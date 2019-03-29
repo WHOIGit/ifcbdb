@@ -3,7 +3,7 @@ from django.db import models
 FILL_VALUE = -9999
 
 class Dataset(models.Model):
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=256)
 
 class DataDirectory(models.Model):
