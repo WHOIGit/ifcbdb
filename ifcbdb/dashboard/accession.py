@@ -16,7 +16,7 @@ def as_ifcb_data_directory(dd):
     return ifcb.DataDirectory(path)
 
 def sync_dataset(dataset):
-    for dd in dataset.directories.all(): # FIXME order by priority
+    for dd in dataset.directories.filter(kind=DATA_DIRECTORY_RAW): # FIXME order by priority
         directory = as_ifcb_data_directory(dd)
         for b in directory:
             add_bin(dataset, b)
