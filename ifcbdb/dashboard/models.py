@@ -26,7 +26,7 @@ class DataDirectory(models.Model):
 
 class Bin(models.Model):
     # bin's permanent identifier (e.g., D20190102T1234_IFCB927)
-    pid = models.CharField(max_length=64)
+    pid = models.CharField(max_length=64, unique=True)
     # the parsed bin timestamp
     timestamp = models.DateTimeField('bin timestamp')
     # spatiotemporal information
@@ -39,6 +39,7 @@ class Bin(models.Model):
     # qaqc flags
     qc_bad = models.BooleanField(default=False) # is this bin invalid
     # metrics
+    size = models.IntegerField(default=0) # size of raw data in bytes
     temperature = models.FloatField(default=FILL_VALUE)
     humidity = models.FloatField(default=FILL_VALUE)
     run_time = models.FloatField(default=FILL_VALUE)
