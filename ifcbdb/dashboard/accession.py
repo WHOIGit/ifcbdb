@@ -4,14 +4,9 @@ from .models import Bin, DataDirectory, DATA_DIRECTORY_RAW
 
 import ifcb
 
-def as_ifcb_data_directory(dd):
-    # FIXME handle white/blacklist
-    path = dd.path
-    return ifcb.DataDirectory(path)
-
 def sync_dataset(dataset):
     for dd in dataset.directories.filter(kind=DATA_DIRECTORY_RAW): # FIXME order by priority
-        directory = as_ifcb_data_directory(dd)
+        directory = ifcb.DataDirectory(dd.path)
         for b in directory:
             add_bin(dataset, b)
 
@@ -22,7 +17,7 @@ def add_bin(dataset, bin):
         b = Bin(pid=pid, timestamp=timestamp, sample_time=timestamp)
         b.temperature = bin.temperature
         b.humidity = bin.humidity
-        b.size = bin.fileset.getsize()
+        b.size = bin.fileset.getsize() # assumes FilesetBin
         b.ml_analyzed = bin.ml_analyzed
         b.look_time = bin.look_time
         b.run_time = bin.run_time
