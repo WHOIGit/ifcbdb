@@ -4,12 +4,6 @@ from .models import Bin, DataDirectory, DATA_DIRECTORY_RAW
 
 import ifcb
 
-def bin_verify(bin):
-    return {}
-
-def bin_metadata(bin):
-    return {}
-
 def as_ifcb_data_directory(dd):
     # FIXME handle white/blacklist
     path = dd.path
@@ -24,10 +18,14 @@ def sync_dataset(dataset):
 def add_bin(dataset, bin):
     pid = bin.lid
     try:
-        metrics = bin_verify(bin)
-        metadata = bin_metadata(bin)
         timestamp = bin.timestamp
         b = Bin(pid=pid, timestamp=timestamp, sample_time=timestamp)
+        b.temperature = bin.temperature
+        b.humidity = bin.humidity
+        b.size = bin.fileset.getsize()
+        b.ml_analyzed = bin.ml_analyzed
+        b.look_time = bin.look_time
+        b.run_time = bin.run_time
         b.save()
         dataset.bins.add(b)
         print('added {} to {}'.format(pid, dataset.name)) # FIXME use logging

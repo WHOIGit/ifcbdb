@@ -43,4 +43,8 @@ class Bin(models.Model):
     temperature = models.FloatField(default=FILL_VALUE)
     humidity = models.FloatField(default=FILL_VALUE)
     run_time = models.FloatField(default=FILL_VALUE)
+    look_time = models.FloatField(default=FILL_VALUE)
     ml_analyzed = models.FloatField(default=FILL_VALUE)
+
+    def __str__(self):
+        return self.pid
