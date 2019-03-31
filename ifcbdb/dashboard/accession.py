@@ -1,3 +1,5 @@
+import os
+
 from django.db import IntegrityError
 
 from .models import Bin, DataDirectory, DATA_DIRECTORY_RAW
@@ -16,6 +18,13 @@ def sync_dataset(dataset):
 def add_bin(dataset, bin):
     # validate bin
     pid = bin.lid
+    # before we do expensive parsing, make sure we really need to add this
+    try:
+        Bin.objects.get(pid=pid)
+        print('skipping {}, already added'.format(pid))
+        return
+    except Bin.DoesNotExist:
+        pass
     timestamp = bin.timestamp
     b = Bin(pid=pid, timestamp=timestamp, sample_time=timestamp)
     # qaqc checks
@@ -34,11 +43,6 @@ def add_bin(dataset, bin):
     b.ml_analyzed = bin.ml_analyzed
     b.look_time = bin.look_time
     b.run_time = bin.run_time
-    try:
-        b.save()
-        dataset.bins.add(b)
-        print('added {} to {}'.format(pid, dataset.name)) # FIXME use logging
-    except IntegrityError:
-        # bin already exists, skip
-        print('skipping {}, already added'.format(pid))
-
+    b.save()
+    dataset.bins.add(b)
+    print('added {} to {}'.format(pid, dataset.name)) # FIXME use logging
