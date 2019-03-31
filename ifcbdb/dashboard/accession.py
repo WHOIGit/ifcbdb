@@ -7,6 +7,8 @@ import ifcb
 
 def sync_dataset(dataset):
     for dd in dataset.directories.filter(kind=DATA_DIRECTORY_RAW): # FIXME order by priority
+        if not os.path.exists(dd.path):
+            continue # skip and continue searching
         directory = ifcb.DataDirectory(dd.path)
         for b in directory:
             add_bin(dataset, b)
