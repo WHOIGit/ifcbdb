@@ -28,3 +28,4 @@ def get_mosaic(bin_pid, shape=(1080,1920), page=0, bgcolor=200):
     m = Mosaic(b, shape, bgcolor)
     coordinates = m.pack() # cache this somehow
     image = m.page(page)
+    return image, coordinates

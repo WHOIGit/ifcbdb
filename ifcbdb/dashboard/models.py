@@ -38,6 +38,7 @@ class Bin(models.Model):
     datasets = models.ManyToManyField('Dataset', related_name='bins')
     # qaqc flags
     qc_bad = models.BooleanField(default=False) # is this bin invalid
+    qc_no_rois = models.BooleanField(default=False)
     # metrics
     size = models.IntegerField(default=0) # size of raw data in bytes
     temperature = models.FloatField(default=FILL_VALUE)
