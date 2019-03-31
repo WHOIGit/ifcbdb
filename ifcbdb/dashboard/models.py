@@ -39,6 +39,8 @@ class Bin(models.Model):
     # qaqc flags
     qc_bad = models.BooleanField(default=False) # is this bin invalid
     qc_no_rois = models.BooleanField(default=False)
+    # metadata JSON
+    metadata = models.CharField(max_length=8192, default='{}')
     # metrics
     size = models.IntegerField(default=0) # size of raw data in bytes
     temperature = models.FloatField(default=FILL_VALUE)

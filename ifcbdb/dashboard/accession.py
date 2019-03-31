@@ -1,4 +1,5 @@
 import os
+import json
 
 from django.db import IntegrityError
 
@@ -35,6 +36,8 @@ def add_bin(dataset, bin):
         print('bad bin {}'.format(pid))
         return
     b.qc_no_rois = check_no_rois(bin)
+    # metadata
+    b.metadata = json.dumps(bin.hdr_attributes)
     # metrics
     b.temperature = bin.temperature
     b.humidity = bin.humidity

@@ -15,7 +15,7 @@ def get_bin(pid):
                 return dd[pid]
             except KeyError:
                 pass # keep searching
-    raise KeyError
+    raise Bin.DoesNotExist
 
 def get_image(bin_pid, target_number):
     b = get_bin(bin_pid)
