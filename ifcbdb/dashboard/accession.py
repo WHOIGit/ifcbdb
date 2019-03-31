@@ -16,7 +16,6 @@ def sync_dataset(dataset):
             add_bin(dataset, b)
 
 def add_bin(dataset, bin):
-    # validate bin
     pid = bin.lid
     # before we do expensive parsing, make sure we really need to add this
     try:
