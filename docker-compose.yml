@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  ifcbdb:
+    build: .
+    container_name: ifcbdb
+    networks:
+      - nginx_network
+      - postgres_network
+    depends_on:
+      - postgres
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - 8000:80
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - ifcbdb
+    networks:
+      - nginx_network
+
+  postgres:
+    image: mdillon/postgis
+    container_name: postgres
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+    networks:
+      - postgres_network
+
+networks:
+  nginx_network:
+    driver: bridge
+  postgres_network:
+    driver: bridge
