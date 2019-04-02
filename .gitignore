@@ -110,3 +110,4 @@ venv.bak/
 # ifcbdb specific stuff
 nginx/ifcbdb.conf
 pyifcb
+pg_data
