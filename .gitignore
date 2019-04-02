@@ -106,3 +106,7 @@ venv.bak/
 # emacs
 *~
 \#*\#
+
+# ifcbdb specific stuff
+nginx/ifcbdb.conf
+pyifcb
