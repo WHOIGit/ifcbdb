@@ -12,7 +12,7 @@ RUN conda install gunicorn
 # pyifcb must be cloned into the same directory as this dockerfile
 
 WORKDIR /pyifcb
-COPY pyifcb/environment.yml .
+COPY ./pyifcb .
 RUN conda env update -n root -f environment.yml
 
 WORKDIR /ifcbdb
@@ -21,19 +21,13 @@ RUN conda env update -n root -f environment.yml
 
 # now install pyifcb
 WORKDIR /pyifcb
-
-COPY pyifcb .
-RUN python setup.py install
+RUN python setup.py develop
 
 # this application
 
 EXPOSE 8000
 
-# now copy all the app code to the container
-WORKDIR /ifcb
-COPY . .
-
 # descend into app directory
-WORKDIR ifcbdb
+WORKDIR /ifcbdb
 
 CMD gunicorn --bind :8000 ifcbdb.wsgi:application --reload

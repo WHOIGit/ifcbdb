@@ -3,3 +3,5 @@
 Dockerfile
 docker-compose.yml
 .dockerignore
+pg_data
+ifcb_data

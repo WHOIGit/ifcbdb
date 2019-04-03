@@ -4,6 +4,10 @@ services:
   ifcbdb:
     build: .
     container_name: ifcbdb
+    volumes:
+      - ./pyifcb:/pyifcb
+      - ./ifcbdb:/ifcbdb
+      - ./ifcb_data:/data
     networks:
       - nginx_network
       - postgres_network
