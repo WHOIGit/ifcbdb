@@ -112,3 +112,4 @@ nginx/ifcbdb.conf
 pyifcb
 pg_data
 ifcb_data
+static
