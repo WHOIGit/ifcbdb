@@ -29,6 +29,10 @@ services:
   postgres:
     image: mdillon/postgis
     container_name: postgres
+    environment:
+      - POSTGRES_USER=ifcb
+      - POSTGRES_PASSWORD=ifcb
+      - POSTGRES_DB=ifcb
     volumes:
       - ./pg_data:/var/lib/postgresql/data
     networks:
