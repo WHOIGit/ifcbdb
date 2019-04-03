@@ -6,5 +6,3 @@ docker-compose.yml
 pg_data
 ifcb_data
 nginx
-postgres
-
