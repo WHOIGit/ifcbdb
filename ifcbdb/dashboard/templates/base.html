@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>IFCB</title>
+
+    <link href="{% static 'vendor/fontawesome/css/all.css' %}" rel="stylesheet" >
+    <link href="{% static 'vendor/mdbootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/mdbootstrap/css/mdb.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/site.css' %}" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <nav class="navbar fixed-top navbar-expand-lg navbar-dark blue scrolling-navbar">
+            <a class="navbar-brand" href="#"><strong>IFCB</strong></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Opinions</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav nav-flex-icons">
+                    <li class="nav-item">
+                        <a class="nav-link"><i class="fab fa-facebook-f"></i></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"><i class="fab fa-twitter"></i></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link"><i class="fab fa-instagram"></i></a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div style="height: 100vh">
+        <div class="flex-center flex-column">
+            <h1>{% block content %}{% endblock %}</h1>
+        </div>
+    </div>
+
+    <footer class="page-footer font-small blue pt-2">
+        <div class="container-fluid text-center text-md-center my-2">
+            <div>
+                <a href="http://www.nsf.gov/" target="_blank">
+                    <img class="logo" src="{% static 'img/nsf.png' %}">
+                </a>
+                <a href="http://www.nasa.gov/" target="_blank">
+                    <img class="logo" src="{% static 'img/nasa.png' %}">
+                </a>
+                <a href="http://www.onr.navy.mil/" target="_blank">
+                    <img class="logo" src="{% static 'img/onr.png' %}">
+                </a>
+                <a href="http://www.moore.org/" target="_blank">
+                    <img class="logo" src="{% static 'img/gbmf.png' %}">
+                </a>
+                <a href="http://www.nopp.org/" target="_blank">
+                    <img class="logo" src="{% static 'img/nopp.png' %}">
+                </a>
+            </div>
+            <div class="mt-2">
+                <a href="mailto:hsosik@whoi.edu">Heidi Sosik</a>,
+                <a href="mailto:rolson@whoi.edu">Robert Olson</a>,
+                <a href="mailto:jfutrelle@whoi.edu">Joe Futrelle</a> @
+                <a href="http://www.whoi.edu/" target="_blank">Woods Hole Oceanographic Institution</a>
+            </div>
+        </div>
+        <div class="footer-copyright text-center py-3">
+            <div>
+                Version 4.4 - 17 October 2018 -
+                <a href="#">About</a> |
+                <a href="https://beagle.whoi.edu/redmine/projects/ifcb-web/wiki" target="_blank">User guide</a> |
+                <a href="#">Log in</a> |
+                <a href="#">Admin</a> |
+                <a href="#">API</a>
+            </div>
+        </div>
+    </footer>
+
+    <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/jquery-3.3.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/popper.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/mdb.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/site.js' %}"></script>
+</body>
+
+</html>

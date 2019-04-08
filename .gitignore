@@ -107,6 +107,9 @@ venv.bak/
 *~
 \#*\#
 
+# IDEs
+.idea/
+
 # ifcbdb specific stuff
 nginx/ifcbdb.conf
 pyifcb
