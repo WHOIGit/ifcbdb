@@ -21,7 +21,7 @@ def get_image(bin_pid, target_number):
     b = get_bin(bin_pid)
     ii = InfilledImages(b) # handle old-style data
     with b.as_single(target_number) as subset:
-        return subset.images[target_number]
+        return ii[target_number]
 
 def get_mosaic(bin_pid, shape=(1080,1920), page=0, bgcolor=200):
     b = get_bin(bin_pid)
