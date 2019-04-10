@@ -37,23 +37,28 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav nav-flex-icons">
-                    <li class="nav-item">
-                        <a class="nav-link"><i class="fab fa-facebook-f"></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link"><i class="fab fa-twitter"></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link"><i class="fab fa-instagram"></i></a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-4" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-user"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right dropdown-info" aria-labelledby="navbarDropdownMenuLink-4">
+                            {% if user.is_authenticated %}
+                            <a class="dropdown-item" href="{% url 'secure:logout' %}">Log out</a>
+                            {% else %}
+                            <a class="dropdown-item" href="{% url 'secure:login' %}">Log In</a>
+                            {% endif %}
+                        </div>
                     </li>
                 </ul>
+
             </div>
         </nav>
     </header>
 
     <div style="height: 100vh">
         <div class="flex-center flex-column">
-            <h1>{% block content %}{% endblock %}</h1>
+            {% block content %}{% endblock %}
         </div>
     </div>
 
