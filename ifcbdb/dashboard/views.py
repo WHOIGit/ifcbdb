@@ -1,9 +1,12 @@
 from django.shortcuts import render
+from .models import Dataset
 
 
 def index(request):
-    return render(request, 'dashboard/index.html', {
+    datasets = Dataset.objects.all()
 
+    return render(request, 'dashboard/index.html', {
+        "datasets": datasets,
     })
 
 def datasets(request):
