@@ -4,6 +4,9 @@ from django.db import models
 
 from django.db.models import Count, Sum, Avg
 from django.db.models.functions import Trunc
+from django.contrib.gis.db.models import PointField
+from django.contrib.gis.geos import Point
+from django.contrib.gis.db.models.functions import Distance
 
 import pandas as pd
 
@@ -31,6 +34,12 @@ class Dataset(models.Model):
     def most_recent_bin(self, time=None):
         qs = self.time_range(end_time=time).order_by('-sample_time')
         return qs.first()
+
+    def closest_bin(self, longitude, latitude):
+        location = Point(longitude, latitude, srid=4326)
+        return self.bins.annotate(
+            distance=Distance('location', location)
+        ).order_by('distance').first()
 
     def timeline(self, start_time=None, end_time=None, metric='size', resolution='day'):
         if resolution not in ['month','day','hour']:
@@ -70,8 +79,7 @@ class Bin(models.Model):
     timestamp = models.DateTimeField('bin timestamp')
     # spatiotemporal information
     sample_time = models.DateTimeField('sample time')
-    latitude = models.FloatField(default=FILL_VALUE)
-    longitude = models.FloatField(default=FILL_VALUE)
+    location = PointField(default=Point())
     depth = models.FloatField(default=0)
     # many-to-many relationship with datasets
     datasets = models.ManyToManyField('Dataset', related_name='bins')
@@ -87,6 +95,10 @@ class Bin(models.Model):
     run_time = models.FloatField(default=FILL_VALUE)
     look_time = models.FloatField(default=FILL_VALUE)
     ml_analyzed = models.FloatField(default=FILL_VALUE)
+
+    def set_location(self, longitude, latitude):
+        # convenience function for setting location w/o having to construct Point object
+        self.location = Point(longitude, latitude, srid=4326)
 
     def _get_bin(self):
         # return the underlying ifcb.Bin object backed by the raw filesets

@@ -2,6 +2,9 @@ from continuumio/miniconda3
 
 RUN apt-get update
 
+# geospatial libraries
+RUN apt-get install -y binutils libproj-dev gdal-bin
+
 # nomkl to reduce image size (mkl is large)
 RUN conda install nomkl
 
@@ -22,6 +25,8 @@ RUN conda env update -n root -f environment.yml
 # now install pyifcb
 WORKDIR /pyifcb
 RUN python setup.py develop
+
+
 
 # this application
 
