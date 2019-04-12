@@ -3,6 +3,8 @@ from django.db import models
 from django.db.models import Count, Sum, Avg
 from django.db.models.functions import Trunc
 
+import pandas as pd
+
 import ifcb
 
 from ifcb.data.stitching import InfilledImages
@@ -20,10 +22,10 @@ class Dataset(models.Model):
         qs = self.bins
         if start_time is not None:
             ts = pd.to_datetime(start_time, utc=True)
-            qs = qs.filter(sample_time__ge=ts)
+            qs = qs.filter(sample_time__gte=ts)
         if end_time is not None:
             ts = pd.to_datetime(end_time, utc=True)
-            qs = qs.filter(sample_time__le=ts)
+            qs = qs.filter(sample_time__lte=ts)
         return qs.all().annotate(dt=Trunc('sample_time', resolution)). \
                 values('dt').annotate(metric=Avg(metric))
 
@@ -79,13 +81,18 @@ class Bin(models.Model):
                     return dd[self.pid]
                 except KeyError:
                     pass # keep searching
-        raise KeyError
+        raise KeyError('cannot find fileset for {}'.format(self))
 
     def image(self, target_number):
         b = self._get_bin()
         with b.as_single(target_number) as subset:
             ii = InfilledImages(subset) # handle old-style data
-            return ii[target_number]
+            try:
+                return ii[target_number]
+            except IndexError:
+                raise KeyError('no such image {} {}'.format(self.pid, target_number))
+            except pd.errors.EmptyDataError:
+                raise KeyError('no such image {} {}'.format(self.pid, target_number))
 
     def list_images(self):
         b = self._get_bin()
