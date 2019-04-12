@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form class="text-center border border-light p-5 col-md-5" method="post">
+    {% csrf_token %}
+
+    <p class="h4 mb-4">Log In</p>
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+        {% for field in form %}
+            {% for error in field.errors %}
+                <strong>{{ field.label_tag }} {{ error|escape }}</strong><br />
+            {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+            <strong>{{ error|escape }}</strong><br />
+        {% endfor %}
+        </div>
+    {% endif %}
+
+    <input class="form-control mb-4 " id="{{ form.username.id_for_label }}" maxlength="30"
+           name="{{ form.username.html_name }}" value="{{ form.username.value|default:'' }}"
+           type="text" placeholder="Username" />
+
+    <input class="form-control mb-4 " id="{{ form.password.id_for_label }}" maxlength="30"
+           name="{{ form.password.html_name }}" value="{{ form.password.value|default:'' }}"
+           type="password" placeholder="Password" />
+
+    <button class="btn btn-info btn-block my-4" type="submit">Sign in</button>
+</form>
+{% endblock %}
