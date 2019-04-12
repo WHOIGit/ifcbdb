@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 
 from django.db.models import Count, Sum, Avg
@@ -44,6 +46,12 @@ class DataDirectory(models.Model):
     whitelist = models.CharField(max_length=512, default='data') # comma separated list of directory names to search
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
 
+    def _get_directory(self):
+        # return the underlying ifcb.DataDirectory
+        whitelist = re.split(',', self.whitelist)
+        blacklist = re.split(',', self.blacklist)
+        return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist)
+
     def __str__(self):
         return '{} ({})'.format(self.path, self.kind)
 
@@ -75,8 +83,8 @@ class Bin(models.Model):
     def _get_bin(self):
         # return the underlying ifcb.Bin object backed by the raw filesets
         for dataset in self.datasets.all():
-            for directory in dataset.directories.filter(kind=DATA_DIRECTORY_RAW):
-                dd = ifcb.DataDirectory(directory.path)
+            for directory in dataset.directories.filter(kind=DATA_DIRECTORY_RAW).order_by('priority'):
+                dd = directory._get_directory()
                 try:
                     return dd[self.pid]
                 except KeyError:
