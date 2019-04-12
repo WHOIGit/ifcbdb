@@ -18,9 +18,7 @@ class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=256)
 
-    def timeline(self, start_time=None, end_time=None, metric='size', resolution='day'):
-        if resolution not in ['month','day','hour']:
-            raise ValueError('unsupported time resolution {}'.format(resoution))
+    def time_range(self, start_time=None, end_time=None):
         qs = self.bins
         if start_time is not None:
             ts = pd.to_datetime(start_time, utc=True)
@@ -28,6 +26,16 @@ class Dataset(models.Model):
         if end_time is not None:
             ts = pd.to_datetime(end_time, utc=True)
             qs = qs.filter(sample_time__lte=ts)
+        return qs
+
+    def most_recent_bin(self, time=None):
+        qs = self.time_range(end_time=time).order_by('-sample_time')
+        return qs.first()
+
+    def timeline(self, start_time=None, end_time=None, metric='size', resolution='day'):
+        if resolution not in ['month','day','hour']:
+            raise ValueError('unsupported time resolution {}'.format(resoution))
+        qs = self.time_range(start_time, end_time)
         return qs.all().annotate(dt=Trunc('sample_time', resolution)). \
                 values('dt').annotate(metric=Avg(metric))
 
