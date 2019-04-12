@@ -1,10 +1,31 @@
 from django.db import models
 
+from django.db.models import Count, Sum, Avg
+from django.db.models.functions import Trunc
+
+import ifcb
+
+from ifcb.data.stitching import InfilledImages
+from ifcb.viz.mosaic import Mosaic
+
 FILL_VALUE = -9999
 
 class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=256)
+
+    def timeline(self, start_time=None, end_time=None, metric='size', resolution='day'):
+        if resolution not in ['month','day','hour']:
+            raise ValueError('unsupported time resolution {}'.format(resoution))
+        qs = self.bins
+        if start_time is not None:
+            ts = pd.to_datetime(start_time, utc=True)
+            qs = qs.filter(sample_time__ge=ts)
+        if end_time is not None:
+            ts = pd.to_datetime(end_time, utc=True)
+            qs = qs.filter(sample_time__le=ts)
+        return qs.all().annotate(dt=Trunc('sample_time', resolution)). \
+                values('dt').annotate(metric=Avg(metric))
 
     def __str__(self):
         return self.name
@@ -48,6 +69,35 @@ class Bin(models.Model):
     run_time = models.FloatField(default=FILL_VALUE)
     look_time = models.FloatField(default=FILL_VALUE)
     ml_analyzed = models.FloatField(default=FILL_VALUE)
+
+    def _get_bin(self):
+        # return the underlying ifcb.Bin object backed by the raw filesets
+        for dataset in self.datasets.all():
+            for directory in dataset.directories.filter(kind=DATA_DIRECTORY_RAW):
+                dd = ifcb.DataDirectory(directory.path)
+                try:
+                    return dd[self.pid]
+                except KeyError:
+                    pass # keep searching
+        raise KeyError
+
+    def image(self, target_number):
+        b = self._get_bin()
+        with b.as_single(target_number) as subset:
+            ii = InfilledImages(subset) # handle old-style data
+            return ii[target_number]
+
+    def list_images(self):
+        b = self._get_bin()
+        ii = InfilledImages(b) # handle old-style data
+        return list(ii.keys())
+
+    def mosaic(self, shape=(1080,1920), page=0, bgcolor=200):
+        b = self._get_bin()
+        m = Mosaic(b, shape, bgcolor)
+        coordinates = m.pack() # cache this somehow
+        image = m.page(page)
+        return image, coordinates        
 
     def __str__(self):
         return self.pid
