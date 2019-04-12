@@ -1,8 +1,17 @@
-footer .logo {
-    height:50px;
-    margin:0 5px;
-    padding: 5px 10px;
-    background: #fff;
-    border-radius: 5px;
-    border: solid 1px #007bff;
+html,
+body,
+.view {
+    height: 100%;
+}
+
+body {
+    padding-top: 75px
+}
+
+.page-footer {
+    background-color: #929FBA;
+}
+
+.footer-thumb {
+    max-height: 60px;
 }

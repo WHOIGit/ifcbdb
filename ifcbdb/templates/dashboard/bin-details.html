@@ -1,0 +1,210 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row">
+    <div class="col">
+        <h1>2020-12-30 12:34:56 UTC (5 Days Ago) by IFCB927</h1>
+    </div>
+</div>
+<hr class="my-3">
+<div class="row">
+    <div class="col">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Download Image Button Group">
+            <button type="button" class="btn btn-unique btn-sm">Raw Data</button>
+            <button type="button" class="btn btn-unique btn-sm">Images</button>
+            <button type="button" class="btn btn-unique btn-sm">Meta Data</button>
+            <button type="button" class="btn btn-unique btn-sm">Products</button>
+        </div>
+    </div>
+</div>
+<div class="row py-2 mt-2">
+    <div class="col-md-6">
+        <div class="card" style="height:650px">
+            <div class="card-header">
+                <h2>Images</h2>
+            </div>
+            <div class="card-body text-center">
+                <div class="tab-content" id="imageTabContent">
+                    <div class="tab-pane fade show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
+                        <img class="img-fluid" src="https://via.placeholder.com/450?text=Image1">
+                    </div>
+                    <div class="tab-pane fade" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
+                        <img class="img-fluid" src="https://via.placeholder.com/450?text=Image2">
+                    </div>
+                    <div class="tab-pane fade" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab">
+                        <img class="img-fluid" src="https://via.placeholder.com/450?text=Image3">
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <nav aria-label="Page navigation example" class="text-center">
+                    <ul class="pagination pg-blue">
+                        <li class="page-item disabled">
+                            <a class="page-link" tabindex="-1">Previous</a>
+                        </li>
+                        <li class="page-item"><a class="page-link">1</a></li>
+                        <li class="page-item active">
+                            <a class="page-link">2 <span class="sr-only">(current)</span></a>
+                        </li>
+                        <li class="page-item"><a class="page-link">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card" style="height:650px">
+            <div class="card-header">
+                <h2>Location</h2>
+            </div>
+            <div class="card-body">
+                <div id="mapid" style="height:400px;"></div>
+                <script>
+                    var mymap = L.map('mapid').setView([51.505, -0.09], 13);
+
+                    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+                        maxZoom: 18,
+                        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+                            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+                            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                        id: 'mapbox.streets'
+                    }).addTo(mymap);
+                </script>
+            </div>
+            <div class="card-footer">
+                <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row py-2">
+    <div class="col-md-6 col-lg-5">
+        <div class="card" style="height:550px">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col">
+                        <h2>Plot</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body overflow-auto">
+                <img class="img-fluid" src="https://via.placeholder.com/650x250">
+            </div>
+            <div class="card-footer text-center">
+                <div class="btn-group" role="group" aria-label="Change Plots Button Group">
+                    <button type="button" class="btn btn-unique">X/Y</button>
+                    <button type="button" class="btn btn-unique">ADC Variables</button>
+                    <button type="button" class="btn btn-unique">Features</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-5">
+        <div class="card" style="height:550px">
+            <div class="card-header">
+                <h2>Meta Data</h2>
+            </div>
+            <div class="card-body overflow-auto">
+                <div class="table-responsive text-nowrap">
+
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">Field</th>
+                                <th scope="col">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">1</th>
+                                <td>Cell</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">2</th>
+                                <td>Cell</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">3</th>
+                                <td>Cell</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">4</th>
+                                <td>Cell</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">5</th>
+                                <td>Cell</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">6</th>
+                                <td>Cell</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">7</th>
+                                <td>Cell</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">7</th>
+                                <td>Cell</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">7</th>
+                                <td>Cell</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-2">
+        <div class="card" style="height:550px">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col">
+                        <h2>Tags</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body overflow-auto">
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>Tag 1</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>Tag 2</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>Tag 3</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-footer">
+                <a href="#" class="btn btn-primary btn-block btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="basicExampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+            </div>
+            <div class="modal-body">
+                ...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+{% endblock %}

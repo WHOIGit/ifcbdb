@@ -116,3 +116,6 @@ pyifcb
 pg_data
 ifcb_data
 static
+
+.DS_Store
+.vscode
