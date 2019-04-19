@@ -143,6 +143,14 @@ class Bin(models.Model):
         image = m.page(page)
         return image, coordinates        
 
+    def target_id(self, target_number):
+        return ifcb.Pid(self.pid).with_target(target_number)
+
+    def target_metadata(self, target_number):
+        b = self._get_bin()
+        # FIXME return as dict keyed by column name
+        return b[target_number]
+
     def __str__(self):
         return self.pid
 
