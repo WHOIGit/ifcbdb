@@ -2,11 +2,16 @@ import re
 
 from django.db import models
 
+from django.conf import settings
+
 from django.db.models import Count, Sum, Avg
 from django.db.models.functions import Trunc
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
+
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 import pandas as pd
 
@@ -14,6 +19,8 @@ import ifcb
 
 from ifcb.data.stitching import InfilledImages
 from ifcb.viz.mosaic import Mosaic
+
+from .crypto import AESCipher
 
 FILL_VALUE = -9999
 
@@ -81,6 +88,8 @@ class Bin(models.Model):
     sample_time = models.DateTimeField('sample time')
     location = PointField(default=Point())
     depth = models.FloatField(default=0)
+    # instrument
+    instrument = models.ForeignKey('Instrument', related_name='bins', null=True, on_delete=models.SET_NULL)
     # many-to-many relationship with datasets
     datasets = models.ManyToManyField('Dataset', related_name='bins')
     # qaqc flags
@@ -127,12 +136,56 @@ class Bin(models.Model):
         ii = InfilledImages(b) # handle old-style data
         return list(ii.keys())
 
-    def mosaic(self, shape=(1080,1920), page=0, bgcolor=200):
+    def mosaic(self, page=0, shape=(600,800), scale=0.33, bgcolor=200):
         b = self._get_bin()
-        m = Mosaic(b, shape, bgcolor)
+        m = Mosaic(b, shape, scale=scale, bgcolor=bgcolor)
         coordinates = m.pack() # cache this somehow
         image = m.page(page)
         return image, coordinates        
 
     def __str__(self):
         return self.pid
+
+class Instrument(models.Model):
+    number = models.IntegerField(unique=True)
+    version = models.IntegerField(default=2)
+    # nickname is optional, not everyone names their IFCB
+    nickname = models.CharField(max_length=64)
+    # connection parameters for Samba
+    address = models.CharField(max_length=128) # ip address or dns name
+    username = models.CharField(max_length=64)
+    _password = models.CharField(max_length=128, db_column='password')
+    share_name = models.CharField(max_length=128, default='Data')
+
+    @staticmethod
+    def _get_cipher():
+        return AESCipher(settings.IFCB_PASSWORD_KEY)
+
+    def set_password(self, password):
+        cipher = self._get_cipher()
+        self._password = cipher.encrypt(password)
+
+    def get_password(self):
+        cipher = self._get_cipher()
+        ciphertext = self._password
+        if not ciphertext:
+            return None
+        return cipher.decrypt(ciphertext)
+
+    password = property(get_password, set_password)
+
+    def __str__(self):
+        return 'IFCB{}'.format(self.number)
+
+@receiver(pre_save, sender=Bin)
+def _lazy_instrument_create(sender, **kw):
+    """automatically associate an Instrument with a bin,
+    creating the instrument if it does not exist"""
+    b = kw['instance']
+    instrument_number = ifcb.Pid(b.pid).instrument
+    try:
+        i = Instrument.objects.get(number=instrument_number)
+    except Instrument.DoesNotExist:
+        i = Instrument(number=instrument_number)
+    i.save()
+    b.instrument = i

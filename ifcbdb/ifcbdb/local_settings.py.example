@@ -1,0 +1,4 @@
+# this key is used to encrypt/decrypt samba passwords for connecting to IFCB
+# edit it after copying local_settings.py.example to local_settings.py
+
+IFCB_PASSWORD_KEY = 'axfd9087qy23hnr'

@@ -134,3 +134,8 @@ STATICFILES_DIRS = [
 LOGIN_URL = 'secure:login'
 LOGIN_REDIRECT_URL = 'secure:index'
 LOGOUT_REDIRECT_URL = 'secure:login'
+
+try:
+    from .local_settings import *
+except ImportError as e:
+    raise ImportError('local settings not found') from e

@@ -9,7 +9,7 @@ from .qaqc import check_bad, check_no_rois
 import ifcb
 
 def sync_dataset(dataset):
-    for dd in dataset.directories.filter(kind=DATA_DIRECTORY_RAW): # FIXME order by priority
+    for dd in dataset.directories.filter(kind=DATA_DIRECTORY_RAW).order_by('priority'):
         if not os.path.exists(dd.path):
             continue # skip and continue searching
         directory = ifcb.DataDirectory(dd.path)
