@@ -1,4 +1,4 @@
-{% load static %}
+{% load static nav %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -13,8 +13,6 @@
     <link href="{% static 'vendor/mdbootstrap/css/mdb.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/site.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/leaflet/leaflet.css' %}" rel="stylesheet">
-    <script type="text/javascript" src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
-        <script type="text/javascript" src="{% static 'vendor/plotly/plotly-latest.min.js' %}"></script>
 </head>
 
 <body class="white">
@@ -29,8 +27,8 @@
 
             <!-- Collapse -->
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
             <!-- Links -->
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -38,15 +36,9 @@
                 <!-- Left -->
                 <ul class="navbar-nav mr-auto white-text">
                     <li class="nav-item active">
-                        <a class="nav-link waves-effect" href="#">Home
-              <span class="sr-only">(current)</span>
-            </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link waves-effect" href="#">Datasets</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link waves-effect" href="#">Menu Link 2?</a>
+                    <a class="nav-link waves-effect" href="{% url 'datasets' %}">Datasets
+                        <span class="sr-only">(current)</span>
+                    </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link waves-effect" href="#">Settings</a>
@@ -54,16 +46,13 @@
                 </ul>
 
                 <!-- Right -->
-                <form class="form-inline my-2 my-lg-0 ml-auto">
-                    <label for="inputSelectDataset" class="col-form-label pr-1">Jump to Dataset:</label>
-                    <select class="browser-default custom-select mb-2" id="inputSelectDataset">
-  <option selected>Select a Dataset</option>
-  <option value="1">One</option>
-  <option value="2">Two</option>
-  <option value="3">Three</option>
-</select>
-                </form>
-                <button type="button" class="btn btn-indigo btn-md"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log In / Log Out</button>
+                {% dataset_switcher %}
+
+                {% if user.is_authenticated %}
+                <a href="{% url 'secure:logout' %}" class="btn btn-indigo btn-md"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log Out</a>
+                {% else %}
+                <a href="{% url 'secure:login' %}" class="btn btn-indigo btn-md"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log In</a>
+                {% endif %}
             </div>
 
         </div>
@@ -73,9 +62,8 @@
     <div class="container-fluid">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb grey lighten-3">
-                <li class="breadcrumb-item"><a class="black-text" href="#">Home</a></li>
-                <li class="breadcrumb-item"><a class="black-text" href="#">Level 1</a></li>
-                <li class="breadcrumb-item active">Level 2</li>
+                <li class="breadcrumb-item"><a class="black-text" href="{% url 'datasets' %}">Datasets</a></li>
+                {% block breadcrumbs %}{% endblock %}
             </ol>
         </nav>
     </div>
@@ -131,18 +119,21 @@
                 Version 4.4 - 17 October 2018 -
                 <a href="#">About</a> |
                 <a href="https://beagle.whoi.edu/redmine/projects/ifcb-web/wiki" target="_blank">User guide</a> |
-                <a href="#">Log in</a> |
+                <a href="{% url 'secure:login' %}">Log in</a> |
                 <a href="#">Admin</a> |
                 <a href="#">API</a>
             </div>
         </div>
     </footer>
 
-    <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/jquery-3.3.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/jquery/jquery-3.4.0.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/popper.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/bootstrap.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/mdb.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/plotly/plotly-latest.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/site.js' %}"></script>
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>

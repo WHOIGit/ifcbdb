@@ -1,0 +1,9 @@
+<form class="form-inline my-2 my-lg-0 ml-auto">
+    <label for="dataset-switcher" class="col-form-label pr-1">Jump to Dataset:</label>
+    <select class="browser-default custom-select mb-2" id="dataset-switcher">
+        <option selected>Select a Dataset</option>
+        {% for dataset in datasets %}
+        <option value="{{ dataset.name }}">{{ dataset.name }}</option>
+        {% endfor %}
+    </select>
+</form>
