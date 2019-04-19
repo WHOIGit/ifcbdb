@@ -126,10 +126,10 @@ class Bin(models.Model):
             ii = InfilledImages(subset) # handle old-style data
             try:
                 return ii[target_number]
-            except IndexError:
-                raise KeyError('no such image {} {}'.format(self.pid, target_number))
-            except pd.errors.EmptyDataError:
-                raise KeyError('no such image {} {}'.format(self.pid, target_number))
+            except IndexError as e:
+                raise KeyError('no such image {} {}'.format(self.pid, target_number)) from e
+            except pd.errors.EmptyDataError as e:
+                raise KeyError('no such image {} {}'.format(self.pid, target_number)) from e
 
     def list_images(self):
         b = self._get_bin()
@@ -187,5 +187,5 @@ def _lazy_instrument_create(sender, **kw):
         i = Instrument.objects.get(number=instrument_number)
     except Instrument.DoesNotExist:
         i = Instrument(number=instrument_number)
-    i.save()
+        i.save()
     b.instrument = i
