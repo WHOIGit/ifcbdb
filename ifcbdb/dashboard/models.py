@@ -19,6 +19,7 @@ import ifcb
 
 from ifcb.data.stitching import InfilledImages
 from ifcb.viz.mosaic import Mosaic
+from ifcb.data.adc import schema_names
 
 from .crypto import AESCipher
 
@@ -136,9 +137,9 @@ class Bin(models.Model):
         ii = InfilledImages(b) # handle old-style data
         return list(ii.keys())
 
-    def mosaic(self, page=0, shape=(600,800), scale=0.33, bgcolor=200):
+    def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
         b = self._get_bin()
-        m = Mosaic(b, shape, scale=scale, bgcolor=bgcolor)
+        m = Mosaic(b, shape, scale=scale, bg_color=bg_color)
         coordinates = m.pack() # cache this somehow
         image = m.page(page)
         return image, coordinates        
@@ -149,7 +150,9 @@ class Bin(models.Model):
     def target_metadata(self, target_number):
         b = self._get_bin()
         # FIXME return as dict keyed by column name
-        return b[target_number]
+        metadata = b[target_number]
+        names = schema_names(b.schema)
+        return dict(zip(names, metadata))
 
     def __str__(self):
         return self.pid
