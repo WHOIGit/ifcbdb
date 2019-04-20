@@ -71,7 +71,9 @@ class DataDirectory(models.Model):
     whitelist = models.CharField(max_length=512, default='data') # comma separated list of directory names to search
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
 
-    def _get_directory(self):
+    def _get_raw_directory(self):
+        if self.kind != DATA_DIRECTORY_RAW:
+            raise ValueError('not a raw directory')
         # return the underlying ifcb.DataDirectory
         whitelist = re.split(',', self.whitelist)
         blacklist = re.split(',', self.blacklist)
@@ -110,15 +112,19 @@ class Bin(models.Model):
         # convenience function for setting location w/o having to construct Point object
         self.location = Point(longitude, latitude, srid=4326)
 
+    def _directories(self, kind=DATA_DIRECTORY_RAW):
+        for dataset in self.datasets.all():
+            for directory in dataset.directories.filter(kind=kind).order_by('priority'):
+                yield directory
+
     def _get_bin(self):
         # return the underlying ifcb.Bin object backed by the raw filesets
-        for dataset in self.datasets.all():
-            for directory in dataset.directories.filter(kind=DATA_DIRECTORY_RAW).order_by('priority'):
-                dd = directory._get_directory()
-                try:
-                    return dd[self.pid]
-                except KeyError:
-                    pass # keep searching
+        for directory in self._directories(kind=DATA_DIRECTORY_RAW):
+            dd = directory._get_raw_directory()
+            try:
+                return dd[self.pid]
+            except KeyError:
+                pass # keep searching
         raise KeyError('cannot find fileset for {}'.format(self))
 
     def image(self, target_number):
