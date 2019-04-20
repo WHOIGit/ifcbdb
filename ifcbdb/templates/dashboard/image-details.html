@@ -1,7 +1,15 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
+<li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></li>
+<li class="breadcrumb-item"><a class="black-text" href="{% url 'image' dataset.name bin.pid image_id %}">{{ image_id }}</a></li>
+{% endblock %}
+
+{% block content %}
 <div class="row">
     <div class="col">
-        <h1>2020-12-30 12:34:56 UTC (5 Days Ago) by IFCB927</h1>
+        <h1>{{ bin }}</h1>
     </div>
 </div>
 <hr class="my-3">
@@ -18,7 +26,7 @@
             <div class="card-body text-center">
                 <div class="tab-content" id="ImageTabContent">
                     <div class="tab-pane fade show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
-                        <img class="img-fluid" src="https://via.placeholder.com/400?text=Image1">
+                        <img id="bin-mosaic" src="data:image/png;base64,{{image}}" />
                     </div>
                     <div class="tab-pane fade" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
                         <img class="img-fluid" src="https://via.placeholder.com/400?text=Image2">
@@ -50,18 +58,6 @@
             </div>
             <div class="card-body">
                 <div id="mapid" style="height:400px;"></div>
-                <script>
-                    var mymap = L.map('mapid').setView([51.505, -0.09], 13);
-
-                    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
-                        maxZoom: 18,
-                        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-                            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-                            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-                        id: 'mapbox.streets'
-                    }).addTo(mymap);
-                    var marker = L.marker([51.5, -0.09]).addTo(mymap);
-                </script>
             </div>
             <div class="card-footer">
                 <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
@@ -166,9 +162,11 @@
                     </li>
                 </ul>
             </div>
+            {% if user.is_authenticated %}
             <div class="card-footer text-right">
                 <a data-toggle="modal" data-target="#addAnnotationModal" class="btn btn-unique btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
+            {% endif %}
         </div>
     </div>
     <div class="col-md-6 col-lg-2">
@@ -194,9 +192,11 @@
                 </ul>
 
             </div>
+            {% if user.is_authenticated %}
             <div class="card-footer text-right">
                 <a data-toggle="modal" data-target="#addTagModal" class="btn btn-unique btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -275,4 +275,19 @@
     </div>
 </div>
 <!-- Modal -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var mymap = L.map('mapid').setView([51.505, -0.09], 13);
+
+    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+        maxZoom: 18,
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        id: 'mapbox.streets'
+    }).addTo(mymap);
+    var marker = L.marker([51.5, -0.09]).addTo(mymap);
+</script>
 {% endblock %}

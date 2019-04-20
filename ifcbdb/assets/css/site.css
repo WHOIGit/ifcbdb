@@ -14,4 +14,9 @@ body {
 
 .footer-thumb {
     max-height: 60px;
+    margin: 0 8px;
+}
+
+#bin-mosaic {
+    max-width:70%;
 }
