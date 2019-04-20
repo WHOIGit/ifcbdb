@@ -20,6 +20,7 @@ import ifcb
 from ifcb.data.stitching import InfilledImages
 from ifcb.viz.mosaic import Mosaic
 from ifcb.data.adc import schema_names
+from ifcb.data.products.blobs import BlobDirectory
 
 from .crypto import AESCipher
 
@@ -60,6 +61,7 @@ class Dataset(models.Model):
         return self.name
 
 DATA_DIRECTORY_RAW = 'raw'
+DATA_DIRECTORY_BLOBS = 'blobs'
 
 class DataDirectory(models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='directories')
@@ -70,14 +72,21 @@ class DataDirectory(models.Model):
     # parameters controlling searching (simple comma separated fields because we don't have to query on these)
     whitelist = models.CharField(max_length=512, default='data') # comma separated list of directory names to search
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
+    # for product directories, the product version
+    version = models.IntegerField(null=True)
 
-    def _get_raw_directory(self):
+    def get_raw_directory(self):
         if self.kind != DATA_DIRECTORY_RAW:
             raise ValueError('not a raw directory')
         # return the underlying ifcb.DataDirectory
         whitelist = re.split(',', self.whitelist)
         blacklist = re.split(',', self.blacklist)
         return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist)
+
+    def get_blob_directory(self):
+        if self.kind != DATA_DIRECTORY_BLOBS:
+            raise ValueError('not a blobs directory')
+        return BlobDirectory(self.path, self.version)
 
     def __str__(self):
         return '{} ({})'.format(self.path, self.kind)
@@ -112,15 +121,18 @@ class Bin(models.Model):
         # convenience function for setting location w/o having to construct Point object
         self.location = Point(longitude, latitude, srid=4326)
 
-    def _directories(self, kind=DATA_DIRECTORY_RAW):
+    def _directories(self, kind=DATA_DIRECTORY_RAW, version=None):
         for dataset in self.datasets.all():
-            for directory in dataset.directories.filter(kind=kind).order_by('priority'):
+            qs = dataset.directories.filter(kind=kind)
+            if version is not None:
+                qs = qs.filter(version=version)
+            for directory in qs.order_by('priority'):
                 yield directory
 
     def _get_bin(self):
         # return the underlying ifcb.Bin object backed by the raw filesets
         for directory in self._directories(kind=DATA_DIRECTORY_RAW):
-            dd = directory._get_raw_directory()
+            dd = directory.get_raw_directory()
             try:
                 return dd[self.pid]
             except KeyError:
@@ -142,6 +154,19 @@ class Bin(models.Model):
         b = self._get_bin()
         ii = InfilledImages(b) # handle old-style data
         return list(ii.keys())
+
+    def blob(self, target_number, version=2):
+        for directory in self._directories(kind=DATA_DIRECTORY_BLOBS, version=version):
+            bd = directory.get_blob_directory()
+            try:
+                bf = bd[self.pid]
+            except KeyError as e:
+                raise KeyError('no blobs found for {}'.format(self.pid)) from e
+            try:
+                return bf[target_number]
+            except KeyError as e:
+                raise KeyError('no such blob {} {}'.format(self.pid, target_number)) from e
+        raise KeyError('no v{} blob directory found'.format(version))
 
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
         b = self._get_bin()
@@ -199,10 +224,12 @@ def _lazy_instrument_create(sender, **kw):
     """automatically associate an Instrument with a bin,
     creating the instrument if it does not exist"""
     b = kw['instance']
-    instrument_number = ifcb.Pid(b.pid).instrument
+    pid = ifcb.Pid(b.pid)
+    instrument_number = pid.instrument
+    version = pid.schema_version
     try:
         i = Instrument.objects.get(number=instrument_number)
     except Instrument.DoesNotExist:
-        i = Instrument(number=instrument_number)
+        i = Instrument(number=instrument_number, version=version)
         i.save()
     b.instrument = i
