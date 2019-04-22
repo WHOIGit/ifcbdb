@@ -41,18 +41,16 @@ def bin_details(request, dataset_name, bin_id):
     images = []
     image_keys = bin.list_images()[:5]
     for k in image_keys:
-        #images.append(bin.image(k))
         images.append(k)
 
-    # TODO: Clean this up with proper paging
-    first_image = embed_image(bin.image(images[0]))
-
+    # TODO: Need to set proper scale/size
+    image, coordinates = bin.mosaic(page=0, shape=(600, 800), scale=0.33, bg_color=200)
 
     return render(request, 'dashboard/bin-details.html', {
         "dataset": dataset,
         "bin": bin,
         "images": images,
-        "first_image": first_image,
+        "image": embed_image(image),
     })
 
 
