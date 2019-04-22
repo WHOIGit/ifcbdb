@@ -31,12 +31,16 @@
             <div class="card-body text-center">
                 <div class="tab-content" id="imageTabContent">
                     <div class="tab-pane fade show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
-                        <img id="bin-mosaic" src="data:image/png;base64,{{ image }}" class="img-fluid" />
+                        <div id="mosaic-container"></div>
                     </div>
 
-                    {% for image in images %}
-                        <a href="{% url 'image' dataset.name bin.pid image %}">{{ image }}</a>
-                    {% endfor %}
+                    <div>
+                        Images:
+                        {% for image in images %}
+                            <a href="{% url 'image' dataset.name bin.pid image %}">{{ image }}</a>
+                        {% endfor %}
+                    </div>
+
                     <div class="tab-pane fade" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
                         <img class="img-fluid" src="https://via.placeholder.com/450?text=Image2">
                     </div>
@@ -51,11 +55,11 @@
                         <li class="page-item disabled">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
-                        <li class="page-item"><a class="page-link">1</a></li>
+                        <li class="page-item"><a class="page-link" data-page="0">1</a></li>
                         <li class="page-item active">
-                            <a class="page-link">2 <span class="sr-only">(current)</span></a>
+                            <a class="page-link" data-page="1">2 <span class="sr-only">(current)</span></a>
                         </li>
-                        <li class="page-item"><a class="page-link">3</a></li>
+                        <li class="page-item"><a class="page-link" data-page="2">3</a></li>
                         <li class="page-item">
                             <a class="page-link">Next</a>
                         </li>
@@ -211,7 +215,9 @@
 
 {% block scripts %}
 <script>
-    var mymap = L.map('mapid').setView([51.505, -0.09], 13);
+    //var mymap = L.map('mapid').setView([51.505, -0.09], 13);
+    var latlng = {lat: {{ lat }}, lng: {{ lng }} };
+    var mymap = L.map('mapid').setView(latlng, 13);
 
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
         maxZoom: 18,
@@ -220,5 +226,32 @@
             'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
         id: 'mapbox.streets'
     }).addTo(mymap);
+
+    L.marker(latlng).addTo(mymap);
+
+
+</script>
+<script>
+    var currentMosaicPage = 1;
+
+    function loadMosaic(page) {
+        var url = "/{{ dataset.name }}/{{ bin.pid }}/mosaic.html?page=" + page;
+
+        $("#mosaic-container").load(url, function(){
+            currentMosaicPage = page;
+        });
+    }
+
+    $(".page-link").click(function(e){
+        e.preventDefault();
+
+        var page = $(this).data("page");
+
+        loadMosaic(page);
+    });
+
+    $(function(){
+        loadMosaic(currentMosaicPage);
+    });
 </script>
 {% endblock %}

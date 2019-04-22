@@ -43,14 +43,20 @@ def bin_details(request, dataset_name, bin_id):
     for k in image_keys:
         images.append(k)
 
-    # TODO: Need to set proper scale/size
-    image, coordinates = bin.mosaic(page=0, shape=(600, 800), scale=0.33, bg_color=200)
+    # TODO: Need to check to make sure lat/ln are in the right order
+    lat, lng = 0, 0
+    try:
+        lat = bin.location.x
+        lng = bin.location.y
+    except:
+        pass
 
     return render(request, 'dashboard/bin-details.html', {
         "dataset": dataset,
         "bin": bin,
         "images": images,
-        "image": embed_image(image),
+        "lat": lat,
+        "lng": lng,
     })
 
 
@@ -68,6 +74,22 @@ def image_details(request, dataset_name, bin_id, image_id):
         "bin": bin,
         "image": embed_image(image),
         "image_id": image_id,
+    })
+
+
+# TODO: Need loading icon/etc for this
+# TODO: Add prefetching of mosaics that can be cached
+def mosaic(request, dataset_name, bin_id):
+    dataset = get_object_or_404(Dataset, name=dataset_name)
+    bin = get_object_or_404(Bin, pid=bin_id)
+
+    # TODO: Needs type checking
+    page = int(request.GET.get("page", 0))
+
+    image, coordinates = bin.mosaic(page=page, shape=(600, 800), scale=0.33, bg_color=200)
+
+    return render(request, 'dashboard/_mosaic.html', {
+        "image": embed_image(image),
     })
 
 

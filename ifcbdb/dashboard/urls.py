@@ -9,6 +9,7 @@ urlpatterns = [
     # The urls below must remain in this specific order (by granularity)
     # TODO: The slugs for the images need to be left padded with zeros
     # TODO: Handle .jpg and .png (instead of .html) to go to the images directly
+    path('<slug:dataset_name>/<slug:bin_id>/mosaic.html', views.mosaic, name='mosaic'),
     path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.image_details, name='image'),
     path('<slug:dataset_name>/<slug:bin_id>.html', views.bin_details, name='bin'),
     path('<slug:dataset_name>', views.dataset_details, name='dataset'),
