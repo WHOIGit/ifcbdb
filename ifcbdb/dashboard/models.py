@@ -19,6 +19,7 @@ import ifcb
 
 from ifcb.data.stitching import InfilledImages
 from ifcb.viz.mosaic import Mosaic
+from ifcb.viz.blobs import blob_outline
 from ifcb.data.adc import schema_names
 from ifcb.data.products.blobs import BlobDirectory
 
@@ -168,6 +169,12 @@ class Bin(models.Model):
                 raise KeyError('no such blob {} {}'.format(self.pid, target_number)) from e
         raise KeyError('no v{} blob directory found'.format(version))
 
+    def outline(self, target_number, blob_version=2, outline_color=[255, 0, 0]):
+        image = self.image(target_number)
+        blob = self.blob(target_number, version=blob_version)
+        out = blob_outline(image, blob, outline_color=outline_color)
+        return out
+
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
         b = self._get_bin()
         m = Mosaic(b, shape, scale=scale, bg_color=bg_color)
@@ -180,7 +187,6 @@ class Bin(models.Model):
 
     def target_metadata(self, target_number):
         b = self._get_bin()
-        # FIXME return as dict keyed by column name
         metadata = b[target_number]
         names = schema_names(b.schema)
         return dict(zip(names, metadata))
