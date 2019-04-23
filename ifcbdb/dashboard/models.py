@@ -99,7 +99,7 @@ class Bin(models.Model):
     timestamp = models.DateTimeField('bin timestamp')
     # spatiotemporal information
     sample_time = models.DateTimeField('sample time')
-    location = PointField(default=Point())
+    location = PointField(default=Point(FILL_VALUE, FILL_VALUE, srid=4326))
     depth = models.FloatField(default=0)
     # instrument
     instrument = models.ForeignKey('Instrument', related_name='bins', null=True, on_delete=models.SET_NULL)
@@ -122,6 +122,16 @@ class Bin(models.Model):
         # convenience function for setting location w/o having to construct Point object
         self.location = Point(longitude, latitude, srid=4326)
 
+    @property
+    def latitude(self):
+        return self.location.y
+
+    @property
+    def longitude(self):
+        return self.location.x
+    
+    # access to underlying FilesetBin objects
+
     def _directories(self, kind=DATA_DIRECTORY_RAW, version=None):
         for dataset in self.datasets.all():
             qs = dataset.directories.filter(kind=kind)
@@ -140,6 +150,19 @@ class Bin(models.Model):
                 pass # keep searching
         raise KeyError('cannot find fileset for {}'.format(self))
 
+    # access to raw files
+
+    def adc_path(self):
+        return self._get_bin().fileset.adc_path
+
+    def hdr_path(self):
+        return self._get_bin().fileset.hdr_path
+
+    def roi_path(self):
+        return self._get_bin().fileset.roi_path
+
+    # access to images
+
     def image(self, target_number):
         b = self._get_bin()
         with b.as_single(target_number) as subset:
@@ -156,24 +179,33 @@ class Bin(models.Model):
         ii = InfilledImages(b) # handle old-style data
         return list(ii.keys())
 
-    def blob(self, target_number, version=2):
-        for directory in self._directories(kind=DATA_DIRECTORY_BLOBS, version=version):
+    # access to blobs
+
+    def blob_file(self, version=2):
+         for directory in self._directories(kind=DATA_DIRECTORY_BLOBS, version=version):
             bd = directory.get_blob_directory()
             try:
-                bf = bd[self.pid]
+                return bd[self.pid]
             except KeyError as e:
                 raise KeyError('no blobs found for {}'.format(self.pid)) from e
-            try:
-                return bf[target_number]
-            except KeyError as e:
-                raise KeyError('no such blob {} {}'.format(self.pid, target_number)) from e
-        raise KeyError('no v{} blob directory found'.format(version))
+
+    def blob_path(self, version=2):
+        return self.blob_file(version=version).path
+
+    def blob(self, target_number, version=2):
+        bf = self.blob_file(version=version)
+        try:
+            return bf[target_number]
+        except KeyError as e:
+            raise KeyError('no such blob {} {}'.format(self.pid, target_number)) from e
 
     def outline(self, target_number, blob_version=2, outline_color=[255, 0, 0]):
         image = self.image(target_number)
         blob = self.blob(target_number, version=blob_version)
         out = blob_outline(image, blob, outline_color=outline_color)
         return out
+
+    # mosaics
 
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
         b = self._get_bin()
