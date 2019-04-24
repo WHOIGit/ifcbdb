@@ -134,11 +134,10 @@ def roi_data(request, dataset_name, bin_id):
 
 # TODO: This could use a better name and potentially a pre-defined object
 def _create_bin_wrapper(bin):
-    # TODO: Need to check to make sure lat/ln are in the right order
     lat, lng = 0, 0
     try:
-        lat = bin.location.x
-        lng = bin.location.y
+        lat = bin.location.y
+        lng = bin.location.x
     except:
         pass
 
