@@ -2,13 +2,13 @@
 
 {% block breadcrumbs %}
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
-<li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></li>
+<li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin_data.bin.pid %}">{{ bin_data.bin.pid }}</a></li>
 {% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col">
-        <h1>{{ bin.pid }}</h1>
+        <h1>{{ bin_data.bin.pid }}</h1>
     </div>
 </div>
 <hr class="my-3">
@@ -37,7 +37,7 @@
                     <div>
                         Images:
                         {% for image in images %}
-                            <a href="{% url 'image' dataset.name bin.pid image %}">{{ image }}</a>
+                            <a href="{% url 'image' dataset.name bin_data.bin.pid image %}">{{ image }}</a>
                         {% endfor %}
                     </div>
 
@@ -52,15 +52,15 @@
             <div class="card-footer text-center">
                 <nav aria-label="Page navigation example" class="text-center">
                     <ul class="pagination pg-blue">
-                        <li class="page-item disabled">
+                        <li class="page-item page-previous">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
-                        <li class="page-item"><a class="page-link" data-page="0">1</a></li>
-                        <li class="page-item active">
-                            <a class="page-link" data-page="1">2 <span class="sr-only">(current)</span></a>
+                        {% for page in bin_data.pages %}
+                        <li class="page-item page-index {% if page == 0 %}active{% endif %}">
+                            <a class="page-link" data-page="{{ page }}">{{ page|add:"1" }}</a>
                         </li>
-                        <li class="page-item"><a class="page-link" data-page="2">3</a></li>
-                        <li class="page-item">
+                        {% endfor %}
+                        <li class="page-item page-next">
                             <a class="page-link">Next</a>
                         </li>
                     </ul>
@@ -77,7 +77,7 @@
                 <div id="mapid" style="height:400px;"></div>
             </div>
             <div class="card-footer">
-                <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
+                <p>Latitude: {{ bin_data.lat }}, Longitude: {{ bin_data.lng }}, Depth {{ bin_data.bin.depth }}m</p>
             </div>
         </div>
     </div>
@@ -215,43 +215,60 @@
 
 {% block scripts %}
 <script>
-    //var mymap = L.map('mapid').setView([51.505, -0.09], 13);
-    var latlng = {lat: {{ lat }}, lng: {{ lng }} };
-    var mymap = L.map('mapid').setView(latlng, 13);
-
-    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
-        maxZoom: 18,
-        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-        id: 'mapbox.streets'
-    }).addTo(mymap);
-
-    L.marker(latlng).addTo(mymap);
-
-
-</script>
-<script>
     var currentMosaicPage = 1;
+    var currentBinPage = 0;
+    var numBinPages = {{ bin_data.num_pages }};
 
     function loadMosaic(page) {
-        var url = "/{{ dataset.name }}/{{ bin.pid }}/mosaic.html?page=" + page;
+        var url = "/{{ dataset.name }}/{{ bin_data.bin.pid }}/mosaic.html?page=" + page;
 
         $("#mosaic-container").load(url, function(){
             currentMosaicPage = page;
         });
     }
 
-    $(".page-link").click(function(e){
+    $(".page-index a").click(function(e){
         e.preventDefault();
 
-        var page = $(this).data("page");
+        var pageNumber = $(this).data("page")
 
-        loadMosaic(page);
+        changePage(pageNumber);
     });
 
+    $(".page-previous").click(function(e){
+        e.preventDefault();
+
+        if (currentBinPage > 0)
+            changePage(currentBinPage - 1);
+    });
+
+    $(".page-next").click(function(e){
+        e.preventDefault();
+
+        if (currentBinPage < numBinPages)
+            changePage(currentBinPage + 1);
+    });
+
+    function changePage(pageNumber) {
+        currentBinPage = pageNumber;
+
+        $(".page-previous").toggleClass("disabled", (pageNumber <= 0));
+        $(".page-next").toggleClass("disabled", (pageNumber >= numBinPages));
+
+        $.each($(".page-index a"), function(){
+            var isSelected = $(this).data("page") == pageNumber;
+
+            $(this).closest("li").toggleClass("active", isSelected);
+        });
+
+        loadMosaic(pageNumber);
+    }
+
     $(function(){
-        loadMosaic(currentMosaicPage);
+        var map = createMap({{ bin_data.lat }}, {{ bin_data.lng }});
+        L.marker([{{ bin_data.lat }}, {{ bin_data.lng }}]).addTo(map);
+
+        changePage(currentBinPage);
     });
 </script>
 {% endblock %}

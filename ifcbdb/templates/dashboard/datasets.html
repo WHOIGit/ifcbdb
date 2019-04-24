@@ -68,8 +68,9 @@
 
 {% block scripts %}
 <script>
-    var mymap = L.map('mapid').setView([41.5507768,-70.6593102], 11);
-    L.esri.basemapLayer('Oceans').addTo(mymap);
-    L.esri.basemapLayer('OceansLabels').addTo(mymap);
+    $(function(){
+        // TODO: Fill in proper values and a real default starting location
+        createMap(41.5507768,-70.6593102);
+    });
 </script>
 {% endblock %}

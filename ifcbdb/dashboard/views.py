@@ -24,6 +24,8 @@ def dataset_details(request, dataset_name):
     dataset = get_object_or_404(Dataset, name=dataset_name)
     bin = dataset.most_recent_bin()
 
+    bins = dataset.bins
+
     # TODO: Need to set proper scale/size
     image, coordinates = bin.mosaic(page=0, shape=(600,800), scale=0.33, bg_color=200)
 
@@ -32,6 +34,7 @@ def dataset_details(request, dataset_name):
         "bin": bin,
         "image": embed_image(image),
         "coordinates": coordinates,
+        "bins": bins,
     })
 
 
@@ -46,20 +49,12 @@ def bin_details(request, dataset_name, bin_id):
     for k in image_keys:
         images.append(k)
 
-    # TODO: Need to check to make sure lat/ln are in the right order
-    lat, lng = 0, 0
-    try:
-        lat = bin.location.x
-        lng = bin.location.y
-    except:
-        pass
-
+    # TODO: bin.depth is coming out to 0. Check to see if the depth will be 0 when there is no lat/lng found, and handle
+    # TODO: Mockup for lat/lng under the map had something like "41 north, 82 east (41.31, -70.39)"
     return render(request, 'dashboard/bin-details.html', {
         "dataset": dataset,
-        "bin": bin,
+        "bin_data": _create_bin_wrapper(bin),
         "images": images,
-        "lat": lat,
-        "lng": lng,
     })
 
 
@@ -94,7 +89,7 @@ def mosaic(request, dataset_name, bin_id):
     return render(request, 'dashboard/_mosaic.html', {
         "image": embed_image(image),
     })
-   
+
 def _image_data(bin_id, target, mimetype):
     b = get_object_or_404(Bin, pid=bin_id)
     arr = b.image(target)
@@ -132,3 +127,25 @@ def roi_data(request, dataset_name, bin_id):
     filename = '{}.roi'.format(bin_id)
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
+
+# TODO: This could use a better name and potentially a pre-defined object
+def _create_bin_wrapper(bin):
+    # TODO: Need to check to make sure lat/ln are in the right order
+    lat, lng = 0, 0
+    try:
+        lat = bin.location.x
+        lng = bin.location.y
+    except:
+        pass
+
+    # TODO: This loads the first image, but we're still forcing a second load through AJAX. Need to consolidate
+    image, coordinates = bin.mosaic(page=0, shape=(600, 800), scale=0.33, bg_color=200)
+    num_pages = coordinates.page.max()
+
+    return {
+        "bin": bin,
+        "lat": lat,
+        "lng": lng,
+        "pages": range(num_pages + 1),
+        "num_pages": num_pages,
+    }
