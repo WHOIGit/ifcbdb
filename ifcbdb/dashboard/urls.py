@@ -11,12 +11,18 @@ urlpatterns = [
     # TODO: Handle .jpg and .png (instead of .html) to go to the images directly
     path('<slug:dataset_name>/<slug:bin_id>/mosaic.html', views.mosaic, name='mosaic'),
     path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.image_details, name='image'),
+    path('<slug:dataset_name>/<slug:bin_id>_<int:image_id>.html', views.image_details, name='image_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>.html', views.bin_details, name='bin'),
-    path('<slug:dataset_name>/<slug:bin_id>.adc', views.adc_data, name='adc data (csv)'),
-    path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr data (text/plain)'),
-    path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi data (raw binary)'),
-    path('<slug:dataset_name>/<slug:image_id>.png', views.image_data_png, name='image_data (png)'),
-    path('<slug:dataset_name>/<slug:image_id>.jpg', views.image_data_jpg, name='image data (jpg)'),
+
+    # raw data access
+    path('<slug:dataset_name>/<slug:bin_id>.adc', views.adc_data, name='adc_csv'),
+    path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'),
+    path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary'),
+
+    # image access
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png'),
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg'),
+
     path('<slug:dataset_name>', views.dataset_details, name='dataset'),
 
     # TODO: Need to handle previous permalink URLS. (work in progress/examples to be handled later)

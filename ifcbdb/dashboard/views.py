@@ -1,10 +1,9 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, Http404
 
 from .models import Dataset, Bin
 from common.utilities import embed_image
 
-from ifcb import Pid
 from ifcb.data.imageio import format_image
 
 # TODO: The naming convensions for the dataset, bin and image ID's needs to be cleaned up and be made
@@ -96,24 +95,22 @@ def mosaic(request, dataset_name, bin_id):
         "image": embed_image(image),
     })
    
-def _image_data(image_id, mimetype):
-    image_pid = Pid(image_id)
-    bin_pid = image_pid.bin_lid
-    target = image_pid.target
-    b = get_object_or_404(Bin, pid=bin_pid)
+def _image_data(bin_id, target, mimetype):
+    b = get_object_or_404(Bin, pid=bin_id)
     arr = b.image(target)
     image_data = format_image(arr, mimetype)
     return HttpResponse(image_data, content_type=mimetype)
 
-def image_data_png(request, dataset_name, image_id):
+def image_data_png(request, dataset_name, bin_id, target):
     # ignore dataset name
-    return _image_data(image_id, 'image/png')
+    return _image_data(bin_id, target, 'image/png')
 
-def image_data_jpg(request, dataset_name, image_id):
+def image_data_jpg(request, dataset_name, bin_id, target):
     # ignore dataset name
-    return _image_data(image_id, 'image/jpeg')
+    return _image_data(bin_id, target, 'image/jpeg')
 
 def adc_data(request, dataset_name, bin_id):
+    # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     adc_path = b.adc_path()
     filename = '{}.adc'.format(bin_id)
@@ -121,6 +118,7 @@ def adc_data(request, dataset_name, bin_id):
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
 def hdr_data(request, dataset_name, bin_id):
+    # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     hdr_path = b.hdr_path()
     filename = '{}.hdr'.format(bin_id)
@@ -128,6 +126,7 @@ def hdr_data(request, dataset_name, bin_id):
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/plain')
 
 def roi_data(request, dataset_name, bin_id):
+    # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     roi_path = b.roi_path()
     filename = '{}.roi'.format(bin_id)
