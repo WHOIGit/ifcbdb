@@ -48,7 +48,17 @@
     <div class="col-md-8">
         <div class="card" style="height:650px">
             <div class="card-header">
-                <h2>Images for Bin: <a href="{% url 'bin' dataset.name bin.pid %}">{{ bin }}</a></h2>
+                <div class="input-group">
+                    <label>Bin</label>
+                    <select class="custom-select" id="bin-switcher">
+                        {% for b in bins.all %}
+                            <option value="{{ b.pid }}" {% if b.pid == bin.pid %}selected{% endif %}>{{ b.pid }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="input-group-append">
+                        <button class="btn btn-secondary" type="button" id="bin-details">Details</button>
+                    </div>
+                </div>
             </div>
             <div class="card-body text-center">
                 <img id="bin-mosaic" src="data:image/png;base64,{{image}}" />
@@ -134,14 +144,17 @@ Plotly.d3.csv("https://raw.githubusercontent.com/plotly/datasets/master/finance-
     });
 </script>
 <script>
-    var mymap = L.map('mapid').setView([51.505, -0.09], 13);
 
-    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
-        maxZoom: 18,
-        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-        id: 'mapbox.streets'
-    }).addTo(mymap);
+    $("#bin-details").click(function(e){
+        var url = "{% url 'bin' dataset.name '__BIN_PID__' %}";
+        var pid = $("#bin-switcher").val();
+
+        location.href = url.replace("__BIN_PID__", pid);
+    });
+
+    $(function(){
+        // TODO: Fill in proper values and a real default starting location
+        var map = createMap(41.5507768,-70.6593102);
+    });
 </script>
 {% endblock %}
