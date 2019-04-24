@@ -20,9 +20,13 @@ def datasets(request):
 
 # TODO: Configure link needs proper permissions (more than just user is authenticated)
 # TODO: Handle a dataset with no bins? Is that possible?
-def dataset_details(request, dataset_name):
+def dataset_details(request, dataset_name, bin_id=None):
     dataset = get_object_or_404(Dataset, name=dataset_name)
-    bin = dataset.most_recent_bin()
+
+    if bin_id is None:
+        bin = dataset.most_recent_bin()
+    else:
+        bin = get_object_or_404(Bin, pid=bin_id)
 
     # TODO: Need to set proper scale/size
     image, coordinates = bin.mosaic(page=0, shape=(600,800), scale=0.33, bg_color=200)
