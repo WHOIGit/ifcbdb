@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, FileResponse, Http404
+from django.http import HttpResponse, FileResponse, Http404, JsonResponse
+
 
 from .models import Dataset, Bin
 from common.utilities import embed_image
@@ -28,6 +29,9 @@ def dataset_details(request, dataset_name, bin_id=None):
     else:
         bin = get_object_or_404(Bin, pid=bin_id)
 
+    previous_bin = dataset.previous_bin(bin)
+    next_bin = dataset.next_bin(bin)
+
     bins = dataset.bins
 
     # TODO: Need to set proper scale/size
@@ -36,6 +40,8 @@ def dataset_details(request, dataset_name, bin_id=None):
     return render(request, 'dashboard/dataset-details.html', {
         "dataset": dataset,
         "bin": bin,
+        "previous_bin": previous_bin,
+        "next_bin": next_bin,
         "image": embed_image(image),
         "coordinates": coordinates,
         "bins": bins,
@@ -159,3 +165,43 @@ def _create_bin_wrapper(bin):
         "pages": range(num_pages + 1),
         "num_pages": num_pages,
     }
+
+
+
+# TODO: The below views are API/AJAX calls; in the future, it would be beneficial to use a proper API framework
+def generate_time_series(request, dataset_name, metric):
+    # Allows us to keep consistant url names
+    metric = metric.replace("-", "_")
+
+    # TODO: Allow resolution to be set from API call; default to hours for testing
+    dataset = get_object_or_404(Dataset, name=dataset_name)
+    time_series = dataset.timeline(None, None, metric=metric, resolution="hour")
+
+    # TODO: Possible performance issues in the way we're pivoting the data before it gets return
+    return JsonResponse({
+        "x": [item["dt"] for item in time_series],
+        "y": [item["metric"] for item in time_series],
+        "y-axis": dataset.metric_label(metric),
+    })
+
+# TODO: This call needs a lot of clean up, standardization with other methods and cutting out some dup code
+# TODO: This is also where page caching could occur...
+def bin_data(request, dataset_name, bin_id):
+    dataset = get_object_or_404(Dataset, name=dataset_name)
+    bin = get_object_or_404(Bin, pid=bin_id)
+    previous_bin = dataset.previous_bin(bin)
+    next_bin = dataset.next_bin(bin)
+
+    bin_data = _create_bin_wrapper(bin)
+
+    # TODO: Need to set proper scale/size
+    image, coordinates = bin.mosaic(page=0, shape=(600, 800), scale=0.33, bg_color=200)
+
+
+    return JsonResponse({
+        "previous_bin_id": previous_bin.pid if previous_bin else "",
+        "next_bin_id": next_bin.pid if next_bin else "",
+        "lat": bin_data["lat"],
+        "lng": bin_data["lng"],
+        "mosaic": embed_image(image),
+    })

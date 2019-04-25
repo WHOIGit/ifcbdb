@@ -30,6 +30,9 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png'),
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg'),
 
+
     path('<slug:dataset_name>', views.dataset_details, name='dataset'),
 
+    path('api/<slug:dataset_name>/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
+    path('api/<slug:dataset_name>/bin/<slug:bin_id>', views.bin_data, name='bin_data'),
 ]
