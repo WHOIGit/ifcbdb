@@ -29,7 +29,7 @@ services:
       - nginx_network
 
   postgres:
-    image: mdillon/postgis:11
+    image: mdillon/postgis:11-alpine
     container_name: postgres
     environment:
       - POSTGRES_USER=ifcb
