@@ -22,6 +22,7 @@ from ifcb.viz.mosaic import Mosaic
 from ifcb.viz.blobs import blob_outline
 from ifcb.data.adc import schema_names
 from ifcb.data.products.blobs import BlobDirectory
+from ifcb.data.zip import bin2zip_stream
 
 from .crypto import AESCipher
 
@@ -222,6 +223,10 @@ class Bin(models.Model):
         metadata = b[target_number]
         names = schema_names(b.schema)
         return dict(zip(names, metadata))
+
+    # zip file
+    def zip(self):
+        return bin2zip_stream(self._get_bin())
 
     def __str__(self):
         return self.pid

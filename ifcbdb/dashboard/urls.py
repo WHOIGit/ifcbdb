@@ -23,6 +23,9 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'),
     path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary'),
 
+    # zip access
+    path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip'),
+
     # image access
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png'),
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg'),

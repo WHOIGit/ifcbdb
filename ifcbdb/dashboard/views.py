@@ -132,6 +132,13 @@ def roi_data(request, dataset_name, bin_id):
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
 
+def zip(request, dataset_name, bin_id):
+    # ignore dataset name
+    b = get_object_or_404(Bin, pid=bin_id)
+    zip_buf = b.zip()
+    filename = '{}.zip'.format(bin_id)
+    return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
+
 # TODO: This could use a better name and potentially a pre-defined object
 def _create_bin_wrapper(bin):
     lat, lng = 0, 0
