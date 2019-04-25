@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, FileResponse, Http404
+from django.http import HttpResponse, FileResponse, Http404, JsonResponse
+
 
 from .models import Dataset, Bin
 from common.utilities import embed_image
@@ -159,3 +160,20 @@ def _create_bin_wrapper(bin):
         "pages": range(num_pages + 1),
         "num_pages": num_pages,
     }
+
+
+# TODO: in the future, it would be beneficial to use a proper API framework
+def generate_time_series(request, dataset_name, metric):
+    # Allows us to keep consistant url names
+    metric = metric.replace("-", "_")
+
+    # TODO: Allow resolution to be set from API call; default to hours for testing
+    dataset = get_object_or_404(Dataset, name=dataset_name)
+    time_series = dataset.timeline(None, None, metric=metric, resolution="hour")
+
+    # TODO: Possible performance issues in the way we're pivoting the data before it gets return
+    return JsonResponse({
+        "x": [item["dt"] for item in time_series],
+        "y": [item["metric"] for item in time_series],
+        "y-axis": dataset.metric_label(metric),
+    })

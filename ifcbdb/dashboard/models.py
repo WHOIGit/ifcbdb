@@ -32,6 +32,16 @@ class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=256)
 
+    # TODO: Fill in names for the ones that are missing
+    TIMELINE_METRICS = {
+        "size": "Bytes",
+        "temperature": "Degrees C",
+        "humidity": "Percentage",
+        "run_time": "",
+        "look_time": "",
+        "ml_analyzed": "Milliliters"
+    }
+
     def time_range(self, start_time=None, end_time=None):
         qs = self.bins
         if start_time is not None:
@@ -53,11 +63,21 @@ class Dataset(models.Model):
         ).order_by('distance').first()
 
     def timeline(self, start_time=None, end_time=None, metric='size', resolution='day'):
-        if resolution not in ['month','day','hour']:
-            raise ValueError('unsupported time resolution {}'.format(resoution))
+        if resolution not in ['month', 'day', 'hour']:
+            raise ValueError('unsupported time resolution {}'.format(resolution))
+
+        if metric not in self.TIMELINE_METRICS.keys():
+            raise ValueError('unsupported metric {}'.format(metric))
+
         qs = self.time_range(start_time, end_time)
         return qs.all().annotate(dt=Trunc('sample_time', resolution)). \
                 values('dt').annotate(metric=Avg(metric))
+
+    def metric_label(self, metric):
+        if metric not in self.TIMELINE_METRICS.keys():
+            return ""
+
+        return self.TIMELINE_METRICS[metric]
 
     def __str__(self):
         return self.name

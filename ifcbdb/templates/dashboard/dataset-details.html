@@ -15,30 +15,38 @@
 <div class="row py-3 px-3">
     <div class="col-sm-12">
 
-        <ul class="nav nav-tabs" id="DataSetTabs" role="tablist">
+        <ul class="nav nav-tabs" id="ts-tabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" id="DataVolume-tab" data-toggle="tab" href="#DataVolume" role="tab" aria-controls="DataVolume" aria-selected="true">Data Volume</a>
+                <a class="nav-link active" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
+                   role="tab" aria-controls="ts-size" aria-selected="true">Data Size</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="TriggerRate-tab" data-toggle="tab" href="#TriggerRate" role="tab" aria-controls="TriggerRate" aria-selected="false">Trigger Rate</a>
+                <a class="nav-link" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
+                   role="tab" aria-controls="ts-temperature" aria-selected="false">Temperature</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="VolumeImaged-tab" data-toggle="tab" href="#VolumeImaged" role="tab" aria-controls="VolumeImaged" aria-selected="false">Volume Imaged</a>
+                <a class="nav-link" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
+                   role="tab" aria-controls="ts-humidity" aria-selected="false">Humidity</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="Instrument-tab" data-toggle="tab" href="#Instrument" role="tab" aria-controls="Instrument" aria-selected="false">Instrument</a>
+                <a class="nav-link" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
+                   role="tab" aria-controls="ts-ml-analyzed" aria-selected="false">Volume Imaged</a>
             </li>
         </ul>
 
-        <div class="tab-content" id="DataSetTabContent">
-            <div class="tab-pane fade show active" id="DataVolume" role="tabpanel" aria-labelledby="DataVolume-tab">
-                <div id="timeline-data" style="width:100%;height:250px;"></div>
+        <div class="tab-content" id="ts-data">
+            <div class="tab-pane fade show active" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
+                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
             </div>
-            <div class="tab-pane fade" id="TriggerRate" role="tabpanel" aria-labelledby="TriggerRate-tab">
-                <div id="triggerrate-data" style="width:100%;height:250px;"></div>
+            <div class="tab-pane fade" id="ts-temperature" role="tabpanel" aria-labelledby="ts-temperature-tab">
+                <div id="test" class="ts-plot-container" style="width:100%;height:250px;"></div>
             </div>
-            <div class="tab-pane fade" id="VolumeImaged" role="tabpanel" aria-labelledby="VolumeImaged-tab">Tab pane 3 content.</div>
-            <div class="tab-pane fade" id="Instrument" role="tabpanel" aria-labelledby="Instrument-tab">Tab pane 3 content.</div>
+            <div class="tab-pane fade" id="ts-humidity" role="tabpanel" aria-labelledby="ts-humidity-tab">
+                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            </div>
+            <div class="tab-pane fade" id="ts-ml-analyzed" role="tabpanel" aria-labelledby="ts-ml-analyzed-tab">
+                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -51,7 +59,7 @@
                     <form class="form-inline my-2 my-lg-0">
                         <a class="trigger" href="#"><span class="waves-effect"><i class="fas fa-arrow-circle-left fa-2x"></i></span></a>
                     </form>
-                    <span class="h4-responsive"><strong>Bin:</strong> <small class="text-muted">abc124asdfakljsdaf</small></span>
+                    <span class="h4-responsive"><strong>Bin:</strong> <small class="text-muted">{{ bin.pid }}</small></span>
                     <form class="form-inline my-2 my-lg-0">
                         <a class="trigger" href="#"><span class="waves-effect"><i class="fas fa-arrow-circle-right fa-2x"></i></span></a>
                     </form>
@@ -113,59 +121,61 @@
 
 {% endblock %} {% block scripts %}
 <script>
-    Plotly.d3.csv("https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv", function(err, rows) {
-        function unpack(rows, key) {
-            return rows.map(function(row) {
-                return row[key];
-            });
-        }
-        var trace1 = {
+function createTimeSeries(container, metric) {
+    var dataUrl = "/{{ dataset.name }}/time-series/" + metric;
+
+    Plotly.d3.json(dataUrl, function(err, response) {
+        var data = [{
             type: "bar",
-            name: 'AAPL High',
-            x: unpack(rows, 'Date'),
-            y: unpack(rows, 'AAPL.High'),
+            x: response["x"],
+            y: response["y"],
             line: {
                 color: '#17BECF'
-            }
-        }
+            },
+        }];
 
-        var data = [trace1];
 
         var layout = {
-            title: 'Basic Time Series',
+            bargap: .05,
+            yaxis: {
+                title: {
+                    text: response["y-axis"]
+                }
+            }
         };
 
-        Plotly.newPlot('timeline-data', data, layout, {
+        var config = {
             responsive: true,
             displaylogo: false
-        });
-    })
-</script>
-<script>
-    var trace3 = {
-        x: [1, 2, 3, 4],
-        y: [10, 15, 13, 17],
-        type: 'scatter'
-    };
+        };
 
-    var data2 = [trace3];
-
-    Plotly.newPlot('triggerrate-data', data2, {
-        responsive: true,
-        displaylogo: false
+        Plotly.newPlot(container, data, layout, config);
     });
-</script>
-<script>
-    $("#bin-details").click(function(e) {
-        var url = "{% url 'bin' dataset.name '__BIN_PID__' %}";
-        var pid = $("#bin-switcher").val();
+}
 
-        location.href = url.replace("__BIN_PID__", pid);
-    });
+$("#bin-details").click(function(e) {
+    var url = "{% url 'bin' dataset.name '__BIN_PID__' %}";
+    var pid = $("#bin-switcher").val();
 
-    $(function() {
-        // TODO: Fill in proper values and a real default starting location
-        var map = createMap(41.5507768, -70.6593102);
-    });
+    location.href = url.replace("__BIN_PID__", pid);
+});
+
+$("#ts-tabs .nav-link").click(function() {
+    var metric = $(this).data("metric");
+    var container = $("#" + $(this).attr("aria-controls") + " .ts-plot-container")[0]
+
+    // TODO: The timeout is temporary; the plot needs to be drawn after the tab has switched, which has a delay
+    //   due to the transition effect
+    setTimeout(function(){
+        createTimeSeries(container, metric);
+    }, 300);
+});
+
+$(function() {
+    // TODO: Fill in proper values and a real default starting location
+    var map = createMap(41.5507768, -70.6593102);
+
+    createTimeSeries($("#ts-size .ts-plot-container")[0], "size");
+});
 </script>
 {% endblock %}
