@@ -17,6 +17,55 @@ body {
     margin: 0 8px;
 }
 
-#bin-mosaic {
-    max-width:70%;
+@keyframes waver {
+    0% {
+        border-radius: 2px;
+    }
+    100% {
+        border-radius: 20px;
+    }
+}
+
+.loading {
+    text-align: center;
+    font-size: 0.8em;
+}
+
+.loader,
+.loader::before,
+.loader::after {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: solid 3px transparent;
+}
+
+.loader {
+    border-bottom-color: #35008b;
+    margin: auto;
+    margin-bottom: 10px;
+    text-align: center;
+    animation: waver 1s infinite alternate ease-in-out;
+    position: relative;
+}
+
+.loader::before,
+.loader::after {
+    content: '';
+    display: block;
+    position: absolute;
+}
+
+.loader::before {
+    border-bottom-color: #35008b;
+    left: -28px;
+    top: -3px;
+    animation: waver 1s infinite alternate ease-in-out;
+}
+
+.loader::after {
+    border-bottom-color: #35008b;
+    left: 23px;
+    top: -3px;
+    animation: waver 1s infinite alternate ease-in-out;
 }

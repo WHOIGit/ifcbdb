@@ -1,17 +1,15 @@
-{% extends 'base.html' %}
-
-{% block breadcrumbs %}
+{% extends 'base.html' %} {% block breadcrumbs %}
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
-{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col">
+{% endblock %} {% block content %}
+<div class="row d-flex justify-content-start">
+    <div class="pl-3">
         <h1>{{ dataset.title }}</h1>
-        {% if user.is_authenticated %}
-        <a href="#" class="btn btn-sm btn-primary">Configure</a>
-        {% endif %}
     </div>
+    {% if user.is_authenticated %}
+    <div>
+        <a href="#" class="btn btn-sm btn-primary ml-3">Configure</a>
+    </div>
+    {% endif %}
 </div>
 <hr class="my-3">
 <div class="row py-3 px-3">
@@ -44,29 +42,30 @@
         </div>
     </div>
 </div>
-<div class="row py-2">
+<div class="row py-2 card-deck">
     <div class="col-md-8">
-        <div class="card" style="height:650px">
+        <div class="card">
             <div class="card-header">
-                <div class="input-group">
-                    <label>Bin</label>
-                    <select class="custom-select" id="bin-switcher">
-                        {% for b in bins.all %}
-                            <option value="{{ b.pid }}" {% if b.pid == bin.pid %}selected{% endif %}>{{ b.pid }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="input-group-append">
-                        <button class="btn btn-secondary" type="button" id="bin-details">Details</button>
-                    </div>
+                <div class="row col justify-content-between">
+
+                    <form class="form-inline my-2 my-lg-0">
+                        <a class="trigger" href="#"><span class="waves-effect"><i class="fas fa-arrow-circle-left fa-2x"></i></span></a>
+                    </form>
+                    <span class="h4-responsive"><strong>Bin:</strong> <small class="text-muted">abc124asdfakljsdaf</small></span>
+                    <form class="form-inline my-2 my-lg-0">
+                        <a class="trigger" href="#"><span class="waves-effect"><i class="fas fa-arrow-circle-right fa-2x"></i></span></a>
+                    </form>
+
                 </div>
             </div>
+
             <div class="card-body text-center">
-                <img id="bin-mosaic" src="data:image/png;base64,{{image}}" />
+                <img class="img-fluid" id="bin-mosaic" src="data:image/png;base64,{{image}}" data-toggle="modal" data-target="#exampleModalCenter" />
                 <br clear="all" />
             </div>
             <div class="card-footer text-center">
                 <nav aria-label="Page navigation example" class="text-center">
-                    <ul class="pagination pg-blue">
+                    <ul class="pagination pg-blue justify-content-center">
                         <li class="page-item disabled">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
@@ -84,12 +83,12 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card" style="height:650px">
+        <div class="card">
             <div class="card-header">
-                <h2>Location</h2>
+                <h2 class="h4-responsive">Location</h2>
             </div>
             <div class="card-body">
-                <div id="mapid" style="height:400px;"></div>
+                <div id="mapid" style="height:600px;"></div>
             </div>
             <div class="card-footer">
                 <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
@@ -97,37 +96,50 @@
         </div>
     </div>
 </div>
-{% endblock %}
+<!-- Modal -->
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
 
-{% block scripts %}
+    <!-- Add .modal-dialog-centered to .modal-dialog to vertically center the modal -->
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+
+
+        <div class="modal-content">
+            <div class="modal-body">
+                <img class="img-fluid" id="bin-mosaic" src="data:image/png;base64,{{image}}" />
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %} {% block scripts %}
 <script>
-Plotly.d3.csv("https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv", function(err, rows) {
-    function unpack(rows, key) {
-        return rows.map(function(row) {
-            return row[key];
-        });
-    }
-    var trace1 = {
-        type: "bar",
-        name: 'AAPL High',
-        x: unpack(rows, 'Date'),
-        y: unpack(rows, 'AAPL.High'),
-        line: {
-            color: '#17BECF'
+    Plotly.d3.csv("https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv", function(err, rows) {
+        function unpack(rows, key) {
+            return rows.map(function(row) {
+                return row[key];
+            });
         }
-    }
+        var trace1 = {
+            type: "bar",
+            name: 'AAPL High',
+            x: unpack(rows, 'Date'),
+            y: unpack(rows, 'AAPL.High'),
+            line: {
+                color: '#17BECF'
+            }
+        }
 
-    var data = [trace1];
+        var data = [trace1];
 
-    var layout = {
-        title: 'Basic Time Series',
-    };
+        var layout = {
+            title: 'Basic Time Series',
+        };
 
-    Plotly.newPlot('timeline-data', data, layout, {
-        responsive: true,
-        displaylogo: false
-    });
-})
+        Plotly.newPlot('timeline-data', data, layout, {
+            responsive: true,
+            displaylogo: false
+        });
+    })
 </script>
 <script>
     var trace3 = {
@@ -144,17 +156,16 @@ Plotly.d3.csv("https://raw.githubusercontent.com/plotly/datasets/master/finance-
     });
 </script>
 <script>
-
-    $("#bin-details").click(function(e){
+    $("#bin-details").click(function(e) {
         var url = "{% url 'bin' dataset.name '__BIN_PID__' %}";
         var pid = $("#bin-switcher").val();
 
         location.href = url.replace("__BIN_PID__", pid);
     });
 
-    $(function(){
+    $(function() {
         // TODO: Fill in proper values and a real default starting location
-        var map = createMap(41.5507768,-70.6593102);
+        var map = createMap(41.5507768, -70.6593102);
     });
 </script>
 {% endblock %}

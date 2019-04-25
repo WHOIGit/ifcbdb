@@ -1,9 +1,11 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<form class="text-center border border-light p-5 col-md-5" method="post">
+<div class="container">
+<div class="row justify-content-center">
+<form class="text-center border border-light p-5 col-md-6" method="post">
     {% csrf_token %}
-
+<i class="fas fa-user fa-4x pb-2"></i>
     <p class="h4 mb-4">Log In</p>
 
     {% if form.errors %}
@@ -29,4 +31,6 @@
 
     <button class="btn btn-info btn-block my-4" type="submit">Sign in</button>
 </form>
+</div>
+</div>
 {% endblock %}
