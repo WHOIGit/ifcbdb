@@ -16,7 +16,7 @@ services:
       - postgres
 
   nginx:
-    image: nginx:latest
+    image: nginx:1.15
     container_name: nginx
     ports:
       - 8000:80
@@ -29,7 +29,7 @@ services:
       - nginx_network
 
   postgres:
-    image: mdillon/postgis
+    image: mdillon/postgis:11
     container_name: postgres
     environment:
       - POSTGRES_USER=ifcb
