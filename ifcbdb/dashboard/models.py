@@ -4,7 +4,7 @@ from django.db import models
 
 from django.conf import settings
 
-from django.db.models import Count, Sum, Avg
+from django.db.models import F, Count, Sum, Avg
 from django.db.models.functions import Trunc
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.geos import Point
@@ -37,9 +37,12 @@ class Dataset(models.Model):
         "size": "Bytes",
         "temperature": "Degrees C",
         "humidity": "Percentage",
-        "run_time": "",
-        "look_time": "",
-        "ml_analyzed": "Milliliters"
+        "run_time": "Seconds",
+        "look_time": "Seconds",
+        "ml_analyzed": "Milliliters",
+        'concentration': 'Cells / ml',
+        'n_triggers': 'Count',
+        'n_images': 'Count',
     }
 
     def time_range(self, start_time=None, end_time=None):
@@ -69,15 +72,19 @@ class Dataset(models.Model):
         ).order_by('distance').first()
 
     def timeline(self, start_time=None, end_time=None, metric='size', resolution='day'):
-        if resolution not in ['month', 'day', 'hour']:
+        if resolution not in ['month', 'day', 'hour', 'bin']:
             raise ValueError('unsupported time resolution {}'.format(resolution))
 
         if metric not in self.TIMELINE_METRICS.keys():
             raise ValueError('unsupported metric {}'.format(metric))
 
         qs = self.time_range(start_time, end_time)
-        return qs.all().annotate(dt=Trunc('sample_time', resolution)). \
-                values('dt').annotate(metric=Avg(metric))
+
+        if resolution == 'bin':
+            return qs.annotate(dt=F('timestamp'),metric=F(metric)).values('dt','metric')
+        else:
+            return qs.all().annotate(dt=Trunc('sample_time', resolution)). \
+                    values('dt').annotate(metric=Avg(metric))
 
     def metric_label(self, metric):
         if metric not in self.TIMELINE_METRICS.keys():
@@ -139,11 +146,14 @@ class Bin(models.Model):
     metadata = models.CharField(max_length=8192, default='{}')
     # metrics
     size = models.IntegerField(default=0) # size of raw data in bytes
+    n_triggers = models.IntegerField(default=0)
+    n_images = models.IntegerField(default=0)
     temperature = models.FloatField(default=FILL_VALUE)
     humidity = models.FloatField(default=FILL_VALUE)
     run_time = models.FloatField(default=FILL_VALUE)
     look_time = models.FloatField(default=FILL_VALUE)
     ml_analyzed = models.FloatField(default=FILL_VALUE)
+    concentration = models.FloatField(default=FILL_VALUE)
 
     def set_location(self, longitude, latitude):
         # convenience function for setting location w/o having to construct Point object

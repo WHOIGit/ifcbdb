@@ -45,6 +45,9 @@ def add_bin(dataset, bin):
     b.ml_analyzed = bin.ml_analyzed
     b.look_time = bin.look_time
     b.run_time = bin.run_time
+    b.n_triggers = len(bin)
+    b.n_images = len(bin.images)
+    b.concentration = b.n_images / b.ml_analyzed
     b.save()
     dataset.bins.add(b)
     print('added {} to {}'.format(pid, dataset.name)) # FIXME use logging
