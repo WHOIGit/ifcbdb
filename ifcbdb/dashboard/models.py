@@ -56,6 +56,12 @@ class Dataset(models.Model):
         qs = self.time_range(end_time=time).order_by('-sample_time')
         return qs.first()
 
+    def previous_bin(self, bin):
+        return self.bins.filter(sample_time__lt=bin.sample_time).order_by("-sample_time").first()
+
+    def next_bin(self, bin):
+        return self.bins.filter(sample_time__gt=bin.sample_time).order_by("sample_time").first()
+
     def closest_bin(self, longitude, latitude):
         location = Point(longitude, latitude, srid=4326)
         return self.bins.annotate(

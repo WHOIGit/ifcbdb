@@ -57,18 +57,21 @@
                 <div class="row col justify-content-between">
 
                     <form class="form-inline my-2 my-lg-0">
-                        <a class="trigger" href="#"><span class="waves-effect"><i class="fas fa-arrow-circle-left fa-2x"></i></span></a>
+                        <a href="#" id="previous-bin" data-bin="{{ previous_bin.pid }}"><span class="waves-effect"><i class="fas fa-arrow-circle-left fa-2x"></i></span></a>
                     </form>
-                    <span class="h4-responsive"><strong>Bin:</strong> <small class="text-muted">{{ bin.pid }}</small></span>
+                    <span class="h4-responsive">
+                        <strong>Bin:</strong>
+                        <small class="text-muted"><a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></small>
+                    </span>
                     <form class="form-inline my-2 my-lg-0">
-                        <a class="trigger" href="#"><span class="waves-effect"><i class="fas fa-arrow-circle-right fa-2x"></i></span></a>
+                        <a href="#" id="next-bin" data-bin="{{ next_bin.pid }}"><span class="waves-effect"><i class="fas fa-arrow-circle-right fa-2x"></i></span></a>
                     </form>
 
                 </div>
             </div>
 
             <div class="card-body text-center">
-                <img class="img-fluid" id="bin-mosaic" src="data:image/png;base64,{{image}}" data-toggle="modal" data-target="#exampleModalCenter" />
+                <img class="img-fluid" id="mosaic" src="data:image/png;base64,{{image}}" data-toggle="modal" data-target="#exampleModalCenter" />
                 <br clear="all" />
             </div>
             <div class="card-footer text-center">
@@ -121,8 +124,10 @@
 
 {% endblock %} {% block scripts %}
 <script>
+var map;
+
 function createTimeSeries(container, metric) {
-    var dataUrl = "/{{ dataset.name }}/time-series/" + metric;
+    var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric;
 
     Plotly.d3.json(dataUrl, function(err, response) {
         var data = [{
@@ -171,9 +176,53 @@ $("#ts-tabs .nav-link").click(function() {
     }, 300);
 });
 
+$("#previous-bin, #next-bin").click(function(e){
+    e.preventDefault();
+
+    var binPid = $(this).data("bin");
+    if (binPid === "")
+        return;
+
+    var baseDataUrl = "{% url 'bin_data' dataset.name '__BIN_PID__' %}";
+    var baseBinUrl = "{% url 'bin' dataset.name '__BIN_PID__' %}";
+    var dataUrl = baseDataUrl.replace("__BIN_PID__", binPid); // "/api/{{ dataset.name }}/bin/" + binPid;
+    var binUrl = baseBinUrl.replace("__BIN_PID__", binPid);
+
+    $.get(dataUrl, function(data){
+        console.log(data);
+
+        // Update mosaic
+        // TODO: Needs error handling if mosaic cannot be generated
+        // TODO: Needs to pass proper scaling, etc settings
+        $("#mosaic").attr("src", "data:image/png;base64," + data.mosaic);
+
+        // TODO: Needs a loading panel
+
+        // Update bin name/link
+        $("#bin-header")
+            .attr("href", binUrl)
+            .html(binPid);
+
+        // Update bin paging
+        $("#previous-bin").data("bin", data.previous_bin_id);
+        $("#next-bin").data("bin", data.next_bin_id);
+
+        // TODO: Update image paging
+
+        // Update map location(s)
+        // TODO: Need a loading panel around the map
+        if (data.lat == 0 || data.lng == 0) {
+            // TODO: Need some indication there is no location (not just default map location)
+            map.setView([41.5507768, -70.6593102], 11);
+        } else {
+            map.setView([data.lng, data.lat], 11);
+        }
+    });
+});
+
 $(function() {
     // TODO: Fill in proper values and a real default starting location
-    var map = createMap(41.5507768, -70.6593102);
+    map = createMap(41.5507768, -70.6593102);
 
     createTimeSeries($("#ts-size .ts-plot-container")[0], "size");
 });
