@@ -81,7 +81,7 @@ class Dataset(models.Model):
         qs = self.time_range(start_time, end_time)
 
         if resolution == 'bin':
-            return qs.annotate(dt=F('timestamp'),metric=F(metric)).values('dt','metric')
+            return qs.annotate(dt=F('sample_time'),metric=F(metric)).values('dt','metric')
         else:
             return qs.all().annotate(dt=Trunc('sample_time', resolution)). \
                     values('dt').annotate(metric=Avg(metric))
