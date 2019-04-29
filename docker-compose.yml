@@ -12,8 +12,10 @@ services:
     networks:
       - nginx_network
       - postgres_network
+      - memcached_network
     depends_on:
       - postgres
+      - memcached
 
   nginx:
     image: nginx:1.15
@@ -40,8 +42,17 @@ services:
     networks:
       - postgres_network
 
+  memcached:
+    image: memcached:1.5.12-alpine
+    container_name: memcached
+    command: ["-m", "64m"]
+    networks:
+      - memcached_network
+
 networks:
   nginx_network:
     driver: bridge
   postgres_network:
+    driver: bridge
+  memcached_network:
     driver: bridge

@@ -4,3 +4,6 @@ dependencies:
 - django=2.1.7
 - psycopg2=2.7.6.1
 - pycrypto=2.6.1
+- pip=19.0.3
+- pip:
+  - python-memcached==1.59

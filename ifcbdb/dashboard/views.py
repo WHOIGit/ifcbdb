@@ -175,7 +175,7 @@ def generate_time_series(request, dataset_name, metric):
 
     # TODO: Allow resolution to be set from API call; default to hours for testing
     dataset = get_object_or_404(Dataset, name=dataset_name)
-    time_series = dataset.timeline(None, None, metric=metric, resolution="hour")
+    time_series = dataset.timeline(None, None, metric=metric, resolution="bin")
 
     # TODO: Possible performance issues in the way we're pivoting the data before it gets return
     return JsonResponse({

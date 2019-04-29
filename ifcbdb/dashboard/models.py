@@ -13,6 +13,8 @@ from django.contrib.gis.db.models.functions import Distance
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
+from django.core.cache import cache
+
 import pandas as pd
 
 import ifcb
@@ -246,8 +248,16 @@ class Bin(models.Model):
 
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
         b = self._get_bin()
-        m = Mosaic(b, shape, scale=scale, bg_color=bg_color)
-        coordinates = m.pack() # cache this somehow
+        h, w = shape
+        cache_key = 'mosaic_coords_{}_{}x{}_{:.2f}'.format(self.pid, h, w, scale)
+        pickled = cache.get(cache_key)
+        if pickled is not None:
+            coordinates = pd.DataFrame.from_dict(pickled)
+            m = Mosaic(b, shape, scale=scale, bg_color=bg_color, coordinates=coordinates)
+        else:
+            m = Mosaic(b, shape, scale=scale, bg_color=bg_color)
+            coordinates = m.pack()
+            cache.set(cache_key, coordinates.to_dict('list'))
         image = m.page(page)
         return image, coordinates        
 
