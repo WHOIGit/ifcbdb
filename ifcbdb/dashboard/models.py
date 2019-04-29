@@ -246,18 +246,24 @@ class Bin(models.Model):
 
     # mosaics
 
-    def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
-        b = self._get_bin()
+    def mosaic_coordinates(self, shape=(600,800), scale=0.33, ifcb_bin=None):
         h, w = shape
-        cache_key = 'mosaic_coords_{}_{}x{}_{:.2f}'.format(self.pid, h, w, scale)
+        b = self._get_bin() if ifcb_bin is None else ifcb_bin
+        cache_key = 'mosaic_coords_{}_{}x{}_{}'.format(self.pid, h, w, int(scale*100))
         pickled = cache.get(cache_key)
         if pickled is not None:
             coordinates = pd.DataFrame.from_dict(pickled)
-            m = Mosaic(b, shape, scale=scale, bg_color=bg_color, coordinates=coordinates)
+            m = Mosaic(b, shape, scale=scale, coordinates=coordinates)
         else:
-            m = Mosaic(b, shape, scale=scale, bg_color=bg_color)
+            m = Mosaic(b, shape, scale=scale)
             coordinates = m.pack()
-            cache.set(cache_key, coordinates.to_dict('list'))
+            cache.set(cache_key, coordinates.to_dict('list'), timeout=None) # cache indefinitely
+        return coordinates
+
+    def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
+        b = self._get_bin()
+        coordinates = self.mosaic_coordinates(shape, scale, ifcb_bin=b)
+        m = Mosaic(b, shape, scale=scale, bg_color=bg_color, coordinates=coordinates)
         image = m.page(page)
         return image, coordinates        
 

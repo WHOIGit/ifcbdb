@@ -37,4 +37,6 @@ urlpatterns = [
     path('api/<slug:dataset_name>/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
     path('api/<slug:dataset_name>/bin/<slug:bin_id>', views.bin_data, name='bin_data'),
     path('api/<slug:dataset_name>/closest_bin', views.closest_bin, name='closest_bin'),
+    path('api/mosaic/coordinates/<slug:bin_id>/<int:height>/<int:width>/<int:scale_percent>', views.mosaic_coordinates, name='mosaic_coordintes'),
+    path('api/mosaic/image/<slug:bin_id>/<int:height>/<int:width>/<int:scale_percent>/<int:page>.png', views.mosaic_page_image, name='mosaic_page_image'),
 ]

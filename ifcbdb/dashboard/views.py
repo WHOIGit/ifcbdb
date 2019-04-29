@@ -102,6 +102,21 @@ def mosaic(request, dataset_name, bin_id):
         "image": embed_image(image),
     })
 
+def mosaic_coordinates(request, bin_id, height, width, scale_percent):
+    b = get_object_or_404(Bin, pid=bin_id)
+    shape = (height, width)
+    scale = scale_percent / 100
+    coords = b.mosaic_coordinates(shape, scale)
+    return JsonResponse(coords.to_dict('list'))
+
+def mosaic_page_image(request, bin_id, height, width, scale_percent, page):
+    b = get_object_or_404(Bin, pid=bin_id)
+    shape = (height, width)
+    scale = scale_percent / 100
+    arr, coordinates = b.mosaic(page=page, shape=shape, scale=scale)
+    image_data = format_image(arr, 'image/png')
+    return HttpResponse(image_data, content_type='image/png')
+
 def _image_data(bin_id, target, mimetype):
     b = get_object_or_404(Bin, pid=bin_id)
     arr = b.image(target)
