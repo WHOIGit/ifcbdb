@@ -1,11 +1,13 @@
+from datetime import datetime
+
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, FileResponse, Http404, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
+from ifcb.data.imageio import format_image
 
 from .models import Dataset, Bin
 from common.utilities import embed_image
-
-from ifcb.data.imageio import format_image
 
 # TODO: The naming convensions for the dataset, bin and image ID's needs to be cleaned up and be made
 #   more consistent
@@ -204,4 +206,22 @@ def bin_data(request, dataset_name, bin_id):
         "lat": bin_data["lat"],
         "lng": bin_data["lng"],
         "mosaic": embed_image(image),
+    })
+
+
+# TODO: Using a proper API, the CSRF exempt decorator probably won't be needed
+@csrf_exempt
+def closest_bin(request, dataset_name):
+    dataset = get_object_or_404(Dataset, name=dataset_name)
+    target_date = request.POST.get("target_date", None)
+
+    try:
+        dte = datetime.strptime(target_date, "%Y-%m-%d %H:%M:%S")
+    except:
+        dte = None
+
+    bin = dataset.most_recent_bin(dte)
+
+    return JsonResponse({
+        "bin_id": bin.pid,
     })
