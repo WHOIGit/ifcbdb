@@ -47,26 +47,26 @@
         </ul>
 
         <div class="tab-content" id="ts-data">
-            <div class="tab-pane fade show active" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
-                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            <div class="tab-pane show active" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
+                <div class="ts-plot-container"></div>
             </div>
-            <div class="tab-pane fade" id="ts-temperature" role="tabpanel" aria-labelledby="ts-temperature-tab">
-                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            <div class="tab-pane" id="ts-temperature" role="tabpanel" aria-labelledby="ts-temperature-tab">
+                <div id="test" class="ts-plot-container"></div>
             </div>
-            <div class="tab-pane fade" id="ts-humidity" role="tabpanel" aria-labelledby="ts-humidity-tab">
-                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            <div class="tab-pane" id="ts-humidity" role="tabpanel" aria-labelledby="ts-humidity-tab">
+                <div class="ts-plot-container"></div>
             </div>
-            <div class="tab-pane fade" id="ts-ml-analyzed" role="tabpanel" aria-labelledby="ts-ml-analyzed-tab">
-                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            <div class="tab-pane" id="ts-ml-analyzed" role="tabpanel" aria-labelledby="ts-ml-analyzed-tab">
+                <div class="ts-plot-container"></div>
             </div>
-            <div class="tab-pane fade" id="ts-concentration" role="tabpanel" aria-labelledby="ts-concentration-tab">
-                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            <div class="tab-pane" id="ts-concentration" role="tabpanel" aria-labelledby="ts-concentration-tab">
+                <div class="ts-plot-container"></div>
             </div>
-            <div class="tab-pane fade" id="ts-triggers" role="tabpanel" aria-labelledby="ts-triggers-tab">
-                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            <div class="tab-pane" id="ts-triggers" role="tabpanel" aria-labelledby="ts-triggers-tab">
+                <div class="ts-plot-container"></div>
             </div>
-            <div class="tab-pane fade" id="ts-images" role="tabpanel" aria-labelledby="ts-images-tab">
-                <div class="ts-plot-container" style="width:100%;height:250px;"></div>
+            <div class="tab-pane" id="ts-images" role="tabpanel" aria-labelledby="ts-images-tab">
+                <div class="ts-plot-container"></div>
             </div>
         </div>
     </div>
@@ -75,22 +75,25 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <div class="row col justify-content-between">
-
-                    <form class="form-inline my-2 my-lg-0">
-                        <a href="#" id="previous-bin" data-bin="{{ previous_bin.pid }}"><span class="waves-effect"><i class="fas fa-arrow-circle-left fa-2x"></i></span></a>
-                    </form>
-                    <span class="h4-responsive">
+                <div class="row">
+                    <div class="col-sm-2 order-2 order-sm-1">
+                        <form class="form-inline">
+                            <a href="#" id="previous-bin" data-bin="{{ previous_bin.pid }}" class="btn btn-mdb-color btn-sm btn-block disabled"><i class="fas fa-arrow-circle-left fa-2x"></i></a>
+                        </form>
+                    </div>
+                    <div class="col-sm-8 text-center order-1 order-sm-2">
+                        <span class="h4-responsive">
                         <strong>Bin:</strong>
                         <small class="text-muted"><a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></small>
                     </span>
-                    <form class="form-inline my-2 my-lg-0">
-                        <a href="#" id="next-bin" data-bin="{{ next_bin.pid }}"><span class="waves-effect"><i class="fas fa-arrow-circle-right fa-2x"></i></span></a>
-                    </form>
-
+                    </div>
+                    <div class="col-sm-2 order-3 order-sm-3 pt-1 pt-sm-0">
+                        <form class="form-inline">
+                            <a href="#" id="next-bin" data-bin="{{ next_bin.pid }}" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-right fa-2x"></i></a>
+                        </form>
+                    </div>
                 </div>
             </div>
-
             <div class="card-body text-center">
                 <img class="img-fluid" id="mosaic" src="data:image/png;base64,{{image}}" data-toggle="modal" data-target="#exampleModalCenter" />
                 <br clear="all" />
