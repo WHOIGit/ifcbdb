@@ -163,11 +163,17 @@ class Bin(models.Model):
 
     @property
     def latitude(self):
-        return self.location.y
+        try:
+            return self.location.y
+        except:
+            return 0
 
     @property
     def longitude(self):
-        return self.location.x
+        try:
+            return self.location.x
+        except:
+            return 0
     
     # access to underlying FilesetBin objects
 

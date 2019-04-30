@@ -51,7 +51,7 @@
                 <div class="ts-plot-container"></div>
             </div>
             <div class="tab-pane" id="ts-temperature" role="tabpanel" aria-labelledby="ts-temperature-tab">
-                <div id="test" class="ts-plot-container"></div>
+                <div class="ts-plot-container"></div>
             </div>
             <div class="tab-pane" id="ts-humidity" role="tabpanel" aria-labelledby="ts-humidity-tab">
                 <div class="ts-plot-container"></div>
@@ -78,7 +78,7 @@
                 <div class="row">
                     <div class="col-sm-2 order-2 order-sm-1">
                         <form class="form-inline">
-                            <a href="#" id="previous-bin" data-bin="{{ previous_bin.pid }}" class="btn btn-mdb-color btn-sm btn-block disabled"><i class="fas fa-arrow-circle-left fa-2x"></i></a>
+                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-left fa-2x"></i></a>
                         </form>
                     </div>
                     <div class="col-sm-8 text-center order-1 order-sm-2">
@@ -89,27 +89,27 @@
                     </div>
                     <div class="col-sm-2 order-3 order-sm-3 pt-1 pt-sm-0">
                         <form class="form-inline">
-                            <a href="#" id="next-bin" data-bin="{{ next_bin.pid }}" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-right fa-2x"></i></a>
+                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-right fa-2x"></i></a>
                         </form>
                     </div>
                 </div>
             </div>
             <div class="card-body text-center">
-                <img class="img-fluid" id="mosaic" src="data:image/png;base64,{{image}}" data-toggle="modal" data-target="#exampleModalCenter" />
+                <img class="img-fluid" id="mosaic" src="" data-toggle="modal" data-target="#exampleModalCenter" style="display:none" />
+                <div id="mosaic-loading" class="loading">
+                    <div class="loader"></div>
+                    loading...
+                </div>
                 <br clear="all" />
             </div>
             <div class="card-footer text-center">
-                <nav aria-label="Page navigation example" class="text-center">
-                    <ul class="pagination pg-blue justify-content-center">
-                        <li class="page-item disabled">
+                <nav aria-label="Bin Paging" class="text-center">
+                    <ul id="bin-paging" class="pagination pg-blue justify-content-center">
+                        <li class="page-item page-previous disabled">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
-                        <li class="page-item"><a class="page-link">1</a></li>
-                        <li class="page-item active">
-                            <a class="page-link">2 <span class="sr-only">(current)</span></a>
-                        </li>
-                        <li class="page-item"><a class="page-link">3</a></li>
-                        <li class="page-item">
+
+                        <li class="page-item page-next">
                             <a class="page-link">Next</a>
                         </li>
                     </ul>
@@ -150,6 +150,10 @@
 <script>
 var map;
 var plot;
+var currentMosaicPage = 1;
+var currentBinPage = 0;
+var numBinPages = 0;
+var currentBinId = "";
 
 function getClosestBin(targetDate) {
     var url = "{% url 'closest_bin' dataset.name %}";
@@ -210,39 +214,47 @@ $("#ts-tabs .nav-link").click(function() {
     var metric = $(this).data("metric");
     var container = $("#" + $(this).attr("aria-controls") + " .ts-plot-container")
 
-    // TODO: The timeout is temporary; the plot needs to be drawn after the tab has switched, which has a delay
-    //   due to the transition effect
-    setTimeout(function(){
-        createTimeSeries(container, metric);
-    }, 300);
+    createTimeSeries(container, metric);
 });
 
 function changeBin(binId) {
+    if (binId === "")
+        return;
+
     var baseDataUrl = "{% url 'bin_data' dataset.name '__BIN_PID__' %}";
     var baseBinUrl = "{% url 'bin' dataset.name '__BIN_PID__' %}";
-    var dataUrl = baseDataUrl.replace("__BIN_PID__", binId); // "/api/{{ dataset.name }}/bin/" + binPid;
+    var dataUrl = baseDataUrl.replace("__BIN_PID__", binId);
     var binUrl = baseBinUrl.replace("__BIN_PID__", binId);
 
+    // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
+    $("#mosaic-loading").show();
+    $("#mosaic").hide();
+
     $.get(dataUrl, function(data){
-        console.log(data);
-
-        // Update mosaic
-        // TODO: Needs error handling if mosaic cannot be generated
-        // TODO: Needs to pass proper scaling, etc settings
-        $("#mosaic").attr("src", "data:image/png;base64," + data.mosaic);
-
-        // TODO: Needs a loading panel
+        currentBinId = binId;
 
         // Update bin name/link
-        $("#bin-header")
-            .attr("href", binUrl)
-            .html(binId);
+        $("#bin-header").attr("href", binUrl).html(binId);
 
         // Update bin paging
-        $("#previous-bin").data("bin", data.previous_bin_id);
-        $("#next-bin").data("bin", data.next_bin_id);
+        currentBinPage = 0;
+        numBinPages = data.num_pages;
 
-        // TODO: Update image paging
+        $("#previous-bin")
+            .data("bin", data.previous_bin_id)
+            .toggleClass("disabled", data.previous_bin_id === "");
+
+        $("#next-bin")
+            .data("bin", data.next_bin_id)
+            .toggleClass("disabled", data.next_bin_id === "");
+
+        $(".page-index").remove();
+        for (var i = 0; i < numBinPages + 1; i++) {
+            var li = $("<li class='page-item page-index' />").toggleClass("active", i == 0);
+            var btn = $("<a class='page-link' />").text(i + 1).attr("data-page", i);
+
+            li.append(btn).insertBefore($(".page-next"));
+        }
 
         // Update map location(s)
         // TODO: Need a loading panel around the map
@@ -252,18 +264,76 @@ function changeBin(binId) {
         } else {
             map.setView([data.lng, data.lat], 11);
         }
+
+        // Update mosaic; save this for last since it will require and additional ajax request
+        loadMosaic(0);
+    });
+}
+
+function loadMosaic(pageNumber) {
+    $("#mosaic-loading").show();
+    $("#mosaic").hide();
+
+    // TODO: Need to pass in scale/width/height from UI controls
+    // TODO: Needs error handling if mosaic cannot be generated
+    var mosaicUrl = "{% url 'mosaic_page_image' "__BIN_PID__" %}" +
+        "?width=800" +
+        "&height=600" +
+        "&scale_percent=33" +
+        "&page=" + pageNumber;
+    mosaicUrl = mosaicUrl.replace("__BIN_PID__", currentBinId);
+
+    $.get(mosaicUrl, function(data){
+        $("#mosaic").attr("src", "data:image/png;base64," + data);
+        $("#mosaic-loading").hide();
+        $("#mosaic").show();
     });
 }
 
 $("#previous-bin, #next-bin").click(function(e){
     e.preventDefault();
 
-    var binId = $(this).data("bin");
-    if (binId === "")
-        return;
-
-    changeBin(binId);
+    changeBin($(this).data("bin"));
 });
+
+$("#bin-paging").on("click", ".page-previous", function(e){
+    e.preventDefault();
+
+    if (currentBinPage > 0)
+        changePage(currentBinPage - 1);
+});
+
+$("#bin-paging").on("click", ".page-next", function(e){
+    e.preventDefault();
+
+    if (currentBinPage < numBinPages)
+        changePage(currentBinPage + 1);
+});
+
+$("#bin-paging").on("click", ".page-index a", function(e){
+    e.preventDefault();
+
+    var pageNumber = $(this).data("page")
+
+    changePage(pageNumber);
+});
+
+
+function changePage(pageNumber) {
+    currentBinPage = pageNumber;
+
+    console.log(pageNumber);
+    $(".page-previous").toggleClass("disabled", (pageNumber <= 0));
+    $(".page-next").toggleClass("disabled", (pageNumber >= numBinPages));
+
+    $.each($(".page-index a"), function(){
+        var isSelected = $(this).data("page") == pageNumber;
+
+        $(this).closest("li").toggleClass("active", isSelected);
+    });
+
+    loadMosaic(pageNumber);
+}
 
 $(function() {
     // TODO: Fill in proper values and a real default starting location
@@ -271,6 +341,7 @@ $(function() {
 
     createTimeSeries($("#ts-size .ts-plot-container"), "size");
 
+    changeBin("{{ bin.pid }}");
 });
 </script>
 {% endblock %}

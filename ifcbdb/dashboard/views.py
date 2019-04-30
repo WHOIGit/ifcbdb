@@ -31,22 +31,22 @@ def dataset_details(request, dataset_name, bin_id=None):
     else:
         bin = get_object_or_404(Bin, pid=bin_id)
 
-    previous_bin = dataset.previous_bin(bin)
-    next_bin = dataset.next_bin(bin)
+    # previous_bin = dataset.previous_bin(bin)
+    # next_bin = dataset.next_bin(bin)
 
-    bins = dataset.bins
+    # bins = dataset.bins
 
     # TODO: Need to set proper scale/size
-    image, coordinates = bin.mosaic(page=0, shape=(600,800), scale=0.33, bg_color=200)
+    #image, coordinates = bin.mosaic(page=0, shape=(600,800), scale=0.33, bg_color=200)
 
     return render(request, 'dashboard/dataset-details.html', {
         "dataset": dataset,
         "bin": bin,
-        "previous_bin": previous_bin,
-        "next_bin": next_bin,
-        "image": embed_image(image),
-        "coordinates": coordinates,
-        "bins": bins,
+        # "previous_bin": previous_bin,
+        # "next_bin": next_bin,
+        #"image": embed_image(image),
+        #"coordinates": coordinates,
+        # "bins": bins,
     })
 
 
@@ -87,33 +87,32 @@ def image_details(request, dataset_name, bin_id, image_id):
     })
 
 
-# TODO: Need loading icon/etc for this
-# TODO: Add prefetching of mosaics that can be cached
-def mosaic(request, dataset_name, bin_id):
-    dataset = get_object_or_404(Dataset, name=dataset_name)
-    bin = get_object_or_404(Bin, pid=bin_id)
+def mosaic_coordinates(request, bin_id):
+    width = int(request.GET.get("width", 800))
+    height = int(request.GET.get("height", 600))
+    scale_percent = int(request.GET.get("scale_percent", 33))
 
-    # TODO: Needs type checking
-    page = int(request.GET.get("page", 0))
-
-    image, coordinates = bin.mosaic(page=page, shape=(600, 800), scale=0.33, bg_color=200)
-
-    return render(request, 'dashboard/_mosaic.html', {
-        "image": embed_image(image),
-    })
-
-def mosaic_coordinates(request, bin_id, height, width, scale_percent):
     b = get_object_or_404(Bin, pid=bin_id)
     shape = (height, width)
     scale = scale_percent / 100
     coords = b.mosaic_coordinates(shape, scale)
     return JsonResponse(coords.to_dict('list'))
 
-def mosaic_page_image(request, bin_id, height, width, scale_percent, page):
+def mosaic_page_image(request, bin_id):
+    width = int(request.GET.get("width", 800))
+    height = int(request.GET.get("height", 600))
+    scale_percent = int(request.GET.get("scale_percent", 33))
+    page = int(request.GET.get("page", 0))
+    encode = (request.GET.get("encode", "False") == "False")
+
     b = get_object_or_404(Bin, pid=bin_id)
     shape = (height, width)
     scale = scale_percent / 100
     arr, coordinates = b.mosaic(page=page, shape=shape, scale=scale)
+
+    if encode:
+        return HttpResponse(embed_image(arr), content_type='plain/text')
+
     image_data = format_image(arr, 'image/png')
     return HttpResponse(image_data, content_type='image/png')
 
@@ -163,6 +162,7 @@ def zip(request, dataset_name, bin_id):
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
 # TODO: This could use a better name and potentially a pre-defined object
+# TODO: Remove; replace existing code with _bin_details
 def _create_bin_wrapper(bin):
     lat, lng = 0, 0
     try:
@@ -171,9 +171,7 @@ def _create_bin_wrapper(bin):
     except:
         pass
 
-    # TODO: This loads the first image, but we're still forcing a second load through AJAX. Need to consolidate
-    image, coordinates = bin.mosaic(page=0, shape=(600, 800), scale=0.33, bg_color=200)
-    num_pages = coordinates.page.max()
+    num_pages = bin.mosaic_coordinates(shape=(600, 800), scale=0.33).page.max()
 
     return {
         "bin": bin,
@@ -181,6 +179,21 @@ def _create_bin_wrapper(bin):
         "lng": lng,
         "pages": range(num_pages + 1),
         "num_pages": num_pages,
+    }
+
+
+def _bin_details(dataset, bin):
+    pages = bin.mosaic_coordinates(shape=(600, 800), scale=0.33).page.max()
+    previous_bin = dataset.previous_bin(bin)
+    next_bin = dataset.next_bin(bin)
+
+    return {
+        "previous_bin_id": previous_bin.pid if previous_bin else "",
+        "next_bin_id": next_bin.pid if next_bin else "",
+        "lat": bin.latitude,
+        "lng": bin.longitude,
+        "pages": list(range(pages + 1)),
+        "num_pages": int(pages),
     }
 
 
@@ -201,27 +214,15 @@ def generate_time_series(request, dataset_name, metric):
         "y-axis": dataset.metric_label(metric),
     })
 
+
 # TODO: This call needs a lot of clean up, standardization with other methods and cutting out some dup code
 # TODO: This is also where page caching could occur...
 def bin_data(request, dataset_name, bin_id):
     dataset = get_object_or_404(Dataset, name=dataset_name)
     bin = get_object_or_404(Bin, pid=bin_id)
-    previous_bin = dataset.previous_bin(bin)
-    next_bin = dataset.next_bin(bin)
+    details = _bin_details(dataset, bin)
 
-    bin_data = _create_bin_wrapper(bin)
-
-    # TODO: Need to set proper scale/size
-    image, coordinates = bin.mosaic(page=0, shape=(600, 800), scale=0.33, bg_color=200)
-
-
-    return JsonResponse({
-        "previous_bin_id": previous_bin.pid if previous_bin else "",
-        "next_bin_id": next_bin.pid if next_bin else "",
-        "lat": bin_data["lat"],
-        "lng": bin_data["lng"],
-        "mosaic": embed_image(image),
-    })
+    return JsonResponse(details)
 
 
 # TODO: Using a proper API, the CSRF exempt decorator probably won't be needed

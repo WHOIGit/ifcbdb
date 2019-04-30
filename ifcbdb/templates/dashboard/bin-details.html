@@ -31,7 +31,11 @@
             <div class="card-body text-center">
                 <div class="tab-content" id="imageTabContent">
                     <div class="tab-pane fade show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
-                        <div id="mosaic-container"></div>
+                        <img id="mosaic" src="data:image/png;base64,{{ image }}" class="img-fluid" style="display:none" />
+                        <div id="mosaic-loading" class="loading">
+                            <div class="loader"></div>
+                            loading...
+                        </div>
                     </div>
 
                     <div>
@@ -220,10 +224,22 @@
     var numBinPages = {{ bin_data.num_pages }};
 
     function loadMosaic(page) {
-        var url = "/{{ dataset.name }}/{{ bin_data.bin.pid }}/mosaic.html?page=" + page;
+        $("#mosaic").hide();
+        $("#mosaic-loading").show();
 
-        $("#mosaic-container").load(url, function(){
+        // TODO: Need to pass in scale/width/height from UI controls
+        var url = "{% url 'mosaic_page_image' bin_data.bin.pid %}" +
+            "?width=800" +
+            "&height=600" +
+            "&scale_percent=33" +
+            "&page=" + page;
+
+        $.get(url, function(data){
+            $("#mosaic").attr("src", "data:image/png;base64," + data);
             currentMosaicPage = page;
+
+            $("#mosaic-loading").hide();
+            $("#mosaic").show();
         });
     }
 

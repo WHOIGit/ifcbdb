@@ -13,7 +13,6 @@ urlpatterns = [
     # e.g. http://ifcb-data.whoi.edu/mvco/dashboard/http://ifcb-data.whoi.edu/mvco/D20140101T123456_IFCB010
     re_path(r'(?P<dataset_name>[\w-]+)/dashboard/http.*/(?P<bin_id>\w+)', views.dataset_details),
 
-    path('<slug:dataset_name>/<slug:bin_id>/mosaic.html', views.mosaic, name='mosaic'),
     path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.image_details, name='image'),
     path('<slug:dataset_name>/<slug:bin_id>_<int:image_id>.html', views.image_details, name='image_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>.html', views.bin_details, name='bin'),
@@ -37,6 +36,6 @@ urlpatterns = [
     path('api/<slug:dataset_name>/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
     path('api/<slug:dataset_name>/bin/<slug:bin_id>', views.bin_data, name='bin_data'),
     path('api/<slug:dataset_name>/closest_bin', views.closest_bin, name='closest_bin'),
-    path('api/mosaic/coordinates/<slug:bin_id>/<int:height>/<int:width>/<int:scale_percent>', views.mosaic_coordinates, name='mosaic_coordintes'),
-    path('api/mosaic/image/<slug:bin_id>/<int:height>/<int:width>/<int:scale_percent>/<int:page>.png', views.mosaic_page_image, name='mosaic_page_image'),
+    path('api/mosaic/coordinates/<slug:bin_id>', views.mosaic_coordinates, name='mosaic_coordintes'),
+    path('api/mosaic/image/<slug:bin_id>.png', views.mosaic_page_image, name='mosaic_page_image'),
 ]
