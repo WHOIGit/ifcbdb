@@ -53,28 +53,28 @@
                 <h2>Datasets:</h2>
             </div>
             <div class="card-body overflow-auto" style="max-height:450px">
-                <ul class="list-group">
-                    {% for dataset in datasets %}
-                    <li class="list-group-item">
-                        <a href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-                  <div class='loading'>
-    <div class='loader'></div>
-    loading
-  </div>
+                <div style="display:none">
+                    <ul class="list-group">
+                        {% for dataset in datasets %}
+                        <li class="list-group-item">
+                            <a href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="loading">
+                    <div class="loader"></div>
+                    loading...
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script>
-    $(function(){
+    $(function() {
         // TODO: Fill in proper values and a real default starting location
-        createMap(41.5507768,-70.6593102);
+        createMap(41.5507768, -70.6593102);
     });
 </script>
 {% endblock %}

@@ -29,6 +29,9 @@ body {
 .loading {
     text-align: center;
     font-size: 0.8em;
+    background: #e9e9e9;
+    position: relative;
+    opacity: 0.5;
 }
 
 .loader,
@@ -68,4 +71,9 @@ body {
     left: 23px;
     top: -3px;
     animation: waver 1s infinite alternate ease-in-out;
+}
+
+.ts-plot-container {
+    height: 25vmax;
+    min-height: 300px;
 }
