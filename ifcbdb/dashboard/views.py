@@ -1,4 +1,4 @@
-from datetime import datetime
+import pandas as pd
 
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, FileResponse, Http404, JsonResponse
@@ -231,7 +231,7 @@ def closest_bin(request, dataset_name):
     target_date = request.POST.get("target_date", None)
 
     try:
-        dte = datetime.strptime(target_date, "%Y-%m-%d %H:%M:%S")
+        dte = pd.to_datetime(target_date, utc='True')
     except:
         dte = None
 
