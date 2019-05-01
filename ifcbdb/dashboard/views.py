@@ -3,6 +3,7 @@ import pandas as pd
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, FileResponse, Http404, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import cache_control
 
 from ifcb.data.imageio import format_image
 
@@ -98,6 +99,7 @@ def mosaic_coordinates(request, bin_id):
     coords = b.mosaic_coordinates(shape, scale)
     return JsonResponse(coords.to_dict('list'))
 
+@cache_control(max_age=31557600) # client cache for 1y
 def mosaic_page_image(request, bin_id):
     width = int(request.GET.get("width", 800))
     height = int(request.GET.get("height", 600))
