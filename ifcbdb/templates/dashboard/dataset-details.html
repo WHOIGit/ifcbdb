@@ -280,7 +280,7 @@ function loadMosaic(pageNumber) {
 
     // TODO: Need to pass in scale/width/height from UI controls
     // TODO: Needs error handling if mosaic cannot be generated
-    var mosaicUrl = "{% url 'mosaic_page_image' "__BIN_PID__" %}" +
+    var mosaicUrl = "{% url 'mosaic_page_encoded_image' "__BIN_PID__" %}" +
         "?width=800" +
         "&height=600" +
         "&scale_percent=33" +
@@ -326,7 +326,6 @@ $("#bin-paging").on("click", ".page-index a", function(e){
 function changePage(pageNumber) {
     currentBinPage = pageNumber;
 
-    console.log(pageNumber);
     $(".page-previous").toggleClass("disabled", (pageNumber <= 0));
     $(".page-next").toggleClass("disabled", (pageNumber >= numBinPages));
 

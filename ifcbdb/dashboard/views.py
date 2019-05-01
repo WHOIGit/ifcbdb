@@ -32,22 +32,9 @@ def dataset_details(request, dataset_name, bin_id=None):
     else:
         bin = get_object_or_404(Bin, pid=bin_id)
 
-    # previous_bin = dataset.previous_bin(bin)
-    # next_bin = dataset.next_bin(bin)
-
-    # bins = dataset.bins
-
-    # TODO: Need to set proper scale/size
-    #image, coordinates = bin.mosaic(page=0, shape=(600,800), scale=0.33, bg_color=200)
-
     return render(request, 'dashboard/dataset-details.html', {
         "dataset": dataset,
         "bin": bin,
-        # "previous_bin": previous_bin,
-        # "next_bin": next_bin,
-        #"image": embed_image(image),
-        #"coordinates": coordinates,
-        # "bins": bins,
     })
 
 
@@ -101,22 +88,18 @@ def mosaic_coordinates(request, bin_id):
 
 @cache_control(max_age=31557600) # client cache for 1y
 def mosaic_page_image(request, bin_id):
-    width = int(request.GET.get("width", 800))
-    height = int(request.GET.get("height", 600))
-    scale_percent = int(request.GET.get("scale_percent", 33))
-    page = int(request.GET.get("page", 0))
-    encode = (request.GET.get("encode", "False") == "False")
-
-    b = get_object_or_404(Bin, pid=bin_id)
-    shape = (height, width)
-    scale = scale_percent / 100
-    arr, coordinates = b.mosaic(page=page, shape=shape, scale=scale)
-
-    if encode:
-        return HttpResponse(embed_image(arr), content_type='plain/text')
-
+    arr = _mosaic_page_image(request, bin_id)
     image_data = format_image(arr, 'image/png')
+
     return HttpResponse(image_data, content_type='image/png')
+
+
+@cache_control(max_age=31557600) # client cache for 1y
+def mosaic_page_encoded_image(request, bin_id):
+    arr = _mosaic_page_image(request, bin_id)
+
+    return HttpResponse(embed_image(arr), content_type='plain/text')
+
 
 def _image_data(bin_id, target, mimetype):
     b = get_object_or_404(Bin, pid=bin_id)
@@ -199,6 +182,19 @@ def _bin_details(dataset, bin):
     }
 
 
+def _mosaic_page_image(request, bin_id):
+    width = int(request.GET.get("width", 800))
+    height = int(request.GET.get("height", 600))
+    scale_percent = int(request.GET.get("scale_percent", 33))
+    page = int(request.GET.get("page", 0))
+
+    bin = get_object_or_404(Bin, pid=bin_id)
+    shape = (height, width)
+    scale = scale_percent / 100
+    arr, _ = bin.mosaic(page=page, shape=shape, scale=scale)
+
+    return arr
+
 
 # TODO: The below views are API/AJAX calls; in the future, it would be beneficial to use a proper API framework
 def generate_time_series(request, dataset_name, metric):
@@ -209,7 +205,7 @@ def generate_time_series(request, dataset_name, metric):
     dataset = get_object_or_404(Dataset, name=dataset_name)
     time_series = dataset.timeline(None, None, metric=metric, resolution="bin")
 
-    # TODO: Possible performance issues in the way we're pivoting the data before it gets return
+    # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
     return JsonResponse({
         "x": [item["dt"] for item in time_series],
         "y": [item["metric"] for item in time_series],

@@ -234,7 +234,7 @@
         $("#mosaic-loading").show();
 
         // TODO: Need to pass in scale/width/height from UI controls
-        var url = "{% url 'mosaic_page_image' bin_data.bin.pid %}" +
+        var url = "{% url 'mosaic_page_encoded_image' bin_data.bin.pid %}" +
             "?width=800" +
             "&height=600" +
             "&scale_percent=33" +
