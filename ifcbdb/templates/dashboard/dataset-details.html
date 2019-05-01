@@ -3,7 +3,7 @@
 {% endblock %} {% block content %}
 <div class="row d-flex justify-content-start">
     <div class="pl-3">
-        <h1>{{ dataset.title }}</h1>
+        <span class="h2-responsive">{{ dataset.title }}</span>
     </div>
     {% if user.is_authenticated %}
     <div>
@@ -11,37 +11,36 @@
     </div>
     {% endif %}
 </div>
-<hr class="my-3">
-<div class="row py-3 px-3">
+<hr class="my-2">
+<div class="row px-1">
     <div class="col-sm-12">
-
-        <ul class="nav nav-tabs" id="ts-tabs" role="tablist">
+        <ul class="nav justify-content-end" id="ts-tabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
+                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
                    role="tab" aria-controls="ts-size" aria-selected="true">Data Size</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
+                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
                    role="tab" aria-controls="ts-temperature" aria-selected="false">Temperature</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
+                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
                    role="tab" aria-controls="ts-humidity" aria-selected="false">Humidity</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
+                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
                    role="tab" aria-controls="ts-ml-analyzed" aria-selected="false">Volume Imaged</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
+                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
                    role="tab" aria-controls="ts-concentration" aria-selected="false">Concentration</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
+                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
                    role="tab" aria-controls="ts-triggers" aria-selected="false">Trigger Count</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
+                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
                    role="tab" aria-controls="ts-images" aria-selected="false">Image Count</a>
             </li>
         </ul>
@@ -71,40 +70,44 @@
         </div>
     </div>
 </div>
-<div class="row py-2 card-deck">
-    <div class="col-md-8">
+<div class="row py-2">
+    <div class="col-sm-12">
         <div class="card">
-            <div class="card-header">
-                <div class="row">
-                    <div class="col-sm-2 order-2 order-sm-1">
-                        <form class="form-inline">
-                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-left fa-2x"></i></a>
-                        </form>
+                <div class="card-header mdb-color lighten-5">
+                        <div class="row">
+                            <div class="col-sm-2 order-2 order-sm-1">
+                                <form class="form-inline">
+                                    <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-left fa-2x"></i></a>
+                                </form>
+                            </div>
+                            <div class="col-sm-8 text-center order-1 order-sm-2">
+                                <span class="h4-responsive">
+                                <strong>Selected Bin:</strong>
+                                <small class="text-muted"><a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></small>
+                            </span>
+                            </div>
+                            <div class="col-sm-2 order-3 order-sm-3 pt-1 pt-sm-0">
+                                <form class="form-inline">
+                                    <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-right fa-2x"></i></a>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-sm-8 text-center order-1 order-sm-2">
-                        <span class="h4-responsive">
-                        <strong>Bin:</strong>
-                        <small class="text-muted"><a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></small>
-                    </span>
-                    </div>
-                    <div class="col-sm-2 order-3 order-sm-3 pt-1 pt-sm-0">
-                        <form class="form-inline">
-                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-right fa-2x"></i></a>
-                        </form>
-                    </div>
-                </div>
-            </div>
+        <div class="card-body">
+        <div class="row">
+    <div class="col-md-6 col-lg-8">
+        <div class="card h-100">
             <div class="card-body text-center">
                 <img class="img-fluid" id="mosaic" src="" data-toggle="modal" data-target="#exampleModalCenter" style="display:none" />
-                <div id="mosaic-loading" class="loading">
+                <div id="mosaic-loading" class="loading h-100">
                     <div class="loader"></div>
                     loading...
                 </div>
                 <br clear="all" />
             </div>
-            <div class="card-footer text-center">
+            <div class="card-footer text-center white">
                 <nav aria-label="Bin Paging" class="text-center">
-                    <ul id="bin-paging" class="pagination pg-blue justify-content-center">
+                    <ul id="bin-paging" class="pagination pg-dark justify-content-center">
                         <li class="page-item page-previous disabled">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
@@ -117,19 +120,20 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h2 class="h4-responsive">Location</h2>
+    <div class="col-md-6 col-lg-4 mt-2 mt-md-0">
+        <div class="card h-50">
+            <div class="card-body h-75">
+                <div id="mapid" class="h-100"></div>
             </div>
-            <div class="card-body">
-                <div id="mapid" style="height:600px;"></div>
-            </div>
-            <div class="card-footer">
+            <div class="card-footer white">
                 <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
             </div>
         </div>
     </div>
+</div>
+</div>
+</div>
+</div>
 </div>
 <!-- Modal -->
 <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">

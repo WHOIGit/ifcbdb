@@ -17,11 +17,11 @@
 
 <body class="white">
     <!-- Navbar -->
-    <nav class="navbar fixed-top navbar-expand-lg navbar-dark blue white-text scrolling-navbar">
+    <nav class="navbar fixed-top navbar-expand-lg navbar-dark stylish-color white-text scrolling-navbar">
         <div class="container">
 
             <!-- Brand -->
-            <a class="navbar-brand waves-effect" href="#">
+            <a class="navbar-brand waves-effect">
                 <strong class="white-text">IFCB</strong>
             </a>
 
@@ -43,16 +43,19 @@
                     <li class="nav-item">
                         <a class="nav-link waves-effect" href="#">Settings</a>
                     </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                <a href="{% url 'secure:logout' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log Out</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                <a href="{% url 'secure:login' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log In</a>
+                </li>
+                {% endif %}                    
                 </ul>
 
                 <!-- Right -->
                 {% dataset_switcher %}
-
-                {% if user.is_authenticated %}
-                <a href="{% url 'secure:logout' %}" class="btn btn-indigo btn-md"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log Out</a>
-                {% else %}
-                <a href="{% url 'secure:login' %}" class="btn btn-indigo btn-md"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log In</a>
-                {% endif %}
             </div>
 
         </div>
@@ -61,7 +64,7 @@
     <!-- Breadcrumb Bar-->
     <div class="container-fluid">
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb grey lighten-3">
+            <ol class="breadcrumb mdb-color lighten-5">
                 <li class="breadcrumb-item"><a class="black-text" href="{% url 'datasets' %}">Datasets</a></li>
                 {% block breadcrumbs %}{% endblock %}
             </ol>
@@ -69,13 +72,13 @@
     </div>
     <!-- Breacrumb Bar-->
     <!--Main layout-->
-    <main class="pt-3 mx-lg-3">
-        <div class="container-fluid mt-2">
+    <main class="mx-lg-3">
+        <div class="container-fluid mt-1">
             {% block content %}{% endblock %}
         </div>
     </main>
     <!--Main layout-->
-    <footer class="page-footer font-small blue pt-2 mt-4">
+    <footer class="page-footer font-small stylish-color pt-2 mt-4">
         <div class="container-fluid text-center my-2">
             <div class="row justify-content-center">
                 <div class="col-xs-1">
@@ -114,7 +117,7 @@
             </div>
         </div>
         </div>
-        <div class="footer-copyright text-center py-3">
+        <div class="footer-copyright text-center py-3 stylish-color-dark">
             <div>
                 Version 4.4 - 17 October 2018 -
                 <a href="#">About</a> |

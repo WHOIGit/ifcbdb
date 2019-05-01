@@ -1,36 +1,58 @@
-{% extends 'base.html' %}
-
-{% block breadcrumbs %}
+{% extends 'base.html' %} {% block breadcrumbs %}
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin_data.bin.pid %}">{{ bin_data.bin.pid }}</a></li>
-{% endblock %}
-
-{% block content %}
-<div class="row">
-    <div class="col">
-        <h1>{{ bin_data.bin.pid }}</h1>
+{% endblock %} {% block content %}
+<div class="row d-flex justify-content-start">
+    <div class="pl-3">
+        <span class="h2-responsive">{{ bin_data.bin.pid }}</span>
     </div>
 </div>
-<hr class="my-3">
-<div class="row">
-    <div class="col">
-        <div class="btn-group btn-group-sm" role="group" aria-label="Download Image Button Group">
-            <button type="button" class="btn btn-unique btn-sm">Raw Data</button>
-            <button type="button" class="btn btn-unique btn-sm">Images</button>
-            <button type="button" class="btn btn-unique btn-sm">Meta Data</button>
-            <button type="button" class="btn btn-unique btn-sm">Products</button>
-        </div>
-    </div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+        <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                    <div class="col-md-4">
+                            <h6 class="h6-responsive">2020-12-30 12:34:56 UTC <small>(5 Days Ago)</small></h6> 
+                            <h6 class="h6-responsive">By IFCB927</h6> 
+                        <dl class="row">
+                            <dt class="col-sm-4">Triggers:</dt>
+                            <dd class="col-sm-8">3201</dd> 
+                            <dt class="col-sm-4">Images:</dt>
+                            <dd class="col-sm-8">2873</dd>
+                            <dt class="col-sm-4">Triggers / S:</dt>
+                            <dd class="col-sm-8">2.67</dd>                                                                                                 
+                            <dt class="col-sm-4">Volume Analyzed:</dt>
+                            <dd class="col-sm-8">1231 ml</dd>                                   
+                        </div>
+                            <div class="col-md-4 mt-1">
+                            <figure class="figure">
+                            <div id="mapid" style="height:200px"></div>
+                            <figcaption class="figure-caption"><strong>Latitude:</strong> {{ bin_data.lat }}, <strong>Longitude:</strong> {{ bin_data.lng }}, <strong>Depth</strong> {{ bin_data.bin.depth }}m</figcaption>
+                            </figure>
+                            </div>
+                           <div class="col-md-2"> 
+                            <p class="lead"><strong>Download:</strong></p>
+                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Raw Data</a>
+                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Images</a>
+                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Meta Data</a>
+                            <a href="#" class="btn btn-mdb-color btn-sm btn-block">Products</a> 
+                            </div>
+                    </div>
+                </div>
+                </div>
+                    </div>
 </div>
-<div class="row py-2 mt-2">
-    <div class="col-md-6">
-        <div class="card" style="height:650px">
-            <div class="card-header">
-                <h2>Images</h2>
+<div class="row py-2 px-3">
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header mdb-color lighten-5">
+                <span class="h4-responsive">Images</span>
             </div>
             <div class="card-body text-center">
                 <div class="tab-content" id="imageTabContent">
-                    <div class="tab-pane fade show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
+                    <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
                         <img id="mosaic" src="data:image/png;base64,{{ image }}" class="img-fluid" style="display:none" />
                         <div id="mosaic-loading" class="loading">
                             <div class="loader"></div>
@@ -39,23 +61,21 @@
                     </div>
 
                     <div>
-                        Images:
-                        {% for image in images %}
-                            <a href="{% url 'image' dataset.name bin_data.bin.pid image %}">{{ image }}</a>
-                        {% endfor %}
+                        Images: {% for image in images %}
+                        <a href="{% url 'image' dataset.name bin_data.bin.pid image %}">{{ image }}</a> {% endfor %}
                     </div>
 
-                    <div class="tab-pane fade" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
+                    <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
                         <img class="img-fluid" src="https://via.placeholder.com/450?text=Image2">
                     </div>
-                    <div class="tab-pane fade" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab">
+                    <div class="tab-pane" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab">
                         <img class="img-fluid" src="https://via.placeholder.com/450?text=Image3">
                     </div>
                 </div>
             </div>
-            <div class="card-footer text-center">
-                <nav aria-label="Page navigation example" class="text-center">
-                    <ul class="pagination pg-blue">
+            <div class="card-footer text-center white">
+                <nav aria-label="Bin Paging" class="text-center">
+                    <ul id="image-paging" class="pagination pg-dark justify-content-center">
                         <li class="page-item page-previous">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
@@ -72,46 +92,34 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card" style="height:650px">
-            <div class="card-header">
-                <h2>Location</h2>
-            </div>
-            <div class="card-body">
-                <div id="mapid" style="height:400px;"></div>
-            </div>
-            <div class="card-footer">
-                <p>Latitude: {{ bin_data.lat }}, Longitude: {{ bin_data.lng }}, Depth {{ bin_data.bin.depth }}m</p>
-            </div>
-        </div>
-    </div>
+
 </div>
-<div class="row py-2">
-    <div class="col-md-6 col-lg-5">
-        <div class="card" style="height:550px">
-            <div class="card-header">
-                <div class="row">
-                    <div class="col">
-                        <h2>Plot</h2>
+<div class="row py-2 px-3 mh-25">
+        <div class="col-xs-12 col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header mdb-color lighten-5">
+                        <div class="row justify-content-between">
+                            <div class="col-sm-4">
+                                <span class="h4-responsive">Plot</span>
+                                </div>
+                                <div class="col-sm-8">
+                                                <div class="btn-group" role="group" aria-label="Change Plots Button Group">
+                            <button type="button" class="btn btn-sm btn-mdb-color">X/Y</button>
+                            <button type="button" class="btn btn-sm btn-mdb-color">ADC Variables</button>
+                            <button type="button" class="btn btn-sm btn-mdb-color">Features</button>
+                        </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <img class="img-fluid" src="https://via.placeholder.com/650x250">
                     </div>
                 </div>
-            </div>
-            <div class="card-body overflow-auto">
-                <img class="img-fluid" src="https://via.placeholder.com/650x250">
-            </div>
-            <div class="card-footer text-center">
-                <div class="btn-group" role="group" aria-label="Change Plots Button Group">
-                    <button type="button" class="btn btn-unique">X/Y</button>
-                    <button type="button" class="btn btn-unique">ADC Variables</button>
-                    <button type="button" class="btn btn-unique">Features</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-5">
-        <div class="card" style="height:550px">
-            <div class="card-header">
-                <h2>Meta Data</h2>
+            </div>    
+    <div class="col-md-8 col-lg-4 mt-2 mt-lg-0">
+        <div class="card h-100">
+            <div class="card-header mdb-color lighten-5">
+                <span class="h4-responsive">Meta Data</span>
             </div>
             <div class="card-body overflow-auto">
                 <div class="table-responsive text-nowrap">
@@ -167,17 +175,17 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-2">
-        <div class="card" style="height:550px">
-            <div class="card-header">
+    <div class="col-md-4 col-lg-2 mt-2 mt-lg-0">
+        <div class="card h-100">
+            <div class="card-header mdb-color lighten-5">
                 <div class="row">
                     <div class="col">
-                        <h2>Tags</h2>
+                        <span class="h4-responsive">Tags</span>
                     </div>
                 </div>
             </div>
             <div class="card-body overflow-auto">
-                <ul class="list-group">
+                <ul class="list-group list-group-flush">
                     <li class="list-group-item">
                         <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>Tag 1</a>
                     </li>
@@ -189,8 +197,8 @@
                     </li>
                 </ul>
             </div>
-            <div class="card-footer">
-                <a href="#" class="btn btn-primary btn-block btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
+            <div class="card-footer white">
+                <a href="#" class="btn btn-mdb-color btn-block btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
         </div>
     </div>
@@ -215,13 +223,11 @@
     </div>
 </div>
 <!-- Modal -->
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script>
     var currentMosaicPage = 1;
     var currentBinPage = 0;
-    var numBinPages = {{ bin_data.num_pages }};
+    var numBinPages = {{bin_data.num_pages}};
 
     function loadMosaic(page) {
         $("#mosaic").hide();
@@ -234,7 +240,7 @@
             "&scale_percent=33" +
             "&page=" + page;
 
-        $.get(url, function(data){
+        $.get(url, function(data) {
             $("#mosaic").attr("src", "data:image/png;base64," + data);
             currentMosaicPage = page;
 
@@ -243,7 +249,7 @@
         });
     }
 
-    $(".page-index a").click(function(e){
+    $(".page-index a").click(function(e) {
         e.preventDefault();
 
         var pageNumber = $(this).data("page")
@@ -251,14 +257,14 @@
         changePage(pageNumber);
     });
 
-    $(".page-previous").click(function(e){
+    $(".page-previous").click(function(e) {
         e.preventDefault();
 
         if (currentBinPage > 0)
             changePage(currentBinPage - 1);
     });
 
-    $(".page-next").click(function(e){
+    $(".page-next").click(function(e) {
         e.preventDefault();
 
         if (currentBinPage < numBinPages)
@@ -271,7 +277,7 @@
         $(".page-previous").toggleClass("disabled", (pageNumber <= 0));
         $(".page-next").toggleClass("disabled", (pageNumber >= numBinPages));
 
-        $.each($(".page-index a"), function(){
+        $.each($(".page-index a"), function() {
             var isSelected = $(this).data("page") == pageNumber;
 
             $(this).closest("li").toggleClass("active", isSelected);
@@ -280,10 +286,9 @@
         loadMosaic(pageNumber);
     }
 
-    $(function(){
-        var map = createMap({{ bin_data.lat }}, {{ bin_data.lng }});
-        L.marker([{{ bin_data.lat }}, {{ bin_data.lng }}]).addTo(map);
-
+    $(function() {
+        var map = createMap({{bin_data.lat}}, {{bin_data.lng}});
+        L.marker([{{bin_data.lat}}, {{bin_data.lng}}]).addTo(map);
         changePage(currentBinPage);
     });
 </script>
