@@ -29,6 +29,7 @@ from ifcb.data.zip import bin2zip_stream
 from .crypto import AESCipher
 
 FILL_VALUE = -9999
+SRID = 4326
 
 class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
@@ -68,7 +69,7 @@ class Dataset(models.Model):
         return self.bins.filter(sample_time__gt=bin.sample_time).order_by("sample_time").first()
 
     def closest_bin(self, longitude, latitude):
-        location = Point(longitude, latitude, srid=4326)
+        location = Point(longitude, latitude, srid=SRID)
         return self.bins.annotate(
             distance=Distance('location', location)
         ).order_by('distance').first()
@@ -135,7 +136,7 @@ class Bin(models.Model):
     timestamp = models.DateTimeField('bin timestamp')
     # spatiotemporal information
     sample_time = models.DateTimeField('sample time')
-    location = PointField(default=Point(FILL_VALUE, FILL_VALUE, srid=4326))
+    location = PointField(null=True)
     depth = models.FloatField(default=0)
     # instrument
     instrument = models.ForeignKey('Instrument', related_name='bins', null=True, on_delete=models.SET_NULL)
@@ -159,21 +160,19 @@ class Bin(models.Model):
 
     def set_location(self, longitude, latitude):
         # convenience function for setting location w/o having to construct Point object
-        self.location = Point(longitude, latitude, srid=4326)
+        self.location = Point(longitude, latitude, srid=SRID)
 
     @property
     def latitude(self):
-        try:
-            return self.location.y
-        except:
-            return 0
+        if self.location is None:
+            return FILL_VALUE
+        return self.location.y
 
     @property
     def longitude(self):
-        try:
-            return self.location.x
-        except:
-            return 0
+        if self.location is None:
+            return FILL_VALUE
+        return self.location.x
     
     # access to underlying FilesetBin objects
 

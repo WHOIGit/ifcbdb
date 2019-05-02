@@ -149,12 +149,7 @@ def zip(request, dataset_name, bin_id):
 # TODO: This could use a better name and potentially a pre-defined object
 # TODO: Remove; replace existing code with _bin_details
 def _create_bin_wrapper(bin):
-    lat, lng = 0, 0
-    try:
-        lat = bin.location.y
-        lng = bin.location.x
-    except:
-        pass
+    lat, lng = bin.latitude, bin.longitude
 
     num_pages = bin.mosaic_coordinates(shape=(600, 800), scale=0.33).page.max()
 

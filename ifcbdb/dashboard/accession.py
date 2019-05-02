@@ -8,15 +8,15 @@ from .qaqc import check_bad, check_no_rois
 
 import ifcb
 
-def sync_dataset(dataset):
+def sync_dataset(dataset, lat=None, lon=None, depth=None):
     for dd in dataset.directories.filter(kind=DATA_DIRECTORY_RAW).order_by('priority'):
         if not os.path.exists(dd.path):
             continue # skip and continue searching
         directory = ifcb.DataDirectory(dd.path)
         for b in directory:
-            add_bin(dataset, b)
+            add_bin(dataset, b, lat, lon, depth)
 
-def add_bin(dataset, bin):
+def add_bin(dataset, bin, lat, lon, depth):
     pid = bin.lid
     # before we do expensive parsing, make sure we really need to add this
     try:
@@ -35,6 +35,11 @@ def add_bin(dataset, bin):
         # should it also be added to the dataset?
         print('bad bin {}'.format(pid))
         return
+    # spatial information
+    if lat is not None and lon is not None:
+        b.set_location(lon, lat)
+    if depth is not None:
+        b.depth = depth
     b.qc_no_rois = check_no_rois(bin)
     # metadata
     b.metadata = json.dumps(bin.hdr_attributes)
