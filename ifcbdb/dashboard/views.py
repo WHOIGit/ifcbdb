@@ -28,7 +28,7 @@ def dataset_details(request, dataset_name, bin_id=None):
     dataset = get_object_or_404(Dataset, name=dataset_name)
 
     if bin_id is None:
-        bin = dataset.most_recent_bin()
+        bin = dataset.timeline.most_recent_bin()
     else:
         bin = get_object_or_404(Bin, pid=bin_id)
 
@@ -164,8 +164,8 @@ def _create_bin_wrapper(bin):
 
 def _bin_details(dataset, bin):
     pages = bin.mosaic_coordinates(shape=(600, 800), scale=0.33).page.max()
-    previous_bin = dataset.previous_bin(bin)
-    next_bin = dataset.next_bin(bin)
+    previous_bin = dataset.timeline.previous_bin(bin)
+    next_bin = dataset.timeline.next_bin(bin)
 
     return {
         "previous_bin_id": previous_bin.pid if previous_bin else "",
@@ -198,13 +198,13 @@ def generate_time_series(request, dataset_name, metric):
 
     # TODO: Allow resolution to be set from API call; default to hours for testing
     dataset = get_object_or_404(Dataset, name=dataset_name)
-    time_series = dataset.timeline(None, None, metric=metric, resolution="bin")
+    time_series = dataset.timeline.timeline(None, None, metric=metric, resolution="bin")
 
     # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
     return JsonResponse({
         "x": [item["dt"] for item in time_series],
         "y": [item["metric"] for item in time_series],
-        "y-axis": dataset.metric_label(metric),
+        "y-axis": dataset.timeline.metric_label(metric),
     })
 
 
@@ -229,7 +229,7 @@ def closest_bin(request, dataset_name):
     except:
         dte = None
 
-    bin = dataset.most_recent_bin(dte)
+    bin = dataset.timeline.most_recent_bin(dte)
 
     return JsonResponse({
         "bin_id": bin.pid,

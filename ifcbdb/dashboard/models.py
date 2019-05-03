@@ -31,11 +31,8 @@ from .crypto import AESCipher
 FILL_VALUE = -9999
 SRID = 4326
 
-class Dataset(models.Model):
-    name = models.CharField(max_length=64, unique=True)
-    title = models.CharField(max_length=256)
+class BinTimelineQuery(object):
 
-    # TODO: Fill in names for the ones that are missing
     TIMELINE_METRICS = {
         "size": "Bytes",
         "temperature": "Degrees C",
@@ -47,6 +44,9 @@ class Dataset(models.Model):
         'n_triggers': 'Count',
         'n_images': 'Count',
     }
+
+    def __init__(self, bin_qs):
+        self.bins = bin_qs
 
     def time_range(self, start_time=None, end_time=None):
         qs = self.bins
@@ -94,6 +94,14 @@ class Dataset(models.Model):
             return ""
 
         return self.TIMELINE_METRICS[metric]
+
+class Dataset(models.Model):
+    name = models.CharField(max_length=64, unique=True)
+    title = models.CharField(max_length=256)
+
+    @property
+    def timeline(self):
+        return BinTimelineQuery(self.bins)
 
     def __str__(self):
         return self.name
@@ -316,6 +324,10 @@ class Instrument(models.Model):
 
     password = property(get_password, set_password)
 
+    @property
+    def timeline(self):
+        return BinTimelineQuery(self.bins)
+    
     def __str__(self):
         return 'IFCB{}'.format(self.number)
 
