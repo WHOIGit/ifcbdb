@@ -52,6 +52,27 @@
             </div>
             <div class="card-body text-center">
                 <div class="tab-content" id="imageTabContent">
+                    <div class="text-center">
+                        <div id="view-size">
+                            View Size:
+                            {% for size in mosaic_view_sizes %}
+                            <label>
+                                <input type="radio" name="view-size" value="{{ size }}" {% if size == mosaic_default_view_size %}checked{% endif %} />
+                                {{ size }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <div id="scale-factor">
+                            Scale Factor:
+                            {% for factor in mosaic_scale_factors %}
+                                <label>
+                                    <input type="radio" name="scale-factor" value="{{ factor}}" {% if factor == mosaic_default_scale_factor %}checked{% endif %} />
+                                    {{ factor }}%
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
                     <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
                         <img id="mosaic" src="data:image/png;base64,{{ image }}" class="img-fluid" style="display:none" />
                         <div id="mosaic-loading" class="loading">
@@ -228,11 +249,13 @@
         $("#mosaic").hide();
         $("#mosaic-loading").show();
 
+        var viewSize = $("#view-size input[type=radio]:checked").val();
+    var scaleFactor = $("#scale-factor input[type=radio]:checked").val();
+
         // TODO: Need to pass in scale/width/height from UI controls
         var url = "{% url 'mosaic_page_encoded_image' bin_data.bin.pid %}" +
-            "?width=800" +
-            "&height=600" +
-            "&scale_percent=33" +
+            "?view_size=" + viewSize +
+            "&scale_factor=" + scaleFactor +
             "&page=" + page;
 
         $.get(url, function(data) {
@@ -280,6 +303,16 @@
 
         loadMosaic(pageNumber);
     }
+
+    // TODO: This does nto currently update paging for the image
+    $("#view-size input[type=radio]").click(function(e){
+        loadMosaic(currentBinPage);
+    });
+
+    // TODO: This does nto currently update paging for the image
+    $("#scale-factor input[type=radio]").click(function(e){
+        loadMosaic(currentBinPage);
+    });
 
     $(function() {
         var map = createMap({{bin_data.lat}}, {{bin_data.lng}});
