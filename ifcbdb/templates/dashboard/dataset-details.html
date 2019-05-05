@@ -159,12 +159,12 @@ var currentBinPage = 0;
 var numBinPages = 0;
 var currentBinId = "";
 
-function getClosestBin(targetDate) {
+function changeToClosestBin(targetDate) {
     var url = "{% url 'closest_bin' dataset.name %}";
 
     $.post(url, {"target_date": targetDate}, function(resp){
         if (resp.bin_id != "")
-            changeBin(resp.bin_id);
+            changeBin(resp.bin_id, true);
     });
 }
 
@@ -200,8 +200,7 @@ function createTimeSeries(container, metric) {
 
         // Add event to locate nearest bin to user's click
         container[0].on("plotly_click", function(d){
-            var x = getClosestBin(d.points[0].x);
-
+            changeToClosestBin(d.points[0].x);
         });
     });
 
@@ -221,7 +220,7 @@ $("#ts-tabs .nav-link").click(function() {
     createTimeSeries(container, metric);
 });
 
-function changeBin(binId) {
+function changeBin(binId, updateHistory) {
     if (binId === "")
         return;
 
@@ -269,6 +268,10 @@ function changeBin(binId) {
             map.setView([data.lng, data.lat], 11);
         }
 
+        if (updateHistory) {
+            history.pushState(null, null, "?bin_id=" + binId);
+        }
+
         // Update mosaic; save this for last since it will require and additional ajax request
         loadMosaic(0);
     });
@@ -297,7 +300,7 @@ function loadMosaic(pageNumber) {
 $("#previous-bin, #next-bin").click(function(e){
     e.preventDefault();
 
-    changeBin($(this).data("bin"));
+    changeBin($(this).data("bin"), true);
 });
 
 $("#bin-paging").on("click", ".page-previous", function(e){
@@ -344,7 +347,7 @@ $(function() {
 
     createTimeSeries($("#ts-size .ts-plot-container"), "size");
 
-    changeBin("{{ bin.pid }}");
+    changeBin("{{ bin.pid }}", false);
 });
 </script>
 {% endblock %}

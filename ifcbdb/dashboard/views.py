@@ -26,6 +26,8 @@ def datasets(request):
 # TODO: Handle a dataset with no bins? Is that possible?
 def dataset_details(request, dataset_name, bin_id=None):
     dataset = get_object_or_404(Dataset, name=dataset_name)
+    if not bin_id:
+        bin_id = request.GET.get("bin_id")
 
     if bin_id is None:
         bin = Timeline(dataset.bins).most_recent_bin()
