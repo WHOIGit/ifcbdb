@@ -73,30 +73,51 @@
 <div class="row py-2">
     <div class="col-sm-12">
         <div class="card">
-                <div class="card-header mdb-color lighten-5">
-                        <div class="row">
-                            <div class="col-sm-2 order-2 order-sm-1">
-                                <form class="form-inline">
-                                    <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-left fa-2x"></i></a>
-                                </form>
-                            </div>
-                            <div class="col-sm-8 text-center order-1 order-sm-2">
-                                <span class="h4-responsive">
-                                <strong>Selected Bin:</strong>
-                                <small class="text-muted"><a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></small>
-                            </span>
-                            </div>
-                            <div class="col-sm-2 order-3 order-sm-3 pt-1 pt-sm-0">
-                                <form class="form-inline">
-                                    <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-right fa-2x"></i></a>
-                                </form>
-                            </div>
-                        </div>
+            <div class="card-header mdb-color lighten-5">
+                <div class="row">
+                    <div class="col-sm-2 order-2 order-sm-1">
+                        <form class="form-inline">
+                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-left fa-2x"></i></a>
+                        </form>
                     </div>
+                    <div class="col-sm-8 text-center order-1 order-sm-2">
+                        <span class="h4-responsive">
+                        <strong>Selected Bin:</strong>
+                        <small class="text-muted"><a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></small>
+                    </span>
+                    </div>
+                    <div class="col-sm-2 order-3 order-sm-3 pt-1 pt-sm-0">
+                        <form class="form-inline">
+                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-right fa-2x"></i></a>
+                        </form>
+                    </div>
+                </div>
+            </div>
         <div class="card-body">
         <div class="row">
     <div class="col-md-6 col-lg-8">
         <div class="card h-100">
+            <div class="text-center">
+                <div id="view-size">
+                    View Size:
+                    {% for size in mosaic_view_sizes %}
+                    <label>
+                        <input type="radio" name="view-size" value="{{ size }}" {% if size == mosaic_default_view_size %}checked{% endif %} />
+                        {{ size }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <div id="scale-factor">
+                    Scale Factor:
+                    {% for factor in mosaic_scale_factors %}
+                        <label>
+                            <input type="radio" name="scale-factor" value="{{ factor}}" {% if factor == mosaic_default_scale_factor %}checked{% endif %} />
+                            {{ factor }}%
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
             <div class="card-body text-center">
                 <img class="img-fluid" id="mosaic" src="" data-toggle="modal" data-target="#exampleModalCenter" style="display:none" />
                 <div id="mosaic-loading" class="loading h-100">
@@ -159,12 +180,12 @@ var currentBinPage = 0;
 var numBinPages = 0;
 var currentBinId = "";
 
-function getClosestBin(targetDate) {
+function changeToClosestBin(targetDate) {
     var url = "{% url 'closest_bin' dataset.name %}";
 
     $.post(url, {"target_date": targetDate}, function(resp){
         if (resp.bin_id != "")
-            changeBin(resp.bin_id);
+            changeBin(resp.bin_id, true);
     });
 }
 
@@ -200,8 +221,7 @@ function createTimeSeries(container, metric) {
 
         // Add event to locate nearest bin to user's click
         container[0].on("plotly_click", function(d){
-            var x = getClosestBin(d.points[0].x);
-
+            changeToClosestBin(d.points[0].x);
         });
     });
 
@@ -221,14 +241,18 @@ $("#ts-tabs .nav-link").click(function() {
     createTimeSeries(container, metric);
 });
 
-function changeBin(binId) {
+function changeBin(binId, updateHistory) {
     if (binId === "")
         return;
 
-    var baseDataUrl = "{% url 'bin_data' dataset.name '__BIN_PID__' %}";
-    var baseBinUrl = "{% url 'bin' dataset.name '__BIN_PID__' %}";
-    var dataUrl = baseDataUrl.replace("__BIN_PID__", binId);
-    var binUrl = baseBinUrl.replace("__BIN_PID__", binId);
+    var viewSize = $("#view-size input[type=radio]:checked").val();
+    var scaleFactor = $("#scale-factor input[type=radio]:checked").val();
+
+    var binUrl = "{% url 'bin' dataset.name '__BIN_PID__' %}".replace("__BIN_PID__", binId);
+
+    var dataUrl = "{% url 'bin_data' dataset.name '__BIN_PID__' %}".replace("__BIN_PID__", binId);
+    dataUrl += "?view_size=" + viewSize;
+    dataUrl += "&scale_factor=" + scaleFactor;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
@@ -269,6 +293,10 @@ function changeBin(binId) {
             map.setView([data.lng, data.lat], 11);
         }
 
+        if (updateHistory) {
+            history.pushState(null, null, "?bin_id=" + binId);
+        }
+
         // Update mosaic; save this for last since it will require and additional ajax request
         loadMosaic(0);
     });
@@ -278,12 +306,14 @@ function loadMosaic(pageNumber) {
     $("#mosaic-loading").show();
     $("#mosaic").hide();
 
+    var viewSize = $("#view-size input[type=radio]:checked").val();
+    var scaleFactor = $("#scale-factor input[type=radio]:checked").val();
+
     // TODO: Need to pass in scale/width/height from UI controls
     // TODO: Needs error handling if mosaic cannot be generated
     var mosaicUrl = "{% url 'mosaic_page_encoded_image' "__BIN_PID__" %}" +
-        "?width=800" +
-        "&height=600" +
-        "&scale_percent=33" +
+        "?view_size=" + viewSize +
+        "&scale_factor=" + scaleFactor +
         "&page=" + pageNumber;
     mosaicUrl = mosaicUrl.replace("__BIN_PID__", currentBinId);
 
@@ -297,7 +327,7 @@ function loadMosaic(pageNumber) {
 $("#previous-bin, #next-bin").click(function(e){
     e.preventDefault();
 
-    changeBin($(this).data("bin"));
+    changeBin($(this).data("bin"), true);
 });
 
 $("#bin-paging").on("click", ".page-previous", function(e){
@@ -338,13 +368,21 @@ function changePage(pageNumber) {
     loadMosaic(pageNumber);
 }
 
+$("#view-size input[type=radio]").click(function(e){
+    changeBin(currentBinId, true);
+});
+
+$("#scale-factor input[type=radio]").click(function(e){
+    changeBin(currentBinId, true);
+});
+
 $(function() {
     // TODO: Fill in proper values and a real default starting location
     map = createMap(41.5507768, -70.6593102);
 
     createTimeSeries($("#ts-size .ts-plot-container"), "size");
 
-    changeBin("{{ bin.pid }}");
+    changeBin("{{ bin.pid }}", false);
 });
 </script>
 {% endblock %}

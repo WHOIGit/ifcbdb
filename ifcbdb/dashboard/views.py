@@ -8,7 +8,7 @@ from django.views.decorators.cache import cache_control
 from ifcb.data.imageio import format_image
 
 from .models import Dataset, Bin, Timeline
-from common.utilities import embed_image
+from common.utilities import *
 
 # TODO: The naming convensions for the dataset, bin and image ID's needs to be cleaned up and be made
 #   more consistent
@@ -26,6 +26,8 @@ def datasets(request):
 # TODO: Handle a dataset with no bins? Is that possible?
 def dataset_details(request, dataset_name, bin_id=None):
     dataset = get_object_or_404(Dataset, name=dataset_name)
+    if not bin_id:
+        bin_id = request.GET.get("bin_id")
 
     if bin_id is None:
         bin = Timeline(dataset.bins).most_recent_bin()
@@ -35,6 +37,10 @@ def dataset_details(request, dataset_name, bin_id=None):
     return render(request, 'dashboard/dataset-details.html', {
         "dataset": dataset,
         "bin": bin,
+        "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
+        "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
+        "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
+        "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
     })
 
 
@@ -55,6 +61,10 @@ def bin_details(request, dataset_name, bin_id):
         "dataset": dataset,
         "bin_data": _create_bin_wrapper(bin),
         "images": images,
+        "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
+        "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
+        "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
+        "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
     })
 
 
@@ -163,8 +173,12 @@ def _create_bin_wrapper(bin):
     }
 
 
-def _bin_details(dataset, bin):
-    pages = bin.mosaic_coordinates(shape=(600, 800), scale=0.33).page.max()
+def _bin_details(dataset, bin, view_size, scale_factor):
+    pages = bin.mosaic_coordinates(
+        shape=parse_view_size(view_size),
+        scale=parse_scale_factor(scale_factor)
+    ).page.max()
+
     previous_bin = Timeline(dataset.bins).previous_bin(bin)
     next_bin = Timeline(dataset.bins).next_bin(bin)
 
@@ -180,14 +194,13 @@ def _bin_details(dataset, bin):
 
 
 def _mosaic_page_image(request, bin_id):
-    width = int(request.GET.get("width", 800))
-    height = int(request.GET.get("height", 600))
-    scale_percent = int(request.GET.get("scale_percent", 33))
+    view_size = request.GET.get("view_size")
+    scale_factor = int(request.GET.get("scale_factor", 33))
     page = int(request.GET.get("page", 0))
 
     bin = get_object_or_404(Bin, pid=bin_id)
-    shape = (height, width)
-    scale = scale_percent / 100
+    shape = parse_view_size(view_size)
+    scale = parse_scale_factor(scale_factor)
     arr, _ = bin.mosaic(page=page, shape=shape, scale=scale)
 
     return arr
@@ -215,7 +228,9 @@ def generate_time_series(request, dataset_name, metric):
 def bin_data(request, dataset_name, bin_id):
     dataset = get_object_or_404(Dataset, name=dataset_name)
     bin = get_object_or_404(Bin, pid=bin_id)
-    details = _bin_details(dataset, bin)
+    view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
+    scale_factor = request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
+    details = _bin_details(dataset, bin, view_size, scale_factor)
 
     return JsonResponse(details)
 

@@ -31,6 +31,7 @@ from .crypto import AESCipher
 FILL_VALUE = -9999
 SRID = 4326
 
+
 class Timeline(object):
 
     TIMELINE_METRICS = {
@@ -169,6 +170,11 @@ class Bin(models.Model):
 
     # tags
     tags = models.ManyToManyField('Tag', through='TagEvent')
+
+    MOSAIC_SCALE_FACTORS = [25, 33, 66, 100]
+    MOSAIC_VIEW_SIZES = ["640x480", "800x600", "1280x720", "1280x1280"]
+    MOSAIC_DEFAULT_SCALE_FACTOR = 33
+    MOSAIC_DEFAULT_VIEW_SIZE = "800x600"
 
     def set_location(self, longitude, latitude):
         # convenience function for setting location w/o having to construct Point object
