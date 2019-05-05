@@ -149,6 +149,8 @@ class Bin(models.Model):
     instrument = models.ForeignKey('Instrument', related_name='bins', null=True, on_delete=models.SET_NULL)
     # many-to-many relationship with datasets
     datasets = models.ManyToManyField('Dataset', related_name='bins')
+    # accession
+    added = models.DateTimeField(auto_now_add=True, null=True)
     # qaqc flags
     qc_bad = models.BooleanField(default=False) # is this bin invalid
     qc_no_rois = models.BooleanField(default=False)
@@ -386,7 +388,7 @@ class TagEvent(models.Model):
     bin = models.ForeignKey(Bin, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
-    timestamp = models.DateTimeField(auto_now_add=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True, null=True)
     # FIXME add user (which can be null)]
 
     def __str__(self):
