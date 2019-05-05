@@ -31,7 +31,7 @@ from .crypto import AESCipher
 FILL_VALUE = -9999
 SRID = 4326
 
-class BinTimelineQuery(object):
+class Timeline(object):
 
     TIMELINE_METRICS = {
         "size": "Bytes",
@@ -74,7 +74,7 @@ class BinTimelineQuery(object):
             distance=Distance('location', location)
         ).order_by('distance').first()
 
-    def timeline(self, start_time=None, end_time=None, metric='size', resolution='day'):
+    def metrics(self, metric, start_time=None, end_time=None, resolution='day'):
         if resolution not in ['month', 'day', 'hour', 'bin']:
             raise ValueError('unsupported time resolution {}'.format(resolution))
 
@@ -99,9 +99,8 @@ class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=256)
 
-    @property
-    def timeline(self):
-        return BinTimelineQuery(self.bins)
+    def tag_cloud(self, instrument=None):
+        return Tag.cloud(dataset=self, instrument=instrument)
 
     def __str__(self):
         return self.name
@@ -165,6 +164,9 @@ class Bin(models.Model):
     look_time = models.FloatField(default=FILL_VALUE)
     ml_analyzed = models.FloatField(default=FILL_VALUE)
     concentration = models.FloatField(default=FILL_VALUE)
+
+    # tags
+    tags = models.ManyToManyField('Tag', through='TagEvent')
 
     def set_location(self, longitude, latitude):
         # convenience function for setting location w/o having to construct Point object
@@ -293,6 +295,23 @@ class Bin(models.Model):
     def zip(self):
         return bin2zip_stream(self._get_bin())
 
+    # tags
+
+    @property
+    def tag_names(self):
+        return [t.name for t in self.tags.all()]
+
+    def add_tag(self, tag_name):
+        tag, created = Tag.objects.get_or_create(name=tag_name)
+        # don't add this tag if was already added
+        event, created = TagEvent.objects.get_or_create(bin=self, tag=tag)
+        return event
+
+    def delete_tag(self, tag_name):
+        tag = Tag.objects.get(name=tag_name)
+        event = TagEvent.objects.get(bin=self, tag=tag)
+        event.delete()
+
     def __str__(self):
         return self.pid
 
@@ -324,10 +343,9 @@ class Instrument(models.Model):
 
     password = property(get_password, set_password)
 
-    @property
-    def timeline(self):
-        return BinTimelineQuery(self.bins)
-    
+    def tag_cloud(self, dataset=None):
+        return Tag.cloud(instrument=self, dataset=dataset)
+
     def __str__(self):
         return 'IFCB{}'.format(self.number)
 
@@ -345,3 +363,31 @@ def _lazy_instrument_create(sender, **kw):
         i = Instrument(number=instrument_number, version=version)
         i.save()
     b.instrument = i
+
+# tags
+
+class Tag(models.Model):
+    name = models.CharField(max_length=128)
+
+    # Timeline()
+    @staticmethod
+    def cloud(dataset=None, instrument=None):
+        qs = TagEvent.objects
+        if dataset is not None:
+            qs = qs.filter(bin__datasets=dataset)
+        if instrument is not None:
+            qs = qs.filter(bin__instrument=instrument)
+        return qs.values('tag').annotate(count=Count('tag')).values('tag__name','count')
+
+    def __str__(self):
+        return self.name
+
+class TagEvent(models.Model):
+    bin = models.ForeignKey(Bin, on_delete=models.CASCADE)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+
+    timestamp = models.DateTimeField(auto_now_add=True, blank=True)
+    # FIXME add user (which can be null)]
+
+    def __str__(self):
+        return '{} tagged {}'.format(self.bin, self.tag)

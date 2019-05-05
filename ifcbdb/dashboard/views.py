@@ -7,7 +7,7 @@ from django.views.decorators.cache import cache_control
 
 from ifcb.data.imageio import format_image
 
-from .models import Dataset, Bin
+from .models import Dataset, Bin, Timeline
 from common.utilities import embed_image
 
 # TODO: The naming convensions for the dataset, bin and image ID's needs to be cleaned up and be made
@@ -28,7 +28,7 @@ def dataset_details(request, dataset_name, bin_id=None):
     dataset = get_object_or_404(Dataset, name=dataset_name)
 
     if bin_id is None:
-        bin = dataset.timeline.most_recent_bin()
+        bin = Timeline(dataset.bins).most_recent_bin()
     else:
         bin = get_object_or_404(Bin, pid=bin_id)
 
@@ -159,13 +159,14 @@ def _create_bin_wrapper(bin):
         "lng": lng,
         "pages": range(num_pages + 1),
         "num_pages": num_pages,
+        "tags": bin.tag_names,
     }
 
 
 def _bin_details(dataset, bin):
     pages = bin.mosaic_coordinates(shape=(600, 800), scale=0.33).page.max()
-    previous_bin = dataset.timeline.previous_bin(bin)
-    next_bin = dataset.timeline.next_bin(bin)
+    previous_bin = Timeline(dataset.bins).previous_bin(bin)
+    next_bin = Timeline(dataset.bins).next_bin(bin)
 
     return {
         "previous_bin_id": previous_bin.pid if previous_bin else "",
@@ -174,6 +175,7 @@ def _bin_details(dataset, bin):
         "lng": bin.longitude,
         "pages": list(range(pages + 1)),
         "num_pages": int(pages),
+        "tags": bin.tag_names,
     }
 
 
@@ -198,13 +200,13 @@ def generate_time_series(request, dataset_name, metric):
 
     # TODO: Allow resolution to be set from API call; default to hours for testing
     dataset = get_object_or_404(Dataset, name=dataset_name)
-    time_series = dataset.timeline.timeline(None, None, metric=metric, resolution="bin")
+    time_series = Timeline(dataset.bins).metrics(metric, None, None, resolution="bin")
 
     # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
     return JsonResponse({
         "x": [item["dt"] for item in time_series],
         "y": [item["metric"] for item in time_series],
-        "y-axis": dataset.timeline.metric_label(metric),
+        "y-axis": Timeline(dataset.bins).metric_label(metric),
     })
 
 
@@ -229,7 +231,7 @@ def closest_bin(request, dataset_name):
     except:
         dte = None
 
-    bin = dataset.timeline.most_recent_bin(dte)
+    bin = Timeline(dataset.bins).most_recent_bin(dte)
 
     return JsonResponse({
         "bin_id": bin.pid,

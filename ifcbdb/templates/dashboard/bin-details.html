@@ -185,16 +185,11 @@
                 </div>
             </div>
             <div class="card-body overflow-auto">
-                <ul class="list-group list-group-flush">
+                    {% for tag in bin_data.tags %}
                     <li class="list-group-item">
-                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>Tag 1</a>
+                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>{{tag}}</a>
                     </li>
-                    <li class="list-group-item">
-                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>Tag 2</a>
-                    </li>
-                    <li class="list-group-item">
-                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>Tag 3</a>
-                    </li>
+                    {% endfor %}
                 </ul>
             </div>
             <div class="card-footer white">
