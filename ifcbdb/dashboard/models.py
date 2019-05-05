@@ -371,6 +371,10 @@ def _lazy_instrument_create(sender, **kw):
 class Tag(models.Model):
     name = models.CharField(max_length=128)
 
+    @staticmethod
+    def autocomplete(search_string):
+        return Tag.objects.filter(name__istartswith=search_string)
+
     # Timeline()
     @staticmethod
     def cloud(dataset=None, instrument=None):
