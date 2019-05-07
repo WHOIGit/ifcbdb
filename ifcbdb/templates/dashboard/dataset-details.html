@@ -95,30 +95,25 @@
             </div>
         <div class="card-body">
         <div class="row">
-    <div class="col-md-6 col-lg-8">
+    <div class="col-lg-6 col-xl-8">
         <div class="card h-100">
-            <div class="text-center">
-                <div id="view-size">
-                    View Size:
-                    {% for size in mosaic_view_sizes %}
-                    <label>
-                        <input type="radio" name="view-size" value="{{ size }}" {% if size == mosaic_default_view_size %}checked{% endif %} />
-                        {{ size }}
-                    </label>
-                    {% endfor %}
-                </div>
-                <div id="scale-factor">
-                    Scale Factor:
-                    {% for factor in mosaic_scale_factors %}
-                        <label>
-                            <input type="radio" name="scale-factor" value="{{ factor}}" {% if factor == mosaic_default_scale_factor %}checked{% endif %} />
-                            {{ factor }}%
-                        </label>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="card-body text-center">
+    <div class="card-header white">
+                            <form class="form-inline justify-content-end">
+                                    <label class="my-1 mr-2" for="view-size">View Size:</label>
+                                    <select id="view-size" class="custom-select custom-select-sm form-control" name="view-size">                                  
+                                    {% for size in mosaic_view_sizes %}
+                                    <option value="{{ size }}" autocomplete="off" {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
+                                    {% endfor %}
+                                </select>
+                                    <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>                                    
+                                    <select id="scale-factor" class="custom-select custom-select-sm form-control" name="scale-factor">                                  
+                                    {% for factor in mosaic_scale_factors %}
+                                    <option value="{{ factor }}" autocomplete="off" {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%</option>
+                                    {% endfor %}                                 
+                                    </select>
+                                </form>   
+</div>
+            <div class="card-body text-center">                
                 <img class="img-fluid" id="mosaic" src="" data-toggle="modal" data-target="#exampleModalCenter" style="display:none" />
                 <div id="mosaic-loading" class="loading h-100">
                     <div class="loader"></div>
@@ -141,7 +136,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-4 mt-2 mt-md-0">
+    <div class="col-lg-6 col-xl-4 mt-2 mt-md-0">
         <div class="card h-50">
             <div class="card-body h-75">
                 <div id="mapid" class="h-100"></div>
@@ -245,8 +240,8 @@ function changeBin(binId, updateHistory) {
     if (binId === "")
         return;
 
-    var viewSize = $("#view-size input[type=radio]:checked").val();
-    var scaleFactor = $("#scale-factor input[type=radio]:checked").val();
+    var viewSize = $("#view-size input[type=select]:selected").val();
+    var scaleFactor = $("#scale-factor input[type=select]:selectedIndex").val();
 
     var binUrl = "{% url 'bin' dataset.name '__BIN_PID__' %}".replace("__BIN_PID__", binId);
 
@@ -306,8 +301,8 @@ function loadMosaic(pageNumber) {
     $("#mosaic-loading").show();
     $("#mosaic").hide();
 
-    var viewSize = $("#view-size input[type=radio]:checked").val();
-    var scaleFactor = $("#scale-factor input[type=radio]:checked").val();
+    var viewSize = $("#view-size input[type=select]:selected").val();
+    var scaleFactor = $("#scale-factor input[type=select]:selected").val();
 
     // TODO: Need to pass in scale/width/height from UI controls
     // TODO: Needs error handling if mosaic cannot be generated
@@ -368,11 +363,11 @@ function changePage(pageNumber) {
     loadMosaic(pageNumber);
 }
 
-$("#view-size input[type=radio]").click(function(e){
+$("#view-size input[type=select]").select(function(e){
     changeBin(currentBinId, true);
 });
 
-$("#scale-factor input[type=radio]").click(function(e){
+$("#scale-factor input[type=select]").select(function(e){
     changeBin(currentBinId, true);
 });
 

@@ -48,31 +48,26 @@
     <div class="col">
         <div class="card h-100">
             <div class="card-header mdb-color lighten-5">
+            <div class="row col justify-content-between">
                 <span class="h4-responsive">Images</span>
+                        <form class="form-inline">
+                                <label class="my-1 mr-2" for="view-size">View Size:</label>
+                                <select id="view-size" class="custom-select custom-select-sm form-control flex-fill" name="view-size">                                  
+                                {% for size in mosaic_view_sizes %}
+                                <option value="{{ size }}" autocomplete="off" {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
+                                {% endfor %}
+                            </select>
+                                <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>                                    
+                                <select id="scale-factor" class="custom-select custom-select-sm form-control flex-fill" name="scale-factor">                                  
+                                {% for factor in mosaic_scale_factors %}
+                                <option value="{{ factor }}" autocomplete="off" {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%</option>
+                                {% endfor %}                                 
+                                </select>
+                            </form>                 
+                </div>
             </div>
             <div class="card-body text-center">
-                <div class="tab-content" id="imageTabContent">
-                    <div class="text-center">
-                        <div id="view-size">
-                            View Size:
-                            {% for size in mosaic_view_sizes %}
-                            <label>
-                                <input type="radio" name="view-size" value="{{ size }}" {% if size == mosaic_default_view_size %}checked{% endif %} />
-                                {{ size }}
-                            </label>
-                            {% endfor %}
-                        </div>
-                        <div id="scale-factor">
-                            Scale Factor:
-                            {% for factor in mosaic_scale_factors %}
-                                <label>
-                                    <input type="radio" name="scale-factor" value="{{ factor}}" {% if factor == mosaic_default_scale_factor %}checked{% endif %} />
-                                    {{ factor }}%
-                                </label>
-                            {% endfor %}
-                        </div>
-                    </div>
-
+                <div class="tab-content" id="imageTabContent">  
                     <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
                         <img id="mosaic" src="data:image/png;base64,{{ image }}" class="img-fluid" style="display:none" />
                         <div id="mosaic-loading" class="loading">
@@ -249,8 +244,8 @@
         $("#mosaic").hide();
         $("#mosaic-loading").show();
 
-        var viewSize = $("#view-size input[type=radio]:checked").val();
-    var scaleFactor = $("#scale-factor input[type=radio]:checked").val();
+        var viewSize = $("#view-size input[type=select]:selected").val();
+    var scaleFactor = $("#scale-factor input[type=select]:selected").val();
 
         // TODO: Need to pass in scale/width/height from UI controls
         var url = "{% url 'mosaic_page_encoded_image' bin_data.bin.pid %}" +
@@ -305,12 +300,12 @@
     }
 
     // TODO: This does nto currently update paging for the image
-    $("#view-size input[type=radio]").click(function(e){
+    $("#view-size input[type=select]").select(function(e){
         loadMosaic(currentBinPage);
     });
 
     // TODO: This does nto currently update paging for the image
-    $("#scale-factor input[type=radio]").click(function(e){
+    $("#scale-factor input[type=select]").select(function(e){
         loadMosaic(currentBinPage);
     });
 
