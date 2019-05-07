@@ -301,8 +301,8 @@ function loadMosaic(pageNumber) {
     $("#mosaic-loading").show();
     $("#mosaic").hide();
 
-    var viewSize = $("#view-size input[type=select]:selected").val();
-    var scaleFactor = $("#scale-factor input[type=select]:selected").val();
+    var viewSize = $("#view-size option:selected").val();
+    var scaleFactor = $("#scale-factor option:selected").val();
 
     // TODO: Need to pass in scale/width/height from UI controls
     // TODO: Needs error handling if mosaic cannot be generated
@@ -363,11 +363,11 @@ function changePage(pageNumber) {
     loadMosaic(pageNumber);
 }
 
-$("#view-size input[type=select]").select(function(e){
+$("#view-size").change(function(e){
     changeBin(currentBinId, true);
 });
 
-$("#scale-factor input[type=select]").select(function(e){
+$("#scale-factor").change(function(e){
     changeBin(currentBinId, true);
 });
 

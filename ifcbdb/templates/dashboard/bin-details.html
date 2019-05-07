@@ -244,8 +244,8 @@
         $("#mosaic").hide();
         $("#mosaic-loading").show();
 
-        var viewSize = $("#view-size input[type=select]:selected").val();
-    var scaleFactor = $("#scale-factor input[type=select]:selected").val();
+        var viewSize = $("#view-size option:selected").val();
+        var scaleFactor = $("#scale-factor option:selected").val();
 
         // TODO: Need to pass in scale/width/height from UI controls
         var url = "{% url 'mosaic_page_encoded_image' bin_data.bin.pid %}" +
@@ -299,13 +299,13 @@
         loadMosaic(pageNumber);
     }
 
-    // TODO: This does nto currently update paging for the image
-    $("#view-size input[type=select]").select(function(e){
+    // TODO: This does not currently update paging for the image
+    $("#view-size").change(function(e){
         loadMosaic(currentBinPage);
     });
 
-    // TODO: This does nto currently update paging for the image
-    $("#scale-factor input[type=select]").select(function(e){
+    // TODO: This does not currently update paging for the image
+    $("#scale-factor").change(function(e){
         loadMosaic(currentBinPage);
     });
 
