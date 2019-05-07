@@ -16,51 +16,57 @@
 <div class="row py-2 px-3">
     <div class="col-md-6">
         <div class="card h-100">
-            <div class="card-header mdb-color lighten-5">
-                <div class="row">
+            <div class="card-header py-1 mdb-color lighten-5">
+                <div class="row d-flex justify-content-between">
                     <div class="col">
                         <span class="h4-responsive">Image</span>
                     </div>
+                <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-mdb-color" id="image-tab-label" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-mdb-color" id="blob-tab-label" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-mdb-color" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
+                    </li>
+                </ul>                    
                 </div>
             </div>
             <div class="card-body text-center">
-                <div class="tab-content justify-content-center align-items-center" id="ImageTabContent">
-                    <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
+                <div class="row h-100 justify-content-center align-items-center">
+                    <div class="col">
+                <div class="tab-content" id="ImageTabContent">
+                    <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab-label">
                         <img id="bin-mosaic" src="data:image/png;base64,{{image}}" />
                     </div>
-                    <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
+                    <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab-label">
                         <img class="img-fluid" src="https://via.placeholder.com/400?text=Image2">
                     </div>
-                    <div class="tab-pane" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab">
+                    <div class="tab-pane" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab-label">
                         <img class="img-fluid" src="https://via.placeholder.com/400?text=Image3">
                     </div>
                 </div>
             </div>
-            <div class="card-footer text-center white">
-                <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
-                    <li class="nav-item">
-                        <a class="btn btn-mdb-color" id="image-tab" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-mdb-color" id="blob-tab" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-mdb-color" id="outline-tab" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
-                    </li>
-                </ul>
+            </div>
             </div>
         </div>
     </div>
     <div class="col-md-6 mt-2 mt-md-0">
         <div class="card h-100">
-            <div class="card-header mdb-color lighten-5">
+            <div class="card-header py-1 mdb-color lighten-5">
+            <div class="row d-flex justify-content-between">
+            <div class="col">
                 <span class="h4-responsive">Location</span>
+                </div>
+                <div class="col">
+                <span>41 north, 82 east (41.31, -70.39), depth 5m</span>
+                </div>
+            </div>
             </div>
             <div class="card-body">
                 <div id="mapid" class="h-100" style="min-height:300px;"></div>
-            </div>
-            <div class="card-footer white">
-                <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
             </div>
         </div>
     </div>
@@ -68,13 +74,13 @@
 <div class="row py-2 px-3">
     <div class="col-md-6 col-lg-4" style="max-height:450px">
         <div class="card h-100">
-            <div class="card-header mdb-color lighten-5">
+            <div class="card-header py-1 mdb-color lighten-5">
                 <span class="h4-responsive">Meta Data</span>
             </div>
             <div class="card-body overflow-auto">
                 <div class="table-responsive text-nowrap">
 
-                    <table class="table table-striped">
+                    <table class="table table-striped table-sm table-hover">
                         <thead>
                             <tr>
                                 <th scope="col">Field</th>
@@ -127,7 +133,7 @@
     </div>
     <div class="col-md-6 col-lg-6 mt-2 mt-md-0" style="max-height:450px">
         <div class="card h-100">
-            <div class="card-header mdb-color lighten-5">
+            <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row">
                     <div class="col">
                         <span class="h4-responsive">Annotations</span>
@@ -163,7 +169,7 @@
                 </ul>
             </div>
             {% if user.is_authenticated %}
-            <div class="card-footer text-right white">
+            <div class="card-footer py-1 text-right white">
                 <a data-toggle="modal" data-target="#addAnnotationModal" class="btn btn-unique btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
             {% endif %}
@@ -171,7 +177,7 @@
     </div>
     <div class="col-md-6 col-lg-2 mt-2 mt-md-0" style="max-height:450px">
         <div class="card h-100">
-            <div class="card-header mdb-color lighten-5">
+            <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row">
                     <div class="col">
                         <span class="h4-responsive">Tags</span>
@@ -193,7 +199,7 @@
 
             </div>
             {% if user.is_authenticated %}
-            <div class="card-footer text-right white">
+            <div class="card-footer py-1 text-right white">
                 <a data-toggle="modal" data-target="#addTagModal" class="btn btn-unique btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
             {% endif %}

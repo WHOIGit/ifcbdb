@@ -2,52 +2,31 @@
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin_data.bin.pid %}">{{ bin_data.bin.pid }}</a></li>
 {% endblock %} {% block content %}
-<div class="row d-flex justify-content-start">
+<div class="row d-flex justify-content-between">
     <div class="pl-3">
         <span class="h2-responsive">{{ bin_data.bin.pid }}</span>
     </div>
+        <ul class="nav justify-content-end">
+            <li class="nav-item">
+                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
+                   role="tab" aria-controls="ts-size" aria-selected="true">Raw Data</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link btn btn-mdb-color btn-sm" href="#">Meta Data</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link btn btn-mdb-color btn-sm" href="#">Images</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link btn btn-mdb-color btn-sm"href="#">Products</a>
+            </li>
+        </ul>    
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-        <div class="col-md-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row">
-                    <div class="col-md-4">
-                            <h6 class="h6-responsive">2020-12-30 12:34:56 UTC <small>(5 Days Ago)</small></h6> 
-                            <h6 class="h6-responsive">By IFCB927</h6> 
-                        <dl class="row">
-                            <dt class="col-sm-4">Triggers:</dt>
-                            <dd class="col-sm-8">3201</dd> 
-                            <dt class="col-sm-4">Images:</dt>
-                            <dd class="col-sm-8">2873</dd>
-                            <dt class="col-sm-4">Triggers / S:</dt>
-                            <dd class="col-sm-8">2.67</dd>                                                                                                 
-                            <dt class="col-sm-4">Volume Analyzed:</dt>
-                            <dd class="col-sm-8">1231 ml</dd>                                   
-                        </div>
-                            <div class="col-md-4 mt-1">
-                            <figure class="figure">
-                            <div id="mapid" style="height:200px"></div>
-                            <figcaption class="figure-caption"><strong>Latitude:</strong> {{ bin_data.lat }}, <strong>Longitude:</strong> {{ bin_data.lng }}, <strong>Depth</strong> {{ bin_data.bin.depth }}m</figcaption>
-                            </figure>
-                            </div>
-                           <div class="col-md-2"> 
-                            <p class="lead"><strong>Download:</strong></p>
-                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Raw Data</a>
-                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Images</a>
-                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Meta Data</a>
-                            <a href="#" class="btn btn-mdb-color btn-sm btn-block">Products</a> 
-                            </div>
-                    </div>
-                </div>
-                </div>
-                    </div>
-</div>
-<div class="row py-2 px-3">
     <div class="col">
         <div class="card h-100">
-            <div class="card-header mdb-color lighten-5">
+            <div class="card-header py-1 mdb-color lighten-5">
             <div class="row col justify-content-between">
                 <span class="h4-responsive">Images</span>
                         <form class="form-inline">
@@ -89,7 +68,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card-footer text-center white">
+            <div class="card-footer py-1 text-center white">
                 <nav aria-label="Bin Paging" class="text-center">
                     <ul id="image-paging" class="pagination pg-dark justify-content-center">
                         <li class="page-item page-previous">
@@ -110,10 +89,39 @@
     </div>
 
 </div>
+<div class="row py-2 px-3">
+        <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                    <div class="col-md-8">
+                            <h6 class="h6-responsive">2020-12-30 12:34:56 UTC <small>(5 Days Ago)</small></h6> 
+                            <h6 class="h6-responsive">By IFCB927</h6> 
+                        <dl class="row">
+                            <dt class="col-sm-4">Triggers:</dt>
+                            <dd class="col-sm-8">3201</dd> 
+                            <dt class="col-sm-4">Images:</dt>
+                            <dd class="col-sm-8">2873</dd>
+                            <dt class="col-sm-4">Triggers / S:</dt>
+                            <dd class="col-sm-8">2.67</dd>                                                                                                 
+                            <dt class="col-sm-4">Volume Analyzed:</dt>
+                            <dd class="col-sm-8">1231 ml</dd>                                   
+                        </div>
+                            <div class="col-md-4 mt-1">
+                            <figure class="figure">
+                            <div id="mapid" style="height:200px"></div>
+                            <figcaption class="figure-caption"><strong>Latitude:</strong> {{ bin_data.lat }}, <strong>Longitude:</strong> {{ bin_data.lng }}, <strong>Depth</strong> {{ bin_data.bin.depth }}m</figcaption>
+                            </figure>
+                            </div>
+                    </div>
+                </div>
+                </div>
+                    </div>
+</div>
 <div class="row py-2 px-3 mh-25">
         <div class="col-xs-12 col-lg-6">
                 <div class="card h-100">
-                    <div class="card-header mdb-color lighten-5">
+                    <div class="card-header py-1 mdb-color lighten-5">
                         <div class="row justify-content-between">
                             <div class="col-sm-4">
                                 <span class="h4-responsive">Plot</span>
@@ -134,13 +142,13 @@
             </div>    
     <div class="col-md-8 col-lg-4 mt-2 mt-lg-0">
         <div class="card h-100">
-            <div class="card-header mdb-color lighten-5">
+            <div class="card-header py-1 mdb-color lighten-5">
                 <span class="h4-responsive">Meta Data</span>
             </div>
             <div class="card-body overflow-auto">
                 <div class="table-responsive text-nowrap">
 
-                    <table class="table table-striped">
+                    <table class="table table-striped table-sm table-hover">
                         <thead>
                             <tr>
                                 <th scope="col">Field</th>
@@ -193,7 +201,7 @@
     </div>
     <div class="col-md-4 col-lg-2 mt-2 mt-lg-0">
         <div class="card h-100">
-            <div class="card-header mdb-color lighten-5">
+            <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row">
                     <div class="col">
                         <span class="h4-responsive">Tags</span>
@@ -208,7 +216,7 @@
                     {% endfor %}
                 </ul>
             </div>
-            <div class="card-footer white">
+            <div class="card-footer py-1 white">
                 <a href="#" class="btn btn-mdb-color btn-block btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
         </div>

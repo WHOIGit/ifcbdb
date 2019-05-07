@@ -5,7 +5,22 @@ body,
 }
 
 body {
-    padding-top: 75px
+    padding-top: 45px
+}
+
+.navbar {
+    min-height: 15px;
+}
+
+.navbar-brand {
+    padding: 0 5px;
+    height: 15px;
+    line-height: 15px;
+}
+
+.navbar.scrolling-navbar,
+.navbar.scrolling-navbar.top-nav-collapse {
+    padding: 0;
 }
 
 .page-footer {
@@ -75,6 +90,6 @@ body {
 }
 
 .ts-plot-container {
-    height: 25vmax;
-    min-height: 300px;
+    height: 12vmax;
+    min-height: 200px;
 }

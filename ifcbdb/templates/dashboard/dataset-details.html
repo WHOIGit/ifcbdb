@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {% block breadcrumbs %}
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
 {% endblock %} {% block content %}
-<div class="row d-flex justify-content-start">
+<div class="row d-flex justify-content-between">
     <div class="pl-3">
         <span class="h2-responsive">{{ dataset.title }}</span>
     </div>
@@ -10,10 +10,6 @@
         <a href="#" class="btn btn-sm btn-primary ml-3">Configure</a>
     </div>
     {% endif %}
-</div>
-<hr class="my-2">
-<div class="row px-1">
-    <div class="col-sm-12">
         <ul class="nav justify-content-end" id="ts-tabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
@@ -44,7 +40,10 @@
                    role="tab" aria-controls="ts-images" aria-selected="false">Image Count</a>
             </li>
         </ul>
-
+</div>
+<hr class="my-2">
+<div class="row px-1">
+    <div class="col-sm-12">
         <div class="tab-content" id="ts-data">
             <div class="tab-pane show active" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
                 <div class="ts-plot-container"></div>
@@ -73,31 +72,31 @@
 <div class="row py-2">
     <div class="col-sm-12">
         <div class="card">
-            <div class="card-header mdb-color lighten-5">
-                <div class="row">
-                    <div class="col-sm-2 order-2 order-sm-1">
+            <div class="card-header py-1 white">
+                <div class="d-flex flex-row justify-content-between">
+                    <div class="flex-column">
                         <form class="form-inline">
-                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-left fa-2x"></i></a>
+                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm"><i class="fas fa-arrow-circle-left fa-1x"></i></a>
                         </form>
                     </div>
-                    <div class="col-sm-8 text-center order-1 order-sm-2">
-                        <span class="h4-responsive">
+                    <div class="flex-column text-center">
+                        <span class="p">
                         <strong>Selected Bin:</strong>
-                        <small class="text-muted"><a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></small>
+                        <a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a>
                     </span>
                     </div>
-                    <div class="col-sm-2 order-3 order-sm-3 pt-1 pt-sm-0">
+                    <div class="flex-column pt-1 pt-sm-0">
                         <form class="form-inline">
-                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-block"><i class="fas fa-arrow-circle-right fa-2x"></i></a>
+                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm"><i class="fas fa-arrow-circle-right fa-1x"></i></a>
                         </form>
                     </div>
                 </div>
             </div>
         <div class="card-body">
         <div class="row">
-    <div class="col-lg-6 col-xl-8">
+    <div class="col-lg-6 col-xl-9">
         <div class="card h-100">
-    <div class="card-header white">
+    <div class="card-header py-1 white">
                             <form class="form-inline justify-content-end">
                                     <label class="my-1 mr-2" for="view-size">View Size:</label>
                                     <select id="view-size" class="custom-select custom-select-sm form-control" name="view-size">                                  
@@ -121,7 +120,7 @@
                 </div>
                 <br clear="all" />
             </div>
-            <div class="card-footer text-center white">
+            <div class="card-footer py-1 text-center white">
                 <nav aria-label="Bin Paging" class="text-center">
                     <ul id="bin-paging" class="pagination pg-dark justify-content-center">
                         <li class="page-item page-previous disabled">
@@ -136,12 +135,39 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-6 col-xl-4 mt-2 mt-md-0">
-        <div class="card h-50">
-            <div class="card-body h-75">
-                <div id="mapid" class="h-100"></div>
+    <div class="col-lg-6 col-xl-3 mt-2 mt-md-0">
+            <div class="card h-50">
+                    <div class="card-header white py-1">
+<p>Download:</p>
             </div>
-            <div class="card-footer white">
+            <div class="card-body">
+            <div class="row">
+            <div class="col">
+            <ul class="list-unstyled">
+                <li><a href="#">ADC</a></li>
+                <li><a href="#">HDR</a></li> 
+                <li><a href="#">ROI</a></li> 
+                <li><a href="#">CSV</a></li> 
+                <li><a href="#">ZIP</a></li> 
+                <li><a href="#">XML</a></li> 
+                </ul>
+            </div>
+            <div class="col">
+            <ul class="list-unstyled">            
+                <li><a href="#">RDF</a></li> 
+                <li><a href="#">blobs</a></li> 
+                <li><a href="#">ZIP</a></li> 
+                <li><a href="#">features</a></li> 
+                <li><a href="#">CSV</a></li>
+                <li><a href="#">autoclass CSV</a></li>
+                </ul>
+            </div>            
+            </div>
+            </div>
+        </div>
+        <div class="card h-50">
+            <div class="card-body">
+                <div id="mapid" class="h-75"></div>
                 <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
             </div>
         </div>
@@ -200,6 +226,13 @@ function createTimeSeries(container, metric) {
 
         var layout = {
             bargap: .05,
+  margin: {
+    l: 50,
+    r: 50,
+    b: 50,
+    t: 00,
+    pad: 2
+  },
             yaxis: {
                 title: {
                     text: response["y-axis"]
@@ -209,7 +242,8 @@ function createTimeSeries(container, metric) {
 
         var config = {
             responsive: true,
-            displaylogo: false
+            displaylogo: false,
+            scrollZoom: true
         };
 
         Plotly.newPlot(container[0], data, layout, config);
