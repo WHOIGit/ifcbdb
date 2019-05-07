@@ -44,6 +44,7 @@ def dataset_details(request, dataset_name, bin_id=None):
     })
 
 
+# TODO: bin.instrument is not filled in?
 def bin_details(request, dataset_name, bin_id):
     dataset = get_object_or_404(Dataset, name=dataset_name)
     bin = get_object_or_404(Bin, pid=bin_id)
@@ -59,12 +60,13 @@ def bin_details(request, dataset_name, bin_id):
     # TODO: Mockup for lat/lng under the map had something like "41 north, 82 east (41.31, -70.39)"
     return render(request, 'dashboard/bin-details.html', {
         "dataset": dataset,
-        "bin_data": _create_bin_wrapper(bin),
         "images": images,
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
         "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
+        "bin": bin,
+        "details": _bin_details(dataset, bin),
     })
 
 
@@ -85,10 +87,11 @@ def image_details(request, dataset_name, bin_id, image_id):
     })
 
 
+# TODO: Needs to change from width/height parameters to single widthXheight
 def mosaic_coordinates(request, bin_id):
     width = int(request.GET.get("width", 800))
     height = int(request.GET.get("height", 600))
-    scale_percent = int(request.GET.get("scale_percent", 33))
+    scale_percent = int(request.GET.get("scale_percent", Bin.MOSAIC_DEFAULT_SCALE_FACTOR))
 
     b = get_object_or_404(Bin, pid=bin_id)
     shape = (height, width)
@@ -156,24 +159,13 @@ def zip(request, dataset_name, bin_id):
     filename = '{}.zip'.format(bin_id)
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
-# TODO: This could use a better name and potentially a pre-defined object
-# TODO: Remove; replace existing code with _bin_details
-def _create_bin_wrapper(bin):
-    lat, lng = bin.latitude, bin.longitude
 
-    num_pages = bin.mosaic_coordinates(shape=(600, 800), scale=0.33).page.max()
+def _bin_details(dataset, bin, view_size=None, scale_factor=None):
+    if not view_size:
+        view_size = Bin.MOSAIC_DEFAULT_VIEW_SIZE
+    if not scale_factor:
+        scale_factor = Bin.MOSAIC_DEFAULT_SCALE_FACTOR
 
-    return {
-        "bin": bin,
-        "lat": lat,
-        "lng": lng,
-        "pages": range(num_pages + 1),
-        "num_pages": num_pages,
-        "tags": bin.tag_names,
-    }
-
-
-def _bin_details(dataset, bin, view_size, scale_factor):
     pages = bin.mosaic_coordinates(
         shape=parse_view_size(view_size),
         scale=parse_scale_factor(scale_factor)
@@ -182,6 +174,7 @@ def _bin_details(dataset, bin, view_size, scale_factor):
     previous_bin = Timeline(dataset.bins).previous_bin(bin)
     next_bin = Timeline(dataset.bins).next_bin(bin)
 
+    # TODO: Volume Analyzed is using floatformat:3; is that ok?
     return {
         "previous_bin_id": previous_bin.pid if previous_bin else "",
         "next_bin_id": next_bin.pid if next_bin else "",
@@ -194,8 +187,8 @@ def _bin_details(dataset, bin, view_size, scale_factor):
 
 
 def _mosaic_page_image(request, bin_id):
-    view_size = request.GET.get("view_size")
-    scale_factor = int(request.GET.get("scale_factor", 33))
+    view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
+    scale_factor = int(request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR))
     page = int(request.GET.get("page", 0))
 
     bin = get_object_or_404(Bin, pid=bin_id)

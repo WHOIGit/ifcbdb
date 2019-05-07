@@ -1,48 +1,49 @@
 {% extends 'base.html' %} {% block breadcrumbs %}
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
-<li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin_data.bin.pid %}">{{ bin_data.bin.pid }}</a></li>
+<li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></li>
 {% endblock %} {% block content %}
 <div class="row d-flex justify-content-start">
     <div class="pl-3">
-        <span class="h2-responsive">{{ bin_data.bin.pid }}</span>
+        <span class="h2-responsive">{{ bin.pid }}</span>
     </div>
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-        <div class="col-md-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
                     <div class="col-md-4">
-                            <h6 class="h6-responsive">2020-12-30 12:34:56 UTC <small>(5 Days Ago)</small></h6> 
-                            <h6 class="h6-responsive">By IFCB927</h6> 
+                        <h6 class="h6-responsive">{{ bin.timestamp|date:'Y-m-d H:i:s e' }} <small>(XX days ago)</small></h6>
+                        <h6 class="h6-responsive">By {{ bin.instrument.name|default:"Unknown" }}</h6>
                         <dl class="row">
-                            <dt class="col-sm-4">Triggers:</dt>
-                            <dd class="col-sm-8">3201</dd> 
-                            <dt class="col-sm-4">Images:</dt>
-                            <dd class="col-sm-8">2873</dd>
-                            <dt class="col-sm-4">Triggers / S:</dt>
-                            <dd class="col-sm-8">2.67</dd>                                                                                                 
-                            <dt class="col-sm-4">Volume Analyzed:</dt>
-                            <dd class="col-sm-8">1231 ml</dd>                                   
-                        </div>
-                            <div class="col-md-4 mt-1">
-                            <figure class="figure">
+                            <dt class="col-sm-6">Triggers:</dt>
+                            <dd class="col-sm-6">{{ bin.n_triggers }}</dd>
+                            <dt class="col-sm-6">Images:</dt>
+                            <dd class="col-sm-6">{{ bin.n_images }}</dd>
+                            <dt class="col-sm-6">Triggers h/ S:</dt>
+                            <dd class="col-sm-6">{{ bin.trigger_frequency|floatformat:3 }}</dd>
+                            <dt class="col-sm-6">Volume Analyzed:</dt>
+                            <dd class="col-sm-6">{{ bin.ml_analyzed|floatformat:3 }} ml</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-4 mt-1">
+                        <figure class="figure">
                             <div id="mapid" style="height:200px"></div>
-                            <figcaption class="figure-caption"><strong>Latitude:</strong> {{ bin_data.lat }}, <strong>Longitude:</strong> {{ bin_data.lng }}, <strong>Depth</strong> {{ bin_data.bin.depth }}m</figcaption>
-                            </figure>
-                            </div>
-                           <div class="col-md-2"> 
-                            <p class="lead"><strong>Download:</strong></p>
-                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Raw Data</a>
-                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Images</a>
-                            <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Meta Data</a>
-                            <a href="#" class="btn btn-mdb-color btn-sm btn-block">Products</a> 
-                            </div>
+                            <figcaption class="figure-caption"><strong>Latitude:</strong> {{ bin.latitude }}, <strong>Longitude:</strong> {{ bin.longitude }}, <strong>Depth</strong> {{ bin.depth }}m</figcaption>
+                        </figure>
+                    </div>
+                    <div class="col-md-2">
+                        <p class="lead"><strong>Download:</strong></p>
+                        <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Raw Data</a>
+                        <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Images</a>
+                        <a href="#" class="btn btn-mdb-color btn-sm btn-block mb-1">Meta Data</a>
+                        <a href="#" class="btn btn-mdb-color btn-sm btn-block">Products</a>
                     </div>
                 </div>
-                </div>
-                    </div>
+            </div>
+        </div>
+    </div>
 </div>
 <div class="row py-2 px-3">
     <div class="col">
@@ -78,7 +79,7 @@
 
                     <div>
                         Images: {% for image in images %}
-                        <a href="{% url 'image' dataset.name bin_data.bin.pid image %}">{{ image }}</a> {% endfor %}
+                        <a href="{% url 'image' dataset.name bin.pid image %}">{{ image }}</a> {% endfor %}
                     </div>
 
                     <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
@@ -95,7 +96,7 @@
                         <li class="page-item page-previous">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
-                        {% for page in bin_data.pages %}
+                        {% for page in details.pages %}
                         <li class="page-item page-index {% if page == 0 %}active{% endif %}">
                             <a class="page-link" data-page="{{ page }}">{{ page|add:"1" }}</a>
                         </li>
@@ -201,7 +202,7 @@
                 </div>
             </div>
             <div class="card-body overflow-auto">
-                    {% for tag in bin_data.tags %}
+                    {% for tag in details.tags %}
                     <li class="list-group-item">
                         <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>{{tag}}</a>
                     </li>
@@ -238,7 +239,7 @@
 <script>
     var currentMosaicPage = 1;
     var currentBinPage = 0;
-    var numBinPages = {{bin_data.num_pages}};
+    var numBinPages = {{ details.num_pages }};
 
     function loadMosaic(page) {
         $("#mosaic").hide();
@@ -248,7 +249,7 @@
         var scaleFactor = $("#scale-factor option:selected").val();
 
         // TODO: Need to pass in scale/width/height from UI controls
-        var url = "{% url 'mosaic_page_encoded_image' bin_data.bin.pid %}" +
+        var url = "{% url 'mosaic_page_encoded_image' bin.pid %}" +
             "?view_size=" + viewSize +
             "&scale_factor=" + scaleFactor +
             "&page=" + page;
@@ -310,8 +311,8 @@
     });
 
     $(function() {
-        var map = createMap({{bin_data.lat}}, {{bin_data.lng}});
-        L.marker([{{bin_data.lat}}, {{bin_data.lng}}]).addTo(map);
+        var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
+        L.marker([{{ bin.latitude }}, {{ bin.longitude }}]).addTo(map);
         changePage(currentBinPage);
     });
 </script>
