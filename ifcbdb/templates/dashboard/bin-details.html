@@ -96,13 +96,13 @@
                         <div class="row">
                     <div class="col-md-8">
                             <h6 class="h6-responsive">{{ bin.timestamp|date:'Y-m-d H:i:s e' }}<small>(5 Days Ago)</small></h6> 
-                            <h6 class="h6-responsive">By {{ bin.instrument.name|default:"Unknown" }}</h6> 
+                            <h6 class="h6-responsive">By IFCB{{ bin.instrument.number }}</h6> 
                         <dl class="row">
                             <dt class="col-sm-4">Triggers:</dt>
                             <dd class="col-sm-8">{{ bin.n_triggers }}</dd> 
                             <dt class="col-sm-4">Images:</dt>
                             <dd class="col-sm-8">{{ bin.n_images }}</dd>
-                            <dt class="col-sm-4">Triggers h/ S:</dt>
+                            <dt class="col-sm-4">Triggers / s:</dt>
                             <dd class="col-sm-8">{{ bin.trigger_frequency|floatformat:3 }}</dd>                                                                                                 
                             <dt class="col-sm-4">Volume Analyzed:</dt>
                             <dd class="col-sm-8">{{ bin.ml_analyzed|floatformat:3 }} ml</dd>                                   
