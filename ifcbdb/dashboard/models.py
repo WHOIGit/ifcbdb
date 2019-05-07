@@ -191,6 +191,13 @@ class Bin(models.Model):
         if self.location is None:
             return FILL_VALUE
         return self.location.x
+
+    @property
+    def trigger_frequency(self):
+        if self.run_time == 0:
+            return 0
+
+        return self.n_triggers / self.run_time
     
     # access to underlying FilesetBin objects
 
