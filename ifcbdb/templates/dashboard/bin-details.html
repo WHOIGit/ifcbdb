@@ -156,42 +156,12 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% for k, v in bin.metadata.items %}
                             <tr>
-                                <th scope="row">1</th>
-                                <td>Cell</td>
+                                <th scope="row">{{ k }}</th>
+                                <td>{{ v }}</td>
                             </tr>
-                            <tr>
-                                <th scope="row">2</th>
-                                <td>Cell</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">3</th>
-                                <td>Cell</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">4</th>
-                                <td>Cell</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">5</th>
-                                <td>Cell</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">6</th>
-                                <td>Cell</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">7</th>
-                                <td>Cell</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">7</th>
-                                <td>Cell</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">7</th>
-                                <td>Cell</td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
 

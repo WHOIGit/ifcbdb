@@ -1,4 +1,5 @@
 import re
+import json
 
 from django.db import models
 
@@ -156,7 +157,7 @@ class Bin(models.Model):
     qc_bad = models.BooleanField(default=False) # is this bin invalid
     qc_no_rois = models.BooleanField(default=False)
     # metadata JSON
-    metadata = models.CharField(max_length=8192, default='{}')
+    metadata_json = models.CharField(max_length=8192, default='{}', db_column='metadata')
     # metrics
     size = models.IntegerField(default=0) # size of raw data in bytes
     n_triggers = models.IntegerField(default=0)
@@ -198,6 +199,10 @@ class Bin(models.Model):
             return 0
 
         return self.n_triggers / self.run_time
+    
+    @property
+    def metadata(self):
+        return json.loads(self.metadata_json)
     
     # access to underlying FilesetBin objects
 
