@@ -93,3 +93,11 @@ body {
     height: 12vmax;
     min-height: 200px;
 }
+
+.card.h500 {
+    max-height: 500px;
+}
+
+.card.h600 {
+    max-height: 600px;
+}
