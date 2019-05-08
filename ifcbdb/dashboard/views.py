@@ -152,6 +152,17 @@ def roi_data(request, dataset_name, bin_id):
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
 
+def blob_zip(request, dataset_name, bin_id):
+    b = get_object_or_404(Bin, pid=bin_id)
+    try:
+        version = int(request.GET.get('v',2))
+    except ValueError:
+        raise Http404
+    blob_path = b.blob_path(version=version)
+    filename = '{}_blobs_v{}.zip'.format(bin_id, version)
+    fin = open(blob_path)
+    return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/zip')
+
 def zip(request, dataset_name, bin_id):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)

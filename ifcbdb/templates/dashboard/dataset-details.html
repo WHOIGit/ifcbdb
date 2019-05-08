@@ -144,15 +144,15 @@
             <div class="row">
             <div class="col">
             <ul class="list-unstyled">
-                <li><a href="#">ADC</a></li>
-                <li><a href="#">HDR</a></li> 
-                <li><a href="#">ROI</a></li> 
-                <li><a href="#">ZIP</a></li> 
+                <li><a href="{% url 'adc_csv' dataset.name bin.pid %}">ADC</a></li>
+                <li><a href="{% url 'hdr_text' dataset.name bin.pid %}">HDR</a></li> 
+                <li><a href="{% url 'roi_binary' dataset.name bin.pid %}">ROI</a></li> 
+                <li><a href="{% url 'zip' dataset.name bin.pid %}">ZIP</a></li> 
                 </ul>
             </div>
             <div class="col">
             <ul class="list-unstyled">       
-                <li><a href="#">blobs</a></li> 
+                <li><a href="{% url 'blob_zip' dataset.name bin.pid %}">blobs</a></li> 
                 <li><a href="#">features</a></li> 
                 <li><a href="#">autoclass</a></li>
             </ul>

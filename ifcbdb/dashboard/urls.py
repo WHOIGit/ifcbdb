@@ -22,6 +22,9 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'),
     path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary'),
 
+    # blob zip access
+    path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'),
+
     # zip access
     path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip'),
 
