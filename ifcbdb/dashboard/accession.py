@@ -42,7 +42,7 @@ def add_bin(dataset, bin, lat, lon, depth):
         b.depth = depth
     b.qc_no_rois = check_no_rois(bin)
     # metadata
-    b.metadata = json.dumps(bin.hdr_attributes)
+    b.metadata_json = json.dumps(bin.hdr_attributes)
     # metrics
     b.temperature = bin.temperature
     b.humidity = bin.humidity

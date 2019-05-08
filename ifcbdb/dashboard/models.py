@@ -256,19 +256,20 @@ class Bin(models.Model):
     # access to blobs
 
     def blob_file(self, version=2):
-         for directory in self._directories(kind=DATA_DIRECTORY_BLOBS, version=version):
+        for directory in self._directories(kind=DATA_DIRECTORY_BLOBS, version=version):
             bd = directory.get_blob_directory()
             try:
                 return bd[self.pid]
             except KeyError as e:
                 raise KeyError('no blobs found for {}'.format(self.pid)) from e
+        raise KeyError('no blobs found for {}'.format(self.pid))
 
     def blob_path(self, version=2):
         return self.blob_file(version=version).path
 
     def blob(self, target_number, version=2):
-        bf = self.blob_file(version=version)
         try:
+            bf = self.blob_file(version=version)
             return bf[target_number]
         except KeyError as e:
             raise KeyError('no such blob {} {}'.format(self.pid, target_number)) from e

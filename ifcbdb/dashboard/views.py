@@ -158,7 +158,10 @@ def blob_zip(request, dataset_name, bin_id):
         version = int(request.GET.get('v',2))
     except ValueError:
         raise Http404
-    blob_path = b.blob_path(version=version)
+    try:
+        blob_path = b.blob_path(version=version)
+    except KeyError:
+        raise Http404
     filename = '{}_blobs_v{}.zip'.format(bin_id, version)
     fin = open(blob_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/zip')
