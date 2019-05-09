@@ -1,4 +1,5 @@
-import base64
+import base64, json
+import numpy
 
 from ifcb.data.imageio import format_image
 
@@ -35,3 +36,34 @@ def parse_view_size(value):
         return (int(dimensions[1]), int(dimensions[0]))
     except:
         return (600, 800)
+
+
+def coordinates_to_json(coordinates):
+    """
+    Converts the coordinates from a mosaic image and puts them into a JSON serializable dictionary
+    """
+    data = []
+    for idx, img in coordinates.iterrows():
+        data.append(dict(
+            pid=str(img["roi_number"]),
+            width=int(img["w"]),
+            height=int(img["h"]),
+            x=int(img["x"]),
+            y=int(img["y"]),
+            page=int(img["page"])
+        ))
+
+    return json.dumps(data)
+
+
+# TODO: Can the values be sanitized (serializable) before it reaches the model to avoid this extra step? (and potential
+#   conversion issues
+def dict_to_json(value):
+    """
+    Intended to allow dictionaries containing int64 values to be serialized to json properly
+
+    Base on code from:
+    https://stackoverflow.com/questions/11942364/typeerror-integer-is-not-json-serializable-when-serializing-json-in-python
+    """
+    if isinstance(value, numpy.int64): return int(value)
+    raise TypeError

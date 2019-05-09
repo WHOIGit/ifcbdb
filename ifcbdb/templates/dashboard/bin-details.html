@@ -48,16 +48,11 @@
             <div class="card-body text-center">
                 <div class="tab-content" id="imageTabContent">  
                     <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
-                        <img id="mosaic" src="data:image/png;base64,{{ image }}" class="img-fluid" style="display:none" />
+                        <img id="mosaic" src="data:image/png;base64,{{ image }}" class="img-fluid" style="display:none" aadata-toggle="modal" aadata-target="#image-modal"  />
                         <div id="mosaic-loading" class="loading">
                             <div class="loader"></div>
                             loading...
                         </div>
-                    </div>
-
-                    <div>
-                        Images: {% for image in images %}
-                        <a href="{% url 'image' dataset.name bin.pid image %}">{{ image }}</a> {% endfor %}
                     </div>
 
                     <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
@@ -212,11 +207,46 @@
     </div>
 </div>
 <!-- Modal -->
+<div class="modal fade" id="image-modal" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Add .modal-dialog-centered to .modal-dialog to vertically center the modal -->
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+
+
+        <div class="modal-content">
+            <div class="modal-body row">
+                <div class="col-md-6 text-center">
+                    <img class="img-fluid mb-2" id="detailed-image" src="data:image/png;base64,{{image}}" />
+                    <br />
+                    <a id="detailed-image-link" href="#" class="btn btn-primary btn-sm">View Details</a>
+                    <a id="detailed-image-xml" href="#" class="btn btn-secondary btn-sm">XML</a>
+                    <a id="detailed-image.rdf" href="#" class="btn btn-secondary btn-sm">RDF</a>
+                </div>
+                <div class="col-md-6">
+                    <h5>Meta Data</h5>
+                    <div class="table-responsive text-nowrap" style="height:250px;">
+                        <table class="table table-striped table-sm table-hover" id="detailed-image-metadata">
+                            <tbody>
+                                <tr>
+                                    <th scope="row">dxxxx</th>
+                                    <td>yyy</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %} {% block scripts %}
 <script>
     var currentMosaicPage = 1;
     var currentBinPage = 0;
     var numBinPages = {{ details.num_pages }};
+    var coordinates = {{ details.coordinates|safe }};
 
     function loadMosaic(page) {
         $("#mosaic").hide();
@@ -287,6 +317,43 @@
         loadMosaic(currentBinPage);
     });
 
+    $("#mosaic").click(function(e){
+        var x = e.pageX - $(this).offset().left;
+        var y = e.pageY - $(this).offset().top;
+
+        $.each(coordinates, function(idx, img) {
+            if (currentBinPage == img.page &&
+                x >= img.x && x <= img.x + img.width &&
+                y >= img.y && y <= img.y + img.height) {
+
+                // TODO: Need to handle routing from Django
+                // TODO: Needs loading indicator
+                // TODO: Is png the right default format
+                var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + img.pid;
+                var metaUrl = "/api/image/{{ bin.pid }}/" + img.pid;
+
+                $("#detailed-image").attr("src", baseUrl + ".png");
+                $("#detailed-image-link").attr("href", baseUrl + ".html");
+                $("#detailed-image-xml").attr("href", baseUrl + ".xml");
+                $("#detailed-image-rdf").attr("href", baseUrl + ".rdf");
+                $("#image-modal").modal();
+
+                $("#detailed-image-metadata tbody").empty();
+                $.get(metaUrl, function(data){
+                    $.each(data, function(key, val) {
+                        var tr = $("<tr />");
+                        tr.append($("<th>").html(key));
+                        tr.append($("<td>").attr("scope", "row").html(val));
+                        $("#detailed-image-metadata tbody").append(tr);
+                    });
+
+                });
+
+                return false;
+            }
+        });
+    });
+
     $(function() {
         var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
         L.marker([{{ bin.latitude }}, {{ bin.longitude }}]).addTo(map);
@@ -295,5 +362,6 @@
         var binDate = "{{ bin.timestamp|date:'Y-m-d H:i:s e' }}";
         $("#bin-date-relative").text(" (" + timeago().format(binDate) + ")");
     });
+
 </script>
 {% endblock %}

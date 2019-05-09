@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 
 from django.shortcuts import render, get_object_or_404
@@ -49,18 +50,10 @@ def bin_details(request, dataset_name, bin_id):
     dataset = get_object_or_404(Dataset, name=dataset_name)
     bin = get_object_or_404(Bin, pid=bin_id)
 
-    # TODO: This needs to be flushed out with proper paging; this is just to get something on the screen to use
-    #   to link to the images page
-    images = []
-    image_keys = bin.list_images()[:5]
-    for k in image_keys:
-        images.append(k)
-
     # TODO: bin.depth is coming out to 0. Check to see if the depth will be 0 when there is no lat/lng found, and handle
     # TODO: Mockup for lat/lng under the map had something like "41 north, 82 east (41.31, -70.39)"
     return render(request, 'dashboard/bin-details.html', {
         "dataset": dataset,
-        "images": images,
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
         "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
@@ -85,6 +78,15 @@ def image_details(request, dataset_name, bin_id, image_id):
         "image": embed_image(image),
         "image_id": image_id,
     })
+
+
+# TODO: The dumps/load call is to get around there being int64 data within the dictionary that cannot be serialized. We
+#   will probably want to find an alternative for this
+def image_metadata(request, bin_id, target):
+    bin = get_object_or_404(Bin, pid=bin_id)
+    metadata = json.dumps(bin.target_metadata(target), default=dict_to_json)
+
+    return JsonResponse(json.loads(metadata))
 
 
 # TODO: Needs to change from width/height parameters to single widthXheight
@@ -180,10 +182,11 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None):
     if not scale_factor:
         scale_factor = Bin.MOSAIC_DEFAULT_SCALE_FACTOR
 
-    pages = bin.mosaic_coordinates(
+    coordinates = bin.mosaic_coordinates(
         shape=parse_view_size(view_size),
         scale=parse_scale_factor(scale_factor)
-    ).page.max()
+    )
+    pages = coordinates.page.max()
 
     previous_bin = Timeline(dataset.bins).previous_bin(bin)
     next_bin = Timeline(dataset.bins).next_bin(bin)
@@ -197,6 +200,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None):
         "pages": list(range(pages + 1)),
         "num_pages": int(pages),
         "tags": bin.tag_names,
+        "coordinates": coordinates_to_json(coordinates),
     }
 
 
@@ -258,3 +262,4 @@ def closest_bin(request, dataset_name):
     return JsonResponse({
         "bin_id": bin.pid,
     })
+
