@@ -12,6 +12,8 @@ from ifcb.data.imageio import format_image
 from .models import Dataset, Bin, Timeline
 from common.utilities import *
 
+from .tasks import mosaic_coordinates_task
+
 # TODO: The naming convensions for the dataset, bin and image ID's needs to be cleaned up and be made
 #   more consistent
 
@@ -191,14 +193,22 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None):
     if not scale_factor:
         scale_factor = Bin.MOSAIC_DEFAULT_SCALE_FACTOR
 
+    mosaic_shape = parse_view_size(view_size)
+    mosaic_scale = parse_scale_factor(scale_factor)
+
     coordinates = bin.mosaic_coordinates(
-        shape=parse_view_size(view_size),
-        scale=parse_scale_factor(scale_factor)
+        shape=mosaic_shape,
+        scale=mosaic_scale
     )
     pages = coordinates.page.max()
 
     previous_bin = Timeline(dataset.bins).previous_bin(bin)
     next_bin = Timeline(dataset.bins).next_bin(bin)
+
+    if previous_bin:
+        mosaic_coordinates_task.delay(previous_bin.pid, mosaic_shape, mosaic_scale)
+    if next_bin:
+        mosaic_coordinates_task.delay(next_bin.pid, mosaic_shape, mosaic_scale)
 
     # TODO: Volume Analyzed is using floatformat:3; is that ok?
     return {
@@ -274,5 +284,5 @@ def closest_bin(request, dataset_name):
 
 def test_celery(request):
     from dashboard.tasks import test_celery
-    result = test_celery.delay().get()
+    result = test_celery.delay('an argument').get()
     return JsonResponse({'foo':result})
