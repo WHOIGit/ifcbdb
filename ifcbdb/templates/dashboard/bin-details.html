@@ -95,7 +95,7 @@
                     <div class="card-body">
                         <div class="row">
                     <div class="col-md-8">
-                            <h6 class="h6-responsive">{{ bin.sample_time|date:'Y-m-d H:i:s e' }}<small>(5 Days Ago)</small></h6> 
+                            <h6 class="h6-responsive">{{ bin.sample_time|date:'Y-m-d H:i:s e' }}<small id="bin-date-relative"></small></h6>
                             <h6 class="h6-responsive">By IFCB{{ bin.instrument.number }}</h6> 
                         <dl class="row">
                             <dt class="col-sm-4">Triggers:</dt>
@@ -291,6 +291,9 @@
         var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
         L.marker([{{ bin.latitude }}, {{ bin.longitude }}]).addTo(map);
         changePage(currentBinPage);
+
+        var binDate = "{{ bin.timestamp|date:'Y-m-d H:i:s e' }}";
+        $("#bin-date-relative").text(" (" + timeago().format(binDate) + ")");
     });
 </script>
 {% endblock %}
