@@ -13,9 +13,28 @@ services:
       - nginx_network
       - postgres_network
       - memcached_network
+      - redis_network
     depends_on:
       - postgres
       - memcached
+      - redis
+
+  celery:
+    build: .
+    container_name: celery
+    command: celery -A ifcbdb worker -l info
+    volumes:
+      - ./pyifcb:/pyifcb
+      - ./ifcbdb:/ifcbdb
+      - ./ifcb_data:/data
+    depends_on:
+      - postgres
+      - memcached
+      - redis
+    networks:
+      - redis_network
+      - postgres_network
+      - memcached_network
 
   nginx:
     image: nginx:1.15
@@ -49,10 +68,18 @@ services:
     networks:
       - memcached_network
 
+  redis:
+    image: redis:5.0.4-alpine
+    container_name: redis
+    networks:
+      - redis_network
+
 networks:
   nginx_network:
     driver: bridge
   postgres_network:
     driver: bridge
   memcached_network:
+    driver: bridge
+  redis_network:
     driver: bridge

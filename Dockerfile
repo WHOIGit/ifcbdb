@@ -8,9 +8,6 @@ RUN apt-get install -y binutils libproj-dev gdal-bin
 # nomkl to reduce image size (mkl is large)
 RUN conda install nomkl
 
-# gunicorn to run the WSGI app
-RUN conda install gunicorn
-
 # install pyifcb and ifcbdb dependencies first
 # pyifcb must be cloned into the same directory as this dockerfile
 
@@ -26,9 +23,9 @@ RUN conda env update -n root -f environment.yml
 WORKDIR /pyifcb
 RUN python setup.py develop
 
-
-
 # this application
+
+RUN conda install gunicorn=19.9.0
 
 EXPOSE 8000
 

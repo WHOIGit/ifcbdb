@@ -35,6 +35,9 @@ urlpatterns = [
 
     path('<slug:dataset_name>', views.dataset_details, name='dataset'),
 
+    # debug
+    path('api/test_celery', views.test_celery),
+
     # Paths used for API/Ajax requests
     path('api/<slug:dataset_name>/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
     path('api/<slug:dataset_name>/bin/<slug:bin_id>', views.bin_data, name='bin_data'),

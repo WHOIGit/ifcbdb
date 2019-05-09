@@ -272,3 +272,7 @@ def closest_bin(request, dataset_name):
         "bin_id": bin.pid,
     })
 
+def test_celery(request):
+    from dashboard.tasks import test_celery
+    result = test_celery.delay().get()
+    return JsonResponse({'foo':result})
