@@ -77,7 +77,7 @@ class Timeline(object):
         ).order_by('distance').first()
 
     def metrics(self, metric, start_time=None, end_time=None, resolution='day'):
-        if resolution not in ['month', 'day', 'hour', 'bin']:
+        if resolution not in ['month', 'week', 'day', 'hour', 'bin']:
             raise ValueError('unsupported time resolution {}'.format(resolution))
 
         if metric not in self.TIMELINE_METRICS.keys():
