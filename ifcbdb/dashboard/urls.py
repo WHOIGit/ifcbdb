@@ -3,7 +3,7 @@ from django.urls import include, path, re_path
 from . import views
 
 urlpatterns = [
-    path('', views.datasets),
+    path('', views.index),
     path('dashboard', views.datasets, name='datasets'),
 
     # The urls below must remain in this specific order (by granularity)

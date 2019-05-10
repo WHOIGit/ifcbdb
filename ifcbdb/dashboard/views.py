@@ -1,8 +1,9 @@
 import json
 import pandas as pd
 
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, FileResponse, Http404, JsonResponse
+from django.conf import settings
+from django.shortcuts import render, get_object_or_404, reverse
+from django.http import HttpResponse, FileResponse, Http404, JsonResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_control
 
@@ -13,6 +14,12 @@ from common.utilities import *
 
 # TODO: The naming convensions for the dataset, bin and image ID's needs to be cleaned up and be made
 #   more consistent
+
+def index(request):
+    if settings.DEFAULT_DATASET:
+        return HttpResponseRedirect(reverse("dataset", kwargs={"dataset_name": settings.DEFAULT_DATASET}))
+
+    return HttpResponseRedirect(reverse("datasets"))
 
 
 def datasets(request):
