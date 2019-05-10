@@ -137,6 +137,12 @@
     </div>
     <div class="col-lg-6 col-xl-3 mt-2 mt-md-0">
             <div class="card h-50">
+                    <div class="card-body">
+                        <div id="mapid" class="h-75"></div>
+                        <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
+                    </div>
+                </div>
+            <div class="card h-50">
                     <div class="card-header white py-1">
 <p>Download:</p>
             </div>
@@ -158,12 +164,6 @@
             </ul>
             </div>            
             </div>
-            </div>
-        </div>
-        <div class="card h-50">
-            <div class="card-body">
-                <div id="mapid" class="h-75"></div>
-                <p>41 north, 82 east (41.31, -70.39), depth 5m</p>
             </div>
         </div>
     </div>
@@ -251,9 +251,6 @@ function createTimeSeries(container, metric) {
         };
 
         Plotly.newPlot(container[0], data, layout, config);
-        container[0].on('plotly_hover', function(data){
-
-        }
         // Add event to locate nearest bin to user's click
         container[0].on("plotly_click", function(d){
             changeToClosestBin(d.points[0].x);
