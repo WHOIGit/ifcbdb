@@ -221,18 +221,26 @@ function createTimeSeries(container, metric) {
 
         var layout = {
             bargap: .05,
-  margin: {
-    l: 50,
-    r: 50,
-    b: 50,
-    t: 00,
-    pad: 2
-  },
+            margin: {
+                l: 50,
+                r: 50,
+                b: 50,
+                t: 00,
+                pad: 2
+            },
             yaxis: {
                 title: {
                     text: response["y-axis"]
                 }
             },
+            "xaxis": {
+                showspikes: true,
+                spikethickness: 1,
+                spikedash: "solid",
+                spikemode: "across+toaxis",
+                spikesnap: "cursor",
+                spikecolor: "#000"
+            }
         };
 
         var config = {
@@ -246,6 +254,11 @@ function createTimeSeries(container, metric) {
         // Add event to locate nearest bin to user's click
         container[0].on("plotly_click", function(d){
             changeToClosestBin(d.points[0].x);
+        });
+
+        // Add event to handle resolution change when zooming
+        container[0].on("plotly_relayout", function(d){
+            
         });
     });
 
