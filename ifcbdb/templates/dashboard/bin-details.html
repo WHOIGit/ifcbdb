@@ -4,7 +4,7 @@
 {% endblock %} {% block content %}
 <div class="row d-flex justify-content-between">
     <div class="pl-3">
-        <span class="h2-responsive">{{ bin.pid }}</span>
+        <span class="h3-responsive">{{ bin.pid }}</span>
     </div>
         <ul class="nav justify-content-end">
             <li class="nav-item">
@@ -28,7 +28,7 @@
         <div class="card h-100">
             <div class="card-header py-1 mdb-color lighten-5">
             <div class="row col justify-content-between">
-                <span class="h4-responsive">Images</span>
+                <span class="h5-responsive">Images</span>
                         <form class="form-inline">
                                 <label class="my-1 mr-2" for="view-size">View Size:</label>
                                 <select id="view-size" class="custom-select custom-select-sm form-control flex-fill" name="view-size">                                  
@@ -119,7 +119,7 @@
                     <div class="card-header py-1 mdb-color lighten-5">
                         <div class="row justify-content-between">
                             <div class="col-sm-4">
-                                <span class="h4-responsive">Plot</span>
+                                <span class="h5-responsive">Plot</span>
                                 </div>
                                 <div class="col-sm-8">
                                                 <div class="btn-group" role="group" aria-label="Change Plots Button Group">
@@ -138,7 +138,7 @@
     <div class="col-md-8 col-lg-4 mt-2 mt-lg-0">
         <div class="card h500 h-100">
             <div class="card-header py-1 mdb-color lighten-5">
-                <span class="h4-responsive">Meta Data</span>
+                <span class="h5-responsive">Meta Data</span>
             </div>
             <div class="card-body overflow-auto">
                 <div class="table-responsive text-nowrap">
@@ -169,7 +169,7 @@
             <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row">
                     <div class="col">
-                        <span class="h4-responsive">Tags</span>
+                        <span class="h5-responsive">Tags</span>
                     </div>
                 </div>
             </div>
@@ -182,7 +182,7 @@
                 </ul>
             </div>
             <div class="card-footer py-1 white">
-                <a href="#" class="btn btn-mdb-color btn-block btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
+                <a href="#" class="btn btn-mdb-color btn-block btn-sm"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
         </div>
     </div>
@@ -207,10 +207,10 @@
     </div>
 </div>
 <!-- Modal -->
-<div class="modal fade" id="image-modal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal" id="image-modal" tabindex="-1" role="dialog" aria-hidden="true">
 
     <!-- Add .modal-dialog-centered to .modal-dialog to vertically center the modal -->
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-dialog modal-dialog modal-dialog-centered modal-xl" role="document">
 
 
         <div class="modal-content">
