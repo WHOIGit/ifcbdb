@@ -79,7 +79,7 @@
                             <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm"><i class="fas fa-arrow-circle-left fa-1x"></i></a>
                         </form>
                     </div>
-                    <div class="flex-column text-center">
+                    <div class="flex-column align-self-center">
                         <span class="p">
                         <strong>Selected Bin:</strong>
                         <a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a>
@@ -138,10 +138,10 @@
         <div class="card h-50">
             <div class="card-body">
                 <div id="mapid" class="h-75"></div>
-                <p>
-                    <strong>Latitude:</strong> <span class="text-nowrap">{{ bin.latitude }}</span>,
-                    <strong>Longitude:</strong> <span class="text-nowrap">{{ bin.longitude }}</span>,
-                    <strong>Depth</strong> {{ bin.depth }}m
+                <p class="figure-caption">
+                    <span class="text-nowrap"><strong>Latitude:</strong> {{ bin.latitude }}</span>,
+                    <span class="text-nowrap"><strong>Longitude:</strong>{{ bin.longitude }}</span>,
+                    <span class="text-nowrap"><strong>Depth</strong> {{ bin.depth }}m</span>
                 </p>
             </div>
         </div>
