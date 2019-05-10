@@ -255,9 +255,6 @@ function createTimeSeries(container, metric) {
         };
 
         Plotly.newPlot(container[0], data, layout, config);
-        container[0].on('plotly_hover', function(data){
-
-        });
         // Add event to locate nearest bin to user's click
         container[0].on("plotly_click", function(d){
             changeToClosestBin(d.points[0].x);
