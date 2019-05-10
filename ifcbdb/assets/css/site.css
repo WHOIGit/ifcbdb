@@ -99,3 +99,7 @@ body {
 .card.h600 {
     max-height: 600px;
 }
+
+.nowrap {
+    white-space: nowrap;
+}

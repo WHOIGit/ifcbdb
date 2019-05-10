@@ -105,7 +105,11 @@
                             <div class="col-md-4 mt-1">
                             <figure class="figure">
                             <div id="mapid" style="height:200px"></div>
-                            <figcaption class="figure-caption"><strong>Latitude:</strong> {{ bin.latitude }}, <strong>Longitude:</strong> {{ bin.longitude }}, <strong>Depth</strong> {{ bin.depth }}m</figcaption>
+                            <figcaption class="figure-caption">
+                                <strong>Latitude:</strong> <span class="nowrap">{{ bin.latitude }}</span>,
+                                <strong>Longitude:</strong> <span class="nowrap">{{ bin.longitude }}</span>,
+                                <strong>Depth</strong> {{ bin.depth }}m
+                            </figcaption>
                             </figure>
                             </div>
                     </div>
