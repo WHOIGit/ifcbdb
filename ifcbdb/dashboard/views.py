@@ -71,12 +71,14 @@ def image_details(request, dataset_name, bin_id, image_id):
 
     # TODO: Add validation checks/error handling
     image = bin.image(int(image_id))
+    metadata = json.loads(json.dumps(bin.target_metadata(image_id), default=dict_to_json))
 
     return render(request, 'dashboard/image-details.html', {
         "dataset": dataset,
         "bin": bin,
         "image": embed_image(image),
         "image_id": image_id,
+        "metadata": metadata,
     })
 
 
