@@ -9,7 +9,7 @@
 {% block content %}
 <div class="row">
     <div class="col">
-        <span class="h2-responsive">{{ bin }}</span>
+        <span class="h3-responsive">{{ bin }}</span>
     </div>
 </div>
 <hr class="my-2">
@@ -19,7 +19,7 @@
             <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row d-flex justify-content-between">
                     <div class="col">
-                        <span class="h4-responsive">Image</span>
+                        <span class="h5-responsive">Image</span>
                     </div>
                 <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
                     <li class="nav-item">
@@ -58,7 +58,7 @@
             <div class="card-header py-1 mdb-color lighten-5">
             <div class="row d-flex justify-content-between">
             <div class="col">
-                <span class="h4-responsive">Location</span>
+                <span class="h5-responsive">Location</span>
                 </div>
                 <div class="col">
                 <span>41 north, 82 east (41.31, -70.39), depth 5m</span>
@@ -73,9 +73,9 @@
 </div>
 <div class="row py-2 px-3">
     <div class="col-md-6 col-lg-4">
-        <div class="card 500 h-100">
+        <div class="card h500 h-100">
             <div class="card-header py-1 mdb-color lighten-5">
-                <span class="h4-responsive">Meta Data</span>
+                <span class="h5-responsive">Meta Data</span>
             </div>
             <div class="card-body overflow-auto">
                 <div class="table-responsive text-nowrap">
@@ -105,7 +105,7 @@
             <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row">
                     <div class="col">
-                        <span class="h4-responsive">Annotations</span>
+                        <span class="h5-responsive">Annotations</span>
                     </div>
                 </div>
             </div>
@@ -139,7 +139,7 @@
             </div>
             {% if user.is_authenticated %}
             <div class="card-footer py-1 text-right white">
-                <a data-toggle="modal" data-target="#addAnnotationModal" class="btn btn-unique btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
+                <a data-toggle="modal" data-target="#addAnnotationModal" class="btn btn-unique btn-sm"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
             {% endif %}
         </div>
@@ -149,7 +149,7 @@
             <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row">
                     <div class="col">
-                        <span class="h4-responsive">Tags</span>
+                        <span class="h5-responsive">Tags</span>
                     </div>
                 </div>
             </div>
@@ -169,7 +169,7 @@
             </div>
             {% if user.is_authenticated %}
             <div class="card-footer py-1 text-right white">
-                <a data-toggle="modal" data-target="#addTagModal" class="btn btn-unique btn-small"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
+                <a data-toggle="modal" data-target="#addTagModal" class="btn btn-unique btn-sm"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
             </div>
             {% endif %}
         </div>
