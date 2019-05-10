@@ -92,10 +92,7 @@ class Timeline(object):
                     values('dt').annotate(metric=Avg(metric))
 
     def metric_label(self, metric):
-        if metric not in self.TIMELINE_METRICS.keys():
-            return ""
-
-        return self.TIMELINE_METRICS[metric]
+        return self.TIMELINE_METRICS.get(metric,'')
 
 class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
