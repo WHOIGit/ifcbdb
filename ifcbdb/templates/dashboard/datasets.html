@@ -57,7 +57,7 @@
                     <ul class="list-group list-group-flush">
                         {% for dataset in datasets %}
                         <li class="list-group-item">
-                            <a href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a>
+                            <a href="{% url 'dataset' dataset.name %}">{{ dataset.title }}</a>
                         </li>
                         {% endfor %}
                     </ul>
