@@ -18,22 +18,18 @@ def sync_dataset(dataset, lat=None, lon=None, depth=None):
 
 def add_bin(dataset, bin, lat, lon, depth):
     pid = bin.lid
-    # before we do expensive parsing, make sure we really need to add this
-    try:
-        Bin.objects.get(pid=pid)
-        print('skipping {}, already added'.format(pid))
+    b = Bin.objects.filter(pid=pid).first()
+    if b is not None:
+        dataset.bins.add(b)
+        print('{} was added to or remains in {}'.format(pid, dataset.name))
         return
-    except Bin.DoesNotExist:
-        pass
     timestamp = bin.timestamp
     b = Bin(pid=pid, timestamp=timestamp, sample_time=timestamp)
     # qaqc checks
     qc_bad = qc_bad = check_bad(bin)
     if qc_bad:
         b.qc_bad = True
-        b.save()
-        # should it also be added to the dataset?
-        print('bad bin {}'.format(pid))
+        print('{} raw data is bad'.format(pid))
         return
     # spatial information
     if lat is not None and lon is not None:
@@ -55,4 +51,4 @@ def add_bin(dataset, bin, lat, lon, depth):
     b.concentration = b.n_images / b.ml_analyzed
     b.save()
     dataset.bins.add(b)
-    print('added {} to {}'.format(pid, dataset.name)) # FIXME use logging
+    print('{} created and added to {}'.format(pid, dataset.name)) # FIXME use logging
