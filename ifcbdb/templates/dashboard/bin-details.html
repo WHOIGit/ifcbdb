@@ -4,23 +4,11 @@
 {% endblock %} {% block content %}
 <div class="row d-flex justify-content-between">
     <div class="pl-3">
-        <span class="h3-responsive">{{ bin.pid }}</span>
+        <span class="h3-responsive">{{ bin.sample_time|date:'Y-m-d H:i:s e' }}
+            <span id="bin-date-relative"></span>
+            by IFCB{{ bin.instrument.number }}
+        </span> 
     </div>
-        <ul class="nav justify-content-end">
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
-                   role="tab" aria-controls="ts-size" aria-selected="true">Raw Data</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" href="#">Meta Data</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" href="#">Images</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm"href="#">Products</a>
-            </li>
-        </ul>    
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
@@ -89,8 +77,6 @@
                     <div class="card-body">
                         <div class="row">
                     <div class="col-md-8">
-                            <h6 class="h6-responsive">{{ bin.sample_time|date:'Y-m-d H:i:s e' }}<small id="bin-date-relative"></small></h6>
-                            <h6 class="h6-responsive">By IFCB{{ bin.instrument.number }}</h6> 
                         <dl class="row">
                             <dt class="col-sm-4">Triggers:</dt>
                             <dd class="col-sm-8">{{ bin.n_triggers }}</dd> 
@@ -335,8 +321,6 @@
 
                 $("#detailed-image").attr("src", baseUrl + ".png");
                 $("#detailed-image-link").attr("href", baseUrl + ".html");
-                $("#detailed-image-xml").attr("href", baseUrl + ".xml");
-                $("#detailed-image-rdf").attr("href", baseUrl + ".rdf");
                 $("#image-modal").modal();
 
                 $("#detailed-image-metadata tbody").empty();
