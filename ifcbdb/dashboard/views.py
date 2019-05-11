@@ -237,13 +237,15 @@ def _mosaic_page_image(request, bin_id):
 
 
 # TODO: The below views are API/AJAX calls; in the future, it would be beneficial to use a proper API framework
-def generate_time_series(request, dataset_name, metric):
+def generate_time_series(request, dataset_name, metric,):
+    resolution = request.GET.get("resolution", "hour")
+
     # Allows us to keep consistant url names
     metric = metric.replace("-", "_")
 
     # TODO: Allow resolution to be set from API call; default to hours for testing
     dataset = get_object_or_404(Dataset, name=dataset_name)
-    time_series = Timeline(dataset.bins).metrics(metric, None, None, resolution="bin")
+    time_series = Timeline(dataset.bins).metrics(metric, None, None, resolution=resolution)
 
     # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
     return JsonResponse({

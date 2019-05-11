@@ -199,6 +199,9 @@ var currentBinPage = 0;
 var numBinPages = 0;
 var currentBinId = "";
 
+// TODO: Default resolution is week; it might be possible to calculate this based on the initial data on the timeline
+var currentResolution = "week";
+
 function changeToClosestBin(targetDate) {
     var url = "{% url 'closest_bin' dataset.name %}";
 
@@ -208,60 +211,120 @@ function changeToClosestBin(targetDate) {
     });
 }
 
+function getPlotlyConfig() {
+    return {
+        responsive: true,
+        displaylogo: false,
+        scrollZoom: true
+    };
+}
+
+function getPlotlyData(data) {
+    return [{
+        type: "bar",
+        x: data["x"],
+        y: data["y"],
+        line: {
+            color: '#17BECF'
+        }
+    }];
+}
+
+function getPlotlyLayout(data, range) {
+    var layout =  {
+        bargap: .05,
+        margin: {
+            l: 50,
+            r: 50,
+            b: 50,
+            t: 00,
+            pad: 2
+        },
+        yaxis: {
+            title: {
+                text: data["y-axis"]
+            },
+            fixedrange: true,
+        },
+        "xaxis": {
+            showspikes: true,
+            spikethickness: 1,
+            spikedash: "solid",
+            spikemode: "across+toaxis",
+            spikesnap: "cursor",
+            spikecolor: "#000"
+        }
+    };
+
+    if (range !== undefined) {
+        layout["xaxis"]["range"] = [
+            range["xaxis.range[0]"],
+            range["xaxis.range[1]"]
+        ]
+    }
+
+    console.log(layout);
+
+    return layout;
+}
+
+function calcResolution(plotlyData) {
+    // up to a week: bin resolution
+    // up to a month: hour resolution
+    // up to two years: day resolution
+    // more than that: week resolution
+
+    // TODO: The values below are temporary for testing until there is a larger dataset available
+    var binResolutionRange = moment.duration(1, "hours");
+    var hourResolutionRange = moment.duration(6, "hours");
+    var dayResolutionRange = moment.duration(1, "days");
+
+    sdate = moment(plotlyData["xaxis.range[0]"]);
+    edate = moment(plotlyData["xaxis.range[1]"]);
+    duration = edate.diff(sdate);
+
+    if (duration < binResolutionRange) {
+        return "bin";
+    } else if (duration < hourResolutionRange) {
+        return "hour";
+    } else if (duration < dayResolutionRange) {
+        return "day";
+    }
+
+    return "week";
+}
+
 function createTimeSeries(container, metric) {
-    var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric;
+    var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric + "?resolution=" + currentResolution;
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
-        var data = [{
-            type: "bar",
-            x: response["x"],
-            y: response["y"],
-            line: {
-                color: '#17BECF'
-            },
-        }];
+        var initialConfig = getPlotlyConfig();
+        var initialData = getPlotlyData(response);
+        var initialLayout = getPlotlyLayout(response);
 
+        Plotly.newPlot(container[0], initialData, initialLayout, initialConfig);
 
-        var layout = {
-            bargap: .05,
-            margin: {
-                l: 50,
-                r: 50,
-                b: 50,
-                t: 00,
-                pad: 2
-            },
-            yaxis: {
-                title: {
-                    text: response["y-axis"]
-                },
-                fixedrange: true,
-            },
-            "xaxis": {
-                showspikes: true,
-                spikethickness: 1,
-                spikedash: "solid",
-                spikemode: "across+toaxis",
-                spikesnap: "cursor",
-                spikecolor: "#000"
-            }
-        };
-
-        var config = {
-            responsive: true,
-            displaylogo: false,
-            scrollZoom: true
-        };
-
-        Plotly.newPlot(container[0], data, layout, config);
         // Add event to locate nearest bin to user's click
         container[0].on("plotly_click", function(d){
             changeToClosestBin(d.points[0].x);
         });
 
         // Add event to handle resolution change when zooming
-        container[0].on("plotly_relayout", function(d){
-            
+        container[0].on("plotly_relayout", function(relayoutResponse){
+            var resolution = calcResolution(relayoutResponse);
+            if (resolution == currentResolution)
+                return;
+
+            $.get("/api/{{ dataset.name }}/time-series/" + metric + "?resolution=" + resolution, function(dataResponse) {
+                var updatedConfig = getPlotlyConfig();
+                var updatedData = getPlotlyData(dataResponse);
+                var updatedLayout = getPlotlyLayout(dataResponse, relayoutResponse);
+
+                Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
+
+                currentResolution = resolution;
+                return false;
+            });
         });
     });
 
