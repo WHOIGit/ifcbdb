@@ -284,7 +284,6 @@ class Bin(models.Model):
     # mosaics
 
     def mosaic_coordinates(self, shape=(600,800), scale=0.33, block=True):
-        b = self._get_bin()
         h, w = shape
         cache_key = 'mosaic_coords_{}_{}x{}_{}'.format(self.pid, h, w, int(scale*100))
         cached = cache.get(cache_key)
