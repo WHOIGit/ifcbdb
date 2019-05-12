@@ -11,8 +11,9 @@ def mosaic_coordinates_task(bin_id, shape=(600,800), scale=0.33, cache_key=None)
     bin = Bin.objects.get(pid=bin_id)
     b = bin._get_bin()
     m = Mosaic(b, shape=shape, scale=scale)
-    print('computing mosaic coordinates for {}'.format(b))
+    print('computing mosaic coordinates for {}'.format(bin.pid))
     coordinates = m.pack()
     result = coordinates.to_dict('list')
-    cache.set(cache_key, result)
+    if cache_key is not None:
+        cache.set(cache_key, result)
     return result

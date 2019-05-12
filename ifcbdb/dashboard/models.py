@@ -2,6 +2,8 @@ import re
 import json
 import logging
 
+from functools import lru_cache
+
 from django.db import models
 
 from django.conf import settings
@@ -215,6 +217,7 @@ class Bin(models.Model):
             for directory in qs.order_by('priority'):
                 yield directory
 
+    @lru_cache()
     def _get_bin(self):
         # return the underlying ifcb.Bin object backed by the raw filesets
         for directory in self._directories(kind=DATA_DIRECTORY_RAW):
