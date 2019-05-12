@@ -206,9 +206,9 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None):
     next_bin = Timeline(dataset.bins).next_bin(bin)
 
     if previous_bin:
-        mosaic_coordinates_task.delay(previous_bin.pid, mosaic_shape, mosaic_scale)
+        previous_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
     if next_bin:
-        mosaic_coordinates_task.delay(next_bin.pid, mosaic_shape, mosaic_scale)
+        next_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
 
     # TODO: Volume Analyzed is using floatformat:3; is that ok?
     return {

@@ -1,5 +1,6 @@
 import re
 import json
+import logging
 
 from django.db import models
 
@@ -28,6 +29,9 @@ from ifcb.data.products.blobs import BlobDirectory
 from ifcb.data.zip import bin2zip_stream
 
 from .crypto import AESCipher
+from .tasks import mosaic_coordinates_task
+
+logger = logging.getLogger(__name__)
 
 FILL_VALUE = -9999
 SRID = 4326
@@ -279,23 +283,21 @@ class Bin(models.Model):
 
     # mosaics
 
-    def mosaic_coordinates(self, shape=(600,800), scale=0.33, ifcb_bin=None):
+    def mosaic_coordinates(self, shape=(600,800), scale=0.33, block=True):
+        b = self._get_bin()
         h, w = shape
-        b = self._get_bin() if ifcb_bin is None else ifcb_bin
         cache_key = 'mosaic_coords_{}_{}x{}_{}'.format(self.pid, h, w, int(scale*100))
-        pickled = cache.get(cache_key)
-        if pickled is not None:
-            coordinates = pd.DataFrame.from_dict(pickled)
-            m = Mosaic(b, shape, scale=scale, coordinates=coordinates)
-        else:
-            m = Mosaic(b, shape, scale=scale)
-            coordinates = m.pack()
-            cache.set(cache_key, coordinates.to_dict('list'), timeout=None) # cache indefinitely
-        return coordinates
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return pd.DataFrame.from_dict(cached)
+        task = mosaic_coordinates_task.delay(self.pid, shape, scale, cache_key)
+        if block:
+            return pd.DataFrame.from_dict(task.get())
+        return None
 
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
         b = self._get_bin()
-        coordinates = self.mosaic_coordinates(shape, scale, ifcb_bin=b)
+        coordinates = self.mosaic_coordinates(shape, scale)
         m = Mosaic(b, shape, scale=scale, bg_color=bg_color, coordinates=coordinates)
         image = m.page(page)
         return image, coordinates        
