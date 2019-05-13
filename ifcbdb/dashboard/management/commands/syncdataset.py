@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from dashboard.models import Dataset, FILL_VALUE
-from dashboard.accession import sync_dataset
+from dashboard.accession import Accession
 
 from ifcb import DataDirectory
 
@@ -27,4 +27,5 @@ class Command(BaseCommand):
         except Dataset.DoesNotExist:
             self.stderr.write('No such dataset "{}"'.format(dataset_name))
             return
-        sync_dataset(d, lat=lat, lon=lon, depth=depth)
+        acc = Accession(d, lat=lat, lon=lon, depth=depth)
+        acc.sync()

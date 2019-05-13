@@ -371,21 +371,6 @@ class Instrument(models.Model):
     def __str__(self):
         return 'IFCB{}'.format(self.number)
 
-@receiver(pre_save, sender=Bin)
-def _lazy_instrument_create(sender, **kw):
-    """automatically associate an Instrument with a bin,
-    creating the instrument if it does not exist"""
-    b = kw['instance']
-    pid = ifcb.Pid(b.pid)
-    instrument_number = pid.instrument
-    version = pid.schema_version
-    try:
-        i = Instrument.objects.get(number=instrument_number)
-    except Instrument.DoesNotExist:
-        i = Instrument(number=instrument_number, version=version)
-        i.save()
-    b.instrument = i
-
 # tags
 
 class Tag(models.Model):
