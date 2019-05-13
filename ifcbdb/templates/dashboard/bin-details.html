@@ -304,6 +304,10 @@
         loadMosaic(currentBinPage);
     });
 
+    function padDigits(number, digits) {
+        return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
+    }
+
     $("#mosaic").click(function(e){
         var x = e.pageX - $(this).offset().left;
         var y = e.pageY - $(this).offset().top;
@@ -316,7 +320,7 @@
                 // TODO: Need to handle routing from Django
                 // TODO: Needs loading indicator
                 // TODO: Is png the right default format
-                var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + img.pid;
+                var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(img.pid, 5);
                 var metaUrl = "/api/image/{{ bin.pid }}/" + img.pid;
 
                 $("#detailed-image").attr("src", baseUrl + ".png");

@@ -1,6 +1,31 @@
-from django.urls import include, path, re_path
+from django.urls import include, path, re_path, register_converter
 
 from . import views
+
+class BinPidConverterVersion1:
+    regex = r'IFCB\d_\d{4}_\d{3}_\d{6}'
+
+    def to_python(self, value):
+        return value
+
+class BinPidConverterVersion2:
+    regex = r'D\d{8}T\d{6}_IFCB\d{3}'
+
+    def to_python(self, value):
+        return value
+
+class ImageIdConverter:
+    regex = r'\d+'
+
+    def to_python(self, value):
+        return int(value)
+
+    def to_url(self, value):
+        return '{:05d}'.format(value)
+
+register_converter(BinPidConverterVersion1, 'pid1')
+register_converter(BinPidConverterVersion2, 'pid2')
+register_converter(ImageIdConverter, 'image_id')
 
 urlpatterns = [
     path('', views.index),
@@ -14,7 +39,8 @@ urlpatterns = [
     re_path(r'(?P<dataset_name>[\w-]+)/dashboard/http.*/(?P<bin_id>\w+)', views.dataset_details),
 
     path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.image_details, name='image'),
-    path('<slug:dataset_name>/<slug:bin_id>_<int:image_id>.html', views.image_details, name='image_legacy'),
+    path('<slug:dataset_name>/<pid1:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy_v1'),
+    path('<slug:dataset_name>/<pid2:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>.html', views.bin_details, name='bin'),
 
     # raw data access
