@@ -67,3 +67,17 @@ def dict_to_json(value):
     """
     if isinstance(value, numpy.int64): return int(value)
     raise TypeError
+
+
+def get_finer_resolution(resolution):
+    """
+    Takes a given resolution and returns the next one down in order
+    """
+    if resolution == "week":
+        return "day"
+
+    if resolution == "day":
+        return "hour"
+
+    # Covers "hour" and "bin" (which is the finest granularity supported)
+    return "bin"

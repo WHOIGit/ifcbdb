@@ -198,6 +198,7 @@ var currentMosaicPage = 1;
 var currentBinPage = 0;
 var numBinPages = 0;
 var currentBinId = "";
+var currentMetric = "";
 
 // TODO: Default resolution is week; it might be possible to calculate this based on the initial data on the timeline
 var currentResolution = "week";
@@ -211,6 +212,13 @@ function changeToClosestBin(targetDate) {
     });
 }
 
+function getPlotlyTypeByMetric(metric) {
+    if (metric == "humidity" || metric == "temperature")
+        return "line";
+
+    return "bar";
+}
+
 function getPlotlyConfig() {
     return {
         responsive: true,
@@ -220,21 +228,32 @@ function getPlotlyConfig() {
 }
 
 function getPlotlyData(data) {
-    return [{
-        type: "bar",
+    var plotlyType = getPlotlyTypeByMetric(currentMetric);
+
+    var series = {
+        type: plotlyType,
         x: data["x"],
         y: data["y"],
         line: {
             color: '#17BECF'
-        }
-    }];
+        },
+    };
+
+    // For bar graphs with only one data point, the width of the bar needs to be set explicitly or
+    //   Plotly will not render anything visible to the user. The x range on a single entry plot is
+    //   set to 24hours, so the bar is set to a width of 1 hour
+    if (plotlyType == "bar" && data["x"].length == 1) {
+        series["width"] = [60*60*1000]
+    }
+
+    return [series];
 }
 
 function getPlotlyLayout(data, range) {
     var layout =  {
         bargap: .05,
         margin: {
-            l: 50,
+            l: 75,
             r: 50,
             b: 50,
             t: 00,
@@ -242,7 +261,7 @@ function getPlotlyLayout(data, range) {
         },
         yaxis: {
             title: {
-                text: data["y-axis"]
+                text: data["y-axis"] + "<br />" + "Resolution: " + currentResolution + "<br />"
             },
             fixedrange: true,
         },
@@ -253,6 +272,11 @@ function getPlotlyLayout(data, range) {
             spikemode: "across+toaxis",
             spikesnap: "cursor",
             spikecolor: "#000"
+        },
+        "marker": {
+            "line": {
+                "width": 10
+            }
         }
     };
 
@@ -263,12 +287,27 @@ function getPlotlyLayout(data, range) {
         ]
     }
 
-    console.log(layout);
+    // TODO: Special handling is needed when there is only one datapoint
+    //   Go through to finer resolutions until we find one with more data
+    //   If we get to a case where there is just a single bin, force a 24 hour xrange
+    if (data["x"].length == 1) {
+        layout["xaxis"]["range"] = [
+            data["x-range"]["start"],
+            data["x-range"]["end"]
+        ]
+    }
 
     return layout;
 }
 
-function calcResolution(plotlyData) {
+function parseAndCalcResolution(plotlyData) {
+    var start = plotlyData["xaxis.range[0]"];
+    var end = plotlyData["xaxis.range[1]"];
+
+    return calcResolution(start, end);
+}
+
+function calcResolution(start, end) {
     // up to a week: bin resolution
     // up to a month: hour resolution
     // up to two years: day resolution
@@ -278,26 +317,30 @@ function calcResolution(plotlyData) {
     var binResolutionRange = moment.duration(1, "hours");
     var hourResolutionRange = moment.duration(6, "hours");
     var dayResolutionRange = moment.duration(1, "days");
+    var weekResolutionRange = moment.duration(1, "weeks");
 
-    sdate = moment(plotlyData["xaxis.range[0]"]);
-    edate = moment(plotlyData["xaxis.range[1]"]);
-    duration = edate.diff(sdate);
+    startDate = moment(start);
+    endDate = moment(end);
+    duration = endDate.diff(startDate);
 
-    if (duration < binResolutionRange) {
-        return "bin";
-    } else if (duration < hourResolutionRange) {
-        return "hour";
-    } else if (duration < dayResolutionRange) {
+    if (duration > weekResolutionRange) {
+        return "week";
+    } else if (duration > dayResolutionRange) {
         return "day";
+    } else if (duration > hourResolutionRange) {
+        return "hour";
     }
 
-    return "week";
+    return "bin";
 }
 
 function createTimeSeries(container, metric) {
+    currentMetric = metric;
     var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric + "?resolution=" + currentResolution;
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
+        currentResolution = response["resolution"];
+
         var initialConfig = getPlotlyConfig();
         var initialData = getPlotlyData(response);
         var initialLayout = getPlotlyLayout(response);
@@ -311,7 +354,7 @@ function createTimeSeries(container, metric) {
 
         // Add event to handle resolution change when zooming
         container[0].on("plotly_relayout", function(relayoutResponse){
-            var resolution = calcResolution(relayoutResponse);
+            var resolution = parseAndCalcResolution(relayoutResponse);
             if (resolution == currentResolution)
                 return;
 
@@ -322,12 +365,11 @@ function createTimeSeries(container, metric) {
 
                 Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
 
-                currentResolution = resolution;
+                currentResolution = dataResponse["resolution"];
                 return false;
             });
         });
     });
-
 }
 
 $("#bin-details").click(function(e) {

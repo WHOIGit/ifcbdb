@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+from datetime import timedelta, datetime
 
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, reverse
@@ -237,21 +238,44 @@ def _mosaic_page_image(request, bin_id):
 
 
 # TODO: The below views are API/AJAX calls; in the future, it would be beneficial to use a proper API framework
+# TODO: The logic to flow through to a finer resolution if the higher ones only return one data item works, but
+#   it causes the UI to need to download data on each zoom level when scroll up, only to then ignore the data. Updates
+#   are needed to let the UI know that certain levels are "off limits" and avoid re-running data when we know it's
+#   just going to force us down to a finer resolution anyway
 def generate_time_series(request, dataset_name, metric,):
-    resolution = request.GET.get("resolution", "hour")
+    resolution = request.GET.get("resolution", "bin")
 
     # Allows us to keep consistant url names
     metric = metric.replace("-", "_")
 
-    # TODO: Allow resolution to be set from API call; default to hours for testing
     dataset = get_object_or_404(Dataset, name=dataset_name)
-    time_series = Timeline(dataset.bins).metrics(metric, None, None, resolution=resolution)
 
     # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
+    while True:
+        time_series = Timeline(dataset.bins).metrics(metric, None, None, resolution=resolution)
+        if len(time_series) > 1 or resolution == "bin":
+            break
+
+        resolution = get_finer_resolution(resolution)
+
+    time_data = [item["dt"] for item in time_series]
+    metric_data = [item["metric"] for item in time_series]
+    if resolution == "bin" and len(time_data) == 1:
+        time_start = time_data[0] + timedelta(hours=-12)
+        time_end = time_data[0] + timedelta(hours=12)
+    else:
+        time_start = min(time_data)
+        time_end = max(time_data)
+
     return JsonResponse({
-        "x": [item["dt"] for item in time_series],
-        "y": [item["metric"] for item in time_series],
+        "x": time_data,
+        "x-range": {
+            "start": time_start,
+            "end": time_end,
+        },
+        "y": metric_data,
         "y-axis": Timeline(dataset.bins).metric_label(metric),
+        "resolution": resolution,
     })
 
 
