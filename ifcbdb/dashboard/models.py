@@ -92,10 +92,10 @@ class Timeline(object):
         qs = self.time_range(start_time, end_time)
 
         if resolution == 'bin':
-            return qs.annotate(dt=F('sample_time'),metric=F(metric)).values('dt','metric')
+            return qs.annotate(dt=F('sample_time'),metric=F(metric)).values('dt','metric').order_by('dt')
         else:
-            return qs.all().annotate(dt=Trunc('sample_time', resolution)). \
-                    values('dt').annotate(metric=Avg(metric))
+            return qs.annotate(dt=Trunc('sample_time', resolution)). \
+                    values('dt').annotate(metric=Avg(metric)).order_by('dt')
 
     def metric_label(self, metric):
         return self.TIMELINE_METRICS.get(metric,'')
