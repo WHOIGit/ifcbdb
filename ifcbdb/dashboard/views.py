@@ -252,7 +252,7 @@ def generate_time_series(request, dataset_name, metric,):
 
     # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
     while True:
-        time_series = Timeline(dataset.bins).metrics(metric, None, None, resolution=resolution)
+        time_series, _ = Timeline(dataset.bins).metrics(metric, None, None, resolution=resolution)
         if len(time_series) > 1 or resolution == "bin":
             break
 

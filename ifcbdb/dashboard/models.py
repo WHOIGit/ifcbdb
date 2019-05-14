@@ -8,7 +8,7 @@ from django.db import models
 
 from django.conf import settings
 
-from django.db.models import F, Count, Sum, Avg
+from django.db.models import F, Count, Sum, Avg, Min, Max
 from django.db.models.functions import Trunc
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.geos import Point
@@ -83,19 +83,42 @@ class Timeline(object):
         ).order_by('distance').first()
 
     def metrics(self, metric, start_time=None, end_time=None, resolution='day'):
-        if resolution not in ['month', 'week', 'day', 'hour', 'bin']:
+        if resolution not in ['month', 'week', 'day', 'hour', 'bin', 'auto']:
             raise ValueError('unsupported time resolution {}'.format(resolution))
 
         if metric not in self.TIMELINE_METRICS.keys():
             raise ValueError('unsupported metric {}'.format(metric))
 
+        if resolution == 'auto':
+            mm = self.bins.aggregate(min=Min('sample_time'),max=Max('sample_time'))
+            min_sample_time, max_sample_time = mm['min'], mm['max']
+            if start_time is None:
+                start_time = min_sample_time
+            else:
+                start_time = pd.to_datetime(start_time, utc=True)
+            if end_time is None:
+                end_time = max_sample_time
+            else:
+                end_time = pd.to_datetime(end_time, utc=True)
+            time_range = end_time - start_time
+            if time_range < pd.Timedelta('14d'):
+                resolution = 'bin'
+            elif time_range < pd.Timedelta('60d'):
+                resolution = 'hour'
+            elif time_range < pd.Timedelta('5y'):
+                resolution = 'day'
+            else:
+                resolution = 'week'
+
         qs = self.time_range(start_time, end_time)
 
         if resolution == 'bin':
-            return qs.annotate(dt=F('sample_time'),metric=F(metric)).values('dt','metric').order_by('dt')
+            result = qs.annotate(dt=F('sample_time'),metric=F(metric)).values('dt','metric').order_by('dt')
         else:
-            return qs.annotate(dt=Trunc('sample_time', resolution)). \
+            result = qs.annotate(dt=Trunc('sample_time', resolution)). \
                     values('dt').annotate(metric=Avg(metric)).order_by('dt')
+
+        return result, resolution
 
     def metric_label(self, metric):
         return self.TIMELINE_METRICS.get(metric,'')
