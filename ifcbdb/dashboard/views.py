@@ -92,13 +92,20 @@ def image_details(request, dataset_name, bin_id, image_id):
     })
 
 
-# TODO: The dumps/load call is to get around there being int64 data within the dictionary that cannot be serialized. We
-#   will probably want to find an alternative for this
 def image_metadata(request, bin_id, target):
     bin = get_object_or_404(Bin, pid=bin_id)
-    metadata = json.dumps(bin.target_metadata(target), default=dict_to_json)
+    metadata = bin.target_metadata(target)
 
-    return JsonResponse(json.loads(metadata))
+    def fmt(k,v):
+        if k == 'start_byte':
+            return str(v)
+        else:
+            return '{:.5g}'.format(v)
+
+    for k in metadata:
+        metadata[k] = fmt(k, metadata[k])
+
+    return JsonResponse(metadata)
 
 
 # TODO: Needs to change from width/height parameters to single widthXheight
