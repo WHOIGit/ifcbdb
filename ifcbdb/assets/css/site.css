@@ -125,9 +125,3 @@ table.table-sm th {
     padding-top: .4rem;
     padding-bottom: .4rem;
 }
-
-table.table-sm td,
-table.table-sm th {
-    font-size: .6rem;
-    font-weight: 400;
-}
