@@ -112,11 +112,16 @@ class Timeline(object):
 
         qs = self.time_range(start_time, end_time)
 
+        if metric == 'size':
+            aggregate_fn = Sum
+        else:
+            aggregate_fn = Avg
+
         if resolution == 'bin':
             result = qs.annotate(dt=F('sample_time'),metric=F(metric)).values('dt','metric').order_by('dt')
         else:
             result = qs.annotate(dt=Trunc('sample_time', resolution)). \
-                    values('dt').annotate(metric=Avg(metric)).order_by('dt')
+                    values('dt').annotate(metric=aggregate_fn(metric)).order_by('dt')
 
         return result, resolution
 
