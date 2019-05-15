@@ -14,7 +14,7 @@
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-    <div class="col-md-6">
+    <div class="col">
         <div class="card h-100">
             <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row d-flex justify-content-between">
@@ -39,7 +39,7 @@
                     <div class="col">
                 <div class="tab-content" id="ImageTabContent">
                     <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab-label">
-                        <img id="bin-mosaic" src="data:image/png;base64,{{image}}" />
+                        <img class="img-fluid" id="bin-mosaic" src="data:image/png;base64,{{image}}" />
                     </div>
                     <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab-label">
                         <img class="img-fluid" src="https://via.placeholder.com/400?text=Image2">
@@ -53,27 +53,10 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 mt-2 mt-md-0">
-        <div class="card h-100">
-            <div class="card-header py-1 mdb-color lighten-5">
-            <div class="row d-flex justify-content-between">
-            <div class="col">
-                <span class="h5-responsive">Location</span>
-                </div>
-                <div class="col">
-                <span>41 north, 82 east (41.31, -70.39), depth 5m</span>
-                </div>
-            </div>
-            </div>
-            <div class="card-body">
-                <div id="mapid" class="h-100" style="min-height:300px;"></div>
-            </div>
-        </div>
-    </div>
 </div>
 <div class="row py-2 px-3">
-    <div class="col-md-6 col-lg-4">
-        <div class="card h500 h-100">
+    <div class="col-md-6 col-xl-5">
+        <div class="card vh-50 h-100">
             <div class="card-header py-1 mdb-color lighten-5">
                 <span class="h5-responsive">Meta Data</span>
             </div>
@@ -100,8 +83,25 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-6 mt-2 mt-md-0">
+    <div class="col-md-6 col-xl-3 mt-2 mt-md-0">
         <div class="card h-100">
+            <div class="card-header py-1 mdb-color lighten-5">
+            <div class="row d-flex justify-content-between">
+            <div class="col">
+                <span class="h5-responsive">Location</span>
+                </div>
+                <div class="col">
+                <span>41 north, 82 east (41.31, -70.39), depth 5m</span>
+                </div>
+            </div>
+            </div>
+            <div class="card-body">
+                <div id="mapid" class="h-100 min-vh-25"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-2 mt-2 mt-xl-0">
+        <div class="card vh-50 h-100">
             <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row">
                     <div class="col">
@@ -144,8 +144,8 @@
             {% endif %}
         </div>
     </div>
-    <div class="col-md-6 col-lg-2 mt-2 mt-md-0">
-        <div class="card h-100">
+    <div class="col-md-6 col-xl-2 mt-2 mt-xl-0">
+        <div class="card vh-50 h-100">
             <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row">
                     <div class="col">

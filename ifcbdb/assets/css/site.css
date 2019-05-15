@@ -99,3 +99,19 @@ body {
 .card.h600 {
     max-height: 600px;
 }
+
+.min-vh-50 {
+    min-height: 50vh !important;
+}
+
+.min-vh-25 {
+    min-height: 25vh !important;
+}
+
+.vh-50 {
+    height: 50vh !important;
+}
+
+.vh-25 {
+    height: 25vh !important;
+}
