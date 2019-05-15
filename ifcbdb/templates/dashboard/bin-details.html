@@ -36,7 +36,7 @@
             <div class="card-body text-center">
                 <div class="tab-content" id="imageTabContent">  
                     <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
-                        <img id="mosaic" src="data:image/png;base64,{{ image }}" class="img-fluid" style="display:none" aadata-toggle="modal" aadata-target="#image-modal"  />
+                        <img id="mosaic" src="data:image/png;base64,{{ image }}" style="display:none" aadata-toggle="modal" aadata-target="#image-modal"  />
                         <div id="mosaic-loading" class="spinner-border" role="status">
                             <span class="sr-only">Loading...</span>
                         </div>
@@ -52,7 +52,7 @@
             </div>
             <div class="card-footer py-1 text-center white">
                 <nav aria-label="Bin Paging" class="text-center">
-                    <ul id="image-paging" class="pagination pg-dark justify-content-center">
+                    <ul id="bin-paging" class="pagination pg-dark justify-content-center">
                         <li class="page-item page-previous">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
@@ -239,14 +239,38 @@
     var numBinPages = {{ details.num_pages }};
     var coordinates = {{ details.coordinates|safe }};
 
-    function loadMosaic(page) {
+    function loadMosaic(page, isInitial) {
         $("#mosaic").hide();
         $("#mosaic-loading").show();
 
         var viewSize = $("#view-size option:selected").val();
         var scaleFactor = $("#scale-factor option:selected").val();
 
-        // TODO: Need to pass in scale/width/height from UI controls
+        if (!isInitial) {
+            var binDataUrl = "{% url 'bin_data' dataset.name bin.pid %}" +
+                "?view_size=" + viewSize +
+                "&scale_factor=" + scaleFactor;
+
+            $.get(binDataUrl, function(data){
+
+                // Update the coordinates for the image
+                coordinates = JSON.parse(data["coordinates"]);
+
+                // Update the paging
+                if (data["num_pages"] != numBinPages) {
+                    numBinPages = data["num_pages"];
+
+                    $(".page-index").remove();
+                    for (var i = 0; i < numBinPages + 1; i++) {
+                        var li = $("<li class='page-item page-index' />").toggleClass("active", i == 0);
+                        var btn = $("<a class='page-link' />").text(i + 1).attr("data-page", i);
+
+                        li.append(btn).insertBefore($(".page-next"));
+                    }
+                }
+            });
+        }
+
         var url = "{% url 'mosaic_page_encoded_image' bin.pid %}" +
             "?view_size=" + viewSize +
             "&scale_factor=" + scaleFactor +
@@ -261,29 +285,29 @@
         });
     }
 
-    $(".page-index a").click(function(e) {
+    $("#bin-paging").on("click", ".page-index a", function(e){
         e.preventDefault();
 
         var pageNumber = $(this).data("page")
 
-        changePage(pageNumber);
+        changePage(pageNumber, false);
     });
 
-    $(".page-previous").click(function(e) {
+    $("#bin-paging").on("click", ".page-previous", function(e){
         e.preventDefault();
 
         if (currentBinPage > 0)
-            changePage(currentBinPage - 1);
+            changePage(currentBinPage - 1, false);
     });
 
-    $(".page-next").click(function(e) {
+    $("#bin-paging").on("click", ".page-next", function(e){
         e.preventDefault();
 
         if (currentBinPage < numBinPages)
-            changePage(currentBinPage + 1);
+            changePage(currentBinPage + 1, false);
     });
 
-    function changePage(pageNumber) {
+    function changePage(pageNumber, isInitial) {
         currentBinPage = pageNumber;
 
         $(".page-previous").toggleClass("disabled", (pageNumber <= 0));
@@ -295,17 +319,17 @@
             $(this).closest("li").toggleClass("active", isSelected);
         });
 
-        loadMosaic(pageNumber);
+        loadMosaic(pageNumber, isInitial);
     }
 
     // TODO: This does not currently update paging for the image
     $("#view-size").change(function(e){
-        loadMosaic(currentBinPage);
+        loadMosaic(currentBinPage, false);
     });
 
     // TODO: This does not currently update paging for the image
     $("#scale-factor").change(function(e){
-        loadMosaic(currentBinPage);
+        loadMosaic(currentBinPage, false);
     });
 
     $("#mosaic").click(function(e){
@@ -346,7 +370,7 @@
     $(function() {
         var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
         L.marker([{{ bin.latitude }}, {{ bin.longitude }}]).addTo(map);
-        changePage(currentBinPage);
+        changePage(currentBinPage, true);
 
         var binDate = "{{ bin.timestamp|date:'Y-m-d H:i:s e' }}";
         $("#bin-date-relative").text(" (" + timeago().format(binDate) + ")");

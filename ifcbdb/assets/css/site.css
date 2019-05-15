@@ -125,3 +125,11 @@ table.table-sm th {
     padding-top: .4rem;
     padding-bottom: .4rem;
 }
+
+#mosaic {
+    height:auto;
+}
+
+#image-tab {
+    overflow-x: auto
+}

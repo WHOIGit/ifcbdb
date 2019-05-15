@@ -220,6 +220,9 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None):
 
     # TODO: Volume Analyzed is using floatformat:3; is that ok?
     return {
+        "scale": mosaic_scale,
+        "shape": mosaic_shape,
+
         "previous_bin_id": previous_bin.pid if previous_bin else "",
         "next_bin_id": next_bin.pid if next_bin else "",
         "lat": bin.latitude,
@@ -228,6 +231,8 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None):
         "num_pages": int(pages),
         "tags": bin.tag_names,
         "coordinates": coordinates_to_json(coordinates),
+
+
     }
 
 
