@@ -35,7 +35,7 @@ from .tasks import mosaic_coordinates_task
 
 logger = logging.getLogger(__name__)
 
-FILL_VALUE = -9999
+FILL_VALUE = -9999999
 SRID = 4326
 
 
