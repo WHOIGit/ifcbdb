@@ -73,7 +73,7 @@
                         {% for key, value in metadata.items %}
                             <tr>
                                 <th scope="row">{{ key }}</th>
-                                <td>{{ value }}</td>
+                                <td>{{ value|floatformat:-4 }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
