@@ -304,10 +304,6 @@
         loadMosaic(currentBinPage);
     });
 
-    function padDigits(number, digits) {
-        return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
-    }
-
     $("#mosaic").click(function(e){
         var x = e.pageX - $(this).offset().left;
         var y = e.pageY - $(this).offset().top;
