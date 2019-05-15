@@ -26,7 +26,7 @@ def index(request):
 
 
 def datasets(request):
-    datasets = Dataset.objects.all()
+    datasets = Dataset.objects.all().order_by('title')
 
     return render(request, 'dashboard/datasets.html', {
         "datasets": datasets,
