@@ -100,6 +100,10 @@ body {
     max-height: 600px;
 }
 
+.modal .h300 {
+    max-height: 300px;
+}
+
 .min-vh-50 {
     min-height: 50vh !important;
 }
@@ -114,4 +118,16 @@ body {
 
 .vh-25 {
     height: 25vh !important;
+}
+
+table.table-sm td,
+table.table-sm th {
+    padding-top: .4rem;
+    padding-bottom: .4rem;
+}
+
+table.table-sm td,
+table.table-sm th {
+    font-size: .6rem;
+    font-weight: 400;
 }

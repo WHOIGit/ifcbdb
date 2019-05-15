@@ -95,7 +95,7 @@
         <div class="card-body">
         <div class="row">
     <div class="col-lg-6 col-xl-9">
-        <div class="card h-100">
+        <div class="card h-100 min-vh-50">
     <div class="card-header py-1 white">
                             <form class="form-inline justify-content-end">
                                     <label class="my-1 mr-2" for="view-size">View Size:</label>
@@ -146,27 +146,25 @@
             </div>
         </div>
             <div class="card h-50">
-                    <div class="card-header white py-1">
-<p>Download:</p>
-            </div>
             <div class="card-body">
-            <div class="row">
-            <div class="col">
-            <ul class="list-unstyled">
-                <li><a href="{% url 'adc_csv' dataset.name bin.pid %}">ADC</a></li>
-                <li><a href="{% url 'hdr_text' dataset.name bin.pid %}">HDR</a></li> 
-                <li><a href="{% url 'roi_binary' dataset.name bin.pid %}">ROI</a></li> 
-                <li><a href="{% url 'zip' dataset.name bin.pid %}">ZIP</a></li> 
-                </ul>
-            </div>
-            <div class="col">
-            <ul class="list-unstyled">       
-                <li><a href="{% url 'blob_zip' dataset.name bin.pid %}">blobs</a></li> 
-                <li><a href="#">features</a></li> 
-                <li><a href="#">autoclass</a></li>
-            </ul>
-            </div>            
-            </div>
+                <p class="h5-responsive">Download:</p>
+                <div class="row">
+                    <div class="col">
+                        <ul class="list-unstyled">
+                            <li><a href="{% url 'adc_csv' dataset.name bin.pid %}">ADC</a></li>
+                            <li><a href="{% url 'hdr_text' dataset.name bin.pid %}">HDR</a></li> 
+                            <li><a href="{% url 'roi_binary' dataset.name bin.pid %}">ROI</a></li> 
+                            <li><a href="{% url 'zip' dataset.name bin.pid %}">ZIP</a></li> 
+                        </ul>
+                    </div>
+                    <div class="col">
+                        <ul class="list-unstyled">       
+                            <li><a href="{% url 'blob_zip' dataset.name bin.pid %}">blobs</a></li> 
+                            <li><a href="#">features</a></li> 
+                            <li><a href="#">autoclass</a></li>
+                        </ul>
+                    </div>            
+                </div>
             </div>
         </div>
     </div>
