@@ -291,6 +291,13 @@ class Bin(models.Model):
                 raise KeyError('no blobs found for {}'.format(self.pid)) from e
         raise KeyError('no blobs found for {}'.format(self.pid))
 
+    def has_blobs(self, version=2):
+        try:
+            self.blob_file(version=version)
+            return True
+        except KeyError:
+            return False
+
     def blob_path(self, version=2):
         return self.blob_file(version=version).path
 
