@@ -491,6 +491,10 @@ $("#mosaic").click(function(e){
     });
 });
 
+$("#image-modal").on("hidden.bs.modal", function() {
+    $("#detailed-image").attr("src","");
+});
+
 $(function() {
     // TODO: Fill in proper values and a real default starting location
     map = createMap(41.5507768, -70.6593102);

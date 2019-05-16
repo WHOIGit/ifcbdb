@@ -406,6 +406,10 @@
         });
     });
 
+    $("#image-modal").on("hidden.bs.modal", function() {
+        $("#detailed-image").attr("src","");
+    });
+
     $(function() {
         var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
         L.marker([{{ bin.latitude }}, {{ bin.longitude }}]).addTo(map);
