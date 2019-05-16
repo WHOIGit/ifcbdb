@@ -241,6 +241,15 @@
     var numBinPages = {{ details.num_pages }};
     var coordinates = {{ details.coordinates|safe }};
 
+    function delayedMosaic(page, isInitial) {
+        $("#mosaic").hide();
+        $("#mosaic-loading").show();
+
+        setTimeout(function(){
+            loadMosaic(page, isInitial);
+        }, 500);
+    }
+
     function loadMosaic(page, isInitial) {
         $("#mosaic").hide();
         $("#mosaic-loading").show();
@@ -321,7 +330,7 @@
             $(this).closest("li").toggleClass("active", isSelected);
         });
 
-        loadMosaic(pageNumber, isInitial);
+        delayedMosaic(pageNumber, isInitial);
     }
 
     $("#view-size").change(function(e){
@@ -329,15 +338,13 @@
         var height = parseInt(size[1]);
 
         $("#mosaic-loading").height(height);
-        $("#mosaic").hide();
-        $("#mosaic-loading").show();
 
-        loadMosaic(currentBinPage, false);
+        delayedMosaic(currentBinPage, false);
     });
 
     // TODO: This does not currently update paging for the image
     $("#scale-factor").change(function(e){
-        loadMosaic(currentBinPage, false);
+        delayedMosaic(currentBinPage, false);
     });
 
     $("#mosaic").click(function(e){
