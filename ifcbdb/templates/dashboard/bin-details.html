@@ -319,8 +319,6 @@
     });
 
     function changePage(pageNumber, isInitial) {
-        currentBinPage = pageNumber;
-
         $(".page-previous").toggleClass("disabled", (pageNumber <= 0));
         $(".page-next").toggleClass("disabled", (pageNumber >= numBinPages));
 
@@ -329,6 +327,8 @@
 
             $(this).closest("li").toggleClass("active", isSelected);
         });
+
+        currentBinPage = pageNumber;
 
         delayedMosaic(pageNumber, isInitial);
     }
@@ -339,12 +339,12 @@
 
         $("#mosaic-loading").height(height);
 
-        delayedMosaic(currentBinPage, false);
+        changePage(0, false);
     });
 
     // TODO: This does not currently update paging for the image
     $("#scale-factor").change(function(e){
-        delayedMosaic(currentBinPage, false);
+        changePage(0, false);
     });
 
     $("#mosaic").click(function(e){
