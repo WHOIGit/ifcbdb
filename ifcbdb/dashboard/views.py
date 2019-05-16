@@ -52,6 +52,7 @@ def dataset_details(request, dataset_name, bin_id=None):
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
         "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
+        "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
     })
 
 
