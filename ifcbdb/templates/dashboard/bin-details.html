@@ -236,7 +236,6 @@
 
 {% endblock %} {% block scripts %}
 <script>
-    var currentMosaicPage = 1;
     var currentBinPage = 0;
     var numBinPages = {{ details.num_pages }};
     var coordinates = {{ details.coordinates|safe }};
@@ -248,6 +247,27 @@
         setTimeout(function(){
             loadMosaic(page, isInitial);
         }, 50);
+    }
+
+    function updatePaging() {
+        $(".page-previous").toggleClass("disabled", (currentBinPage <= 0));
+        $(".page-next").toggleClass("disabled", (currentBinPage >= numBinPages));
+
+        $.each($(".page-index a"), function() {
+            var isSelected = $(this).data("page") == currentBinPage;
+
+            $(this).closest("li").toggleClass("active", isSelected);
+        });
+    }
+
+    function rebuildPageIndexes() {
+        $(".page-index").remove();
+        for (var i = 0; i < numBinPages + 1; i++) {
+            var li = $("<li class='page-item page-index' />").toggleClass("active", i == 0);
+            var btn = $("<a class='page-link' />").text(i + 1).attr("data-page", i);
+
+            li.append(btn).insertBefore($(".page-next"));
+        }
     }
 
     function loadMosaic(page, isInitial) {
@@ -271,13 +291,8 @@
                 if (data["num_pages"] != numBinPages) {
                     numBinPages = data["num_pages"];
 
-                    $(".page-index").remove();
-                    for (var i = 0; i < numBinPages + 1; i++) {
-                        var li = $("<li class='page-item page-index' />").toggleClass("active", i == 0);
-                        var btn = $("<a class='page-link' />").text(i + 1).attr("data-page", i);
-
-                        li.append(btn).insertBefore($(".page-next"));
-                    }
+                    rebuildPageIndexes();
+                    updatePaging();
                 }
             });
         }
@@ -289,7 +304,7 @@
 
         $.get(url, function(data) {
             $("#mosaic").attr("src", "data:image/png;base64," + data);
-            currentMosaicPage = page;
+            currentBinPage = page;
 
             $("#mosaic-loading").hide();
             $("#mosaic").show();
@@ -319,21 +334,15 @@
     });
 
     function changePage(pageNumber, isInitial) {
-        $(".page-previous").toggleClass("disabled", (pageNumber <= 0));
-        $(".page-next").toggleClass("disabled", (pageNumber >= numBinPages));
-
-        $.each($(".page-index a"), function() {
-            var isSelected = $(this).data("page") == pageNumber;
-
-            $(this).closest("li").toggleClass("active", isSelected);
-        });
-
         currentBinPage = pageNumber;
 
         delayedMosaic(pageNumber, isInitial);
+        updatePaging();
     }
 
     $("#view-size").change(function(e){
+        currentBinPage = 0;
+
         var size = $("#view-size").val().split("x");
         var height = parseInt(size[1]);
 
@@ -342,7 +351,6 @@
         changePage(0, false);
     });
 
-    // TODO: This does not currently update paging for the image
     $("#scale-factor").change(function(e){
         changePage(0, false);
     });
