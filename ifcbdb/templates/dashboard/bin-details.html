@@ -387,8 +387,8 @@
         L.marker([{{ bin.latitude }}, {{ bin.longitude }}]).addTo(map);
         changePage(currentBinPage, true);
 
-        var binDate = "{{ bin.timestamp|date:'Y-m-d H:i:s e' }}";
-        $("#bin-date-relative").text(" (" + timeago().format(binDate) + ")");
+        var binDate = "{{ bin.timestamp|date:'c' }}";
+        $("#bin-date-relative").text(" (" + moment(binDate).fromNow() + ")");
     });
 
 </script>
