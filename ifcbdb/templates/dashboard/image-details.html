@@ -21,17 +21,17 @@
                     <div class="col">
                         <span class="h5-responsive">Image</span>
                     </div>
-                <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-mdb-color" id="image-tab-label" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-mdb-color" id="blob-tab-label" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-mdb-color" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
-                    </li>
-                </ul>                    
+                    <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-mdb-color" id="image-tab-label" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-mdb-color {% if not has_blobs %}disabled{% endif %}" id="blob-tab-label" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-sm btn-mdb-color {% if not has_blobs %}disabled{% endif %}" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
             <div class="card-body text-center">
@@ -39,13 +39,13 @@
                     <div class="col">
                 <div class="tab-content" id="ImageTabContent">
                     <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab-label">
-                        <img class="img-fluid" id="bin-mosaic" src="data:image/png;base64,{{image}}" />
+                        <img id="image" class="img-fluid" src="data:image/png;base64,{{ image }}" />
                     </div>
                     <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab-label">
-                        <img class="img-fluid" src="https://via.placeholder.com/400?text=Image2">
+                        <img id="image-blob" class="img-fluid">
                     </div>
                     <div class="tab-pane" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab-label">
-                        <img class="img-fluid" src="https://via.placeholder.com/400?text=Image3">
+                        <img id="image-outline" class="img-fluid">
                     </div>
                 </div>
             </div>
@@ -254,9 +254,33 @@
 
 {% block scripts %}
 <script>
+    $("#blob-tab-label").click(function(e){
+        e.preventDefault();
+
+        $.get("{% url 'image_blob' bin.pid image_id %}", function(data){
+            if (data["blob"] != "")
+                $("#image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+        });
+    });
+
+    $("#outline-tab-label").click(function(e){
+        e.preventDefault();
+
+        $.get("{% url 'image_outline' bin.pid image_id %}", function(data){
+            if (data["outline"] != "")
+                $("#image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+        });
+    });
+
     $(function(){
         // TODO: Fill in proper values and a real default starting location
         var map = createMap(41.5507768,-70.6593102);
+
+        // Default the width/height of the blob/outline images to prevent the dif resizing
+        $("#image-blob").width($("#image").width());
+        $("#image-blob").height($("#image").height());
+        $("#image-outline").width($("#image").width());
+        $("#image-outline").height($("#image").height());
     });
 </script>
 {% endblock %}

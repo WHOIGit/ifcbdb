@@ -64,4 +64,6 @@ urlpatterns = [
     path('api/mosaic/encoded_image/<slug:bin_id>', views.mosaic_page_encoded_image, name='mosaic_page_encoded_image'),
     path('api/mosaic/image/<slug:bin_id>.png', views.mosaic_page_image, name='mosaic_page_image'),
     path('api/image/<slug:bin_id>/<int:target>', views.image_metadata, name='image_metadata'),
+    path('api/blob/<slug:bin_id>/<int:target>', views.image_blob, name='image_blob'),
+    path('api/outline/<slug:bin_id>/<int:target>', views.image_outline, name='image_outline'),
 ]

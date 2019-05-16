@@ -91,6 +91,7 @@ def image_details(request, dataset_name, bin_id, image_id):
         "image": embed_image(image),
         "image_id": image_id,
         "metadata": metadata,
+        "has_blobs": bin.has_blobs(),
     })
 
 
@@ -108,6 +109,24 @@ def image_metadata(request, bin_id, target):
         metadata[k] = fmt(k, metadata[k])
 
     return JsonResponse(metadata)
+
+
+def image_blob(request, bin_id, target):
+    bin = get_object_or_404(Bin, pid=bin_id)
+    blob = embed_image(bin.blob(int(target))) if bin.has_blobs() else None
+
+    return JsonResponse({
+        "blob": blob
+    })
+
+
+def image_outline(request, bin_id, target):
+    bin = get_object_or_404(Bin, pid=bin_id)
+    outline = embed_image(bin.outline(int(target))) if bin.has_blobs() else None
+
+    return JsonResponse({
+        "outline": outline
+    })
 
 
 # TODO: Needs to change from width/height parameters to single widthXheight
