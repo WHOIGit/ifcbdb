@@ -316,6 +316,13 @@ $("#ts-tabs .nav-link").click(function() {
     createTimeSeries(container, metric);
 });
 
+$("#view-size").change(function () {
+    var viewSize = $("#view-size").val();
+    var vs = viewSize.split("x");
+    var height = parseInt(vs[1]);
+    $('#mosaic-loading').height(height);
+});
+
 function changeBin(binId, updateHistory) {
     if (binId === "")
         return;
@@ -373,11 +380,11 @@ function changeBin(binId, updateHistory) {
 }
 
 function loadMosaic(pageNumber) {
-    $("#mosaic-loading").show();
-    $("#mosaic").hide();
-
     var viewSize = $("#view-size option:selected").val();
     var scaleFactor = $("#scale-factor option:selected").val();
+
+    $("#mosaic-loading").show();
+    $("#mosaic").hide();
 
     // TODO: Fix url to use Django routing
     var binDataUrl = "/api/{{ dataset.name }}/bin/" + currentBinId +
