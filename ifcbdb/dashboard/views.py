@@ -70,7 +70,7 @@ def bin_details(request, dataset_name, bin_id):
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
         "bin": bin,
-        "details": _bin_details(dataset, bin),
+        "details": _bin_details(dataset, bin, preload_adjacent_bins=False),
     })
 
 
@@ -196,7 +196,7 @@ def zip(request, dataset_name, bin_id):
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
 
-def _bin_details(dataset, bin, view_size=None, scale_factor=None):
+def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjacent_bins=False):
     if not view_size:
         view_size = Bin.MOSAIC_DEFAULT_VIEW_SIZE
     if not scale_factor:
@@ -214,9 +214,9 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None):
     previous_bin = Timeline(dataset.bins).previous_bin(bin)
     next_bin = Timeline(dataset.bins).next_bin(bin)
 
-    if previous_bin:
+    if preload_adjacent_bins and previous_bin:
         previous_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
-    if next_bin:
+    if preload_adjacent_bins and next_bin:
         next_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
 
     # TODO: Volume Analyzed is using floatformat:3; is that ok?
@@ -299,7 +299,9 @@ def bin_data(request, dataset_name, bin_id):
     bin = get_object_or_404(Bin, pid=bin_id)
     view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
     scale_factor = request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
-    details = _bin_details(dataset, bin, view_size, scale_factor)
+    preload_adjacent_bins = request.GET.get("preload_adjacent_bins", False)
+
+    details = _bin_details(dataset, bin, view_size, scale_factor, preload_adjacent_bins)
 
     return JsonResponse(details)
 

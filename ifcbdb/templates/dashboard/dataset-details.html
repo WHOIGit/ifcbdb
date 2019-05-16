@@ -274,6 +274,7 @@ function changeBin(binId, updateHistory) {
     var dataUrl = "{% url 'bin_data' dataset.name '__BIN_PID__' %}".replace("__BIN_PID__", binId);
     dataUrl += "?view_size=" + viewSize;
     dataUrl += "&scale_factor=" + scaleFactor;
+    dataUrl += "&preload_adjacent_bins=" + true;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
