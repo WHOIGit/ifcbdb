@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block breadcrumbs %}
-<li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
+<li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}">{{ dataset.name }}</a></li>
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></li>
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'image' dataset.name bin.pid image_id %}">{{ image_id }}</a></li>
 {% endblock %}
