@@ -401,8 +401,9 @@ function loadMosaic(pageNumber) {
             numBinPages = data["num_pages"];
 
             rebuildPageIndexes();
-            updatePaging();
         }
+
+        updatePaging();
     });
 
     // TODO: Need to pass in scale/width/height from UI controls
