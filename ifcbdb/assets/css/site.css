@@ -126,6 +126,11 @@ table.table-sm th {
     padding-bottom: .4rem;
 }
 
+.spinner-center {
+    position: absolute;
+    top: 50%;
+}
+
 #mosaic {
     height:auto;
 }
