@@ -252,6 +252,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         "num_pages": int(pages),
         "tags": bin.tag_names,
         "coordinates": coordinates_to_json(coordinates),
+        "has_blobs": bin.has_blobs(),
 
 
     }

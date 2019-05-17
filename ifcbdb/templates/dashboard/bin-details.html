@@ -103,7 +103,11 @@
                             </dd>
                             <dd class="col-sm-8">
                                 <ul class="list-unstyled">
-                                    <li><a href="{% url 'blob_zip' dataset.name bin.pid %}">blobs</a></li> 
+                                    {% if details.has_blobs %}
+                                    <li><a href="{% url 'blob_zip' dataset.name bin.pid %}">blobs</a></li>
+                                    {% else %}
+                                    <li>blobs</li>
+                                    {% endif %} 
                                     <li>features</li> 
                                     <li>autoclass</li>
                                 </ul>
