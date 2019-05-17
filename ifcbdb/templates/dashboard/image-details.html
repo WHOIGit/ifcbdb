@@ -7,9 +7,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row d-flex justify-content-between">
     <div class="col">
         <span class="h3-responsive">{{ bin.pid }}_{{ image_id|stringformat:"05d" }}</span>
+    </div>
+    <div class="pl-3 align-self-center">
+        <span id="share-button" class="h5-responsive fa fa-share-square"></span>
     </div>
 </div>
 <hr class="my-2">
@@ -249,6 +252,25 @@
         </div>
     </div>
 </div>
+<div class="modal" id="share-modal" tabindex="-1" role="dialog" aria-labelledby="share-modal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Share link</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+            </div>
+            <div class="modal-body">
+                <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}{% url 'image_legacy' dataset.name bin.pid image_id %}">
+            </div>
+            <div class="modal-footer">
+                <button id="copy-share-link" type="button" class="btn btn-mdb-color btn-sm">Copy to clipboard</button>
+                <!--button type="button" class="btn btn-mdb-color btn-sm" data-dismiss="modal">Close</button-->
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Modal -->
 {% endblock %}
 
@@ -281,6 +303,16 @@
         $("#image-blob").height($("#image").height());
         $("#image-outline").width($("#image").width());
         $("#image-outline").height($("#image").height());
+    });
+
+    $("#share-button").click(function () {
+        $("#share-modal").modal();
+        $("#share-link").select();
+    });
+
+    $("#copy-share-link").click(function() {
+        $("#share-link").select();
+        document.execCommand("Copy");
     });
 </script>
 {% endblock %}

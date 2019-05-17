@@ -7,7 +7,10 @@
         <span class="h3-responsive">{{ bin.sample_time|date:'Y-m-d H:i:s e' }}
             <span id="bin-date-relative"></span>
             by IFCB{{ bin.instrument.number }}
-        </span> 
+        </span>
+    </div>
+    <div class="pl-3 align-self-center">
+        <span id="share-button" class="h5-responsive fa fa-share-square"></span>
     </div>
 </div>
 <hr class="my-2">
@@ -203,20 +206,21 @@
     </div>
 </div>
 <!-- Modal -->
-<div class="modal fade" id="basicExampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal" id="share-modal" tabindex="-1" role="dialog" aria-labelledby="share-modal" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                <h5 class="modal-title" id="exampleModalLabel">Share link</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
             </div>
             <div class="modal-body">
-                ...
+                <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}{% url 'bin' dataset.name bin.pid %}">
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button id="copy-share-link" type="button" class="btn btn-mdb-color btn-sm">Copy to clipboard</button>
+                <!--button type="button" class="btn btn-mdb-color btn-sm" data-dismiss="modal">Close</button-->
             </div>
         </div>
     </div>
@@ -412,6 +416,16 @@
 
     $("#image-modal").on("hidden.bs.modal", function() {
         $("#detailed-image").attr("src","");
+    });
+
+    $("#share-button").click(function () {
+        $("#share-modal").modal();
+        $("#share-link").select();
+    });
+
+    $("#copy-share-link").click(function() {
+        $("#share-link").select();
+        document.execCommand("Copy");
     });
 
     $(function() {
