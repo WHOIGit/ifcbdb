@@ -430,6 +430,8 @@
     $(".change-image").click(function(e){
         var target = $(this).data("target");
 
+        var pixel = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
         $.each($("#images img"), function(){
             var id = $(this).attr("id");
 
@@ -438,6 +440,8 @@
 
         // TODO: Implement Django routes instead of hardcoded ones
         if (target == "detailed-image-blob" && $("#detailed-image-blob").attr("src") === "") {
+            $('#detailed-image-blob').attr("src", pixel);
+
             var blobUrl = "/api/blob/{{ bin.pid }}/" + $("#detailed-image").data("image-id");
 
             $.get(blobUrl, function(data){
@@ -447,6 +451,8 @@
         }
 
         if (target == "detailed-image-outline" && $("#detailed-image-outline").attr("src") === "") {
+            $('#detailed-image-outline').attr("src", pixel);
+
             var outlineUrl = "/api/outline/{{ bin.pid }}/" + $("#detailed-image").data("image-id");
 
             $.get(outlineUrl, function(data){
