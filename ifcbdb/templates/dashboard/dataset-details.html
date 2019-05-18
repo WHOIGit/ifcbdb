@@ -345,7 +345,14 @@ function changeBin(binId, updateHistory) {
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
-    $("#mosaic").hide();
+    $("#mosaic").hide().attr("src","");
+
+    // Update bin name/link
+    $("#bin-header").attr("href", binUrl).html(binId);
+
+    // disable next/previous buttons
+    $("#previous-bin").addClass("disabled");
+    $("#next-bin").addClass("disabled");
 
     $.get(dataUrl, function(data){
         currentBinId = binId;
@@ -353,19 +360,11 @@ function changeBin(binId, updateHistory) {
         // Update the coordinates for the image
         coordinates = JSON.parse(data["coordinates"]);
 
-        // Update bin name/link
-        $("#bin-header").attr("href", binUrl).html(binId);
-
         // Update bin paging
         currentBinPage = 0;
 
-        $("#previous-bin")
-            .data("bin", data.previous_bin_id)
-            .toggleClass("disabled", data.previous_bin_id === "");
-
-        $("#next-bin")
-            .data("bin", data.next_bin_id)
-            .toggleClass("disabled", data.next_bin_id === "");
+        $("#previous-bin").data("bin", data.previous_bin_id);
+        $("#next-bin").data("bin", data.next_bin_id);
 
         // Update outline/blob links
         $("#detailed-image-blob-link").toggleClass("disabled", !data["has_blobs"]);
@@ -428,6 +427,15 @@ function loadMosaic(pageNumber) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
+
+        var previous_bin_id = $("#previous-bin").data("bin");
+        var next_bin_id = $("#next-bin").data("bin");
+
+        $("#previous-bin")
+            .toggleClass("disabled", previous_bin_id === "");
+
+        $("#next-bin")
+            .toggleClass("disabled", next_bin_id === "");
     });
 }
 
@@ -457,6 +465,11 @@ $("#bin-paging").on("click", ".page-index a", function(e){
     var pageNumber = $(this).data("page")
 
     changePage(pageNumber);
+});
+
+$("#bin-header").click(function() {
+    // prevent users from clicking while the bin page is loading
+    $("#bin-header").css("pointer-events","none");
 });
 
 function changePage(pageNumber) {
