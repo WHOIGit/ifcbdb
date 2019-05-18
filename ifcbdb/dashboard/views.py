@@ -71,7 +71,6 @@ def bin_details(request, dataset_name, bin_id):
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
         "bin": bin,
-        "has_blobs": bin.has_blobs(),
         "details": _bin_details(dataset, bin, preload_adjacent_bins=False),
     })
 
