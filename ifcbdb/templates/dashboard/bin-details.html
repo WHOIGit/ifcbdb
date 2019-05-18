@@ -235,9 +235,11 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 align-self-center text-center h-100" id="images">
-                                <img class="img-fluid mb-2 align-middle" id="detailed-image" src="" />
-                                <img class="img-fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
-                                <img class="img-fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
+                                <a id="detailed-image-link" href="#">
+                                    <img class="img-fluid mb-2 align-middle" id="detailed-image" src="" />
+                                    <img class="img-fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
+                                    <img class="img-fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
+                                </a>
                                 <br />
                                 <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image" href="#">Image</a>
                                 <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-blob" href="#">Blob</a>
@@ -256,7 +258,7 @@
                         </div>
                     </div>
                     <div class="card-footer white text-center">
-                        <a id="detailed-image-link" href="#" class="btn btn-mdb-color btn-sm">View Details</a>
+                        <a id="detailed-image-button" href="#" class="btn btn-mdb-color btn-sm">View Details</a>
                     </div>
                 </div>
             </div>
@@ -403,6 +405,7 @@
                 changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
                 $("#detailed-image").data("image-id", img.pid);
                 $("#detailed-image-link").attr("href", baseUrl + ".html");
+                $("#detailed-image-button").attr("href", baseUrl + ".html");
                 $("#image-modal").modal();
 
                 $("#detailed-image-metadata tbody").empty();
