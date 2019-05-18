@@ -82,15 +82,17 @@ def image_details(request, dataset_name, bin_id, image_id):
     dataset = get_object_or_404(Dataset, name=dataset_name)
     bin = get_object_or_404(Bin, pid=bin_id)
 
+    image_number = int(image_id)
+
     # TODO: Add validation checks/error handling
-    image = bin.image(int(image_id))
-    metadata = json.loads(json.dumps(bin.target_metadata(image_id), default=dict_to_json))
+    image = bin.image(image_number)
+    metadata = json.loads(json.dumps(bin.target_metadata(image_number), default=dict_to_json))
 
     return render(request, 'dashboard/image-details.html', {
         "dataset": dataset,
         "bin": bin,
         "image": embed_image(image),
-        "image_id": image_id,
+        "image_id": image_number,
         "metadata": metadata,
         "has_blobs": bin.has_blobs(),
     })
@@ -253,6 +255,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         "num_pages": int(pages),
         "tags": bin.tag_names,
         "coordinates": coordinates_to_json(coordinates),
+        "has_blobs": bin.has_blobs(),
 
 
     }
