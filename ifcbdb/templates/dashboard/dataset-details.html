@@ -184,8 +184,14 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6 align-self-center text-center h-100">
+                            <div class="col-md-6 align-self-center text-center h-100" id="images">
                                 <img class="img-fluid mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
+                                <img class="img-fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
+                                <img class="img-fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
+                                <br />
+                                <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image" href="#">Image</a>
+                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-blob" href="#" id="detailed-image-blob-link">Blob</a>
+                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-outline" href="#" id="detailed-image-outline-link">Outline</a>
                             </div>
                             <div class="col-md-6 h-100">
                                 <span class="h5-responsive">Metadata</span>
@@ -361,6 +367,10 @@ function changeBin(binId, updateHistory) {
             .data("bin", data.next_bin_id)
             .toggleClass("disabled", data.next_bin_id === "");
 
+        // Update outline/blob links
+        $("#detailed-image-blob-link").toggleClass("disabled", !data["has_blobs"]);
+        $("#detailed-image-outline-link").toggleClass("disabled", !data["has_blobs"]);
+
         // Update map location(s)
         // TODO: Need a loading panel around the map
         if (data.lat == 0 || data.lng == 0) {
@@ -479,7 +489,8 @@ $("#mosaic").click(function(e){
             var baseUrl = "/{{ dataset.name }}/" + currentBinId + "_" + padDigits(img.pid, 5);
             var metaUrl = "/api/image/" + currentBinId + "/" + img.pid;
 
-            $("#detailed-image").attr("src", baseUrl + ".png");
+            changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
+            $("#detailed-image").data("image-id", img.pid);
             $("#detailed-image-link").attr("href", baseUrl + ".html");
             $("#image-modal").modal();
 
@@ -501,6 +512,37 @@ $("#mosaic").click(function(e){
 
 $("#image-modal").on("hidden.bs.modal", function() {
     $("#detailed-image").attr("src","");
+    $("#detailed-image-blob").attr("src","");
+    $("#detailed-image-outline").attr("src","");
+});
+
+$(".change-image").click(function(e){
+    var target = $(this).data("target");
+
+    $.each($("#images img"), function(){
+        var id = $(this).attr("id");
+
+        $(this).toggle(id == target);
+    });
+
+    // TODO: Implement Django routes instead of hardcoded ones
+    if (target == "detailed-image-blob" && $("#detailed-image-blob").attr("src") === "") {
+        var blobUrl = "/api/blob/" + currentBinId + "/" + $("#detailed-image").data("image-id");
+
+        $.get(blobUrl, function(data){
+            if (data["blob"] != "")
+                $("#detailed-image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+        });
+    }
+
+    if (target == "detailed-image-outline" && $("#detailed-image-outline").attr("src") === "") {
+        var outlineUrl = "/api/outline/" + currentBinId + "/" + $("#detailed-image").data("image-id");
+
+        $.get(outlineUrl, function(data){
+            if (data["outline"] != "")
+                $("#detailed-image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+        });
+    }
 });
 
 $(function() {

@@ -137,3 +137,27 @@ function calcResolution(start, end) {
 
     return "bin";
 }
+
+// Special consideration is needed to capture the width/height of the newly loaded image so that we can also
+//   update the default width/height of the outline and blob images
+// See: https://stackoverflow.com/questions/19122625/how-i-can-get-image-width-after-set-src-attribute-without-reload-page
+function changeImage(img, src, blobImg, outlineImg){
+    blobImg.hide();
+    outlineImg.hide();
+
+    img.on('load', function() {
+        blobImg.attr("src", "");
+        blobImg.width(this.width);
+        blobImg.height(this.height);
+
+        outlineImg.attr("src", "");
+        outlineImg.width(this.width);
+        outlineImg.height(this.height);
+    })
+    .attr("src", src)
+    .show()
+    .each(function() {
+        if (this.complete)
+            $(this).trigger('load');
+    });
+}

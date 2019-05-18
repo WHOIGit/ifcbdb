@@ -385,30 +385,6 @@
         changePage(0, false);
     });
 
-    // Special consideration is needed to capture the width/height of the newly loaded image so that we can also
-    //   update the default width/height of the outline and blob images
-    // See: https://stackoverflow.com/questions/19122625/how-i-can-get-image-width-after-set-src-attribute-without-reload-page
-    function changeImage(src){
-        $("#detailed-image-blob").hide();
-        $("#detailed-image-outline").hide();
-
-        $("#detailed-image").on('load', function() {
-            $("#detailed-image-blob").attr("src", "");
-            $("#detailed-image-blob").width(this.width);
-            $("#detailed-image-blob").height(this.height);
-
-            $("#detailed-image-outline").attr("src", "");
-            $("#detailed-image-outline").width(this.width);
-            $("#detailed-image-outline").height(this.height);
-        })
-        .attr("src", src)
-        .show()
-        .each(function() {
-            if (this.complete)
-                $(this).trigger('load');
-        });
-    }
-
     $("#mosaic").click(function(e){
         var x = e.pageX - $(this).offset().left;
         var y = e.pageY - $(this).offset().top;
@@ -424,7 +400,7 @@
                 var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(img.pid, 5);
                 var metaUrl = "/api/image/{{ bin.pid }}/" + img.pid;
 
-                changeImage(baseUrl + ".png");
+                changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
                 $("#detailed-image").data("image-id", img.pid);
                 $("#detailed-image-link").attr("href", baseUrl + ".html");
                 $("#image-modal").modal();
