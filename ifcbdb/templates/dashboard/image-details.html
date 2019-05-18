@@ -279,19 +279,23 @@
     $("#blob-tab-label").click(function(e){
         e.preventDefault();
 
-        $.get("{% url 'image_blob' bin.pid image_id %}", function(data){
-            if (data["blob"] != "")
-                $("#image-blob").attr("src", "data:image/png;base64," + data["blob"]);
-        });
+        if ($('#image-blob').attr("src") == undefined) {
+            $.get("{% url 'image_blob' bin.pid image_id %}", function(data){
+                if (data["blob"] != "")
+                    $("#image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+            });
+        }
     });
 
     $("#outline-tab-label").click(function(e){
         e.preventDefault();
 
-        $.get("{% url 'image_outline' bin.pid image_id %}", function(data){
-            if (data["outline"] != "")
-                $("#image-outline").attr("src", "data:image/png;base64," + data["outline"]);
-        });
+        if ($("#image-outline").attr("src") == undefined) {
+            $.get("{% url 'image_outline' bin.pid image_id %}", function(data){
+                if (data["outline"] != "")
+                    $("#image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+            });
+        }
     });
 
     $(function(){
