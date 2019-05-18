@@ -226,8 +226,14 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6 align-self-center text-center h-100">
+                            <div class="col-md-6 align-self-center text-center h-100" id="images">
                                 <img class="img-fluid mb-2 align-middle" id="detailed-image" src="" />
+                                <img class="img-fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
+                                <img class="img-fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
+                                <br />
+                                <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image" href="#">Image</a>
+                                <a class="btn btn-mdb-color btn-sm change-image {% if not has_blobs %}disabled{% endif %}" data-target="detailed-image-blob" href="#">Blob</a>
+                                <a class="btn btn-mdb-color btn-sm change-image {% if not has_blobs %}disabled{% endif %}" data-target="detailed-image-outline" href="#">Outline</a>
                             </div>
                             <div class="col-md-6 h-100">
                                 <span class="h5-responsive">Metadata</span>
@@ -371,6 +377,30 @@
         changePage(0, false);
     });
 
+    // Special consideration is needed to capture the width/height of the newly loaded image so that we can also
+    //   update the default width/height of the outline and blob images
+    // See: https://stackoverflow.com/questions/19122625/how-i-can-get-image-width-after-set-src-attribute-without-reload-page
+    function changeImage(src){
+        $("#detailed-image-blob").hide();
+        $("#detailed-image-outline").hide();
+
+        $("#detailed-image").on('load', function() {
+            $("#detailed-image-blob").attr("src", "");
+            $("#detailed-image-blob").width(this.width);
+            $("#detailed-image-blob").height(this.height);
+
+            $("#detailed-image-outline").attr("src", "");
+            $("#detailed-image-outline").width(this.width);
+            $("#detailed-image-outline").height(this.height);
+        })
+        .attr("src", src)
+        .show()
+        .each(function() {
+            if (this.complete)
+                $(this).trigger('load');
+        });
+    }
+
     $("#mosaic").click(function(e){
         var x = e.pageX - $(this).offset().left;
         var y = e.pageY - $(this).offset().top;
@@ -386,7 +416,8 @@
                 var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(img.pid, 5);
                 var metaUrl = "/api/image/{{ bin.pid }}/" + img.pid;
 
-                $("#detailed-image").attr("src", baseUrl + ".png");
+                changeImage(baseUrl + ".png");
+                $("#detailed-image").data("image-id", img.pid);
                 $("#detailed-image-link").attr("href", baseUrl + ".html");
                 $("#image-modal").modal();
 
@@ -408,7 +439,39 @@
 
     $("#image-modal").on("hidden.bs.modal", function() {
         $("#detailed-image").attr("src","");
+        $("#detailed-image-blob").attr("src","");
+        $("#detailed-image-outline").attr("src","");
     });
+
+    $(".change-image").click(function(e){
+        var target = $(this).data("target");
+
+        $.each($("#images img"), function(){
+            var id = $(this).attr("id");
+
+            $(this).toggle(id == target);
+        });
+
+        // TODO: Implement Django routes instead of hardcoded ones
+        if (target == "detailed-image-blob" && $("#detailed-image-blob").attr("src") === "") {
+            var blobUrl = "/api/blob/{{ bin.pid }}/" + $("#detailed-image").data("image-id");
+
+            $.get(blobUrl, function(data){
+                if (data["blob"] != "")
+                    $("#detailed-image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+            });
+        }
+
+        if (target == "detailed-image-outline" && $("#detailed-image-outline").attr("src") === "") {
+            var outlineUrl = "/api/outline/{{ bin.pid }}/" + $("#detailed-image").data("image-id");
+
+            $.get(outlineUrl, function(data){
+                if (data["outline"] != "")
+                    $("#detailed-image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+            });
+        }
+    });
+
 
     $(function() {
         var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
