@@ -112,16 +112,9 @@ function parseAndCalcResolution(plotlyData) {
 }
 
 function calcResolution(start, end) {
-    // up to a week: bin resolution
-    // up to a month: hour resolution
-    // up to two years: day resolution
-    // more than that: week resolution
-
-    // TODO: The values below are temporary for testing until there is a larger dataset available
-    var binResolutionRange = moment.duration(1, "hours");
-    var hourResolutionRange = moment.duration(6, "hours");
-    var dayResolutionRange = moment.duration(1, "days");
-    var weekResolutionRange = moment.duration(1, "weeks");
+    var hourResolutionRange = moment.duration(1, "week");
+    var dayResolutionRange = moment.duration(2, "months");
+    var weekResolutionRange = moment.duration(3, "years");
 
     startDate = moment(start);
     endDate = moment(end);

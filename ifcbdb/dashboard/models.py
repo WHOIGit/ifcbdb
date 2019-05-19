@@ -105,11 +105,11 @@ class Timeline(object):
             else:
                 end_time = pd.to_datetime(end_time, utc=True)
             time_range = end_time - start_time
-            if time_range < pd.Timedelta('14d'):
+            if time_range < pd.Timedelta('7d'):
                 resolution = 'bin'
             elif time_range < pd.Timedelta('60d'):
                 resolution = 'hour'
-            elif time_range < pd.Timedelta('5y'):
+            elif time_range < pd.Timedelta('3y'):
                 resolution = 'day'
             else:
                 resolution = 'week'
