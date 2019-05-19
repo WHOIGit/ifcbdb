@@ -71,7 +71,7 @@ def bin_details(request, dataset_name, bin_id):
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
         "bin": bin,
-        "details": _bin_details(dataset, bin, preload_adjacent_bins=False),
+        "details": _bin_details(dataset, bin, preload_adjacent_bins=False, include_coordinates=False),
     })
 
 
@@ -218,7 +218,7 @@ def zip(request, dataset_name, bin_id):
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
 
-def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjacent_bins=False):
+def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjacent_bins=False, include_coordinates=True):
     if not view_size:
         view_size = Bin.MOSAIC_DEFAULT_VIEW_SIZE
     if not scale_factor:
@@ -227,11 +227,16 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
     mosaic_shape = parse_view_size(view_size)
     mosaic_scale = parse_scale_factor(scale_factor)
 
-    coordinates = bin.mosaic_coordinates(
-        shape=mosaic_shape,
-        scale=mosaic_scale
-    )
-    pages = coordinates.page.max()
+    if include_coordinates:
+        coordinates = bin.mosaic_coordinates(
+                shape=mosaic_shape,
+                scale=mosaic_scale
+            )
+        pages = coordinates.page.max()
+        coordinates_json = coordinates_to_json(coordinates);
+    else:
+        coordinates_json = []
+        pages = 1
 
     previous_bin = Timeline(dataset.bins).previous_bin(bin)
     next_bin = Timeline(dataset.bins).next_bin(bin)
@@ -253,7 +258,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         "pages": list(range(pages + 1)),
         "num_pages": int(pages),
         "tags": bin.tag_names,
-        "coordinates": coordinates_to_json(coordinates),
+        "coordinates": coordinates_json,
         "has_blobs": bin.has_blobs(),
 
 

@@ -269,15 +269,15 @@
 {% endblock %} {% block scripts %}
 <script>
     var currentBinPage = 0;
-    var numBinPages = {{ details.num_pages }};
-    var coordinates = {{ details.coordinates|safe }};
+    var numBinPages = 1; // placeholder until mosaic load
+    var coordinates = []; // placeholder until mosaic load
 
-    function delayedMosaic(page, isInitial) {
+    function delayedMosaic(page) {
         $("#mosaic").hide();
         $("#mosaic-loading").show();
 
         setTimeout(function(){
-            loadMosaic(page, isInitial);
+            loadMosaic(page);
         }, 50);
     }
 
@@ -302,32 +302,30 @@
         }
     }
 
-    function loadMosaic(page, isInitial) {
+    function loadMosaic(page) {
         $("#mosaic").hide();
         $("#mosaic-loading").show();
 
         var viewSize = $("#view-size option:selected").val();
         var scaleFactor = $("#scale-factor option:selected").val();
 
-        if (!isInitial) {
-            var binDataUrl = "{% url 'bin_data' dataset.name bin.pid %}" +
-                "?view_size=" + viewSize +
-                "&scale_factor=" + scaleFactor;
+        var binDataUrl = "{% url 'bin_data' dataset.name bin.pid %}" +
+            "?view_size=" + viewSize +
+            "&scale_factor=" + scaleFactor;
 
-            $.get(binDataUrl, function(data){
+        $.get(binDataUrl, function(data){
 
-                // Update the coordinates for the image
-                coordinates = JSON.parse(data["coordinates"]);
+            // Update the coordinates for the image
+            coordinates = JSON.parse(data["coordinates"]);
 
-                // Update the paging
-                if (data["num_pages"] != numBinPages) {
-                    numBinPages = data["num_pages"];
+            // Update the paging
+            if (data["num_pages"] != numBinPages) {
+                numBinPages = data["num_pages"];
 
-                    rebuildPageIndexes();
-                    updatePaging();
-                }
-            });
-        }
+                rebuildPageIndexes();
+                updatePaging();
+            }
+        });
 
         var url = "{% url 'mosaic_page_encoded_image' bin.pid %}" +
             "?view_size=" + viewSize +
