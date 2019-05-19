@@ -81,7 +81,7 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="row">
-                    <div class="col-md-8">
+                    <div class="col-sm-6 col-md-4">
                         <dl class="row">
                             <dt class="col-sm-4">Triggers:</dt>
                             <dd class="col-sm-8">{{ bin.n_triggers }}</dd> 
@@ -92,31 +92,33 @@
                             <dt class="col-sm-4">Volume Analyzed:</dt>
                             <dd class="col-sm-8">{{ bin.ml_analyzed|floatformat:3 }} ml</dd>
                         </dl>
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4">Download:</dt>
-                        </dl>
-                        <dl class="row">
-                            <dd class="col-sm-2">
-                                <ul class="list-unstyled">
-                                    <li><a href="{% url 'adc_csv' dataset.name bin.pid %}">ADC</a></li>
-                                    <li><a href="{% url 'hdr_text' dataset.name bin.pid %}">HDR</a></li> 
-                                    <li><a href="{% url 'roi_binary' dataset.name bin.pid %}">ROI</a></li> 
-                                    <li><a href="{% url 'zip' dataset.name bin.pid %}">ZIP</a></li> 
-                                </ul>
-                            </dd>
-                            <dd class="col-sm-8">
-                                <ul class="list-unstyled">
-                                    {% if details.has_blobs %}
-                                    <li><a href="{% url 'blob_zip' dataset.name bin.pid %}">blobs</a></li>
-                                    {% else %}
-                                    <li>blobs</li>
-                                    {% endif %}
-                                    <li>features</li> 
-                                    <li>autoclass</li>
-                                </ul>
-                            </dd>
-                        </dl>
                         </div>
+                        <div class="col-sm-6 col-md-4 mt-1">
+                            <div class="row mb-0">
+                                <span class="col"><strong>Download:</strong></span>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-auto">
+                                    <ul class="list-unstyled">
+                                        <li><a href="{% url 'adc_csv' dataset.name bin.pid %}">ADC</a></li>
+                                        <li><a href="{% url 'hdr_text' dataset.name bin.pid %}">HDR</a></li> 
+                                        <li><a href="{% url 'roi_binary' dataset.name bin.pid %}">ROI</a></li> 
+                                        <li><a href="{% url 'zip' dataset.name bin.pid %}">ZIP</a></li> 
+                                    </ul>
+                                </div>
+                                <div class="col-sm-auto">
+                                    <ul class="list-unstyled">
+                                        {% if details.has_blobs %}
+                                        <li><a href="{% url 'blob_zip' dataset.name bin.pid %}">blobs</a></li>
+                                        {% else %}
+                                        <li>blobs</li>
+                                        {% endif %}
+                                        <li>features</li> 
+                                        <li>autoclass</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>                        
                             <div class="col-md-4 mt-1">
                             <figure class="figure">
                             <div id="mapid" style="height:200px"></div>
