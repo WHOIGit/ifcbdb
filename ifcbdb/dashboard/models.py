@@ -67,8 +67,12 @@ class Timeline(object):
         return qs
 
     def most_recent_bin(self, time=None):
-        qs = self.time_range(end_time=time).order_by('-sample_time')
-        return qs.first()
+        b = self.time_range(end_time=time).order_by('-sample_time').first()
+        if b is None:
+            # time is before first bin
+            return self.bins.order_by('sample_time').first()
+        else:
+            return b
 
     def previous_bin(self, bin):
         return self.bins.filter(sample_time__lt=bin.sample_time).order_by("-sample_time").first()
