@@ -238,20 +238,24 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         coordinates_json = []
         pages = 1
 
-    previous_bin = Timeline(dataset.bins).previous_bin(bin)
-    next_bin = Timeline(dataset.bins).next_bin(bin)
+    previous_bin = None
+    next_bin = None
 
-    if preload_adjacent_bins and previous_bin:
-        previous_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
-    if preload_adjacent_bins and next_bin:
-        next_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
+    if preload_adjacent_bins:
+        previous_bin = Timeline(dataset.bins).previous_bin(bin)
+        next_bin = Timeline(dataset.bins).next_bin(bin)
+
+        if previous_bin is not None:
+            previous_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
+        if next_bin is not None:
+            next_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
 
     # TODO: Volume Analyzed is using floatformat:3; is that ok?
     return {
         "scale": mosaic_scale,
         "shape": mosaic_shape,
-        "previous_bin_id": previous_bin.pid if previous_bin else "",
-        "next_bin_id": next_bin.pid if next_bin else "",
+        "previous_bin_id": previous_bin.pid if previous_bin is not None else "",
+        "next_bin_id": next_bin.pid if next_bin is not None else "",
         "lat": bin.latitude,
         "lng": bin.longitude,
         "depth": bin.depth,
