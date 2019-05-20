@@ -93,7 +93,7 @@ def image_details(request, dataset_name, bin_id, image_id):
         "image": embed_image(image),
         "image_id": image_number,
         "metadata": metadata,
-        "details": _bin_details(dataset, bin),
+        "details": _bin_details(dataset, bin, include_coordinates=False),
     })
 
 
