@@ -1,15 +1,75 @@
+// TODO: Move default location to settings
+var defaultLat = 41.5507768;
+var defaultLng = -70.6593102;
+var minLatitude = -180;
+var minLongitude = -180;
+var zoomLevel = 6;
+
 $(function(){
     $("#dataset-switcher").change(function(){
         location.href = "/" + $(this).val();
     });
 })
 
+function isKnownLocation(lat, lng) {
+    return parseFloat(lat) >= minLatitude && parseFloat(lng) >= minLongitude;
+}
+
 function createMap(lat, lng) {
-    var map = L.map('mapid').setView([lat, lng], 11);
+    // Center the map on the default location if the bin doesn't have real gps coordinates
+    if (!isKnownLocation(lat, lng)) {
+        lat = defaultLat;
+        lng = defaultLng;
+    }
+
+    var map = L.map('mapid').setView([lat, lng], zoomLevel);
     L.esri.basemapLayer('Oceans').addTo(map);
     L.esri.basemapLayer('OceansLabels').addTo(map);
 
     return map;
+}
+
+function addMapMarker(map, lat, lng, depth) {
+    // If the bin's location is not known, display a message saying so
+    if (!isKnownLocation(lat, lng)) {
+        var options = {
+            closeButton: false,
+            closeOnClick: false,
+            closeOnEscapeKey: false,
+            keepInView: true
+        }
+        var popup = L.popup(options)
+            .setLatLng([defaultLat, defaultLng])
+            .setContent("Unknown Location")
+            .openOn(map)
+
+        $("#mapid .leaflet-popup-tip-container").hide()
+        return popup;
+    }
+
+    return L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup(
+            "Latitude: <strong>" + lat + "</strong><br />" +
+            "Longitude: <strong>" + lng + "</strong><br />" +
+            "Depth: <strong>" + parseFloat(depth).toFixed(1) + "m</strong>"
+        )
+        .openPopup();
+}
+
+function changeMapLocation(map, lat, lng, depth, existingMarker) {
+    if (existingMarker) {
+        map.removeLayer(existingMarker);
+    }
+
+    // Center the map on the default location if the bin doesn't have real gps coordinates
+    if (isKnownLocation(lat, lng)) {
+       map.setView([lat, lng], zoomLevel);
+    } else {
+        map.setView([defaultLat, defaultLng], zoomLevel);
+    }
+
+    return addMapMarker(map, lat, lng, depth);
 }
 
 function padDigits(number, digits) {

@@ -119,16 +119,9 @@
                                 </div>
                             </div>
                         </div>                        
-                            <div class="col-md-4 mt-1">
-                            <figure class="figure">
+                        <div class="col-md-4 mt-1">
                             <div id="mapid" style="height:200px"></div>
-                            <figcaption class="figure-caption">
-                                <span class="text-nowrap"><strong>Latitude:</strong> {{ bin.latitude }}</span>,
-                                <span class="text-nowrap"><strong>Longitude:</strong> {{ bin.longitude }}</span>,
-                                <span class="text-nowrap"><strong>Depth</strong> {{ bin.depth }}m</span>
-                            </figcaption>
-                            </figure>
-                            </div>
+                        </div>
                     </div>
                 </div>
                 </div>
@@ -478,7 +471,8 @@
 
     $(function() {
         var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
-        L.marker([{{ bin.latitude }}, {{ bin.longitude }}]).addTo(map);
+        addMapMarker(map, {{ bin.latitude }}, {{ bin.longitude }}, {{ bin.depth }});
+
         changePage(currentBinPage, true);
 
         var binDate = "{{ bin.timestamp|date:'c' }}";

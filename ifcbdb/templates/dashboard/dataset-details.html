@@ -140,11 +140,11 @@
         <div class="card h-50">
             <div class="card-body">
                 <div id="mapid" class="h-75"></div>
-                <p class="figure-caption">
-                    <span class="text-nowrap"><strong>Latitude:</strong> {{ bin.latitude }}</span>,
-                    <span class="text-nowrap"><strong>Longitude:</strong>{{ bin.longitude }}</span>,
-                    <span class="text-nowrap"><strong>Depth</strong> {{ bin.depth }}m</span>
-                </p>
+                <div id="map-loading" class="text-center">
+                    <div class="spinner-border spinner-center" role="status" style="top:20%">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
             </div>
         </div>
             <div class="card h-50">
@@ -219,6 +219,7 @@
 {% endblock %} {% block scripts %}
 <script>
 var map;
+var mapMarker;
 var plot;
 var currentBinPage = 0;
 var numBinPages = -1;
@@ -349,6 +350,12 @@ function changeBin(binId, updateHistory) {
     $("#mosaic-loading").show();
     $("#mosaic").hide().attr("src","");
 
+    // The map must be made invisible, rather than hidden, or the Leaflet will not render the map at the correct
+    //   position when it finishes loading. the leaflet control container must be hidden completely as well or there
+    //   will be a split second where the controls are visible but the map is not
+    $("#mapid").css("visibility", "hidden");
+    $("#mapid .leaflet-control-container").hide();
+
     // Update bin name/link
     $("#bin-header").attr("href", binUrl).html(binId);
 
@@ -373,13 +380,12 @@ function changeBin(binId, updateHistory) {
         $("#detailed-image-outline-link").toggleClass("disabled", !data["has_blobs"]);
 
         // Update map location(s)
-        // TODO: Need a loading panel around the map
-        if (data.lat == 0 || data.lng == 0) {
-            // TODO: Need some indication there is no location (not just default map location)
-            map.setView([41.5507768, -70.6593102], 11);
-        } else {
-            map.setView([data.lng, data.lat], 11);
+        if (!map) {
+            map = createMap(data.lat, data.lng);
         }
+        mapMarker = changeMapLocation(map, data.lat, data.lng, data.depth, mapMarker);
+        $("#mapid").css("visibility", "visible");
+        $("#mapid .leaflet-control-container").show()
 
         if (updateHistory) {
             history.pushState(null, null, "?bin_id=" + binId);
@@ -568,8 +574,7 @@ $(".change-image").click(function(e){
 });
 
 $(function() {
-    // TODO: Fill in proper values and a real default starting location
-    map = createMap(41.5507768, -70.6593102);
+    //map = createMap();
 
     createTimeSeries($("#ts-size .ts-plot-container"), "size");
 

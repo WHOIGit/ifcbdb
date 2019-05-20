@@ -29,10 +29,10 @@
                             <a class="btn btn-sm btn-mdb-color" id="image-tab-label" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-sm btn-mdb-color {% if not has_blobs %}disabled{% endif %}" id="blob-tab-label" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
+                            <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="blob-tab-label" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-sm btn-mdb-color {% if not has_blobs %}disabled{% endif %}" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
+                            <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
                         </li>
                     </ul>
                 </div>
@@ -89,14 +89,7 @@
     <div class="col-md-6 col-xl-4 mt-2 mt-md-0">
         <div class="card h-100">
             <div class="card-header py-1 mdb-color lighten-5">
-            <div class="row d-flex justify-content-between">
-            <div class="col">
                 <span class="h5-responsive">Location</span>
-                </div>
-                <div class="col">
-                <span>41 north, 82 east (41.31, -70.39), depth 5m</span>
-                </div>
-            </div>
             </div>
             <div class="card-body">
                 <div id="mapid" class="h-100 min-vh-25"></div>
@@ -299,8 +292,8 @@
     });
 
     $(function(){
-        // TODO: Fill in proper values and a real default starting location
-        var map = createMap(41.5507768,-70.6593102);
+        var map = createMap({{ details.lat }}, {{ details.lng }});
+        addMapMarker(map, {{ details.lat }}, {{ details.lng }}, {{ bin.depth }});
 
         // Default the width/height of the blob/outline images to prevent flicker when resizing
         $("#image-blob").width($("#image").width());

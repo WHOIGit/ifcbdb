@@ -93,7 +93,7 @@ def image_details(request, dataset_name, bin_id, image_id):
         "image": embed_image(image),
         "image_id": image_number,
         "metadata": metadata,
-        "has_blobs": bin.has_blobs(),
+        "details": _bin_details(dataset, bin),
     })
 
 
@@ -250,18 +250,16 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
     return {
         "scale": mosaic_scale,
         "shape": mosaic_shape,
-
         "previous_bin_id": previous_bin.pid if previous_bin else "",
         "next_bin_id": next_bin.pid if next_bin else "",
         "lat": bin.latitude,
         "lng": bin.longitude,
+        "depth": bin.depth,
         "pages": list(range(pages + 1)),
         "num_pages": int(pages),
         "tags": bin.tag_names,
         "coordinates": coordinates_json,
         "has_blobs": bin.has_blobs(),
-
-
     }
 
 
