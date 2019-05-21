@@ -97,12 +97,12 @@ body {
     min-height: 200px;
 }
 
-.card.h500 {
-    max-height: 500px;
+.card.h300 {
+    height: 300px;
 }
 
-.card.h600 {
-    max-height: 600px;
+.card.h500 {
+    height: 500px;
 }
 
 .modal .h300 {
@@ -137,7 +137,7 @@ table.table-sm th {
 }
 
 #mosaic {
-    height:auto;
+    height: auto;
 }
 
 #image-tab {
