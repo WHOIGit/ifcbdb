@@ -340,11 +340,11 @@ function changeBin(binId, updateHistory) {
     var scaleFactor = $("#scale-factor option:selected").val();
 
     var binUrl = "{% url 'bin' dataset.name '__BIN_PID__' %}".replace("__BIN_PID__", binId);
-
     var dataUrl = "{% url 'bin_data' dataset.name '__BIN_PID__' %}".replace("__BIN_PID__", binId);
     dataUrl += "?view_size=" + viewSize;
     dataUrl += "&scale_factor=" + scaleFactor;
     dataUrl += "&preload_adjacent_bins=" + true;
+    dataUrl += "&include_coordinates=" + false;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
@@ -363,15 +363,11 @@ function changeBin(binId, updateHistory) {
     $("#previous-bin").addClass("disabled");
     $("#next-bin").addClass("disabled");
 
+    currentBinId = binId;
+    currentBinPage = 0;
+    delayedMosaic(0);
+
     $.get(dataUrl, function(data){
-        currentBinId = binId;
-
-        // Update the coordinates for the image
-        coordinates = JSON.parse(data["coordinates"]);
-
-        // Update bin paging
-        currentBinPage = 0;
-
         $("#previous-bin").data("bin", data.previous_bin_id);
         $("#next-bin").data("bin", data.next_bin_id);
 
@@ -398,8 +394,14 @@ function changeBin(binId, updateHistory) {
             history.pushState(null, null, "?bin_id=" + binId);
         }
 
-        // Update mosaic; save this for last since it will require and additional ajax request
-        delayedMosaic(0);
+        var previous_bin_id = $("#previous-bin").data("bin");
+        var next_bin_id = $("#next-bin").data("bin");
+
+        $("#previous-bin")
+            .toggleClass("disabled", previous_bin_id === "");
+
+        $("#next-bin")
+            .toggleClass("disabled", next_bin_id === "");
     });
 }
 
@@ -409,6 +411,7 @@ function loadMosaic(pageNumber) {
 
     $("#mosaic-loading").show();
     $("#mosaic").hide();
+    coordinates = [];
 
     // TODO: Fix url to use Django routing
     var binDataUrl = "/api/{{ dataset.name }}/bin/" + currentBinId +
@@ -430,7 +433,6 @@ function loadMosaic(pageNumber) {
         updatePaging();
     });
 
-    // TODO: Need to pass in scale/width/height from UI controls
     // TODO: Needs error handling if mosaic cannot be generated
     var mosaicUrl = "{% url 'mosaic_page_encoded_image' "__BIN_PID__" %}" +
         "?view_size=" + viewSize +
@@ -443,14 +445,7 @@ function loadMosaic(pageNumber) {
         $("#mosaic-loading").hide();
         $("#mosaic").show();
 
-        var previous_bin_id = $("#previous-bin").data("bin");
-        var next_bin_id = $("#next-bin").data("bin");
 
-        $("#previous-bin")
-            .toggleClass("disabled", previous_bin_id === "");
-
-        $("#next-bin")
-            .toggleClass("disabled", next_bin_id === "");
     });
 }
 

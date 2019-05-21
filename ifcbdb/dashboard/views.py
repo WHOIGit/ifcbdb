@@ -329,9 +329,10 @@ def bin_data(request, dataset_name, bin_id):
     bin = get_object_or_404(Bin, pid=bin_id)
     view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
     scale_factor = request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
-    preload_adjacent_bins = request.GET.get("preload_adjacent_bins", False)
+    preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
+    include_coordinates = request.GET.get("include_coordinates", "true").lower() == "true"
 
-    details = _bin_details(dataset, bin, view_size, scale_factor, preload_adjacent_bins)
+    details = _bin_details(dataset, bin, view_size, scale_factor, preload_adjacent_bins, include_coordinates)
 
     return JsonResponse(details)
 
