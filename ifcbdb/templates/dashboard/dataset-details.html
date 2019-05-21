@@ -336,8 +336,8 @@ function changeBin(binId, updateHistory) {
     if (binId === "")
         return;
 
-    var viewSize = $("#view-size input[type=select]:selected").val();
-    var scaleFactor = $("#scale-factor input[type=select]:selectedIndex").val();
+    var viewSize = $("#view-size option:selected").val();
+    var scaleFactor = $("#scale-factor option:selected").val();
 
     var binUrl = "{% url 'bin' dataset.name '__BIN_PID__' %}".replace("__BIN_PID__", binId);
 
