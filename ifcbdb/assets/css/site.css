@@ -138,6 +138,7 @@ table.table-sm th {
 
 #mosaic {
     height: auto;
+    cursor: pointer;
 }
 
 #image-tab {
