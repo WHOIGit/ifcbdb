@@ -138,7 +138,10 @@ table.table-sm th {
 
 #mosaic {
     height: auto;
-    cursor: pointer;
+}
+
+#mosaic-loading {
+    cursor: wait;
 }
 
 #image-tab {

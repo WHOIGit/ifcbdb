@@ -301,6 +301,9 @@
         $("#mosaic").hide();
         $("#mosaic-loading").show();
 
+        // indicate to user that the coordinates are loading
+        $("#mosaic").css("cursor","wait");
+
         var viewSize = $("#view-size option:selected").val();
         var scaleFactor = $("#scale-factor option:selected").val();
 
@@ -312,6 +315,7 @@
 
             // Update the coordinates for the image
             coordinates = JSON.parse(data["coordinates"]);
+            $("#mosaic").css("cursor","pointer");
 
             // Update the paging
             if (data["num_pages"] != numBinPages) {

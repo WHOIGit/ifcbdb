@@ -413,6 +413,9 @@ function loadMosaic(pageNumber) {
     $("#mosaic").hide();
     coordinates = [];
 
+    // indicate to the user that coordinates are loading
+    $("#mosaic").css("cursor","wait");
+
     // TODO: Fix url to use Django routing
     var binDataUrl = "/api/{{ dataset.name }}/bin/" + currentBinId +
         "?view_size=" + viewSize +
@@ -422,6 +425,8 @@ function loadMosaic(pageNumber) {
 
         // Update the coordinates for the image
         coordinates = JSON.parse(data["coordinates"]);
+        // indicate to the user that the mosaic is clickable
+        $("#mosaic").css("cursor","pointer");
 
         // Update the paging
         if (data["num_pages"] != numBinPages) {
