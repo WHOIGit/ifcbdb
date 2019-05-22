@@ -25,7 +25,7 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
-                   role="tab" aria-controls="ts-ml-analyzed" aria-selected="false">Volume Imaged</a>
+                   role="tab" aria-controls="ts-ml-analyzed" aria-selected="false">Volume Analyzed</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
@@ -191,9 +191,9 @@
                                     <img class="img-fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
                                 </a>
                                 <br />
-                                <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image" href="#">Image</a>
-                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-blob" href="#" id="detailed-image-blob-link">Blob</a>
-                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-outline" href="#" id="detailed-image-outline-link">Outline</a>
+                                <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image" href="javascript:void(0)">Image</a>
+                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-blob" href="javascript:void(0)" id="detailed-image-blob-link">Blob</a>
+                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-outline" href="javascript:void(0)" id="detailed-image-outline-link">Outline</a>
                             </div>
                             <div class="col-md-6 h-100">
                                 <span class="h5-responsive">Metadata</span>

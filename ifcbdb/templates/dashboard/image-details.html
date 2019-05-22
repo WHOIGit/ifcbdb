@@ -51,6 +51,11 @@
                         <img id="image-outline" class="img-fluid">
                     </div>
                 </div>
+                <div id="scale-bar">
+                  <div class="scale-bar"></div>
+                  <div>10μm</div>
+                  <div id="debug"></div>
+                </div>
             </div>
             </div>
             </div>
@@ -308,5 +313,20 @@
         $("#share-link").select();
         document.execCommand("Copy");
     });
+
+    function handleScaleBar() {
+        var currentImageWidth = $("#image").width();
+        if(currentImageWidth < {{ image_width }}) {
+            $("#scale-bar").hide();
+        } else {
+            $("#scale-bar").show();
+        }        
+    }
+    $(window).resize(function() {
+        handleScaleBar();
+    });
+
+    handleScaleBar();
+
 </script>
 {% endblock %}

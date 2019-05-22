@@ -8,6 +8,10 @@ body {
     padding-top: 45px
 }
 
+body.modal-open {
+    overflow: hidden;
+}
+
 .navbar {
     min-height: 15px;
     transition: top 0.5s ease !important;
@@ -146,4 +150,13 @@ table.table-sm th {
 
 #image-tab {
     overflow-x: auto
+}
+
+div.scale-bar {
+    margin-top: 5px;
+    margin-left: auto;
+    margin-right: auto;
+    background: black;
+    width: 34px;
+    height: 5px;
 }
