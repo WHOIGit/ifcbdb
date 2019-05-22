@@ -54,7 +54,6 @@
                 <div id="scale-bar">
                   <div class="scale-bar"></div>
                   <div>10μm</div>
-                  <div id="debug"></div>
                 </div>
             </div>
             </div>
@@ -316,7 +315,7 @@
 
     function handleScaleBar() {
         var currentImageWidth = $("#image").width();
-        if(currentImageWidth < {{ image_width }}) {
+        if(currentImageWidth != {{ image_width }}) {
             $("#scale-bar").hide();
         } else {
             $("#scale-bar").show();
