@@ -153,9 +153,6 @@ table.table-sm th {
 }
 
 div.scale-bar {
-    margin-top: 5px;
-    margin-left: auto;
-    margin-right: auto;
     background: black;
     width: 34px;
     height: 5px;
