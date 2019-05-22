@@ -289,6 +289,10 @@ function createTimeSeries(container, metric) {
         // Add event to locate nearest bin to user's click
         container[0].on("plotly_click", function(d){
             changeToClosestBin(d.points[0].x);
+
+            coordinates = [];
+            $("#previous-bin").addClass("disabled");
+            $("#next-bin").addClass("disabled");
         });
 
         // Add event to handle resolution change when zooming
@@ -333,6 +337,8 @@ $("#view-size").change(function () {
 });
 
 function changeBin(binId, updateHistory) {
+    coordinates = [];
+
     if (binId === "")
         return;
 
@@ -394,15 +400,18 @@ function changeBin(binId, updateHistory) {
             history.pushState(null, null, "?bin_id=" + binId);
         }
 
-        var previous_bin_id = $("#previous-bin").data("bin");
-        var next_bin_id = $("#next-bin").data("bin");
-
-        $("#previous-bin")
-            .toggleClass("disabled", previous_bin_id === "");
-
-        $("#next-bin")
-            .toggleClass("disabled", next_bin_id === "");
     });
+}
+
+function enableNextPreviousButtons() {
+    var previous_bin_id = $("#previous-bin").data("bin");
+    var next_bin_id = $("#next-bin").data("bin");
+
+    $("#previous-bin")
+        .toggleClass("disabled", previous_bin_id === "");
+
+    $("#next-bin")
+        .toggleClass("disabled", next_bin_id === "");
 }
 
 function loadMosaic(pageNumber) {
@@ -427,6 +436,10 @@ function loadMosaic(pageNumber) {
         coordinates = JSON.parse(data["coordinates"]);
         // indicate to the user that the mosaic is clickable
         $("#mosaic").css("cursor","pointer");
+
+        // re-enable next/previous buttons
+        enableNextPreviousButtons();
+
 
         // Update the paging
         if (data["num_pages"] != numBinPages) {
