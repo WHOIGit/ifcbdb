@@ -42,18 +42,9 @@ def coordinates_to_json(coordinates):
     """
     Converts the coordinates from a mosaic image and puts them into a JSON serializable dictionary
     """
-    data = []
-    for idx, img in coordinates.iterrows():
-        data.append(dict(
-            pid=str(img["roi_number"]),
-            width=int(img["w"]),
-            height=int(img["h"]),
-            x=int(img["x"]),
-            y=int(img["y"]),
-            page=int(img["page"])
-        ))
-
-    return json.dumps(data)
+    c = coordinates.copy(deep=False)
+    c.columns = ['page','y','x','height','width','pid']
+    return c.to_json(orient='records')
 
 
 # TODO: Can the values be sanitized (serializable) before it reaches the model to avoid this extra step? (and potential

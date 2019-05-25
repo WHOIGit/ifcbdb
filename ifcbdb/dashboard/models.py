@@ -38,7 +38,6 @@ logger = logging.getLogger(__name__)
 FILL_VALUE = -9999999
 SRID = 4326
 
-
 class Timeline(object):
 
     TIMELINE_METRICS = {
@@ -273,6 +272,13 @@ class Bin(models.Model):
 
     # access to images
 
+    def images(self):
+        b = self._get_bin()
+        if b.schema == 1:
+            return InfilledImages(b)
+        else:
+            return b.images
+
     def image(self, target_number):
         b = self._get_bin()
         with b.as_single(target_number) as subset:
@@ -285,9 +291,7 @@ class Bin(models.Model):
                 raise KeyError('no such image {} {}'.format(self.pid, target_number)) from e
 
     def list_images(self):
-        b = self._get_bin()
-        ii = InfilledImages(b) # handle old-style data
-        return list(ii.keys())
+        return list(self.images.keys())
 
     # access to blobs
 
@@ -337,7 +341,7 @@ class Bin(models.Model):
         return None
 
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
-        b = self._get_bin()
+        b = self._get_bin().read()
         coordinates = self.mosaic_coordinates(shape, scale)
         m = Mosaic(b, shape, scale=scale, bg_color=bg_color, coordinates=coordinates)
         image = m.page(page)
