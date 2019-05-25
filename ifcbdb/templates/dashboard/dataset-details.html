@@ -287,11 +287,23 @@ function createTimeSeries(container, metric) {
 
         // Add event to locate nearest bin to user's click
         container[0].on("plotly_click", function(d){
+            var pt = d.points[0];
+            var ix = pt.pointIndex;
+
             changeToClosestBin(d.points[0].x);
 
             coordinates = [];
             $("#previous-bin").addClass("disabled");
             $("#next-bin").addClass("disabled");
+
+            var colors = $.map(pt.data.x, function(){ return "#1f77b4"; });
+            colors[ix] = "#bb0000";
+
+            Plotly.restyle(container[0], {
+                "marker": {
+                    "color": colors
+                }
+            });
         });
 
         // Add event to handle resolution change when zooming
