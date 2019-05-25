@@ -125,7 +125,7 @@ function getTimelineLayout(data, range) {
         },
         yaxis: {
             title: {
-                text: data["y-axis"] + "<br />" + "Resolution: " + currentResolution + "<br />"
+                text: data["y-axis"] + "<br />" + "Resolution: " + data["resolution"] + "<br />"
             },
             fixedrange: true,
         },
@@ -180,15 +180,18 @@ function calcResolution(start, end) {
     endDate = moment(end);
     duration = endDate.diff(startDate);
 
+    var resolution = "";
     if (duration > weekResolutionRange) {
-        return "week";
+        resolution = "week";
     } else if (duration > dayResolutionRange) {
-        return "day";
+        resolution = "day";
     } else if (duration > hourResolutionRange) {
-        return "hour";
+        resolution = "hour";
+    } else {
+        resolution = "bin";
     }
 
-    return "bin";
+    return resolution;
 }
 
 // Special consideration is needed to capture the width/height of the newly loaded image so that we can also

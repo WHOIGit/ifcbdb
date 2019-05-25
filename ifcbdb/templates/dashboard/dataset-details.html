@@ -227,9 +227,7 @@ var numBinPages = -1;
 var currentBinId = "";
 var currentMetric = "";
 var coordinates = [];
-
-// TODO: Default resolution is week; it might be possible to calculate this based on the initial data on the timeline
-var currentResolution = "day";
+var currentResolution = "auto";
 
 function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -303,13 +301,14 @@ function createTimeSeries(container, metric) {
                 return;
 
             $.get("/api/{{ dataset.name }}/time-series/" + metric + "?resolution=" + resolution, function(dataResponse) {
+                currentResolution = dataResponse["resolution"];
+
                 var updatedConfig = getTimelineConfig();
                 var updatedData = getTimelineData(dataResponse);
                 var updatedLayout = getTimelineLayout(dataResponse, relayoutResponse);
 
                 Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
 
-                currentResolution = dataResponse["resolution"];
                 return false;
             });
         });
