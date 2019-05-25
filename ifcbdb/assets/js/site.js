@@ -76,13 +76,6 @@ function padDigits(number, digits) {
     return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
 }
 
-function getTimelineTypeByMetric(metric) {
-    if (metric == "humidity" || metric == "temperature")
-        return "line";
-
-    return "bar";
-}
-
 function getTimelineConfig() {
     return {
         responsive: true,
@@ -92,10 +85,9 @@ function getTimelineConfig() {
 }
 
 function getTimelineData(data) {
-    var plotlyType = getTimelineTypeByMetric(currentMetric);
 
     var series = {
-        type: plotlyType,
+        type: "bar",
         x: data["x"],
         y: data["y"],
         line: {
@@ -106,7 +98,7 @@ function getTimelineData(data) {
     // For bar graphs with only one data point, the width of the bar needs to be set explicitly or
     //   Plotly will not render anything visible to the user. The x range on a single entry plot is
     //   set to 24hours, so the bar is set to a width of 1 hour
-    if (plotlyType == "bar" && data["x"].length == 1) {
+    if (data["x"].length == 1) {
         series["width"] = [60*60*1000]
     }
 
