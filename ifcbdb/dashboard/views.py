@@ -352,7 +352,7 @@ def closest_bin(request, dataset_name):
     except:
         dte = None
 
-    bin = Timeline(dataset.bins).most_recent_bin(dte)
+    bin = Timeline(dataset.bins).bin_closest_in_time(dte)
 
     return JsonResponse({
         "bin_id": bin.pid,

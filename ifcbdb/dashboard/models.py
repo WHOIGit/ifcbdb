@@ -73,6 +73,21 @@ class Timeline(object):
         else:
             return b
 
+    def bin_closest_in_time(self, time=None):
+        if time is None:
+            return self.most_recent_bin()
+
+        previous_bin = self.time_range(end_time=time).order_by('-sample_time').first()
+        next_bin = self.time_range(start_time=time).order_by('sample_time').first()
+
+        time_to_next = next_bin.timestamp - time
+        time_to_prev = time - previous_bin.timestamp
+
+        if time_to_next < time_to_prev:
+            return next_bin
+        else:
+            return previous_bin
+
     def previous_bin(self, bin):
         return self.bins.filter(sample_time__lt=bin.sample_time).order_by("-sample_time").first()
 

@@ -229,5 +229,5 @@ function highlightSelectedBinByDate(plot, dataPoints, date) {
             break;
     }
 
-    highlightSelectedBinByIndex(plot, dataPoints, idx);
+    highlightSelectedBinByIndex(plot, dataPoints, idx-1);
 }
