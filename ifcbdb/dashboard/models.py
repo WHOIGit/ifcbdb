@@ -80,6 +80,11 @@ class Timeline(object):
         previous_bin = self.time_range(end_time=time).order_by('-sample_time').first()
         next_bin = self.time_range(start_time=time).order_by('sample_time').first()
 
+        if previous_bin is None:
+            return next_bin
+        if next_bin is None:
+            return previous_bin
+
         time_to_next = next_bin.timestamp - time
         time_to_prev = time - previous_bin.timestamp
 

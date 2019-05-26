@@ -304,18 +304,12 @@ function createTimeSeries(container, metric) {
             $(container[0]).data('date', date);
         });
 
-        container[0].on("plotly_click", function(d){
-            var pt = d.points[0];
-            var ix = pt.pointIndex;
-
-            changeToClosestBin($(container[0]).data("date"));
-            //changeToClosestBin(d.points[0].x);
-
+        container[0].addEventListener('click', function(event) {
             coordinates = [];
             $("#previous-bin").addClass("disabled");
             $("#next-bin").addClass("disabled");
 
-            //highlightSelectedBinByIndex(container[0], pt.data.x, ix);
+            changeToClosestBin($(container[0]).data("date"));
         });
 
         // Add event to handle resolution change when zooming
