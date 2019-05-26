@@ -69,6 +69,7 @@
         </div>
     </div>
 </div>
+<div id="debug"></div>
 <div class="row py-2">
     <div class="col-sm-12">
         <div class="card">
@@ -309,7 +310,13 @@ function createTimeSeries(container, metric) {
             $("#previous-bin").addClass("disabled");
             $("#next-bin").addClass("disabled");
 
-            changeToClosestBin($(container[0]).data("date"));
+            // workaround to prevent accepting clicks on the plotly controls
+            distanceFromTop = event.y - $(container[0]).offset().top;
+            $("#debug").html(distanceFromTop);
+
+            if (distanceFromTop > 35) {
+                changeToClosestBin($(container[0]).data("date"));
+            }
         });
 
         // Add event to handle resolution change when zooming
