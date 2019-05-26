@@ -267,6 +267,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         "tags": bin.tag_names,
         "coordinates": coordinates_json,
         "has_blobs": bin.has_blobs(),
+        "timestamp_iso": bin.timestamp.isoformat(),
     }
 
 

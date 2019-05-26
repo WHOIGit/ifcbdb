@@ -231,6 +231,7 @@ var currentBinId = "";
 var currentMetric = "";
 var coordinates = [];
 var currentResolution = "auto";
+var currentBinTimestamp = null;
 
 function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -288,6 +289,11 @@ function createTimeSeries(container, metric) {
 
         Plotly.newPlot(container[0], initialData, initialLayout, initialConfig);
 
+        if (currentBinTimestamp != null) {
+            
+            highlightSelectedBinByDate(container[0], container[0].data[0].x, currentBinTimestamp);
+        }
+
         // Add event to locate nearest bin to user's click
         container[0].addEventListener('mousemove', function(event) {
             var xaxis = container[0]._fullLayout.xaxis;
@@ -309,14 +315,7 @@ function createTimeSeries(container, metric) {
             $("#previous-bin").addClass("disabled");
             $("#next-bin").addClass("disabled");
 
-            var colors = $.map(pt.data.x, function(){ return "#1f77b4"; });
-            colors[ix] = "#bb0000";
-
-            Plotly.restyle(container[0], {
-                "marker": {
-                    "color": colors
-                }
-            });
+            highlightSelectedBinByIndex(container[0], pt.data.x, ix);
         });
 
         // Add event to handle resolution change when zooming
@@ -399,6 +398,8 @@ function changeBin(binId, updateHistory) {
     delayedMosaic(0);
 
     $.get(dataUrl, function(data){
+        currentBinTimestamp = moment(data["timestamp_iso"]);
+
         $("#previous-bin").data("bin", data.previous_bin_id);
         $("#next-bin").data("bin", data.next_bin_id);
 
@@ -428,6 +429,9 @@ function changeBin(binId, updateHistory) {
             history.pushState(null, null, "?bin_id=" + binId);
         }
 
+        // Update the timeline to select the new bin
+        var timeline = $("#ts-size .ts-plot-container")[0];
+        highlightSelectedBinByDate(timeline, timeline.data[0].x, currentBinTimestamp);
     });
 }
 
@@ -490,8 +494,6 @@ function loadMosaic(pageNumber) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
-
-
     });
 }
 

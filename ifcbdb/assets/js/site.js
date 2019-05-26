@@ -85,14 +85,13 @@ function getTimelineConfig() {
 }
 
 function getTimelineData(data) {
-
     var series = {
         type: "bar",
         x: data["x"],
         y: data["y"],
         line: {
             color: '#17BECF'
-        },
+        }
     };
 
     // For bar graphs with only one data point, the width of the bar needs to be set explicitly or
@@ -132,7 +131,8 @@ function getTimelineLayout(data, range) {
         "marker": {
             "line": {
                 "width": 10
-            }
+            },
+            "color": "#0f0"
         }
     };
 
@@ -208,4 +208,26 @@ function changeImage(img, src, blobImg, outlineImg){
         if (this.complete)
             $(this).trigger('load');
     });
+}
+
+function highlightSelectedBinByIndex(plot, dataPoints, index) {
+    var colors = $.map(dataPoints, function(){ return "#1f77b4"; });
+    if (index >= 0 && index < dataPoints.length)
+        colors[index] = "#bb0000";
+
+    Plotly.restyle(plot, {
+        "marker": {
+            "color": colors
+        }
+    });
+}
+
+function highlightSelectedBinByDate(plot, dataPoints, date) {
+    var idx;
+    for (idx = 0; idx < dataPoints.length; idx++) {
+        if (moment(dataPoints[idx]) > date)
+            break;
+    }
+
+    highlightSelectedBinByIndex(plot, dataPoints, idx);
 }
