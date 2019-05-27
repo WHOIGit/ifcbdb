@@ -13,31 +13,31 @@
         <ul class="nav justify-content-end" id="ts-tabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
-                   role="tab" aria-controls="ts-size" aria-selected="true">Data Size</a>
+                   role="tab" data-target="ts-size" aria-selected="true">Data Size</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
-                   role="tab" aria-controls="ts-temperature" aria-selected="false">Temperature</a>
+                   role="tab" data-target="ts-temperature" aria-selected="false">Temperature</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
-                   role="tab" aria-controls="ts-humidity" aria-selected="false">Humidity</a>
+                   role="tab" data-target="ts-humidity" aria-selected="false">Humidity</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
-                   role="tab" aria-controls="ts-ml-analyzed" aria-selected="false">Volume Analyzed</a>
+                   role="tab" data-target="ts-ml-analyzed" aria-selected="false">Volume Analyzed</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
-                   role="tab" aria-controls="ts-concentration" aria-selected="false">Concentration</a>
+                   role="tab" data-target="ts-concentration" aria-selected="false">Concentration</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
-                   role="tab" aria-controls="ts-triggers" aria-selected="false">Trigger Count</a>
+                   role="tab" data-target="ts-triggers" aria-selected="false">Trigger Count</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
-                   role="tab" aria-controls="ts-images" aria-selected="false">Image Count</a>
+                   role="tab" data-target="ts-images" aria-selected="false">Image Count</a>
             </li>
         </ul>
 </div>
@@ -293,13 +293,13 @@ function createTimeSeries(container, metric) {
         currentResolution = response["resolution"];
 
         var initialConfig = getTimelineConfig();
-        var initialData = getTimelineData(response);
+        var initialData = getTimelineData(response, currentBinTimestamp);
         var initialLayout = getTimelineLayout(response);
 
         Plotly.newPlot(container[0], initialData, initialLayout, initialConfig);
 
         if (currentBinTimestamp != null) {
-            highlightSelectedBinByDate(container[0], container[0].data[0].x, currentBinTimestamp);
+            highlightSelectedBinByDate(container[0].data[0].x, currentBinTimestamp);
         }
 
         // Add event to locate nearest bin to user's click
@@ -335,7 +335,7 @@ function createTimeSeries(container, metric) {
                 currentResolution = dataResponse["resolution"];
 
                 var updatedConfig = getTimelineConfig();
-                var updatedData = getTimelineData(dataResponse);
+                var updatedData = getTimelineData(dataResponse, currentBinTimestamp);
                 var updatedLayout = getTimelineLayout(dataResponse, relayoutResponse);
 
                 Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
@@ -354,7 +354,11 @@ $("#bin-details").click(function(e) {
 });
 
 $("#ts-tabs .nav-link").click(function() {
-    currentPlotId = $(this).attr("aria-controls");
+    $("#" + currentPlotId).hide();
+
+    currentPlotId = $(this).data("target");
+
+    $("#" + currentPlotId).show();
 
     var metric = $(this).data("metric");
     var container = $("#" + currentPlotId + " .ts-plot-container")
@@ -440,7 +444,7 @@ function changeBin(binId, updateHistory) {
 
         // Update the timeline to select the new bin
         var timeline = $("#" + currentPlotId + " .ts-plot-container")[0];
-        highlightSelectedBinByDate(timeline, timeline.data[0].x, currentBinTimestamp);
+        highlightSelectedBinByDate(timeline.data[0].x, currentBinTimestamp);
 
         isBinLoading = false;
     });
