@@ -232,6 +232,8 @@ var currentMetric = "";
 var coordinates = [];
 var currentResolution = "auto";
 var currentBinTimestamp = null;
+var isBinLoading = false;
+var isMosaicLoading = false;
 
 function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -268,6 +270,12 @@ function rebuildPageIndexes() {
 }
 
 function changeToClosestBin(targetDate) {
+    if (isBinLoading || isMosaicLoading)
+        return false;
+
+    isBinLoading = true;
+    isMosaicLoading = true;
+
     var url = "{% url 'closest_bin' dataset.name %}";
 
     $.post(url, {"target_date": targetDate}, function(resp){
@@ -431,6 +439,8 @@ function changeBin(binId, updateHistory) {
         // Update the timeline to select the new bin
         var timeline = $("#ts-size .ts-plot-container")[0];
         highlightSelectedBinByDate(timeline, timeline.data[0].x, currentBinTimestamp);
+
+        isBinLoading = false;
     });
 }
 
@@ -480,6 +490,8 @@ function loadMosaic(pageNumber) {
         }
 
         updatePaging();
+
+        isMosaicLoading = false;
     });
 
     // TODO: Needs error handling if mosaic cannot be generated
