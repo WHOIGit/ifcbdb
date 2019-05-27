@@ -84,15 +84,24 @@ function getTimelineConfig() {
     };
 }
 
-function getTimelineData(data) {
+function getTimelineData(data, selectedDate) {
     var series = {
         type: "bar",
         x: data["x"],
         y: data["y"],
         line: {
             color: '#17BECF'
-        }
+        },
     };
+
+    if (selectedDate != null) {
+        var idx = getDataPointIndex(data.x, selectedDate);
+        var colors = buildColorArray(data.x, idx);
+
+        series["marker"] = {
+            color: colors
+        }
+    }
 
     // For bar graphs with only one data point, the width of the bar needs to be set explicitly or
     //   Plotly will not render anything visible to the user. The x range on a single entry plot is
@@ -210,24 +219,39 @@ function changeImage(img, src, blobImg, outlineImg){
     });
 }
 
-function highlightSelectedBinByIndex(plot, dataPoints, index) {
+function buildColorArray(dataPoints, index) {
     var colors = $.map(dataPoints, function(){ return "#1f77b4"; });
     if (index >= 0 && index < dataPoints.length)
         colors[index] = "#bb0000";
 
-    Plotly.restyle(plot, {
-        "marker": {
-            "color": colors
-        }
-    });
+    return colors;
 }
 
-function highlightSelectedBinByDate(plot, dataPoints, date) {
+function getDataPointIndex(dataPoints, selectedDate) {
     var idx;
     for (idx = 0; idx < dataPoints.length; idx++) {
-        if (moment(dataPoints[idx]) > date)
+        if (moment(dataPoints[idx]) > selectedDate)
             break;
     }
 
-    highlightSelectedBinByIndex(plot, dataPoints, idx-1);
+    return idx - 1;
+}
+
+function highlightSelectedBinByIndex(dataPoints, index) {
+    $("#ts-data .tab-pane").each(function(){
+        var plot = $(".ts-plot-container", $(this))[0]
+        if (!plot.data)
+            return;
+
+        Plotly.restyle(plot, {
+            "marker": {
+                "color": buildColorArray(dataPoints, index)
+            }
+        });
+    })
+}
+
+function highlightSelectedBinByDate(dataPoints, selectedDate) {
+    var idx = getDataPointIndex(dataPoints, selectedDate);
+    highlightSelectedBinByIndex(dataPoints, idx);
 }
