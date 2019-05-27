@@ -233,6 +233,9 @@ var currentMetric = "";
 var coordinates = [];
 var currentResolution = "auto";
 var currentBinTimestamp = null;
+var isBinLoading = false;
+var isMosaicLoading = false;
+var currentPlotId = "ts-size";
 
 function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -269,6 +272,12 @@ function rebuildPageIndexes() {
 }
 
 function changeToClosestBin(targetDate) {
+    if (isBinLoading || isMosaicLoading)
+        return false;
+
+    isBinLoading = true;
+    isMosaicLoading = true;
+
     var url = "{% url 'closest_bin' dataset.name %}";
 
     $.post(url, {"target_date": targetDate}, function(resp){
@@ -291,7 +300,6 @@ function createTimeSeries(container, metric) {
         Plotly.newPlot(container[0], initialData, initialLayout, initialConfig);
 
         if (currentBinTimestamp != null) {
-            
             highlightSelectedBinByDate(container[0], container[0].data[0].x, currentBinTimestamp);
         }
 
@@ -346,8 +354,10 @@ $("#bin-details").click(function(e) {
 });
 
 $("#ts-tabs .nav-link").click(function() {
+    currentPlotId = $(this).attr("aria-controls");
+
     var metric = $(this).data("metric");
-    var container = $("#" + $(this).attr("aria-controls") + " .ts-plot-container")
+    var container = $("#" + currentPlotId + " .ts-plot-container")
 
     createTimeSeries(container, metric);
 });
@@ -429,8 +439,10 @@ function changeBin(binId, updateHistory) {
         }
 
         // Update the timeline to select the new bin
-        var timeline = $("#ts-size .ts-plot-container")[0];
+        var timeline = $("#" + currentPlotId + " .ts-plot-container")[0];
         highlightSelectedBinByDate(timeline, timeline.data[0].x, currentBinTimestamp);
+
+        isBinLoading = false;
     });
 }
 
@@ -480,6 +492,8 @@ function loadMosaic(pageNumber) {
         }
 
         updatePaging();
+
+        isMosaicLoading = false;
     });
 
     // TODO: Needs error handling if mosaic cannot be generated
