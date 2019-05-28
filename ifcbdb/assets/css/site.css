@@ -129,6 +129,14 @@ body.modal-open {
     height: 25vh !important;
 }
 
+.mt-10p {
+    margin-top: 10% !important;
+}
+
+.mt-20p {
+    margin-top: 20% !important;
+}
+
 table.table-sm td,
 table.table-sm th {
     padding-top: .4rem;
