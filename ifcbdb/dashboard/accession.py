@@ -74,7 +74,7 @@ class Accession(object):
     def add_bin(self, bin, b): # IFCB bin, Bin instance
         print('{} checking and processing'.format(b.pid))
         # qaqc checks
-        qc_bad = qc_bad = check_bad(bin)
+        qc_bad = check_bad(bin)
         if qc_bad:
             b.qc_bad = True
             print('{} raw data is bad'.format(pid))
