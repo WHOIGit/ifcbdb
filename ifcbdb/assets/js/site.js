@@ -94,9 +94,25 @@ function getTimelineConfig() {
     };
 }
 
+function getTimelineTypeByMetric(metric) {
+    if (metric == "temperature" || metric == "humidity") {
+        return {
+            "type": "scatter",
+            "mode": "markers"
+        }
+    } else {
+        return {
+            "type": "bar",
+            "mode": "markers"
+        }
+    }
+}
 function getTimelineData(data, selectedDate) {
+    plotlyType = getTimelineTypeByMetric(currentMetric);
+
     var series = {
-        type: "bar",
+        type: plotlyType.type,
+        mode: plotlyType.mode,
         x: data["x"],
         y: data["y"],
         line: {
