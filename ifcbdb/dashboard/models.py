@@ -302,7 +302,7 @@ class Bin(models.Model):
     def image(self, target_number):
         b = self._get_bin()
         with b.as_single(target_number) as subset:
-            ii = InfilledImages(subset) # handle old-style data
+            ii = self.images()
             try:
                 return ii[target_number]
             except IndexError as e:
