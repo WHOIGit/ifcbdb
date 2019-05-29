@@ -1,0 +1,8 @@
+<form class="form-inline my-2 my-lg-0 ml-auto">
+    <select class="browser-default custom-select custom-select-sm mb-2" id="dataset-switcher">
+        <option selected>Select a Dataset</option>
+        {% for dataset in datasets %}
+        <option value="{{ dataset.name }}">{{ dataset.name }}</option>
+        {% endfor %}
+    </select>
+</form>

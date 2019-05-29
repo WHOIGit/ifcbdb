@@ -1,0 +1,158 @@
+{% load static nav %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>IFCB</title>
+
+    <link href="{% static 'vendor/fontawesome/css/all.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/mdbootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/mdbootstrap/css/mdb.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/site.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/leaflet/leaflet.css' %}" rel="stylesheet">
+</head>
+
+<body class="white">
+    <!-- Navbar -->
+    <nav class="navbar fixed-top navbar-expand-lg navbar-dark stylish-color white-text scrolling-navbar">
+        <div class="container">
+
+            <!-- Brand -->
+            <a class="navbar-brand waves-effect" href="{% url 'datasets' %}">
+                <strong class="white-text">IFCB</strong>
+            </a>
+
+            <!-- Collapse -->
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Links -->
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+
+                <!-- Left -->
+                <ul class="navbar-nav mr-auto white-text">
+                    <li class="nav-item active">
+                    <a class="nav-link waves-effect" href="{% url 'datasets' %}">Datasets
+                        <span class="sr-only">(current)</span>
+                    </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link waves-effect" href="#">Settings</a>
+                    </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                <a href="{% url 'secure:logout' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log Out</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                <a href="{% url 'secure:login' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log In</a>
+                </li>
+                {% endif %}                    
+                </ul>
+
+                <!-- Right -->
+                {% dataset_switcher %}
+            </div>
+
+        </div>
+    </nav>
+    <!-- Navbar -->
+    <!-- Breadcrumb Bar-->
+    <div class="container-fluid">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mdb-color lighten-5 py-2">
+                <li class="breadcrumb-item"><a class="black-text" href="{% url 'datasets' %}">Datasets</a></li>
+                {% block breadcrumbs %}{% endblock %}
+            </ol>
+        </nav>
+    </div>
+    <!-- Breacrumb Bar-->
+    <!--Main layout-->
+    <main class="mx-lg-3">
+        <div class="container-fluid mt-1">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    <!--Main layout-->
+    <footer class="page-footer font-small stylish-color pt-2 mt-4">
+        <div class="container-fluid text-center my-2">
+            <div class="row justify-content-center">
+                <div class="col-xs-1">
+                    <a href="http://www.nsf.gov/" target="_blank">
+                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/nsf.png' %}">
+                    </a>
+                </div>
+                <div class="col-xs-1">
+                    <a href="http://www.nasa.gov/" target="_blank">
+                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/nasa.png' %}">
+                    </a>
+                </div>
+                <div class="col-xs-1">
+                    <a href="http://www.onr.navy.mil/" target="_blank">
+                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/onr.png' %}">
+                    </a>
+                </div>
+                <div class="col-xs-1">
+                    <a href="http://www.moore.org/" target="_blank">
+                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/gbmf.png' %}">
+                    </a>
+                </div>
+                <div class="col-xs-1">
+                    <a href="http://www.nopp.org/" target="_blank">
+                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/nopp.png' %}">
+                    </a>
+                </div>
+            </div>
+            <div class="row mt-2 text-center">
+                <div class="col">
+                    <a href="mailto:hsosik@whoi.edu">Heidi Sosik</a>,
+                    <a href="mailto:rolson@whoi.edu">Robert Olson</a>,
+                    <a href="mailto:jfutrelle@whoi.edu">Joe Futrelle</a> @
+                    <a href="http://www.whoi.edu/" target="_blank">Woods Hole Oceanographic Institution</a>
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="footer-copyright text-center py-3 stylish-color-dark">
+            <div>
+                Version 4.4 - 17 October 2018 -
+                <a href="#">About</a> |
+                <a href="https://beagle.whoi.edu/redmine/projects/ifcb-web/wiki" target="_blank">User guide</a> |
+                <a href="{% url 'secure:login' %}">Log in</a> |
+                <a href="#">Admin</a> |
+                <a href="#">API</a>
+            </div>
+        </div>
+    </footer>
+
+    <script type="text/javascript" src="{% static 'vendor/jquery/jquery-3.4.0.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/popper.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/mdb.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/esrileaflet/esri-leaflet.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/plotly/plotly-latest.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/site.js' %}"></script>
+
+
+    <script>
+        // hide navbar after a bit of scrolling
+        $(window).scroll(function(e) {
+            var scroll = $(window).scrollTop();
+            if (scroll >= 150) {
+                $('.navbar').addClass("navbar-hide");
+            } else {
+                $('.navbar').removeClass("navbar-hide");
+            }
+
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
