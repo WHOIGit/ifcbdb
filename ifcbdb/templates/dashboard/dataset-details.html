@@ -13,7 +13,7 @@
         <ul class="nav justify-content-end" id="ts-tabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
-                   role="tab" data-target="ts-size" aria-selected="true">Data Size</a>
+                   role="tab" data-target="ts-size" aria-selected="false">Data Size</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
@@ -28,8 +28,8 @@
                    role="tab" data-target="ts-ml-analyzed" aria-selected="false">Volume Analyzed</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
-                   role="tab" data-target="ts-concentration" aria-selected="false">Concentration</a>
+                <a class="nav-link btn btn-mdb-color btn-sm active" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
+                   role="tab" data-target="ts-concentration" aria-selected="true">Concentration</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
@@ -45,7 +45,7 @@
 <div class="row px-1">
     <div class="col-sm-12">
         <div class="tab-content" id="ts-data">
-            <div class="tab-pane show active" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
+            <div class="tab-pane" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
                 <div class="ts-plot-container"></div>
             </div>
             <div class="tab-pane" id="ts-temperature" role="tabpanel" aria-labelledby="ts-temperature-tab">
@@ -57,7 +57,7 @@
             <div class="tab-pane" id="ts-ml-analyzed" role="tabpanel" aria-labelledby="ts-ml-analyzed-tab">
                 <div class="ts-plot-container"></div>
             </div>
-            <div class="tab-pane" id="ts-concentration" role="tabpanel" aria-labelledby="ts-concentration-tab">
+            <div class="tab-pane show active" id="ts-concentration" role="tabpanel" aria-labelledby="ts-concentration-tab">
                 <div class="ts-plot-container"></div>
             </div>
             <div class="tab-pane" id="ts-triggers" role="tabpanel" aria-labelledby="ts-triggers-tab">
@@ -235,7 +235,7 @@ var currentResolution = "auto";
 var currentBinTimestamp = null;
 var isBinLoading = false;
 var isMosaicLoading = false;
-var currentPlotId = "ts-size";
+var currentPlotId = "ts-concentration";
 
 function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -641,7 +641,7 @@ $(".change-image").click(function(e){
 });
 
 $(function() {
-    createTimeSeries($("#ts-size .ts-plot-container"), "size");
+    createTimeSeries($("#ts-concentration .ts-plot-container"), "concentration");
 
     changeBin("{{ bin.pid }}", false);
 });
