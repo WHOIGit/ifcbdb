@@ -23,6 +23,7 @@ import pandas as pd
 
 import ifcb
 
+from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 from ifcb.viz.mosaic import Mosaic
 from ifcb.viz.blobs import blob_outline
@@ -294,7 +295,7 @@ class Bin(models.Model):
 
     def images(self):
         b = self._get_bin()
-        if b.schema == 1:
+        if b.schema == SCHEMA_VERSION_1:
             return InfilledImages(b)
         else:
             return b.images
