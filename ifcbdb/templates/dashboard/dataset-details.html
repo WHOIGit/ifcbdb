@@ -319,8 +319,12 @@ function createTimeSeries(container, metric) {
             $("#next-bin").addClass("disabled");
 
             // workaround to prevent accepting clicks on the plotly controls
-            distanceFromTop = event.pageY - $(container[0]).offset().top;
-            if (distanceFromTop > 35) {
+            var offset = $(container[0]).offset();
+            var distanceFromTop = event.pageY - offset.top;
+            var margin = container[0]._fullLayout.margin.l;
+            var rightX = offset.left + $(container[0]).width();
+            var distanceFromRight = rightX - event.pageX - margin;
+            if (distanceFromTop > 35 || distanceFromRight > 75) {
                 changeToClosestBin($(container[0]).data("date"));
             }
         });
