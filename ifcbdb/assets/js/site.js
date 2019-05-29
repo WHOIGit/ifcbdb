@@ -80,7 +80,17 @@ function getTimelineConfig() {
     return {
         responsive: true,
         displaylogo: false,
-        scrollZoom: true
+        scrollZoom: true,
+        modeBarButtonsToRemove: [
+            "sendDataToCloud",
+            "hoverCompareCartesian",
+            "hoverClosestCartesian",
+            "toImage",
+            "select2d",
+            "lasso2d",
+            "toggleSpikelines",
+            "resetScale2d"
+        ]
     };
 }
 
