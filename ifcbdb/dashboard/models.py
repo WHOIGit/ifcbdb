@@ -47,7 +47,7 @@ class Timeline(object):
         "run_time": "Seconds",
         "look_time": "Seconds",
         "ml_analyzed": "Milliliters",
-        'concentration': 'Cells / ml',
+        'concentration': 'ROIs / ml',
         'n_triggers': 'Count',
         'n_images': 'Count',
     }
