@@ -3,7 +3,7 @@
 {% endblock %} {% block content %}
 <div class="row d-flex justify-content-between">
     <div class="pl-3">
-        <span class="h3-responsive">{{ dataset.title }}</span>
+        <span class="h3-responsive">{{ dataset.title }}</span><span><button class="btn btn-link" data-toggle="collapse" data-target="#ts-data" aria-expanded="true" aria-controls="ts-data"><i class="fa" aria-hidden="true"></i></button></span>
     </div>
     {% if user.is_authenticated %}
     <div>
@@ -44,7 +44,7 @@
 <hr class="my-2">
 <div class="row px-1">
     <div class="col-sm-12">
-        <div class="tab-content" id="ts-data">
+        <div class="tab-content collapse show" id="ts-data">
             <div class="tab-pane" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
                 <div class="ts-plot-container"></div>
             </div>
