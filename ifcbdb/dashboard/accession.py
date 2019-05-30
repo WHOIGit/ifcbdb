@@ -10,6 +10,7 @@ from .models import Bin, DataDirectory, DATA_DIRECTORY_RAW, Instrument
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
+from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 
 class Accession(object):
@@ -61,7 +62,12 @@ class Accession(object):
                     self.dataset.bins.add(b)
                     print('{} was added to or remains in {}'.format(pid, self.dataset.name))
                     continue
-                bins2save.append(self.add_bin(bin, b))
+                b2s = self.add_bin(bin, b)
+                if b2s is not None:
+                    bins2save.append(b2s)
+                elif created: # created, but bad! delete
+                    print('{} deleting, was bad'.format(pid))
+                    b.delete()
             with transaction.atomic():
                 for b in bins2save:
                     b.save()
@@ -75,9 +81,12 @@ class Accession(object):
         print('{} checking and processing'.format(b.pid))
         # qaqc checks
         qc_bad = check_bad(bin)
+        ml_analyzed = bin.ml_analyzed
+        if ml_analyzed <= 0:
+            qc_bad = True
         if qc_bad:
             b.qc_bad = True
-            print('{} raw data is bad'.format(pid))
+            print('{} raw data is bad'.format(b.pid))
             return
         # spatial information
         if self.lat is not None and self.lon is not None:
@@ -91,14 +100,17 @@ class Accession(object):
         b.temperature = bin.temperature
         b.humidity = bin.humidity
         b.size = bin.fileset.getsize() # assumes FilesetBin
-        b.ml_analyzed = bin.ml_analyzed
+        b.ml_analyzed = ml_analyzed
         b.look_time = bin.look_time
         b.run_time = bin.run_time
         b.n_triggers = len(bin)
-        if bin.pid.schema_version == 1:
+        if bin.pid.schema_version == SCHEMA_VERSION_1:
             ii = InfilledImages(bin)
             b.n_images = len(ii)
         else:
             b.n_images = len(bin.images)
-        b.concentration = b.n_images / b.ml_analyzed
+        b.concentration = b.n_images / ml_analyzed
+        if b.concentration < 0: # metadata is bogus!
+            print('{} negative concentration: ignoring'.format(b.pid))
+            return
         return b # defer save
