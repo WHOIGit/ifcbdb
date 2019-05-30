@@ -3,14 +3,14 @@
 {% endblock %} {% block content %}
 <div class="row d-flex justify-content-between">
     <div class="pl-3">
-        <span class="h3-responsive">{{ dataset.title }}</span><span><button class="btn btn-link" data-toggle="collapse" data-target="#ts-data" aria-expanded="true" aria-controls="ts-data"><i class="fa" aria-hidden="true"></i></button></span>
+        <span class="h3-responsive">{{ dataset.title }}</span><span><button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data"><i class="fa" aria-hidden="true"></i></button></span>
     </div>
     {% if user.is_authenticated %}
     <div>
         <a href="#" class="btn btn-sm btn-primary ml-3">Configure</a>
     </div>
     {% endif %}
-        <ul class="nav justify-content-end" id="ts-tabs" role="tablist">
+        <ul class="nav justify-content-end collapse show ts-collapse" id="ts-tabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
                    role="tab" data-target="ts-size" aria-selected="false">Data Size</a>
@@ -44,7 +44,7 @@
 <hr class="my-2">
 <div class="row px-1">
     <div class="col-sm-12">
-        <div class="tab-content collapse show" id="ts-data">
+        <div class="tab-content collapse show ts-collapse" id="ts-data">
             <div class="tab-pane" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
                 <div class="ts-plot-container"></div>
             </div>
