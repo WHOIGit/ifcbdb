@@ -214,7 +214,7 @@ class Bin(models.Model):
     # metadata JSON
     metadata_json = models.CharField(max_length=8192, default='{}', db_column='metadata')
     # metrics
-    size = models.IntegerField(default=0) # size of raw data in bytes
+    size = models.BigIntegerField(default=0) # size of raw data in bytes
     n_triggers = models.IntegerField(default=0)
     n_images = models.IntegerField(default=0)
     temperature = models.FloatField(default=FILL_VALUE)
