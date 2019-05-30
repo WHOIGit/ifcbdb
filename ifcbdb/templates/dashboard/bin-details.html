@@ -10,7 +10,7 @@
         </span>
     </div>
     <div class="pl-3 align-self-center">
-        <a title="Share link"><span id="share-button" class="h5-responsive fa fa-share-square"></span></a>
+        <a id="share-button" title="Share This Bin"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Bin</a>
     </div>
 </div>
 <hr class="my-2">
@@ -205,7 +205,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Share link</h5>
+                <h5 class="modal-title" id="exampleModalLabel">Share This Bin</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -464,7 +464,9 @@
     });
 
 
-    $("#share-button").click(function () {
+    $("#share-button").click(function (e) {
+        e.preventDefault();
+        
         $("#share-modal").modal();
         $("#share-link").select();
     });

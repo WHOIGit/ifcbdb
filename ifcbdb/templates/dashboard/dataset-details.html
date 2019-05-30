@@ -3,17 +3,17 @@
 {% endblock %} {% block content %}
 <div class="row d-flex justify-content-between">
     <div class="pl-3">
-        <span class="h3-responsive">{{ dataset.title }}</span>
+        <span class="h3-responsive">{{ dataset.title }}</span><span><button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data"><i class="fa" aria-hidden="true"></i></button></span>
     </div>
     {% if user.is_authenticated %}
     <div>
         <a href="#" class="btn btn-sm btn-primary ml-3">Configure</a>
     </div>
     {% endif %}
-        <ul class="nav justify-content-end" id="ts-tabs" role="tablist">
+        <ul class="nav justify-content-end collapse show ts-collapse" id="ts-tabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
-                   role="tab" data-target="ts-size" aria-selected="true">Data Size</a>
+                   role="tab" data-target="ts-size" aria-selected="false">Data Size</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
@@ -28,8 +28,8 @@
                    role="tab" data-target="ts-ml-analyzed" aria-selected="false">Volume Analyzed</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
-                   role="tab" data-target="ts-concentration" aria-selected="false">Concentration</a>
+                <a class="nav-link btn btn-mdb-color btn-sm active" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
+                   role="tab" data-target="ts-concentration" aria-selected="true">ROIs / ml</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link btn btn-mdb-color btn-sm" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
@@ -44,8 +44,8 @@
 <hr class="my-2">
 <div class="row px-1">
     <div class="col-sm-12">
-        <div class="tab-content" id="ts-data">
-            <div class="tab-pane show active" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
+        <div class="tab-content collapse show ts-collapse" id="ts-data">
+            <div class="tab-pane" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
                 <div class="ts-plot-container"></div>
             </div>
             <div class="tab-pane" id="ts-temperature" role="tabpanel" aria-labelledby="ts-temperature-tab">
@@ -57,7 +57,7 @@
             <div class="tab-pane" id="ts-ml-analyzed" role="tabpanel" aria-labelledby="ts-ml-analyzed-tab">
                 <div class="ts-plot-container"></div>
             </div>
-            <div class="tab-pane" id="ts-concentration" role="tabpanel" aria-labelledby="ts-concentration-tab">
+            <div class="tab-pane show active" id="ts-concentration" role="tabpanel" aria-labelledby="ts-concentration-tab">
                 <div class="ts-plot-container"></div>
             </div>
             <div class="tab-pane" id="ts-triggers" role="tabpanel" aria-labelledby="ts-triggers-tab">
@@ -77,7 +77,7 @@
                 <div class="d-flex flex-row justify-content-between">
                     <div class="flex-column">
                         <form class="form-inline">
-                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm"><i class="fas fa-arrow-circle-left fa-1x"></i></a>
+                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm"><i class="fas fa-arrow-circle-left fa-1x"></i>&nbsp;&nbsp;Previous Bin</a>
                         </form>
                     </div>
                     <div class="flex-column align-self-center">
@@ -88,7 +88,7 @@
                     </div>
                     <div class="flex-column pt-1 pt-sm-0">
                         <form class="form-inline">
-                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm"><i class="fas fa-arrow-circle-right fa-1x"></i></a>
+                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm">Next Bin&nbsp;&nbsp;<i class="fas fa-arrow-circle-right fa-1x"></i></a>
                         </form>
                     </div>
                 </div>
@@ -235,7 +235,7 @@ var currentResolution = "auto";
 var currentBinTimestamp = null;
 var isBinLoading = false;
 var isMosaicLoading = false;
-var currentPlotId = "ts-size";
+var currentPlotId = "ts-concentration";
 
 function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -319,8 +319,12 @@ function createTimeSeries(container, metric) {
             $("#next-bin").addClass("disabled");
 
             // workaround to prevent accepting clicks on the plotly controls
-            distanceFromTop = event.pageY - $(container[0]).offset().top;
-            if (distanceFromTop > 35) {
+            var offset = $(container[0]).offset();
+            var distanceFromTop = event.pageY - offset.top;
+            var margin = container[0]._fullLayout.margin.l;
+            var rightX = offset.left + $(container[0]).width();
+            var distanceFromRight = rightX - event.pageX - margin;
+            if (distanceFromTop > 35 || distanceFromRight > 75) {
                 changeToClosestBin($(container[0]).data("date"));
             }
         });
@@ -641,7 +645,7 @@ $(".change-image").click(function(e){
 });
 
 $(function() {
-    createTimeSeries($("#ts-size .ts-plot-container"), "size");
+    createTimeSeries($("#ts-concentration .ts-plot-container"), "concentration");
 
     changeBin("{{ bin.pid }}", false);
 });

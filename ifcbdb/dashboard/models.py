@@ -23,6 +23,7 @@ import pandas as pd
 
 import ifcb
 
+from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 from ifcb.viz.mosaic import Mosaic
 from ifcb.viz.blobs import blob_outline
@@ -47,7 +48,7 @@ class Timeline(object):
         "run_time": "Seconds",
         "look_time": "Seconds",
         "ml_analyzed": "Milliliters",
-        'concentration': 'Cells / ml',
+        'concentration': 'ROIs / ml',
         'n_triggers': 'Count',
         'n_images': 'Count',
     }
@@ -292,9 +293,12 @@ class Bin(models.Model):
 
     # access to images
 
-    def images(self):
-        b = self._get_bin()
-        if b.schema == 1:
+    def images(self, bin=None):
+        if bin is None:
+            b = self._get_bin()
+        else:
+            b = bin
+        if b.schema == SCHEMA_VERSION_1:
             return InfilledImages(b)
         else:
             return b.images
@@ -302,7 +306,7 @@ class Bin(models.Model):
     def image(self, target_number):
         b = self._get_bin()
         with b.as_single(target_number) as subset:
-            ii = InfilledImages(subset) # handle old-style data
+            ii = self.images(subset)
             try:
                 return ii[target_number]
             except IndexError as e:
