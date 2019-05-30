@@ -293,8 +293,11 @@ class Bin(models.Model):
 
     # access to images
 
-    def images(self):
-        b = self._get_bin()
+    def images(self, bin=None):
+        if bin is None:
+            b = self._get_bin()
+        else:
+            b = bin
         if b.schema == SCHEMA_VERSION_1:
             return InfilledImages(b)
         else:
@@ -303,7 +306,7 @@ class Bin(models.Model):
     def image(self, target_number):
         b = self._get_bin()
         with b.as_single(target_number) as subset:
-            ii = self.images()
+            ii = self.images(subset)
             try:
                 return ii[target_number]
             except IndexError as e:
