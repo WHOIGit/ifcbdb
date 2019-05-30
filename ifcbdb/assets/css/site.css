@@ -170,3 +170,21 @@ div.scale-bar {
     width: 34px;
     height: 5px;
 }
+
+[data-toggle="collapse"] .fa:after {
+    content: "\f056";
+}
+
+[data-toggle="collapse"].collapsed .fa:after {
+    content: "\f055";
+}
+
+[data-toggle="collapse"] .fa:before {
+    content: "Hide Timeline ";
+    font-family: "Roboto";
+}
+
+[data-toggle="collapse"].collapsed .fa:before {
+    content: "Show Timeline ";
+    font-family: "Roboto";
+}
