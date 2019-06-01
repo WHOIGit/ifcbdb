@@ -235,7 +235,10 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
                 shape=mosaic_shape,
                 scale=mosaic_scale
             )
-        pages = coordinates.page.max()
+        if len(coordinates) == 0:
+            pages = 0
+        else:
+            pages = coordinates.page.max()
         coordinates_json = coordinates_to_json(coordinates);
     else:
         coordinates_json = []
@@ -290,7 +293,13 @@ def _mosaic_page_image(request, bin_id):
 #   are needed to let the UI know that certain levels are "off limits" and avoid re-running data when we know it's
 #   just going to force us down to a finer resolution anyway
 def generate_time_series(request, dataset_name, metric,):
-    resolution = request.GET.get("resolution", "bin")
+    resolution = request.GET.get("resolution", "auto")
+    start = request.GET.get("start")
+    end = request.GET.get("end")
+    if start is not None:
+        start = pd.to_datetime(start, utc=True)
+    if end is not None:
+        end = pd.to_datetime(end, utc=True)
 
     # Allows us to keep consistant url names
     metric = metric.replace("-", "_")
@@ -299,7 +308,7 @@ def generate_time_series(request, dataset_name, metric,):
 
     # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
     while True:
-        time_series, resolution = Timeline(dataset.bins).metrics(metric, None, None, resolution=resolution)
+        time_series, resolution = Timeline(dataset.bins).metrics(metric, start, end, resolution=resolution)
         if len(time_series) > 1 or resolution == "bin":
             break
 

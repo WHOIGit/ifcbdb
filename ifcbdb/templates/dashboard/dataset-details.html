@@ -236,6 +236,11 @@ var currentBinTimestamp = null;
 var isBinLoading = false;
 var isMosaicLoading = false;
 var currentPlotId = "ts-concentration";
+var timelineValid = true;
+var timelineRelayoutResponse;
+var timelineLocked = false;
+var timelineLoaded = new Date();
+var debug = 0;
 
 function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -288,7 +293,7 @@ function changeToClosestBin(targetDate) {
 
 function createTimeSeries(container, metric) {
     currentMetric = metric;
-    var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric + "?resolution=" + currentResolution;
+    var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric + "?resolution=auto";
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
         currentResolution = response["resolution"];
@@ -331,25 +336,58 @@ function createTimeSeries(container, metric) {
 
         // Add event to handle resolution change when zooming
         container[0].on("plotly_relayout", function(relayoutResponse){
-            var resolution = parseAndCalcResolution(relayoutResponse);
-            if (resolution == currentResolution)
-                return;
+            timelineValid = false;
+            timelineRelayoutResponse = relayoutResponse;
 
-            $.get("/api/{{ dataset.name }}/time-series/" + metric + "?resolution=" + resolution, function(dataResponse) {
-                currentResolution = dataResponse["resolution"];
-
-                var updatedConfig = getTimelineConfig();
-                var updatedData = getTimelineData(dataResponse, currentBinTimestamp);
-                var updatedLayout = getTimelineLayout(dataResponse, relayoutResponse);
-
-                Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
-
-                return false;
-            });
+            var now = new Date();
+            var ok = moment(timelineLoaded).add(1,"s").toDate();
+            if (now > ok) {
+                queryTimeline(container, metric);
+            } else {
+                var timeout = ok.getTime() - now.getTime();
+                setTimeout(function() {
+                    queryTimeline(container, metric);
+                }, timeout);
+            }
         });
     });
 }
 
+function queryTimeline(container, metric) {
+    if (timelineValid || timelineLocked)
+        return;
+    timelineLocked = true;
+
+    var start = timelineRelayoutResponse["xaxis.range[0]"];
+    var end = timelineRelayoutResponse["xaxis.range[1]"];
+    //var resolution = parseAndCalcResolution(relayoutResponse);
+    //if (resolution == currentResolution)
+    //    return;
+
+    var url = "/api/{{ dataset.name }}/time-series/" + metric +
+        "?resolution=" + "auto";
+    if(start)
+        url += "&start=" + start;
+    if(end)
+        url += "&end=" + end;
+
+    $.get(url, function(dataResponse) {
+        debug += 1;
+        $("#debug").html(debug);
+        currentResolution = dataResponse["resolution"];
+
+        var updatedConfig = getTimelineConfig();
+        var updatedData = getTimelineData(dataResponse, currentBinTimestamp);
+        var updatedLayout = getTimelineLayout(dataResponse, timelineRelayoutResponse);
+
+        Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
+
+        timelineValid = true;
+        timelineLocked = false;
+        timelineLoaded = new Date();
+        return false;
+    });
+}
 $("#bin-details").click(function(e) {
     var url = "{% url 'bin' dataset.name '__BIN_PID__' %}";
     var pid = $("#bin-switcher").val();
@@ -367,6 +405,8 @@ $("#ts-tabs .nav-link").click(function() {
     var metric = $(this).data("metric");
     var container = $("#" + currentPlotId + " .ts-plot-container")
 
+    timelineValid = false;
+    timelineWaiting = false;
     createTimeSeries(container, metric);
 });
 
