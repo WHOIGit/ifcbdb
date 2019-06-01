@@ -344,7 +344,7 @@ function createTimeSeries(container, metric) {
             if (now > ok) {
                 queryTimeline(container, metric);
             } else {
-                var timeout = ok.getTime() - now.getTime();
+                var timeout = (ok.getTime() - now.getTime());
                 setTimeout(function() {
                     queryTimeline(container, metric);
                 }, timeout);
@@ -372,8 +372,6 @@ function queryTimeline(container, metric) {
         url += "&end=" + end;
 
     $.get(url, function(dataResponse) {
-        debug += 1;
-        $("#debug").html(debug);
         currentResolution = dataResponse["resolution"];
 
         var updatedConfig = getTimelineConfig();
