@@ -236,11 +236,17 @@ var currentBinTimestamp = null;
 var isBinLoading = false;
 var isMosaicLoading = false;
 var currentPlotId = "ts-concentration";
+
 var timelineValid = true;
 var timelineRelayoutResponse;
 var timelineLocked = false;
-var timelineLoaded = new Date();
-var debug = 0;
+var timelineLoadedAt = new Date();
+var timelineLockedAt = new Date();
+var timelineWaiting = 0;
+var timelineWaitingSince = new Date();
+
+var _attempts = 0;
+var _requests = 0;
 
 function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -339,30 +345,37 @@ function createTimeSeries(container, metric) {
             timelineValid = false;
             timelineRelayoutResponse = relayoutResponse;
 
-            var now = new Date();
-            var ok = moment(timelineLoaded).add(1,"s").toDate();
-            if (now > ok) {
-                queryTimeline(container, metric);
-            } else {
-                var timeout = (ok.getTime() - now.getTime());
-                setTimeout(function() {
-                    queryTimeline(container, metric);
-                }, timeout);
-            }
+            queryTimeline(container, metric);
         });
     });
 }
 
 function queryTimeline(container, metric) {
-    if (timelineValid || timelineLocked)
-        return;
+    _attempts += 1;
+
+    // 
+    var now = new Date();
+    var ok = moment(timelineLoadedAt).add(1,"s").toDate();
+
+    if (timelineLocked || now < ok) {
+        // if a timeline query is underway, or it's not time to make another one,
+        // and we're not already deferring an attempt, defer one for 100ms
+        if (timelineWaiting == 0) {
+            timelineWaiting += 1;
+            setTimeout(function() {
+                timelineWaiting -= 1;
+                queryTimeline(container, metric);
+            }, 10);
+        }
+        return false;
+    }
+
+    // lock the timeline
     timelineLocked = true;
 
+    // prepare the time range query
     var start = timelineRelayoutResponse["xaxis.range[0]"];
     var end = timelineRelayoutResponse["xaxis.range[1]"];
-    //var resolution = parseAndCalcResolution(relayoutResponse);
-    //if (resolution == currentResolution)
-    //    return;
 
     var url = "/api/{{ dataset.name }}/time-series/" + metric +
         "?resolution=" + "auto";
@@ -371,7 +384,20 @@ function queryTimeline(container, metric) {
     if(end)
         url += "&end=" + end;
 
+    // validate the timeline, so that upon return from
+    // the AJAX call we know if it's been invalidated in the meantime
+    timelineValid = true;
+
     $.get(url, function(dataResponse) {
+
+        // the timeline has been invalidated so this response is out of date
+        // if we're not already deferring an attempt, do so
+        if (!timelineValid) {
+            queryTimeline(container, metric);
+        }
+
+        // the user has not invalidated the timeline since we made the
+        // request, so use this response
         currentResolution = dataResponse["resolution"];
 
         var updatedConfig = getTimelineConfig();
@@ -380,12 +406,16 @@ function queryTimeline(container, metric) {
 
         Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
 
+        // success, unlock the timeline
         timelineValid = true;
+        timelineLoadedAt = new Date();
         timelineLocked = false;
-        timelineLoaded = new Date();
         return false;
     });
+    _requests += 1;
+    return true;
 }
+
 $("#bin-details").click(function(e) {
     var url = "{% url 'bin' dataset.name '__BIN_PID__' %}";
     var pid = $("#bin-switcher").val();
