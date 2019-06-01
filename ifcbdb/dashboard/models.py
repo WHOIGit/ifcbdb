@@ -100,7 +100,7 @@ class Timeline(object):
     def next_bin(self, bin):
         return self.bins.filter(sample_time__gt=bin.sample_time).order_by("sample_time").first()
 
-    def closest_bin(self, longitude, latitude):
+    def nearest_bin(self, longitude, latitude):
         location = Point(longitude, latitude, srid=SRID)
         return self.bins.annotate(
             distance=Distance('location', location)
@@ -151,6 +151,20 @@ class Timeline(object):
 
     def metric_label(self, metric):
         return self.TIMELINE_METRICS.get(metric,'')
+
+def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None):
+    qs = Bin.objects
+    if start is not None or end is not None:
+        qs = Timeline(qs).time_range(start, end)
+    if dataset_name is not None:
+        dataset = Dataset.objects.get(name=dataset_name)
+        qs = qs.filter(datasets=dataset)
+    if tags:
+        qs = qs.filter(tags=tags) # FIXME untested
+    if instrument_number is not None:
+        instrument = Instrument.objects.get(number=instrument_number)
+        qs = qs.filter(instrument=instrument)
+    return qs
 
 class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)

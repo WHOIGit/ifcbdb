@@ -4,13 +4,13 @@ from datetime import timedelta, datetime
 
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, reverse
-from django.http import HttpResponse, FileResponse, Http404, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_control
 
 from ifcb.data.imageio import format_image
 
-from .models import Dataset, Bin, Timeline
+from .models import Dataset, Bin, Timeline, bin_query
 from common.utilities import *
 
 from .tasks import mosaic_coordinates_task
@@ -365,4 +365,27 @@ def closest_bin(request, dataset_name):
 
     return JsonResponse({
         "bin_id": bin.pid,
+    })
+
+@csrf_exempt
+def nearest_bin(request):
+    dataset = request.POST.get('dataset') # limit to dataset
+    instrument = request.POST.get('instrument') # limit to instrument
+    start = request.POST.get('start') # limit to start time
+    end = request.POST.get('end') # limit to end time
+    tags = request.POST.get('tags') # limit to tag(s)
+    lat = request.POST.get('latitude')
+    lon = request.POST.get('longitude')
+    if lat is None or lon is None:
+        return HttpResponseBadRequest('lat/lon required')
+    if tags is None:
+        tags = []
+    else:
+        tags = ','.split(tags)
+    bins = bin_query(dataset_name=dataset, start=start, end=end, tags=tags, instrument_number=instrument)
+    lon = float(lon)
+    lat = float(lat)
+    bin_id = Timeline(bins).nearest_bin(lon, lat).pid
+    return JsonResponse({
+        'bin_id': bin_id
     })
