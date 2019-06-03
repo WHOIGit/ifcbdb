@@ -511,7 +511,7 @@ function changeBin(binId, updateHistory) {
         $("#mapid .leaflet-control-container").show()
 
         if (updateHistory) {
-            history.pushState(null, null, "?bin_id=" + binId);
+            history.pushState({"bin_id": binId}, null, "?bin_id=" + binId);
         }
 
         // Update the timeline to select the new bin
@@ -710,6 +710,12 @@ $(".change-image").click(function(e){
                 $("#detailed-image-outline").attr("src", "data:image/png;base64," + data["outline"]);
         });
     }
+});
+
+$(window).on("popstate", function(e) {
+    var state = e.originalEvent.state;
+
+    changeBin(state["bin_id"], false);
 });
 
 $(function() {
