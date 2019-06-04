@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_control
 
 from ifcb.data.imageio import format_image
+from ifcb.data.adc import schema_names
 
 from .models import Dataset, Bin, Timeline, bin_query
 from common.utilities import *
@@ -389,3 +390,12 @@ def nearest_bin(request):
     return JsonResponse({
         'bin_id': bin_id
     })
+
+@csrf_exempt
+def plot_data(request, bin_id):
+    b = get_object_or_404(Bin, pid=bin_id)
+    bin = b._get_bin()
+    ia = bin.images_adc.copy(deep=False)
+    ia.columns = schema_names(bin.schema)
+    ia['target_number'] = bin.images.keys()
+    return JsonResponse(ia.to_dict('list'))

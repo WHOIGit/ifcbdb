@@ -67,4 +67,5 @@ urlpatterns = [
     path('api/image/<slug:bin_id>/<int:target>', views.image_metadata, name='image_metadata'),
     path('api/blob/<slug:bin_id>/<int:target>', views.image_blob, name='image_blob'),
     path('api/outline/<slug:bin_id>/<int:target>', views.image_outline, name='image_outline'),
+    path('api/plot/<slug:bin_id>', views.plot_data, name='plot_data'),
 ]
