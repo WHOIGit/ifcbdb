@@ -141,7 +141,7 @@ function getTimelineData(data, selectedDate) {
 
 function getTimelineLayout(data, range) {
     var layout =  {
-        bargap: .05,
+        bargap: 0,
         margin: {
             l: 75,
             r: 50,
