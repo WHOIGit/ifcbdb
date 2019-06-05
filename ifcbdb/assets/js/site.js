@@ -4,6 +4,8 @@ var defaultLng = -70.6593102;
 var minLatitude = -180;
 var minLongitude = -180;
 var zoomLevel = 6;
+var GPS_PRECISION = 4;
+var DEPTH_PRECISION
 
 $(function(){
     $("#dataset-switcher").change(function(){
@@ -50,9 +52,9 @@ function addMapMarker(map, lat, lng, depth) {
     return L.marker([lat, lng])
         .addTo(map)
         .bindPopup(
-            "Latitude: <strong>" + lat + "</strong><br />" +
-            "Longitude: <strong>" + lng + "</strong><br />" +
-            "Depth: <strong>" + parseFloat(depth).toFixed(1) + "m</strong>"
+            "Latitude: <strong>" + parseFloat(lat).toFixed(GPS_PRECISION) + "</strong><br />" +
+            "Longitude: <strong>" + parseFloat(lng).toFixed(GPS_PRECISION) + "</strong><br />" +
+            "Depth: <strong>" + parseFloat(depth).toFixed(DEPTH_PRECISION) + "m</strong>"
         )
         .openPopup();
 }
