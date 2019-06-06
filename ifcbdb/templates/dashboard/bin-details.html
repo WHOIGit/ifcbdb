@@ -24,8 +24,39 @@
             </div>
             <div class="card-body text-center">
                 <div class="tab-content">
-                    X Axis: <select id="plot-x-axis"></select>
-                    Y Axis: <select id="plot-y-axis"></select>
+                    <form class="form form-row">
+                        <div class="form-group mr-2">
+                            <label>X Axis</label>
+                            <select id="plot-x-axis" class="form-control" style="width:200px"></select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label>Y Axis</label>
+                            <select id="plot-y-axis" class="form-control" style="width:200px"></select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label>X Type</label>
+                            <select id="plot-x-type" class="form-control">
+                                <option value="">Linear</option>
+                                <option value="log">Log</option>
+                            </select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label>Y Type</label>
+                            <select id="plot-y-type" class="form-control">
+                                <option value="">Linear</option>
+                                <option value="log">Log</option>
+                            </select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label>X Offset</label>
+                            <input type="text" id="plot-x-offset" class="form-control" style="width:100px" />
+                        </div>
+                        <div class="form-group">
+                            <label>Y Offset</label>
+                            <input type="text" id="plot-y-offset" class="form-control" style="width:100px" />
+                        </div>
+                    </form>
+
                     <div id="plot"></div>
                 </div>
             </div>
@@ -498,18 +529,43 @@
     function updatePlot() {
         var xAxis = $("#plot-x-axis").val();
         var yAxis = $("#plot-y-axis").val();
+        var xType = $("#plot-x-type").val();
+        var yType = $("#plot-y-type").val();
+        var xOffset = $("#plot-x-offset").val();
+        var yOffset = $("#plot-y-offset").val();
+        var xData = plotData[xAxis];
+        var yData = plotData[yAxis];
+
+        if ($.isNumeric(xOffset) && xOffset != 0) {
+            xData = $.map(xData, function(value) { return value + parseFloat(xOffset); });
+        }
+
+        if ($.isNumeric(yOffset) && yOffset != 0) {
+            yData = $.map(yData, function(value) { return value + parseFloat(yOffset); });
+        }
 
         var trace = [{
-            x: plotData[xAxis],
-            y: plotData[yAxis],
+            x: xData,
+            y: yData,
             mode: 'markers',
             type: 'scatter'
         }];
 
-        Plotly.newPlot('plot', trace);
+        var layout = {
+            xaxis: {
+                type: xType,
+                autorange: true
+            },
+            yaxis: {
+                type: yType,
+                autorange: true
+            }
+        };
+
+        Plotly.react('plot', trace, layout);
     }
 
-    $("#plot-x-axis, #plot-y-axis").change(function(e){
+    $("#plot-x-axis, #plot-y-axis, #plot-x-type, #plot-y-type, #plot-x-offset, #plot-y-offset").change(function(e){
         updatePlot();
     });
 
