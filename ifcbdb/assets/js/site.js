@@ -28,6 +28,10 @@ function createMap(lat, lng) {
     L.esri.basemapLayer('Oceans').addTo(map);
     L.esri.basemapLayer('OceansLabels').addTo(map);
 
+    map.on("zoomend", function(e) {
+        zoomLevel = this.getZoom();
+    });
+
     return map;
 }
 
