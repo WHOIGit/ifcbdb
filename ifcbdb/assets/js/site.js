@@ -5,7 +5,9 @@ var minLatitude = -180;
 var minLongitude = -180;
 var zoomLevel = 6;
 var GPS_PRECISION = 4;
-var DEPTH_PRECISION
+var DEPTH_PRECISION = 1;
+var PLOT_X_DEFAULT = "roi_x";
+var PLOT_Y_DEFAULT = "roi_y";
 
 $(function(){
     $("#dataset-switcher").change(function(){

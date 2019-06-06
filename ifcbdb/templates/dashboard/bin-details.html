@@ -18,6 +18,24 @@
     <div class="col">
         <div class="card h-100">
             <div class="card-header py-1 mdb-color lighten-5">
+                <div class="row col justify-content-between">
+                    <span class="h5-responsive">Plot</span>
+                </div>
+            </div>
+            <div class="card-body text-center">
+                <div class="tab-content">
+                    X Axis: <select id="plot-x-axis"></select>
+                    Y Axis: <select id="plot-y-axis"></select>
+                    <div id="plot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row py-2 px-3">
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header py-1 mdb-color lighten-5">
             <div class="row col justify-content-between">
                 <span class="h5-responsive">Images</span>
                         <form class="form-inline">
@@ -267,6 +285,7 @@
     var currentBinPage = 0;
     var numBinPages = 1; // placeholder until mosaic load
     var coordinates = []; // placeholder until mosaic load
+    var plotData = null;
 
     function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -476,6 +495,24 @@
         document.execCommand("Copy");
     });
 
+    function updatePlot() {
+        var xAxis = $("#plot-x-axis").val();
+        var yAxis = $("#plot-y-axis").val();
+
+        var trace = [{
+            x: plotData[xAxis],
+            y: plotData[yAxis],
+            mode: 'markers',
+            type: 'scatter'
+        }];
+
+        Plotly.newPlot('plot', trace);
+    }
+
+    $("#plot-x-axis, #plot-y-axis").change(function(e){
+        updatePlot();
+    });
+
     $(function() {
         var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
         addMapMarker(map, {{ bin.latitude }}, {{ bin.longitude }}, {{ bin.depth }});
@@ -484,6 +521,22 @@
 
         var binDate = "{{ bin.timestamp|date:'c' }}";
         $("#bin-date-relative").text(" (" + moment(binDate).fromNow() + ")");
+
+        $.get("/api/plot/{{ bin.pid }}", function(data){
+            plotData = data;
+            var plotXAxis = $("#plot-x-axis");
+            var plotYAxis = $("#plot-y-axis");
+
+            $.each(data, function(key) {
+                plotXAxis.append($("<option />").text(key));
+                plotYAxis.append($("<option />").text(key));
+            });
+
+            plotXAxis.val(PLOT_X_DEFAULT);
+            plotYAxis.val(PLOT_Y_DEFAULT);
+
+            updatePlot();
+        });
     });
 
 </script>
