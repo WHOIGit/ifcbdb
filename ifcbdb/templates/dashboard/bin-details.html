@@ -15,7 +15,7 @@
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-    <div class="col">
+    <div class="col-md-8">
         <div class="card h-100">
             <div class="card-header py-1 mdb-color lighten-5">
                 <div class="row col justify-content-between">
@@ -27,11 +27,11 @@
                     <form class="form form-row">
                         <div class="form-group mr-2">
                             <label>X Axis</label>
-                            <select id="plot-x-axis" class="form-control" style="width:200px"></select>
+                            <select id="plot-x-axis" class="form-control" style="width:150px"></select>
                         </div>
                         <div class="form-group mr-2">
                             <label>Y Axis</label>
-                            <select id="plot-y-axis" class="form-control" style="width:200px"></select>
+                            <select id="plot-y-axis" class="form-control" style="width:150px"></select>
                         </div>
                         <div class="form-group mr-2">
                             <label>X Type</label>
@@ -58,6 +58,20 @@
                     </form>
 
                     <div id="plot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header py-1 mdb-color lighten-5">
+                <div class="row col justify-content-between">
+                    <span class="h5-responsive">Images</span>
+                </div>
+            </div>
+            <div class="card-body text-center">
+                <div class="tab-content">
+                    <div id="plot-images"></div>
                 </div>
             </div>
         </div>
@@ -544,6 +558,20 @@
             yData = $.map(yData, function(value) { return value + parseFloat(yOffset); });
         }
 
+        var config = {
+            responsive: true,
+            displaylogo: false,
+            scrollZoom: true,
+            modeBarButtonsToRemove: [
+                "sendDataToCloud",
+                "hoverCompareCartesian",
+                "hoverClosestCartesian",
+                "toImage",
+                "toggleSpikelines",
+                "resetScale2d"
+            ]
+        };
+
         var trace = [{
             x: xData,
             y: yData,
@@ -562,7 +590,36 @@
             }
         };
 
-        Plotly.react('plot', trace, layout);
+        Plotly.react('plot', trace, layout, config);
+
+        $("#plot")[0].on('plotly_click', function(data){
+            var pts = '';
+            for(var i=0; i < data.points.length; i++){
+                var idx = data.points[i].pointIndex;
+
+                var imageId = plotData["target_number"][idx];
+                var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(imageId, 5) + ".png";
+
+                $("#plot-images").empty();
+                $("#plot-images").append($("<img />").attr("src", baseUrl));
+            }
+        });
+
+        $("#plot")[0].on("plotly_selected", function(data){
+            var urls = [];
+            for(var i = 0; i < data.points.length; i++){
+                var idx = data.points[i].pointIndex;
+                var imageId = plotData["target_number"][idx];
+                var imageUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(imageId, 5) + ".png";
+
+                urls.push(imageUrl);
+            }
+
+            $("#plot-images").empty();
+            $.each(urls, function(key, val){
+                $("#plot-images").append($("<img />").attr("src", val));
+            });
+        });
     }
 
     $("#plot-x-axis, #plot-y-axis, #plot-x-type, #plot-y-type, #plot-x-offset, #plot-y-offset").change(function(e){
