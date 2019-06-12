@@ -71,6 +71,9 @@
             </div>
             <div class="card-body text-center">
                 <div class="tab-content">
+                    <div class="alert alert-danger" id="too-many-images" style="display:none">
+                        Too many images have been selected. Only the first <strong id="max-images"></strong> are shown
+                    </div>
                     <div id="plot-images"></div>
                 </div>
             </div>
@@ -607,7 +610,13 @@
 
         $("#plot")[0].on("plotly_selected", function(data){
             var urls = [];
+            var maxImages = false;
             for(var i = 0; i < data.points.length; i++){
+                if (i == MAX_SELECTABLE_IMAGES) {
+                    maxImages = true;
+                    break;
+                }
+
                 var idx = data.points[i].pointIndex;
                 var imageId = plotData["target_number"][idx];
                 var imageUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(imageId, 5) + ".png";
@@ -619,6 +628,8 @@
             $.each(urls, function(key, val){
                 $("#plot-images").append($("<img />").attr("src", val));
             });
+            $("#too-many-images").toggle(maxImages);
+
         });
     }
 
@@ -634,6 +645,8 @@
 
         var binDate = "{{ bin.timestamp|date:'c' }}";
         $("#bin-date-relative").text(" (" + moment(binDate).fromNow() + ")");
+
+        $("#max-images").text(MAX_SELECTABLE_IMAGES);
 
         $.get("/api/plot/{{ bin.pid }}", function(data){
             plotData = data;

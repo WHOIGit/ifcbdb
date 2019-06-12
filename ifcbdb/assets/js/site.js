@@ -8,6 +8,7 @@ var GPS_PRECISION = 4;
 var DEPTH_PRECISION = 1;
 var PLOT_X_DEFAULT = "roi_x";
 var PLOT_Y_DEFAULT = "roi_y";
+var MAX_SELECTABLE_IMAGES = 25;
 
 $(function(){
     $("#dataset-switcher").change(function(){
