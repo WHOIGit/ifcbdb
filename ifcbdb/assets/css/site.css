@@ -188,3 +188,7 @@ div.scale-bar {
     content: "Show Timeline ";
     font-family: "Roboto";
 }
+
+.bin-plot {
+    min-height:300px;
+}

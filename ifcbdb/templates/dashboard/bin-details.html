@@ -49,15 +49,15 @@
                         </div>
                         <div class="form-group mr-2">
                             <label>X Offset</label>
-                            <input type="text" id="plot-x-offset" class="form-control" style="width:100px" />
+                            <input type="text" id="plot-x-offset" class="form-control" disabled style="width:100px" />
                         </div>
                         <div class="form-group">
                             <label>Y Offset</label>
-                            <input type="text" id="plot-y-offset" class="form-control" style="width:100px" />
+                            <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
                         </div>
                     </form>
 
-                    <div id="plot"></div>
+                    <div id="plot" class="bin-plot"></div>
                 </div>
             </div>
         </div>
@@ -589,7 +589,7 @@
             },
             yaxis: {
                 type: yType,
-                autorange: true
+                fixedrange: true,
             }
         };
 
@@ -633,7 +633,27 @@
         });
     }
 
-    $("#plot-x-axis, #plot-y-axis, #plot-x-type, #plot-y-type, #plot-x-offset, #plot-y-offset").change(function(e){
+    $("#plot-x-axis, #plot-y-axis, #plot-x-offset, #plot-y-offset").change(function(e){
+        updatePlot();
+    });
+
+    $("#plot-x-type").change(function(e){
+        if ($(this).val() == "log") {
+            $("#plot-x-offset").prop("disabled", false);
+        } else {
+            $("#plot-x-offset").prop("disabled", true).val("");;
+        }
+
+        updatePlot();
+    });
+
+    $("#plot-y-type").change(function(e){
+        if ($(this).val() == "log") {
+            $("#plot-y-offset").prop("disabled", false);
+        } else {
+            $("#plot-y-offset").prop("disabled", true).val("");;
+        }
+
         updatePlot();
     });
 
