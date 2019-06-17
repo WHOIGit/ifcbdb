@@ -192,3 +192,7 @@ div.scale-bar {
 .bin-plot {
     min-height:300px;
 }
+
+#plot-images-container {
+    overflow: auto;
+}

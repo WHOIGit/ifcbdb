@@ -69,7 +69,7 @@
                     <span class="h5-responsive">Images</span>
                 </div>
             </div>
-            <div class="card-body text-center">
+            <div class="card-body text-center" id="plot-images-container">
                 <div class="tab-content">
                     <div class="alert alert-danger" id="too-many-images" style="display:none">
                         Too many images have been selected. Only the first <strong id="max-images"></strong> are shown
@@ -604,7 +604,11 @@
                 var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(imageId, 5) + ".png";
 
                 $("#plot-images").empty();
-                $("#plot-images").append($("<img />").attr("src", baseUrl));
+                $("#plot-images").append(
+                    $("<img />")
+                        .attr("src", baseUrl)
+                        .attr("data-target", imageId)
+                );
             }
         });
 
@@ -621,15 +625,19 @@
                 var imageId = plotData["target_number"][idx];
                 var imageUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(imageId, 5) + ".png";
 
-                urls.push(imageUrl);
+                urls.push({
+                    "id": imageId,
+                    "url": imageUrl
+                });
             }
 
             $("#plot-images").empty();
             $.each(urls, function(key, val){
-                $("#plot-images").append($("<img />").attr("src", val));
+                $("#plot-images").append($("<img />")
+                    .attr("src", val.url)
+                    .attr("data-target", val.id));
             });
             $("#too-many-images").toggle(maxImages);
-
         });
     }
 
@@ -655,6 +663,13 @@
         }
 
         updatePlot();
+    });
+
+    $("#plot-images").on("click", "img", function(e){
+        var target = $(this).data("target");
+        var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(target, 5);
+
+        location.href = baseUrl + ".html";
     });
 
     $(function() {
