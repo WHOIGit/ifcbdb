@@ -328,6 +328,26 @@ function changeToClosestBin(targetDate) {
     });
 }
 
+function changeToNearestBin(lat, lng) {
+    if (isBinLoading || isMosaicLoading)
+        return false;
+
+    isBinLoading = true;
+    isMosaicLoading = true;
+
+    var url = "{% url 'nearest_bin' %}";
+    var data = {
+        dataset: "{{ dataset.name }}",
+        latitude: lat,
+        longitude: lng
+    };
+
+    $.post(url, data, function(resp){
+        if (resp.bin_id != "")
+            changeBin(resp.bin_id, true);
+    });
+}
+
 function createTimeSeries(container, metric) {
     currentMetric = metric;
     var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric + "?resolution=auto";
@@ -536,6 +556,9 @@ function changeBin(binId, updateHistory) {
         // Update map location(s)
         if (!map) {
             map = createMap(data.lat, data.lng);
+            map.on("click", function(e){
+                changeToNearestBin(e.latlng.lat,e.latlng.lng);
+            });
         }
         mapMarker = changeMapLocation(map, data.lat, data.lng, data.depth, mapMarker);
         $("#mapid").css("visibility", "visible");
