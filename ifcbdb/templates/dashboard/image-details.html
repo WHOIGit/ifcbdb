@@ -11,19 +11,7 @@
     <div class="col">
         <span class="h3-responsive">{{ bin.pid }}_{{ image_id|stringformat:"05d" }}</span>
     </div>
-    <div class="pl-3 align-self-center">
-        <a id="share-button" title="Share This Image"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Image</a>
-    </div>
-</div>
-<hr class="my-2">
-<div class="row py-2 px-3">
     <div class="col">
-        <div class="card h-100">
-            <div class="card-header py-1 mdb-color lighten-5">
-                <div class="row d-flex justify-content-between">
-                    <div class="col align-self-center">
-                        <span class="h5-responsive">Image</span>
-                    </div>
                     <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
                         <li class="nav-item">
                             <a class="btn btn-sm btn-mdb-color" id="image-tab-label" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
@@ -34,9 +22,13 @@
                         <li class="nav-item">
                             <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
                         </li>
-                    </ul>
-                </div>
-            </div>
+                    </ul>    
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <div class="col">
+        <div class="card h-100">
             <div class="card-body text-center">
                 <div class="row h-100 justify-content-center align-items-center">
                     <div class="col">

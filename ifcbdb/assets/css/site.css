@@ -109,6 +109,11 @@ body.modal-open {
     height: 500px;
 }
 
+.card#plotImages {
+    height: 550px;
+    max-height: 550px;
+}
+
 .modal .h300 {
     max-height: 300px;
 }
@@ -190,7 +195,7 @@ div.scale-bar {
 }
 
 .bin-plot {
-    min-height:300px;
+    min-height: 300px;
 }
 
 #plot-images-container {

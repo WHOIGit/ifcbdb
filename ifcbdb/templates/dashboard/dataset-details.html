@@ -97,8 +97,37 @@
         <div class="row">
     <div class="col-xl-9">
         <div class="card h-100 min-vh-50">
-    <div class="card-header py-1 white">
-                            <form class="form-inline justify-content-end">
+            <div class="card-body text-center" id="image-tab">
+                <div class="overflow-auto">
+                <img id="mosaic" src="" style="display:none" />
+                </div>
+                <div id="mosaic-loading" class="grey lighten-4" style="height:{{ mosaic_default_height }}px">
+                    <div class="spinner-border mt-10p" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-top mt-1">
+                <div class="col">
+                <nav aria-label="Bin Paging" class="text-center">
+                    <ul id="bin-paging" class="pagination pg-dark justify-content-center" style="display:none">
+                        <li class="page-item page-previous disabled">
+                            <a class="page-link" tabindex="-1">Previous</a>
+                        </li>
+
+                        <li class="page-item page-next">
+                            <a class="page-link">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="col">
+                <div class="dropdown">
+                    <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-cogs"></i>
+                    </a>
+                    <div class="dropdown-menu">                
+                            <form class="px-4 py-3">
                                     <label class="my-1 mr-2" for="view-size">View Size:</label>
                                     <select id="view-size" class="custom-select custom-select-sm form-control" name="view-size">                                  
                                     {% for size in mosaic_view_sizes %}
@@ -111,32 +140,14 @@
                                     <option value="{{ factor }}" autocomplete="off" {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%</option>
                                     {% endfor %}                                 
                                     </select>
-                                </form>   
-</div>
-            <div class="card-body text-center" id="image-tab">
-                <img id="mosaic" src="" style="display:none" />
-                <div id="mosaic-loading" class="grey lighten-4" style="height:{{ mosaic_default_height }}px">
-                    <div class="spinner-border mt-10p" role="status">
-                        <span class="sr-only">Loading...</span>
-                    </div>
+                                </form> 
                 </div>
-                <br clear="all" />
-            </div>
-            <div class="card-footer py-1 text-center white">
-                <nav aria-label="Bin Paging" class="text-center">
-                    <ul id="bin-paging" class="pagination pg-dark justify-content-center" style="display:none">
-                        <li class="page-item page-previous disabled">
-                            <a class="page-link" tabindex="-1">Previous</a>
-                        </li>
-
-                        <li class="page-item page-next">
-                            <a class="page-link">Next</a>
-                        </li>
-                    </ul>
-                </nav>
+                </div>                  
             </div>
         </div>
     </div>
+</div>
+</div>
     <div class="col-xl-3 mt-2 mt-xl-0">
         <div class="card h300 mb-1">
             <div class="card-body">
@@ -180,7 +191,7 @@
 </div>
 </div>
 
-<!-- Modal -->
+<!-- Image Modal -->
 <div class="modal" id="image-modal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog modal-dialog-centered modal-xl" role="document">
         <div class="modal-content">
@@ -220,6 +231,26 @@
         </div>
     </div>
 </div>
+<!-- Share Modal -->
+<div class="modal" id="share-modal" tabindex="-1" role="dialog" aria-labelledby="share-modal" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Share This Dataset</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+                </div>
+                <div class="modal-body">
+                    <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}{% url 'dataset' dataset.name %}">
+                </div>
+                <div class="modal-footer">
+                    <button id="copy-share-link" type="button" class="btn btn-mdb-color btn-sm">Copy to clipboard</button>
+                    <!--button type="button" class="btn btn-mdb-color btn-sm" data-dismiss="modal">Close</button-->
+                </div>
+            </div>
+        </div>
+    </div>
 
 {% endblock %} {% block scripts %}
 <script>
@@ -723,5 +754,18 @@ $(function() {
 
     changeBin("{{ bin.pid }}", false);
 });
+
+$("#share-button").click(function (e) {
+        e.preventDefault();
+        
+        $("#share-modal").modal();
+        $("#share-link").select();
+    });
+
+    $("#copy-share-link").click(function() {
+        $("#share-link").select();
+        document.execCommand("Copy");
+    });
+
 </script>
 {% endblock %}

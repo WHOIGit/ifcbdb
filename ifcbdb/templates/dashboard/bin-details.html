@@ -2,28 +2,98 @@
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}">{{ dataset.name }}</a></li>
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></li>
 {% endblock %} {% block content %}
-<div class="row d-flex justify-content-between">
+<div class="d-flex flex-row justify-content-between align-middle">
     <div class="pl-3">
         <span class="h3-responsive">{{ bin.sample_time|date:'Y-m-d H:i:s e' }}
             <span id="bin-date-relative"></span>
             by IFCB{{ bin.instrument.number }}
         </span>
     </div>
-    <div class="pl-3 align-self-center">
-        <a id="share-button" title="Share This Bin"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Bin</a>
-    </div>
+    <div>
+ <ul class="nav justify-content-end" id="myTab" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link btn btn-mdb-color btn-sm  btn-block active" id="bd-images-tab" data-toggle="tab" href="#bd-images" role="tab" aria-controls="bd-images"
+      aria-selected="true">Mosaic</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="bd-plot-tab" data-toggle="tab" href="#bd-plot" role="tab" aria-controls="bd-plot"
+      aria-selected="true">Plot</a>
+  </li>          
+  </ul>
+  </div>    
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-    <div class="col-md-8">
-        <div class="card h-100">
-            <div class="card-header py-1 mdb-color lighten-5">
-                <div class="row col justify-content-between">
-                    <span class="h5-responsive">Plot</span>
+<div class="col-12">
+<div class="card">
+<div class="tab-content" id="bdTabContent">
+        <div class="tab-pane show active" id="bd-images" role="tabpanel" aria-labelledby="bd-images-tab">
+<div class="row py-2 px-3">
+    <div class="col text-center">
+           
+                        <div class="overflow-auto">
+                        <img id="mosaic" src="" style="display:none" />
+                        </div>
+                        <div id="mosaic-loading" style="height:{{ mosaic_default_height }}px">
+                            <div class="spinner-border spinner-center" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+
+                <div class="d-flex justify-content-between pt-1 pb-0 border-top mt-1">
+                <div class="col">
+                <nav aria-label="Bin Paging" class="text-center">
+                    <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-center">
+                        <li class="page-item page-previous">
+                            <a class="page-link" tabindex="-1">Previous</a>
+                        </li>
+                        {% for page in details.pages %}
+                        <li class="page-item page-index {% if page == 0 %}active{% endif %}">
+                            <a class="page-link" data-page="{{ page }}">{{ page|add:"1" }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item page-next">
+                            <a class="page-link">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            <div class="col">
+                <div class="dropdown">
+                    <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-cogs"></i>
+                    </a>
+                
+                    <div class="dropdown-menu">
+                        <form class="px-4 py-3">
+                            <label class="my-1 mr-2" for="view-size">View Size:</label>
+                            <select id="view-size" class="custom-select custom-select-sm form-control flex-fill" name="view-size">
+                                {% for size in mosaic_view_sizes %}
+                                <option value="{{ size }}" autocomplete="off"
+                                    {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
+                                {% endfor %}
+                            </select>
+                            <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>
+                            <select id="scale-factor" class="custom-select custom-select-sm form-control flex-fill" name="scale-factor">
+                                {% for factor in mosaic_scale_factors %}
+                                <option value="{{ factor }}" autocomplete="off"
+                                    {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
                 </div>
             </div>
-            <div class="card-body text-center">
-                <div class="tab-content">
+            </div>
+
+
+    </div>
+</div>
+        </div>
+        <div class="tab-pane" id="bd-plot" role="tabpanel" aria-labelledby="bd-plot-tab">
+<div class="row py-2 px-3">
+    <div class="col-md-7 text-center">
                     <form class="form form-row">
                         <div class="form-group mr-2">
                             <label>X Axis</label>
@@ -58,19 +128,13 @@
                     </form>
 
                     <div id="plot" class="bin-plot"></div>
-                </div>
-            </div>
-        </div>
+
+
     </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-header py-1 mdb-color lighten-5">
-                <div class="row col justify-content-between">
-                    <span class="h5-responsive">Images</span>
-                </div>
-            </div>
-            <div class="card-body text-center" id="plot-images-container">
-                <div class="tab-content">
+    <div class="col-md-5">
+        <div class="card h-100" id="plotImages">
+            <div class="card-body text-center overflow-auto" id="plot-images-container">
+                <div>
                     <div class="alert alert-danger" id="too-many-images" style="display:none">
                         Too many images have been selected. Only the first <strong id="max-images"></strong> are shown
                     </div>
@@ -80,67 +144,10 @@
         </div>
     </div>
 </div>
-<div class="row py-2 px-3">
-    <div class="col">
-        <div class="card h-100">
-            <div class="card-header py-1 mdb-color lighten-5">
-            <div class="row col justify-content-between">
-                <span class="h5-responsive">Images</span>
-                        <form class="form-inline">
-                                <label class="my-1 mr-2" for="view-size">View Size:</label>
-                                <select id="view-size" class="custom-select custom-select-sm form-control flex-fill" name="view-size">                                  
-                                {% for size in mosaic_view_sizes %}
-                                <option value="{{ size }}" autocomplete="off" {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
-                                {% endfor %}
-                            </select>
-                                <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>                                    
-                                <select id="scale-factor" class="custom-select custom-select-sm form-control flex-fill" name="scale-factor">                                  
-                                {% for factor in mosaic_scale_factors %}
-                                <option value="{{ factor }}" autocomplete="off" {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%</option>
-                                {% endfor %}                                 
-                                </select>
-                            </form>                 
-                </div>
-            </div>
-            <div class="card-body text-center">
-                <div class="tab-content" id="imageTabContent">
-                    <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
-                        <img id="mosaic" src="" style="display:none" />
-                        <div id="mosaic-loading" style="height:{{ mosaic_default_height }}px">
-                            <div class="spinner-border spinner-center" role="status">
-                                <span class="sr-only">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
-                        <img class="img-fluid" src="https://via.placeholder.com/450?text=Image2">
-                    </div>
-                    <div class="tab-pane" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab">
-                        <img class="img-fluid" src="https://via.placeholder.com/450?text=Image3">
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer py-1 text-center white">
-                <nav aria-label="Bin Paging" class="text-center">
-                    <ul id="bin-paging" class="pagination pg-dark justify-content-center">
-                        <li class="page-item page-previous">
-                            <a class="page-link" tabindex="-1">Previous</a>
-                        </li>
-                        {% for page in details.pages %}
-                        <li class="page-item page-index {% if page == 0 %}active{% endif %}">
-                            <a class="page-link" data-page="{{ page }}">{{ page|add:"1" }}</a>
-                        </li>
-                        {% endfor %}
-                        <li class="page-item page-next">
-                            <a class="page-link">Next</a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
+            </div>        
     </div>
-
+</div>
+</div>
 </div>
 <div class="row py-2 px-3">
         <div class="col-md-12">
@@ -583,6 +590,13 @@
         }];
 
         var layout = {
+                margin: {
+                    l: 50,
+                    r: 50,
+                    b: 50,
+                    t: 00,
+                    pad: 2
+                },            
             xaxis: {
                 type: xType,
                 autorange: true
