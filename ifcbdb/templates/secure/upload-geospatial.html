@@ -1,0 +1,28 @@
+{% extends 'base.html' %} {% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Upload Geospatial Data</span>
+    </div>
+</div>
+<hr class="my-2">
+<div class="container">
+    <div class="row py-2 px-3">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <form>
+                        <form>
+                            <div class="form-group">
+                                <label for="exampleInputEmail1">Geospatial File</label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="customFile">
+                                    <label class="custom-file-label" for="customFile">Choose file</label>
+                                </div>
+                            </div>
+                        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

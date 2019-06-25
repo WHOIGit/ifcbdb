@@ -11,6 +11,7 @@
     <link href="{% static 'vendor/fontawesome/css/all.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/mdbootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/mdbootstrap/css/mdb.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/DataTables/datatables.min.css' %}" rel="stylesheet"> 
     <link href="{% static 'css/site.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/leaflet/leaflet.css' %}" rel="stylesheet">
 </head>
@@ -40,10 +41,10 @@
                         <span class="sr-only">(current)</span>
                     </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link waves-effect" href="#">Settings</a>
-                    </li>
                 {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link waves-effect" href="/secure/">Settings</a>
+                    </li>                
                 <li class="nav-item">
                 <a href="{% url 'secure:logout' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log Out</a>
                 </li>
@@ -133,8 +134,9 @@
     <script type="text/javascript" src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/esrileaflet/esri-leaflet.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/plotly/plotly-latest.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'vendor/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/moment/moment.min.js' %}"></script>   
     <script type="text/javascript" src="{% static 'js/site.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/DataTables/datatables.min.js' %}"></script>       
 
 
     <script>

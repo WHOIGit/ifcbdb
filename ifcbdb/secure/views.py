@@ -8,3 +8,12 @@ def index(request):
 
     })
 
+def dataset_management(request):
+    return render(request, 'secure/dataset-management.html', {
+
+    })
+
+def upload_geospatial(request):
+    return render(request, 'secure/upload-geospatial.html', {
+
+    })
