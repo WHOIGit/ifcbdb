@@ -201,3 +201,17 @@ div.scale-bar {
 #plot-images-container {
     overflow: auto;
 }
+
+.btn-previous::before {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f060";
+    padding-right: 5px;
+}
+
+.btn-next::after {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f061";
+    padding-left: 5px;
+}
