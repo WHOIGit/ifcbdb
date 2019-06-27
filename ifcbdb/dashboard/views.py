@@ -47,6 +47,7 @@ def dataset_details(request, dataset_name, bin_id=None):
         bin = get_object_or_404(Bin, pid=bin_id)
 
     return render(request, 'dashboard/dataset-details.html', {
+        "can_share_page": True,
         "dataset": dataset,
         "bin": bin,
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
@@ -65,6 +66,7 @@ def bin_details(request, dataset_name, bin_id):
     # TODO: bin.depth is coming out to 0. Check to see if the depth will be 0 when there is no lat/lng found, and handle
     # TODO: Mockup for lat/lng under the map had something like "41 north, 82 east (41.31, -70.39)"
     return render(request, 'dashboard/bin-details.html', {
+        "can_share_page": True,
         "dataset": dataset,
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
@@ -91,6 +93,7 @@ def image_details(request, dataset_name, bin_id, image_id):
     metadata = json.loads(json.dumps(bin.target_metadata(image_number), default=dict_to_json))
 
     return render(request, 'dashboard/image-details.html', {
+        "can_share_page": True,
         "dataset": dataset,
         "bin": bin,
         "image": embed_image(image),
