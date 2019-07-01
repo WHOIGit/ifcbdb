@@ -9,10 +9,10 @@
 <div class="row py-2 px-3">
     <div class="col">
         <ul class="list-group">
-            <li class="list-group-item"><a href="/secure/dataset-management">Dataset Management</a>
-            </li>
-            <li class="list-group-item"><a href="/secure/upload-geospatial">Upload Geospatial CSV</a></li>
-            <li class="list-group-item"><a href="#">TBD...</a></li>
+            <li class="list-group-item"><a href="{% url 'secure:dataset-management' %}">Dataset Management</a></li>
+            <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
+            <li class="list-group-item"><a href="{% url 'secure:upload-geospatial' %}">Upload Geospatial CSV</a></li>
+
         </ul>
     </div>
 </div>

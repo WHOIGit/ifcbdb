@@ -4,155 +4,48 @@
         <span class="h3-responsive">Dataset Management</span>
     </div>
     <div class="flex-column">
-        <button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-plus magic mr-1"></i> Add New Dataset</button>
+        <button class="btn btn-sm btn-mdb-color" id="add-dataset"><i class="fas fa-plus magic mr-1"></i> Add New Dataset</button>
     </div>
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
     <div class="col">
-        <table id="datasetManagementListing" class="table table-sm table-striped table-bordered" style="width:100%">
+        <table id="datasets" class="table table-sm table-striped table-bordered" style="width:100%">
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Col2</th>
-                    <th>Col3</th>
-                    <th>Col4</th>
-                    <th>Edit/Delete</th>
+                    <th>Description</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
+            <!--
                 <tr>
                     <td>Ds1</td>
                     <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
                     <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
                 </tr>
-                <tr>
-                    <td>Ds2</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds3</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds4</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds5</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds6</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds7</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds8</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds9</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds10</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds11</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds12</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds13</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds14</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
-                <tr>
-                    <td>Ds15</td>
-                    <td>Col2 Value</td>
-                    <td>Col3 Value</td>
-                    <td>Col4 Value</td>
-                    <td><button class="btn btn-sm btn-mdb-color" data-toggle="modal" data-target="#datasetAddEditModal"><i class="fas fa-edit magic mr-1"></i>Edit</button><button class="btn btn-outline-danger btn-sm ml-2" data-toggle="modal" data-target="#datasetDeleteModal"><i class="fas fa-trash magic mr-1"></i>Delete</button></td>
-                </tr>
+            -->
 
             </tbody>
-            <tfoot>
-                <tr>
-                    <th>Name</th>
-                    <th>Col2</th>
-                    <th>Col3</th>
-                    <th>Col4</th>
-                    <th>Edit/Delete</th>
-                </tr>
-            </tfoot>
         </table>
     </div>
 </div>
 <!-- Add/Edit Modal -->
-<div class="modal" id="datasetAddEditModal" tabindex="-1" role="dialog" aria-labelledby="datasetAddEditModalLabel" aria-hidden="true">
+<div class="modal" id="dataset-modal" tabindex="-1" role="dialog" aria-labelledby="add-dataset-header" aria-hidden="true">
     <div class="modal-dialog modal-lg" role=" document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="datasetAddEditModalLabel">Add/Edit Dataset</h5>
+                <h5 class="modal-title" id="add-dataset-header">Add/Edit Dataset</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
             </div>
             <div class="modal-body">
                 <form>
-                    <div class="form-row">
+                    {% csrf_token %}
+                    {{ form.id }}
+                    <div class="form-row d-none">
                         <div class="form-group col">
                             <div class="col custom-switch">
                                 <input type="checkbox" class="custom-control-input" id="customSwitch1" checked>
@@ -162,58 +55,46 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group col">
-                            <label for="datasetTitle">Title</label>
-                            <input type="text" id="datasetTitle" class="form-control form-control-sm" placeholder="Title">
+                            <label for="id_name">Name</label>
+                            {{ form.name }}
+                            <span id="id_name_validation" class="invalid-feedback"></span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col">
-                            <label for="datasetDescription">Description</label>
-                            <textarea id="datasetDescription" class="form-control form-control-sm" placeholder="Description" rows="3"></textarea>
+                            <label for="id_title">Description</label>
+                            {{ form.title }}
+                            <span id="id_title_validation" class="invalid-feedback"></span>
                         </div>
                     </div>
-                    <div class="form-row">
+                    <div class="form-row d-none">
                         <div class="form-group col">
                             <label for="datasetType">Type</label>
                             <select class="form-control form-control-sm" id="datasetType">
-                <option>Time Series</option>
-                <option>Other</option>
-              </select>
+                                <option>Time Series</option>
+                                <option>Other</option>
+                              </select>
                             <label><small>Most Recent Data: 45 Minutes Ago</small></label>
                         </div>
                     </div>
-                    <div class="form-row">
+                    <div class="form-row d-none">
                         <div class="col">
                             <label for="datasetRawDataInput">Raw Data</label>
                             <input type="text" id="datasetRawDataInput" class="form-control form-control-sm" placeholder="Raw Data">
                         </div>
                     </div>
-                    <div class="form-row">
+                    <div class="form-row d-none">
                         <div class="form-group col">
                             <button type="submit" class="btn btn-sm btn-mdb-color">Scan</button>
                             <button type="submit" class="btn btn-sm btn-mdb-color">Schedule Scan</button>
                             <label><small>456456 Fileset(s), 4.5TB</small></label>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="col">
-                            <label for="datasetRawDataStructureSelect">Structure</label>
-                            <select class="form-control form-control-sm" id="datasetRawDataStructureSelect">
-                <option>Day Directories</option>
-                <option>Other</option>
-              </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <button class="btn btn-sm btn-mdb-color">Reorganize</button>
-                        </div>
-                    </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-sm btn-outline-mdb-color" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-sm btn-mdb-color">Save changes</button>
+                <button type="button" class="btn btn-sm btn-mdb-color" id="save-dataset">Save changes</button>
             </div>
         </div>
     </div>
@@ -242,8 +123,93 @@
 <!-- End Delete Modal -->
 {% endblock %} {% block scripts %}
 <script>
-    $(document).ready(function() {
-        $('#datasetManagementListing').DataTable();
+    var datasetTable;
+
+    function loadDataset(id, dataset) {
+        $("#save-dataset").data("id", id);
+
+        if (dataset !== undefined) {
+            $("#id_name").val(dataset["name"]);
+            $("#id_title").val(dataset["title"]);
+
+        } else {
+            $("#id_name").val("");
+            $("#id_title").val("");
+        }
+
+        resetValidation();
+        $("#dataset-modal").modal();
+
+        return true;
+    }
+
+    function resetValidation() {
+        $("#dataset-modal .form-control").toggleClass("is-invalid", false);
+        $("#dataset-modal .invalid-feedback").text("");
+    }
+
+    $(function(){
+        datasetTable = $('#datasets').DataTable({
+            searching: false,
+            lengthChange: false,
+            ajax: {
+                url: "{% url 'secure:datasets_dt' %}"
+            },
+            columns: [
+                {}, // Name
+                {}, // Description
+                { // Edit
+                    targets: -1,
+                    render: function ( data, type, row ) {
+                        return (
+                            "<button class='btn btn-sm btn-mdb-color edit-dataset' data-id='" + data + "'>" +
+                            "<i class='fas fa-edit magic mr-1'></i>Edit" +
+                            "</button>"
+                        );
+                    }
+                }
+            ]
+        });
+
+
+        $("#datasets").on("click", ".edit-dataset", function(e){
+            e.preventDefault();
+
+            $.get("/secure/api/dataset/" + $(this).data("id"), function(data) {
+                loadDataset(data[0]["pk"], data[0]["fields"]);
+            });
+        });
+
+        $("#dataset-modal").on("click", "#save-dataset", function(e){
+            e.preventDefault();
+
+            var id = $(this).data("id");
+            var data = $("#dataset-modal form").serialize();
+
+            $.post("/secure/api/update-dataset/" + id, data, function(data){
+                if (data["success"]) {
+                    $("#dataset-modal").modal("hide");
+                    datasetTable.ajax.reload();
+                    return;
+                }
+
+                resetValidation();
+
+                for (var i = 0; i < data["errors"].length; i++) {
+                    var error = data["errors"][i];
+
+                    $("#id_" + error[0]).toggleClass("is-invalid", true);
+                    $("#id_" + error[0] + "_validation").text(error[1]);
+                }
+            });
+        });
+
+        $("#add-dataset").click(function(e){
+            e.preventDefault();
+
+            loadDataset(0)
+        });
+
     });
 </script>
 {% endblock %}
