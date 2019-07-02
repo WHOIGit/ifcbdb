@@ -217,6 +217,20 @@ def blob_zip(request, dataset_name, bin_id):
     fin = open(blob_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/zip')
 
+def features_csv(request, dataset_name, bin_id):
+    b = get_object_or_404(Bin, pid=bin_id)
+    try:
+        version = int(request.GET.get('v',2))
+    except ValueError:
+        raise Http404
+    try:
+        features_path = b.features_path(version=version)
+    except KeyError:
+        raise Http404
+    filename = '{}_features_v{}.csv'.format(bin_id, version)
+    fin = open(features_path)
+    return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
+
 def zip(request, dataset_name, bin_id):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
@@ -274,6 +288,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         "tags": bin.tag_names,
         "coordinates": coordinates_json,
         "has_blobs": bin.has_blobs(),
+        "has_features": bin.has_features(),
         "timestamp_iso": bin.timestamp.isoformat(),
     }
 

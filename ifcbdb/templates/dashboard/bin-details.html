@@ -186,7 +186,11 @@
                                         {% else %}
                                         <li>blobs</li>
                                         {% endif %}
-                                        <li>features</li> 
+                                        {% if details.has_features %}
+                                        <li><a href="{% url 'features_csv' dataset.name bin.pid %}">features</a></li>
+                                        {% else %}
+                                        <li>features</li>
+                                        {% endif %} 
                                         <li>autoclass</li>
                                     </ul>
                                 </div>

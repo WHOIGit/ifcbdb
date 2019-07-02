@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from dashboard.models import Dataset, DataDirectory, DATA_DIRECTORY_RAW, DATA_DIRECTORY_BLOBS
+from dashboard.models import Dataset, DataDirectory
 
 class Command(BaseCommand):
     help = 'add data directory'
@@ -17,11 +17,11 @@ class Command(BaseCommand):
         dataset_name = options['dataset']
         if options['kind']:
             kind = options['kind']
-            assert kind in [DATA_DIRECTORY_RAW, DATA_DIRECTORY_BLOBS]
+            assert kind in [DataDirectory.RAW, DataDirectory.BLOBS, DataDirectory.FEATURES]
         else:
-            kind = DATA_DIRECTORY_RAW
+            kind = DataDirectory.RAW
         version = None
-        if kind != DATA_DIRECTORY_RAW:
+        if kind != DataDirectory.RAW:
             assert options['product_version']
             version = options['product_version']
         # find the dataset

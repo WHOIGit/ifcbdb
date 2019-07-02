@@ -169,7 +169,10 @@
                                 <a id="download-blobs" href="#" style="display:none">blobs</a>
                                 <span id="download-blobs-disabled">blobs</span>
                             </li>
-                            <li>features</li> 
+                            <li>
+                                <a id="download-features" href="#" style="display:none">features</a>
+                                <span id="download-features-disabled">features</span>
+                            </li>
                             <li>autoclass</li>
                         </ul>
                     </div>            
@@ -544,9 +547,13 @@ function changeBin(binId, updateHistory) {
         $("#download-roi").attr("href", "{% url 'roi_binary' dataset.name '_BIN_' %}".replace('_BIN_', binId));
         $("#download-zip").attr("href", "{% url 'zip' dataset.name '_BIN_' %}".replace('_BIN_', binId));
         $("#download-blobs").attr("href", "{% url 'blob_zip' dataset.name '_BIN_' %}".replace('_BIN_', binId));
+        $("#download-features").attr("href", "{% url 'features_csv' dataset.name '_BIN_' %}".replace('_BIN_', binId));
 
         $("#download-blobs").toggle(data["has_blobs"]);
         $("#download-blobs-disabled").toggle(!data["has_blobs"]);
+
+        $("#download-features").toggle(data["has_features"]);
+        $("#download-features-disabled").toggle(!data["has_features"]);
 
         // Update map location(s)
         if (!map) {

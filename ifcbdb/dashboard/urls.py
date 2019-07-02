@@ -46,6 +46,9 @@ urlpatterns = [
     # blob zip access
     path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'),
 
+    # features csv access
+    path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv'),
+
     # zip access
     path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip'),
 
