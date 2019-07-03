@@ -416,4 +416,10 @@ def plot_data(request, bin_id):
     ia = bin.images_adc.copy(deep=False)
     ia.columns = schema_names(bin.schema)
     ia['target_number'] = bin.images.keys()
+    if b.has_features():
+        features = b.features().fillna(0)
+        to_drop = set(bin.images.keys()) - set(features.index)
+        ia.drop(to_drop, inplace=True)
+        for fc in features.columns:
+            ia[fc] = features[fc].values
     return JsonResponse(ia.to_dict('list'))
