@@ -395,6 +395,9 @@ class Bin(models.Model):
     def features_path(self, version=2):
         return self.features_file(version=version).path
 
+    def features(self, version=2):
+        return self.features_file(version=version).features(prune=True)
+
     # mosaics
 
     def mosaic_coordinates(self, shape=(600,800), scale=0.33, block=True):
