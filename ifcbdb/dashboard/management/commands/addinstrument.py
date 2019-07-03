@@ -20,11 +20,7 @@ class Command(BaseCommand):
         password = options['password']
         share = options['share']
         nickname = options['nickname']
-
-        if number < 10:
-            version = 1
-        else:
-            version = 2
+        version = Instrument.determine_version(number)
 
         try:
             i = Instrument.objects.get(number=number)

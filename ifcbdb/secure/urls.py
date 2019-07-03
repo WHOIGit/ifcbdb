@@ -14,7 +14,10 @@ urlpatterns = [
 
     # Paths used for AJAX requests specifically for returning data formatted for DataTables
     path('api/dt/datasets', views.dt_datasets, name='datasets_dt'),
+    path('api/dt/instruments', views.dt_instruments, name='instruments_dt'),
     path('api/dataset/<int:id>', views.dataset, name='dataset'),
+    path('api/instrument/<int:id>', views.instrument, name='instrument'),
     path('api/update-dataset/<int:id>', views.update_dataset, name='update_dataset'),
+    path('api/update-instrument/<int:id>', views.update_instrument, name='update_instrument'),
 
 ]
