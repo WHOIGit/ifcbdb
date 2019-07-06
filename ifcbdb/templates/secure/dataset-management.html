@@ -15,6 +15,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Description</th>
+                    <td>Active?</td>
                     <th></th>
                 </tr>
             </thead>
@@ -45,11 +46,11 @@
                 <form>
                     {% csrf_token %}
                     {{ form.id }}
-                    <div class="form-row d-none">
+                    <div class="form-row">
                         <div class="form-group col">
                             <div class="col custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="customSwitch1" checked>
-                                <label class="custom-control-label" for="customSwitch1">Active</label>
+                                {{ form.is_active }}
+                                <label class="custom-control-label" for="id_is_active">Active</label>
                             </div>
                         </div>
                     </div>
@@ -158,6 +159,12 @@
             columns: [
                 {}, // Name
                 {}, // Description
+                {
+                    targets: 2,
+                    render: function(data, type, row) {
+                        return data ? "Yes" : "No";
+                    }
+                }, // Is Active
                 { // Edit
                     targets: -1,
                     render: function ( data, type, row ) {

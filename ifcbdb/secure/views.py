@@ -36,7 +36,7 @@ def upload_geospatial(request):
 
 
 def dt_datasets(request):
-    datasets = list(Dataset.objects.all().values_list("name", "title", "id"))
+    datasets = list(Dataset.objects.all().values_list("name", "title", "is_active", "id"))
 
     return JsonResponse({
         "data": datasets

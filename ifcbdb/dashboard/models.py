@@ -169,6 +169,7 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_numbe
 class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=256)
+    is_active = models.BooleanField(blank=False, null=False, default=True)
 
     def tag_cloud(self, instrument=None):
         return Tag.cloud(dataset=self, instrument=instrument)
