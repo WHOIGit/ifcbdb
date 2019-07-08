@@ -448,16 +448,17 @@ class Bin(models.Model):
     def __str__(self):
         return self.pid
 
+
 class Instrument(models.Model):
     number = models.IntegerField(unique=True)
     version = models.IntegerField(default=2)
     # nickname is optional, not everyone names their IFCB
-    nickname = models.CharField(max_length=64)
+    nickname = models.CharField(max_length=64, blank=True)
     # connection parameters for Samba
-    address = models.CharField(max_length=128) # ip address or dns name
-    username = models.CharField(max_length=64)
-    _password = models.CharField(max_length=128, db_column='password')
-    share_name = models.CharField(max_length=128, default='Data')
+    address = models.CharField(max_length=128, blank=True) # ip address or dns name
+    username = models.CharField(max_length=64, blank=True)
+    _password = models.CharField(max_length=128, db_column='password', blank=True)
+    share_name = models.CharField(max_length=128, default='Data', blank=True)
 
     @staticmethod
     def _get_cipher():
@@ -481,6 +482,11 @@ class Instrument(models.Model):
 
     def __str__(self):
         return 'IFCB{}'.format(self.number)
+
+    @staticmethod
+    def determine_version(number):
+        return 1 if number < 10 else 2
+
 
 # tags
 
