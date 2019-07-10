@@ -45,27 +45,7 @@
 <div class="row px-1">
     <div class="col-sm-12">
         <div class="tab-content collapse show ts-collapse" id="ts-data">
-            <div class="tab-pane" id="ts-size" role="tabpanel" aria-labelledby="ts-size-tab">
-                <div class="ts-plot-container"></div>
-            </div>
-            <div class="tab-pane" id="ts-temperature" role="tabpanel" aria-labelledby="ts-temperature-tab">
-                <div class="ts-plot-container"></div>
-            </div>
-            <div class="tab-pane" id="ts-humidity" role="tabpanel" aria-labelledby="ts-humidity-tab">
-                <div class="ts-plot-container"></div>
-            </div>
-            <div class="tab-pane" id="ts-ml-analyzed" role="tabpanel" aria-labelledby="ts-ml-analyzed-tab">
-                <div class="ts-plot-container"></div>
-            </div>
-            <div class="tab-pane show active" id="ts-concentration" role="tabpanel" aria-labelledby="ts-concentration-tab">
-                <div class="ts-plot-container"></div>
-            </div>
-            <div class="tab-pane" id="ts-triggers" role="tabpanel" aria-labelledby="ts-triggers-tab">
-                <div class="ts-plot-container"></div>
-            </div>
-            <div class="tab-pane" id="ts-images" role="tabpanel" aria-labelledby="ts-images-tab">
-                <div class="ts-plot-container"></div>
-            </div>
+            <div id="primary-plot-container" class="ts-plot-container"></div>
         </div>
     </div>
 </div>
@@ -346,7 +326,9 @@ function changeToNearestBin(lat, lng) {
     });
 }
 
-function createTimeSeries(container, metric) {
+function createTimeSeries(metric) {
+    container = $("#primary-plot-container");
+
     currentMetric = metric;
     var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric + "?resolution=auto";
 
@@ -484,7 +466,7 @@ $("#ts-tabs .nav-link").click(function() {
 
     timelineValid = false;
     timelineWaiting = false;
-    createTimeSeries(container, metric);
+    createTimeSeries(metric);
 });
 
 $("#view-size").change(function () {
@@ -571,7 +553,7 @@ function changeBin(binId, updateHistory) {
         }
 
         // Update the timeline to select the new bin
-        var timeline = $("#" + currentPlotId + " .ts-plot-container")[0];
+        var timeline = $("#primary-plot-container")[0];
         highlightSelectedBinByDate(timeline.data[0].x, currentBinTimestamp);
 
         isBinLoading = false;
@@ -775,7 +757,7 @@ $(window).on("popstate", function(e) {
 });
 
 $(function() {
-    createTimeSeries($("#ts-concentration .ts-plot-container"), "concentration");
+    createTimeSeries("concentration");
 
     changeBin("{{ bin.pid }}", false);
 });
