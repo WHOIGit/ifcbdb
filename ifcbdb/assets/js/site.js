@@ -273,17 +273,15 @@ function getDataPointIndex(dataPoints, selectedDate) {
 }
 
 function highlightSelectedBinByIndex(dataPoints, index) {
-    $("#ts-data .tab-pane").each(function(){
-        var plot = $(".ts-plot-container", $(this))[0]
-        if (!plot.data)
-            return;
+    var plot = $("#primary-plot-container")[0];
+    if (!plot.data)
+        return;
 
-        Plotly.restyle(plot, {
-            "marker": {
-                "color": buildColorArray(dataPoints, index)
-            }
-        });
-    })
+    Plotly.restyle(plot, {
+        "marker": {
+            "color": buildColorArray(dataPoints, index)
+        }
+    });
 }
 
 function highlightSelectedBinByDate(dataPoints, selectedDate) {
