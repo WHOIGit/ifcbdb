@@ -356,25 +356,27 @@ function createTimeSeries(metric) {
         });
 
         container[0].addEventListener('click', function(event) {
+            // Prevent clicks on plotly controls (modebar actions)
+            if ($(event.target).parents(".modebar").length > 0) {
+                return
+            }
+
             coordinates = [];
             $("#previous-bin").addClass("disabled");
             $("#next-bin").addClass("disabled");
 
-            // workaround to prevent accepting clicks on the plotly controls
-            var offset = $(container[0]).offset();
-            var distanceFromTop = event.pageY - offset.top;
-            var margin = container[0]._fullLayout.margin.l;
-            var rightX = offset.left + $(container[0]).width();
-            var distanceFromRight = rightX - event.pageX - margin;
-            if (distanceFromTop > 35 || distanceFromRight > 75) {
-                changeToClosestBin($(container[0]).data("date"));
-            }
+            changeToClosestBin($(container[0]).data("date"));
         });
 
         // Add event to handle resolution change when zooming
         container[0].on("plotly_relayout", function(relayoutResponse){
             timelineValid = false;
             timelineRelayoutResponse = relayoutResponse;
+
+            // Prevent relayout's when switching to pan or zoom "mode"
+            if (relayoutResponse && (relayoutResponse.dragmode == "pan" || relayoutResponse.dragmode == "zoom")) {
+                return
+            }
 
             queryTimeline(container, metric);
         });
