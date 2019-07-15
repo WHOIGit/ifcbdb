@@ -269,6 +269,11 @@ function getDataPointIndex(dataPoints, selectedDate) {
             break;
     }
 
+    // If the end of the list was reached, then the selected bin is not visible and we should
+    //   not try to highlight it
+    if (idx == dataPoints.length)
+        return -1;
+
     return idx - 1;
 }
 
