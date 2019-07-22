@@ -8,6 +8,8 @@ from django.http import HttpResponse, FileResponse, Http404, HttpResponseBadRequ
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_control
 
+from celery.result import AsyncResult
+
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
@@ -432,3 +434,22 @@ def plot_data(request, bin_id):
         for fc in features.columns:
             ia[fc] = features[fc].values
     return JsonResponse(ia.to_dict('list'))
+
+## FIXME move these two views to secure
+
+def test_sync_dataset(request, dataset_id):
+    from .tasks import sync_dataset
+    # ensure that the dataset exists
+    ds = get_object_or_404(Dataset, id=dataset_id)
+    # FIXME make sure we're not already syncing this dataset first
+    r = sync_dataset.delay(dataset_id)
+    return JsonResponse({
+        'task_id': r.task_id,
+        })
+
+def test_sync_dataset_status(request, task_id):
+    result = AsyncResult(task_id)
+    return JsonResponse({
+        'state': result.state,
+        'info': result.info,
+        })

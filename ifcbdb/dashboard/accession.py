@@ -6,12 +6,22 @@ from itertools import islice
 
 from django.db import IntegrityError, transaction
 
-from .models import Bin, DataDirectory, DATA_DIRECTORY_RAW, Instrument
+from .models import Bin, DataDirectory, Instrument
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
 from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
+
+def progress(bin_id, added, total):
+    return {
+        'bin_id': bin_id,
+        'added': added,
+        'total': total,
+    }
+
+def do_nothing(*args, **kwargs):
+    pass
 
 class Accession(object):
     # wraps a dataset object to provide accession
@@ -22,19 +32,23 @@ class Accession(object):
         self.lon = lon
         self.depth = depth
     def scan(self):
-        for dd in self.dataset.directories.filter(kind=DATA_DIRECTORY_RAW).order_by('priority'):
+        for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             if not os.path.exists(dd.path):
                 continue # skip and continue searching
             directory = ifcb.DataDirectory(dd.path)
             for b in directory:
                 yield b
-    def sync(self):
-        print('scanning {}...'.format(self.dataset.name))
+    def sync(self, progress_callback=do_nothing):
+        progress_callback(progress('',0,0))
+        bins_added = 0
+        total_bins = 0
+        most_recent_bin_id = ''
         scanner = self.scan()
         while True:
             bins = list(islice(scanner, self.batch_size))
             if not bins:
                 break
+            total_bins += len(bins)
             # create instrument(s)
             instruments = {} # keyed by instrument number
             for bin in bins:
@@ -46,11 +60,11 @@ class Accession(object):
                     })
                     instruments[i] = instrument
             # create bins
-            print('processing {} bin(s)'.format(len(bins)))
             then = time.time()
             bins2save = []
             for bin in bins:
                 pid = bin.lid
+                most_recent_bin_id = pid
                 instrument = instruments[bin.pid.instrument]
                 timestamp = bin.timestamp
                 b, created = Bin.objects.get_or_create(pid=pid, defaults={
@@ -60,25 +74,25 @@ class Accession(object):
                 })
                 if not created:
                     self.dataset.bins.add(b)
-                    print('{} was added to or remains in {}'.format(pid, self.dataset.name))
                     continue
                 b2s = self.add_bin(bin, b)
                 if b2s is not None:
                     bins2save.append(b2s)
                 elif created: # created, but bad! delete
-                    print('{} deleting, was bad'.format(pid))
                     b.delete()
             with transaction.atomic():
                 for b in bins2save:
                     b.save()
-                    print('{} created'.format(b.pid))
                 for b in bins2save:
                     self.dataset.bins.add(b)
-                    print('{} added to {}'.format(b.pid, self.dataset.name))
-            elapsed = time.time() - then
-            print('processed {} bin(s) in {:.3f}s'.format(len(bins), elapsed))
+                    bins_added += 1
+                    most_recent_bin_id = b.pid
+            progress_callback(progress(most_recent_bin_id, bins_added, total_bins))
+        # done.
+        prog = progress(most_recent_bin_id, bins_added, total_bins)
+        progress_callback(prog)
+        return prog
     def add_bin(self, bin, b): # IFCB bin, Bin instance
-        print('{} checking and processing'.format(b.pid))
         # qaqc checks
         qc_bad = check_bad(bin)
         ml_analyzed = bin.ml_analyzed
@@ -86,7 +100,6 @@ class Accession(object):
             qc_bad = True
         if qc_bad:
             b.qc_bad = True
-            print('{} raw data is bad'.format(b.pid))
             return
         # spatial information
         if self.lat is not None and self.lon is not None:
@@ -111,6 +124,5 @@ class Accession(object):
             b.n_images = len(bin.images)
         b.concentration = b.n_images / ml_analyzed
         if b.concentration < 0: # metadata is bogus!
-            print('{} negative concentration: ignoring'.format(b.pid))
             return
         return b # defer save
