@@ -60,6 +60,47 @@ def dataset_details(request, dataset_name, bin_id=None):
     })
 
 
+def dataset(request, dataset_name):
+    return details(request, group_name=dataset_name, group_type="dataset")
+
+
+def bin(request, bin_id):
+    return details(request, bin_id=bin_id)
+
+
+def details(request, bin_id=None, group_name=None, group_type=None):
+    if not bin_id and not group_name:
+        # TODO: 404 error; don't have enough info to proceed
+        pass
+
+    # TODO: Currently only handles grouping by dataset
+    if group_name and group_type == "dataset":
+        dataset = get_object_or_404(Dataset, name=group_name)
+    else:
+        dataset = None
+
+    if bin_id:
+        bin = get_object_or_404(Bin, pid=bin_id)
+    else:
+        bin = Timeline(dataset.bins).most_recent_bin()
+
+    if not bin:
+        # TODO: Do something
+        pass
+
+    return render(request, "dashboard/bin.html", {
+        "can_share_page": True,
+        "dataset": dataset,
+        "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
+        "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
+        "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
+        "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
+        "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
+        "bin": bin,
+        "details": _bin_details(dataset, bin, preload_adjacent_bins=False, include_coordinates=False),
+    })
+
+
 # TODO: bin.instrument is not filled in?
 def bin_details(request, dataset_name, bin_id):
     dataset = get_object_or_404(Dataset, name=dataset_name)
@@ -173,15 +214,15 @@ def _image_data(bin_id, target, mimetype):
     image_data = format_image(arr, mimetype)
     return HttpResponse(image_data, content_type=mimetype)
 
-def image_data_png(request, dataset_name, bin_id, target):
+def image_data_png(request, bin_id, target, dataset_name=None):
     # ignore dataset name
     return _image_data(bin_id, target, 'image/png')
 
-def image_data_jpg(request, dataset_name, bin_id, target):
+def image_data_jpg(request, bin_id, target, dataset_name=None):
     # ignore dataset name
     return _image_data(bin_id, target, 'image/jpeg')
 
-def adc_data(request, dataset_name, bin_id):
+def adc_data(request, bin_id, dataset_name=None):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     adc_path = b.adc_path()
@@ -189,7 +230,7 @@ def adc_data(request, dataset_name, bin_id):
     fin = open(adc_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
-def hdr_data(request, dataset_name, bin_id):
+def hdr_data(request, bin_id, dataset_name=None):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     hdr_path = b.hdr_path()
@@ -197,7 +238,7 @@ def hdr_data(request, dataset_name, bin_id):
     fin = open(hdr_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/plain')
 
-def roi_data(request, dataset_name, bin_id):
+def roi_data(request, bin_id, dataset_name=None):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     roi_path = b.roi_path()
@@ -205,7 +246,7 @@ def roi_data(request, dataset_name, bin_id):
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
 
-def blob_zip(request, dataset_name, bin_id):
+def blob_zip(request, bin_id, dataset_name=None):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         version = int(request.GET.get('v',2))
@@ -219,7 +260,7 @@ def blob_zip(request, dataset_name, bin_id):
     fin = open(blob_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/zip')
 
-def features_csv(request, dataset_name, bin_id):
+def features_csv(request, bin_id, dataset_name=None):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         version = int(request.GET.get('v',2))
@@ -233,7 +274,7 @@ def features_csv(request, dataset_name, bin_id):
     fin = open(features_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
-def zip(request, dataset_name, bin_id):
+def zip(request, bin_id, dataset_name=None):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     zip_buf = b.zip()

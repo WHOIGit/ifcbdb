@@ -34,6 +34,12 @@ urlpatterns = [
     # e.g. http://ifcb-data.whoi.edu/mvco/dashboard/http://ifcb-data.whoi.edu/mvco/D20140101T123456_IFCB010
     re_path(r'(?P<dataset_name>[\w-]+)/dashboard/http.*/(?P<bin_id>\w+)', views.dataset_details),
 
+
+    # TODO: Temporary for the combined bin page
+    path("dataset/<slug:dataset_name>", views.dataset, name="dataset_combined"),
+    path("bin/<slug:bin_id>.html", views.bin, name="bin_combined"),
+
+
     path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.image_details, name='image'),
     path('<slug:dataset_name>/<pid:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>.html', views.bin_details, name='bin'),
