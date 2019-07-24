@@ -333,6 +333,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         "has_blobs": bin.has_blobs(),
         "has_features": bin.has_features(),
         "timestamp_iso": bin.timestamp.isoformat(),
+        "instrument": "IFCB" + str(bin.instrument.number),
     }
 
 

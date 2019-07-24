@@ -259,14 +259,19 @@
                             <div class="card-body">
                                 <!-- Bin stats -->
                                 <dl class="row">
-                                    <dt class="col-sm-4">Triggers:</dt>
-                                    <dd class="col-sm-8">{{ bin.n_triggers }}</dd>
-                                    <dt class="col-sm-4">Images:</dt>
-                                    <dd class="col-sm-8">{{ bin.n_images }}</dd>
-                                    <dt class="col-sm-4">Triggers / s:</dt>
-                                    <dd class="col-sm-8">{{ bin.trigger_frequency|floatformat:3 }}</dd>
-                                    <dt class="col-sm-4">Volume Analyzed:</dt>
-                                    <dd class="col-sm-8">{{ bin.ml_analyzed|floatformat:3 }} ml</dd>
+                                    <dt class="col-sm-5">Date/Time:</dt>
+                                    <dd class="col-sm-7" id="stat-date-time"></dd>
+                                    <dt class="col-sm-5">Instrument:</dt>
+                                    <dd class="col-sm-7" id="stat-instrument"></dd>
+
+                                    <dt class="col-sm-5">Triggers:</dt>
+                                    <dd class="col-sm-7">{{ bin.n_triggers }}</dd>
+                                    <dt class="col-sm-5">Images:</dt>
+                                    <dd class="col-sm-7">{{ bin.n_images }}</dd>
+                                    <dt class="col-sm-5">Triggers / s:</dt>
+                                    <dd class="col-sm-7">{{ bin.trigger_frequency|floatformat:3 }}</dd>
+                                    <dt class="col-sm-5">Volume Analyzed:</dt>
+                                    <dd class="col-sm-7">{{ bin.ml_analyzed|floatformat:3 }} ml</dd>
                                 </dl>
 
                                 <!-- Download links -->
@@ -427,10 +432,6 @@
 <script type="text/javascript" src="{% static 'js/bin.js' %}"></script>
 <script>
 
-{% if dataset %}
-_dataset = "{{ dataset.name }}";
-{% endif %}
-
 var dataset_name = "{% if dataset %}{{ dataset.name }}{% endif %}";
 
 var map;
@@ -440,11 +441,8 @@ var currentBinPage = 0;
 var numBinPages = -1;
 var currentBinId = "";
 var currentMetric = "";
-var coordinates = [];
 var currentResolution = "auto";
 var currentBinTimestamp = null;
-var isBinLoading = false;
-var isMosaicLoading = false;
 var currentPlotId = "ts-concentration";
 
 var timelineValid = true;
@@ -458,14 +456,7 @@ var timelineWaitingSince = new Date();
 var _attempts = 0;
 var _requests = 0;
 
-function delayedMosaic(page) {
-        $("#mosaic").hide();
-        $("#mosaic-loading").show();
 
-        setTimeout(function(){
-            loadMosaic(page);
-        }, 50);
-    }
 
 function updatePaging() {
     $(".page-previous").toggleClass("disabled", (currentBinPage <= 0));
@@ -480,25 +471,12 @@ function updatePaging() {
     $("#bin-paging").show();
 }
 
-function rebuildPageIndexes() {
-    $(".page-index").remove();
-    for (var i = 0; i < numBinPages + 1; i++) {
-        var li = $("<li class='page-item page-index' />").toggleClass("active", i == 0);
-        var btn = $("<a class='page-link' />").text(i + 1).attr("data-page", i);
-
-        li.append(btn).insertBefore($(".page-next"));
-    }
-
-    $("#bin-paging").show();
-}
-
 function changeToClosestBin(targetDate) {
-    if (isBinLoading || isMosaicLoading)
+    if (_isBinLoading || _isMosaicLoading)
         return false;
 
-    isBinLoading = true;
-    isMosaicLoading = true;
-
+    _isBinLoading = true;
+    _isMosaicLoading = true;
 
     var url = "{% url 'closest_bin' 'DATASET_NAME' %}";
     url = url.replace("DATASET_NAME", dataset_name);
@@ -510,11 +488,11 @@ function changeToClosestBin(targetDate) {
 }
 
 function changeToNearestBin(lat, lng) {
-    if (isBinLoading || isMosaicLoading)
+    if (_isBinLoading || _isMosaicLoading)
         return false;
 
-    isBinLoading = true;
-    isMosaicLoading = true;
+    _isBinLoading = true;
+    _isMosaicLoading = true;
 
     var url = "{% url 'nearest_bin' %}";
     var data = {
@@ -564,7 +542,7 @@ function createTimeSeries(metric) {
                 return
             }
 
-            coordinates = [];
+            _coordinates = [];
             $("#previous-bin").addClass("disabled");
             $("#next-bin").addClass("disabled");
 
@@ -652,13 +630,6 @@ function queryTimeline(container, metric) {
     return true;
 }
 
-$("#bin-details").click(function(e) {
-    var url = "{% url 'bin' '__DATASET_NAME__' '__BIN_PID__' %}";
-    var pid = $("#bin-switcher").val();
-
-    location.href = url.replace("__BIN_PID__", pid).replace("__DATASET_NAME__", dataset_name);
-});
-
 $("#ts-tabs .nav-link").click(function() {
     $("#" + currentPlotId).hide();
 
@@ -681,7 +652,7 @@ $("#view-size").change(function () {
 });
 
 function changeBin(binId, updateHistory) {
-    coordinates = [];
+    _coordinates = [];
 
     if (binId === "")
         return;
@@ -720,6 +691,7 @@ function changeBin(binId, updateHistory) {
     delayedMosaic(0);
 
     $.get(dataUrl, function(data){
+        updateBinStats(data);
         currentBinTimestamp = moment(data["timestamp_iso"]);
 
         $("#previous-bin").data("bin", data.previous_bin_id);
@@ -762,71 +734,7 @@ function changeBin(binId, updateHistory) {
         var timeline = $("#primary-plot-container")[0];
         highlightSelectedBinByDate(timeline.data[0].x, currentBinTimestamp);
 
-        isBinLoading = false;
-    });
-}
-
-function enableNextPreviousButtons() {
-    var previous_bin_id = $("#previous-bin").data("bin");
-    var next_bin_id = $("#next-bin").data("bin");
-
-    $("#previous-bin")
-        .toggleClass("disabled", previous_bin_id === "");
-
-    $("#next-bin")
-        .toggleClass("disabled", next_bin_id === "");
-}
-
-function loadMosaic(pageNumber) {
-    var viewSize = $("#view-size option:selected").val();
-    var scaleFactor = $("#scale-factor option:selected").val();
-
-    $("#mosaic-loading").show();
-    $("#mosaic").hide();
-    coordinates = [];
-
-    // indicate to the user that coordinates are loading
-    $("#mosaic").css("cursor","wait");
-
-    // TODO: Fix url to use Django routing
-    var binDataUrl = "/api/{{ dataset.name }}/bin/" + currentBinId +
-        "?view_size=" + viewSize +
-        "&scale_factor=" + scaleFactor;
-
-    $.get(binDataUrl, function(data){
-
-        // Update the coordinates for the image
-        coordinates = JSON.parse(data["coordinates"]);
-        // indicate to the user that the mosaic is clickable
-        $("#mosaic").css("cursor","pointer");
-
-        // re-enable next/previous buttons
-        enableNextPreviousButtons();
-
-
-        // Update the paging
-        if (data["num_pages"] != numBinPages) {
-            numBinPages = data["num_pages"];
-
-            rebuildPageIndexes();
-        }
-
-        updatePaging();
-
-        isMosaicLoading = false;
-    });
-
-    // TODO: Needs error handling if mosaic cannot be generated
-    var mosaicUrl = "{% url 'mosaic_page_encoded_image' "__BIN_PID__" %}" +
-        "?view_size=" + viewSize +
-        "&scale_factor=" + scaleFactor +
-        "&page=" + pageNumber;
-    mosaicUrl = mosaicUrl.replace("__BIN_PID__", currentBinId);
-
-    $.get(mosaicUrl, function(data){
-        $("#mosaic").attr("src", "data:image/png;base64," + data);
-        $("#mosaic-loading").hide();
-        $("#mosaic").show();
+        _isBinLoading = false;
     });
 }
 
@@ -840,14 +748,14 @@ $("#bin-paging").on("click", ".page-previous", function(e){
     e.preventDefault();
 
     if (currentBinPage > 0)
-        changePage(currentBinPage - 1);
+        changeMosaicPage(currentBinPage - 1);
 });
 
 $("#bin-paging").on("click", ".page-next", function(e){
     e.preventDefault();
 
     if (currentBinPage < numBinPages)
-        changePage(currentBinPage + 1);
+        changeMosaicPage(currentBinPage + 1);
 });
 
 $("#bin-paging").on("click", ".page-index a", function(e){
@@ -855,20 +763,8 @@ $("#bin-paging").on("click", ".page-index a", function(e){
 
     var pageNumber = $(this).data("page")
 
-    changePage(pageNumber);
+    changeMosaicPage(pageNumber);
 });
-
-$("#bin-header").click(function() {
-    // prevent users from clicking while the bin page is loading
-    $("#bin-header").css("pointer-events","none");
-});
-
-function changePage(pageNumber) {
-    currentBinPage = pageNumber;
-
-    delayedMosaic(pageNumber);
-    updatePaging();
-}
 
 $("#view-size").change(function(e){
     changeBin(currentBinId, true);
@@ -882,7 +778,7 @@ $("#mosaic").click(function(e){
     var x = e.pageX - $(this).offset().left;
     var y = e.pageY - $(this).offset().top;
 
-    $.each(coordinates, function(idx, img) {
+    $.each(_coordinates, function(idx, img) {
         if (currentBinPage == img.page &&
             x >= img.x && x <= img.x + img.width &&
             y >= img.y && y <= img.y + img.height) {
@@ -956,11 +852,6 @@ $(".change-image").click(function(e){
     }
 });
 
-$(window).on("popstate", function(e) {
-    var state = e.originalEvent.state;
-
-    changeBin(state["bin_id"], false);
-});
 
 $(function() {
     {% if dataset %}
@@ -999,8 +890,8 @@ $("#show-map").click(function(e){
         var yType = $("#plot-y-type").val();
         var xOffset = $("#plot-x-offset").val();
         var yOffset = $("#plot-y-offset").val();
-        var xData = plotData[xAxis];
-        var yData = plotData[yAxis];
+        var xData = _plotData[xAxis];
+        var yData = _plotData[yAxis];
 
         if ($.isNumeric(xOffset) && xOffset != 0) {
             xData = $.map(xData, function(value) { return value + parseFloat(xOffset); });
@@ -1056,7 +947,7 @@ $("#show-map").click(function(e){
             for(var i=0; i < data.points.length; i++){
                 var idx = data.points[i].pointIndex;
 
-                var imageId = plotData["target_number"][idx];
+                var imageId = _plotData["target_number"][idx];
                 var baseUrl = "/" + dataset_name + "/" + currentBinId + "_" + padDigits(imageId, 5) + ".png";
 
                 $("#plot-images").empty();
@@ -1078,7 +969,7 @@ $("#show-map").click(function(e){
                 }
 
                 var idx = data.points[i].pointIndex;
-                var imageId = plotData["target_number"][idx];
+                var imageId = _plotData["target_number"][idx];
                 var imageUrl = "/" + dataset_name + "/" + currentBinId + "_" + padDigits(imageId, 5) + ".png";
 
                 urls.push({
@@ -1128,32 +1019,10 @@ $("#show-map").click(function(e){
         location.href = baseUrl + ".html";
     });
 
-  function initPlotData(bin_id) {
-      $.get("/api/plot/" + bin_id, function(data){
-        plotData = data;
-        var plotXAxis = $("#plot-x-axis");
-        var plotYAxis = $("#plot-y-axis");
-
-        $.each(data, function(key) {
-            plotXAxis.append($("<option />").text(key));
-            plotYAxis.append($("<option />").text(key));
-        });
-
-        plotXAxis.val(PLOT_X_DEFAULT);
-        plotYAxis.val(PLOT_Y_DEFAULT);
-
-        updatePlot();
-    });
-  }
-
-  $(function() {
-        var binDate = "{{ bin.timestamp|date:'c' }}";
-        $("#bin-date-relative").text(" (" + moment(binDate).fromNow() + ")");
-
-        $("#max-images").text(MAX_SELECTABLE_IMAGES);
-
-        initPlotData("{{ bin.pid }}");
-    });
+    {% if dataset %}
+        _dataset = "{{ dataset.name }}";
+    {% endif %}
+    _bin = "{{ bin.pid }}";
 
 </script>
 {% endblock %}
