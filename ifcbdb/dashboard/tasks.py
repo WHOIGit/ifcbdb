@@ -4,7 +4,6 @@ from django.core.cache import cache
 
 from ifcb.viz.mosaic import Mosaic
 
-
 @shared_task
 def mosaic_coordinates_task(bin_id, shape=(600,800), scale=0.33, cache_key=None):
     from dashboard.models import Bin
@@ -20,11 +19,17 @@ def mosaic_coordinates_task(bin_id, shape=(600,800), scale=0.33, cache_key=None)
     return result
 
 @shared_task(bind=True)
-def sync_dataset(self, dataset_id):
+def sync_dataset(self, dataset_id, lock_key):
     from dashboard.models import Dataset
     from dashboard.accession import Accession
     ds = Dataset.objects.get(id=dataset_id)
+    print('syncing dataset {}'.format(ds.name))
     acc = Accession(ds)
     def progress_callback(p):
+        cache.touch(lock_key) # try to prevent the lock from expiring
         self.update_state(state='PROGRESS', meta=p)
-    return acc.sync(progress_callback=progress_callback)
+    try:
+        result = acc.sync(progress_callback=progress_callback)
+    finally:
+        cache.delete(lock_key) # warning: slow
+    return result

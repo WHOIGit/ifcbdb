@@ -8,6 +8,7 @@ from django.http import HttpResponse, FileResponse, Http404, HttpResponseBadRequ
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_control
 
+from django.core.cache import cache
 from celery.result import AsyncResult
 
 from ifcb.data.imageio import format_image
@@ -441,9 +442,25 @@ def test_sync_dataset(request, dataset_id):
     from .tasks import sync_dataset
     # ensure that the dataset exists
     ds = get_object_or_404(Dataset, id=dataset_id)
-    # FIXME make sure we're not already syncing this dataset first
-    r = sync_dataset.delay(dataset_id)
+    # attempt to lock the dataset
+    lock_key = 'dataset_sync_{}'.format(dataset_id)
+    lock_state = {
+        'state': 'LOCKED'
+    }
+    added = cache.add(lock_key, lock_state) # this is atomic
+    if not added: # dataset is locked for syncing
+        current_lock_state = cache.get(lock_key, lock_state)
+        # it's ok if the cache key no longer exists, user will retry
+        return JsonResponse(current_lock_state)
+    else:
+        r = sync_dataset.delay(dataset_id, lock_key)
+        lock_state.update({
+            'task_id': r.task_id,
+            })
+        cache.set(lock_key, lock_state)
+    result = AsyncResult(r.task_id)
     return JsonResponse({
+        'state': result.state,
         'task_id': r.task_id,
         })
 
