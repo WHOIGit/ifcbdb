@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if form.non_field_errors %}
+  <div class="non-field-errors">
+    {% for err in form.non_field_errors %}
+      <p class="alert alert-danger">{{ err }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.id }}
+    <div class="form-row">
+        <div class="form-group col">
+            <div class="col custom-switch">
+                {{ form.is_active }}
+                <label class="custom-control-label" for="id_is_active">Active</label>
+            </div>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_name">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_title">Description</label>
+            {{ form.title }}
+            {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row d-none">
+        <div class="form-group col">
+            <label for="datasetType">Type</label>
+            <select class="form-control form-control-sm" id="datasetType">
+                <option>Time Series</option>
+                <option>Other</option>
+              </select>
+            <label><small>Most Recent Data: 45 Minutes Ago</small></label>
+        </div>
+    </div>
+    <div class="form-row d-none">
+        <div class="col">
+            <label for="datasetRawDataInput">Raw Data</label>
+            <input type="text" id="datasetRawDataInput" class="form-control form-control-sm" placeholder="Raw Data">
+        </div>
+    </div>
+    <div class="form-row d-none">
+        <div class="form-group col">
+            <button type="submit" class="btn btn-sm btn-mdb-color">Scan</button>
+            <button type="submit" class="btn btn-sm btn-mdb-color">Schedule Scan</button>
+            <label><small>456456 Fileset(s), 4.5TB</small></label>
+        </div>
+    </div>
+    <div class="form-row">
+        <a href="{% url 'secure:dataset-management' %}" class="btn btn-sm">Cancel</a>
+        <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
+    </div>
+</form>
+{% endblock %}

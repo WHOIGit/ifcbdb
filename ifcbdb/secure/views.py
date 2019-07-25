@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators import http
 from django.core import serializers
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect, reverse
 
 from dashboard.models import Dataset, Instrument
 from .forms import DatasetForm, InstrumentForm
@@ -45,31 +45,25 @@ def dt_datasets(request):
     })
 
 
-def dataset(request, id):
-    dataset = get_object_or_404(Dataset, pk=id)
-    resp = serializers.serialize("json", [dataset, ])
 
-    return HttpResponse(resp, content_type="application/json")
-
-
-@http.require_POST
-def update_dataset(request, id):
-    if id > 0:
-        dataset = Dataset.objects.get(pk=id)
+def edit_dataset(request, id):
+    if int(id) > 0:
+        dataset = get_object_or_404(Dataset, pk=id)
     else:
         dataset = Dataset()
 
-    form = DatasetForm(request.POST, instance=dataset)
+    if request.POST:
+        form = DatasetForm(request.POST, instance=dataset)
+        if form.is_valid():
+            form.save()
 
-    if form.is_valid():
-        form.save()
-        return JsonResponse({
-            "success": True
-        })
+            return redirect(reverse("secure:dataset-management"))
+    else:
+        form = DatasetForm(instance=dataset)
 
-    return JsonResponse({
-        "success": False,
-        "errors": list(form.errors.items())
+    return render(request, "secure/edit-dataset.html", {
+        "form": form,
+        "dataset": dataset,
     })
 
 
@@ -81,36 +75,29 @@ def dt_instruments(request):
     })
 
 
-def instrument(request, id):
-    instrument = get_object_or_404(Instrument, pk=id)
-    resp = serializers.serialize("json", [instrument, ])
-
-    return HttpResponse(resp, content_type="application/json")
-
-@http.require_POST
-def update_instrument(request, id):
-    if id > 0:
-        instance = Instrument.objects.get(pk=id)
+def edit_instrument(request, id):
+    if int(id) > 0:
+        instrument = get_object_or_404(Instrument, pk=id)
     else:
-        instance = Instrument()
+        instrument = Instrument()
 
-    form = InstrumentForm(request.POST, instance=instance)
+    if request.POST:
+        form = InstrumentForm(request.POST, instance=instrument)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.version = Instrument.determine_version(instance.number)
 
-    if form.is_valid():
-        instrument = form.save(commit=False)
-        instrument.version = Instrument.determine_version(instrument.number)
+            password = form.cleaned_data["password"]
+            if password:
+                instance.set_password(password)
 
-        password = form.cleaned_data["password"]
-        if password:
-            instrument.set_password(password)
+            instance.save()
 
-        instrument.save()
+            return redirect(reverse("secure:instrument-management"))
+    else:
+        form = InstrumentForm(instance=instrument)
 
-        return JsonResponse({
-            "success": True
-        })
-
-    return JsonResponse({
-        "success": False,
-        "errors": list(form.errors.items())
+    return render(request, "secure/edit-instrument.html", {
+        "instrument": instrument,
+        "form": form,
     })

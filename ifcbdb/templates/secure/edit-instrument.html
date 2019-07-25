@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if form.non_field_errors %}
+  <div class="non-field-errors">
+    {% for err in form.non_field_errors %}
+      <p class="alert alert-danger">{{ err }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.id }}
+
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_number">Number</label>
+            {{ form.number }}
+            {% if form.number.errors %}<span class="text-danger">{{ form.number.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_nickname">Nickname</label>
+            {{ form.nickname }}
+            {% if form.nickname.errors %}<span class="text-danger">{{ form.nickname.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_address">Domain or IP Address</label>
+            {{ form.address }}
+            {% if form.address.errors %}<span class="text-danger">{{ form.address.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_username">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}<span class="text-danger">{{ form.username.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_password">Password</label>
+            {{ form.password }}
+            {% if form.password.errors %}<span class="text-danger">{{ form.password.errors.as_text }}</span>{% endif %}
+            <small class="form-text text-muted">Leave blank to use the existing password</small>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_confirm_password">Confirm Password</label>
+            {{ form.confirm_password }}
+            {% if form.confirm_password.errors %}<span class="text-danger">{{ form.confirm_password.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_share_name">Share Name</label>
+            {{ form.share_name }}
+            {% if form.share_name.errors %}<span class="text-danger">{{ form.share_name.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <a href="{% url 'secure:instrument-management' %}" class="btn btn-sm">Cancel</a>
+        <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
+    </div>
+</form>
+
+{% endblock %}

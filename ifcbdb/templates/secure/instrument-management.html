@@ -4,7 +4,7 @@
         <span class="h3-responsive">Instrument Management</span>
     </div>
     <div class="flex-column">
-        <button class="btn btn-sm btn-mdb-color" id="add-instrument"><i class="fas fa-plus magic mr-1"></i> Add New Instrument</button>
+        <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:edit-instrument' 0 %}"><i class="fas fa-plus magic mr-1"></i> Add New Instrument</a>
     </div>
 </div>
 <hr class="my-2">
@@ -22,81 +22,15 @@
         </table>
     </div>
 </div>
-<!-- Add/Edit Modal -->
-<div class="modal" id="instrument-modal" tabindex="-1" role="dialog" aria-labelledby="instrumentAddEditModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role=" document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="instrumentAddEditModalLabel">Add/Edit Instrument</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    {% csrf_token %}
-                    {{ form.id }}
-                    <span id="non-field-errors" class="invalid-feedback"></span>
 
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_number">Number</label>
-                            {{ form.number }}
-                            <span id="id_number_validation" class="invalid-feedback"></span>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_nickname">Nickname</label>
-                            {{ form.nickname }}
-                            <span id="id_nickname_validation" class="invalid-feedback"></span>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_address">Domain or IP Address</label>
-                            {{ form.address }}
-                            <span id="id_address_validation" class="invalid-feedback"></span>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_username">Username</label>
-                            {{ form.username }}
-                            <span id="id_username_validation" class="invalid-feedback"></span>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_password">Password</label>
-                            {{ form.password }}
-                            <span id="id_password_validation" class="invalid-feedback"></span>
-                            <small class="form-text text-muted">Leave blank to use the existing password</small>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_confirm_password">Confirm Password</label>
-                            {{ form.confirm_password }}
-                            <span id="id_confirm_password_validation" class="invalid-feedback"></span>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_share_name">Share Name</label>
-                            {{ form.share_name }}
-                            <span id="id_share_name_validation" class="invalid-feedback"></span>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-sm btn-outline-mdb-color" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-sm btn-mdb-color" id="save-instrument">Save changes</button>
-            </div>
-        </div>
-    </div>
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
 </div>
+
 <!-- End Add/Edit Modal -->
 <!-- Delete Confirm Modal -->
 <div class="modal" id="confirm-delete-modal" tabindex="-1" role="dialog" aria-labelledby="add-instrument-header" aria-hidden="true">
@@ -119,48 +53,11 @@
     </div>
 </div>
 <!-- End Delete Modal -->
+
 {% endblock %} {% block scripts %}
 <script>
-    var instrumentTable;
-
-    function loadInstrument(id, instrument) {
-        $("#save-instrument").data("id", id);
-
-        if (instrument !== undefined && id > 0) {
-            $("#id_number").val(instrument["number"]);
-            $("#id_version").val(instrument["version"]);
-            $("#id_nickname").val(instrument["nickname"]);
-            $("#id_address").val(instrument["address"]);
-            $("#id_username").val(instrument["username"]);
-            $("#id_share_name").val(instrument["share_name"]);
-        } else {
-            $("#id_number").val("");
-            $("#id_version").val("");
-            $("#id_nickname").val("");
-            $("#id_address").val("");
-            $("#id_username").val("");
-            $("#id_share_name").val("");
-        }
-
-        $("#id_password").val("");
-        $("#id_confirm_password").val("");
-
-        resetValidation();
-        $("#instrument-modal").modal();
-
-        return true;
-    }
-
-    function resetValidation() {
-        $("#instrument-modal .form-control").toggleClass("is-invalid", false);
-        $("#instrument-modal .invalid-feedback").text("");
-
-        $("#non-field-errors").hide();
-        $("#non-field-errors").text("");
-    }
-
     $(function(){
-        instrumentTable = $('#instruments').DataTable({
+        $('#instruments').DataTable({
             searching: false,
             lengthChange: false,
             ajax: {
@@ -174,57 +71,13 @@
                     targets: -1,
                     render: function ( data, type, row ) {
                         return (
-                            "<button class='btn btn-sm btn-mdb-color edit-instrument' data-id='" + data + "'>" +
+                            "<a class='btn btn-sm btn-mdb-color' href='/secure/edit-instrument/" + data + "'>" +
                             "<i class='fas fa-edit magic mr-1'></i>Edit" +
-                            "</button>"
+                            "</a>"
                         );
                     }
                 }
             ]
-        });
-
-        $("#instruments").on("click", ".edit-instrument", function(e){
-            e.preventDefault();
-
-            $.get("/secure/api/instrument/" + $(this).data("id"), function(data) {
-                loadInstrument(data[0]["pk"], data[0]["fields"]);
-            });
-        });
-
-        $("#instrument-modal").on("click", "#save-instrument", function(e){
-            e.preventDefault();
-
-            var id = $(this).data("id");
-            var data = $("#instrument-modal form").serialize();
-
-            $.post("/secure/api/update-instrument/" + id, data, function(data){
-                if (data["success"]) {
-                    $("#instrument-modal").modal("hide");
-                    instrumentTable.ajax.reload();
-                    return;
-                }
-
-                resetValidation();
-
-                for (var i = 0; i < data["errors"].length; i++) {
-                    var error = data["errors"][i];
-
-                    if (error[0] == "__all__") {
-                        $("#non-field-errors").text(error[1]);
-                        $("#non-field-errors").show();
-                        continue;
-                    }
-
-                    $("#id_" + error[0]).toggleClass("is-invalid", true);
-                    $("#id_" + error[0] + "_validation").text(error[1]);
-                }
-            });
-        });
-
-        $("#add-instrument").click(function(e){
-            e.preventDefault();
-
-            loadInstrument(0)
         });
     });
 </script>

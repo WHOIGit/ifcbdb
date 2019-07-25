@@ -4,7 +4,7 @@
         <span class="h3-responsive">Dataset Management</span>
     </div>
     <div class="flex-column">
-        <button class="btn btn-sm btn-mdb-color" id="add-dataset"><i class="fas fa-plus magic mr-1"></i> Add New Dataset</button>
+        <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:edit-dataset' 0 %}"><i class="fas fa-plus magic mr-1"></i> Add New Dataset</a>
     </div>
 </div>
 <hr class="my-2">
@@ -22,75 +22,15 @@
         </table>
     </div>
 </div>
-<!-- Add/Edit Modal -->
-<div class="modal" id="dataset-modal" tabindex="-1" role="dialog" aria-labelledby="add-dataset-header" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role=" document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="add-dataset-header">Add/Edit Dataset</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    {% csrf_token %}
-                    {{ form.id }}
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <div class="col custom-switch">
-                                {{ form.is_active }}
-                                <label class="custom-control-label" for="id_is_active">Active</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_name">Name</label>
-                            {{ form.name }}
-                            <span id="id_name_validation" class="invalid-feedback"></span>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col">
-                            <label for="id_title">Description</label>
-                            {{ form.title }}
-                            <span id="id_title_validation" class="invalid-feedback"></span>
-                        </div>
-                    </div>
-                    <div class="form-row d-none">
-                        <div class="form-group col">
-                            <label for="datasetType">Type</label>
-                            <select class="form-control form-control-sm" id="datasetType">
-                                <option>Time Series</option>
-                                <option>Other</option>
-                              </select>
-                            <label><small>Most Recent Data: 45 Minutes Ago</small></label>
-                        </div>
-                    </div>
-                    <div class="form-row d-none">
-                        <div class="col">
-                            <label for="datasetRawDataInput">Raw Data</label>
-                            <input type="text" id="datasetRawDataInput" class="form-control form-control-sm" placeholder="Raw Data">
-                        </div>
-                    </div>
-                    <div class="form-row d-none">
-                        <div class="form-group col">
-                            <button type="submit" class="btn btn-sm btn-mdb-color">Scan</button>
-                            <button type="submit" class="btn btn-sm btn-mdb-color">Schedule Scan</button>
-                            <label><small>456456 Fileset(s), 4.5TB</small></label>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-sm btn-outline-mdb-color" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-sm btn-mdb-color" id="save-dataset">Save changes</button>
-            </div>
-        </div>
-    </div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
 </div>
-<!-- End Add/Edit Modal -->
+
 <!-- Delete Confirm Modal -->
 <div class="modal" id="datasetDeleteModal" tabindex="-1" role="dialog" aria-labelledby="datasetDeleteModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -114,33 +54,8 @@
 <!-- End Delete Modal -->
 {% endblock %} {% block scripts %}
 <script>
-    var datasetTable;
-
-    function loadDataset(id, dataset) {
-        $("#save-dataset").data("id", id);
-
-        if (dataset !== undefined) {
-            $("#id_name").val(dataset["name"]);
-            $("#id_title").val(dataset["title"]);
-
-        } else {
-            $("#id_name").val("");
-            $("#id_title").val("");
-        }
-
-        resetValidation();
-        $("#dataset-modal").modal();
-
-        return true;
-    }
-
-    function resetValidation() {
-        $("#dataset-modal .form-control").toggleClass("is-invalid", false);
-        $("#dataset-modal .invalid-feedback").text("");
-    }
-
     $(function(){
-        datasetTable = $('#datasets').DataTable({
+        $('#datasets').DataTable({
             searching: false,
             lengthChange: false,
             ajax: {
@@ -159,54 +74,14 @@
                     targets: -1,
                     render: function ( data, type, row ) {
                         return (
-                            "<button class='btn btn-sm btn-mdb-color edit-dataset' data-id='" + data + "'>" +
+                            "<a class='btn btn-sm btn-mdb-color' href='/secure/edit-dataset/" + data + "'>" +
                             "<i class='fas fa-edit magic mr-1'></i>Edit" +
-                            "</button>"
+                            "</a>"
                         );
                     }
                 }
             ]
         });
-
-
-        $("#datasets").on("click", ".edit-dataset", function(e){
-            e.preventDefault();
-
-            $.get("/secure/api/dataset/" + $(this).data("id"), function(data) {
-                loadDataset(data[0]["pk"], data[0]["fields"]);
-            });
-        });
-
-        $("#dataset-modal").on("click", "#save-dataset", function(e){
-            e.preventDefault();
-
-            var id = $(this).data("id");
-            var data = $("#dataset-modal form").serialize();
-
-            $.post("/secure/api/update-dataset/" + id, data, function(data){
-                if (data["success"]) {
-                    $("#dataset-modal").modal("hide");
-                    datasetTable.ajax.reload();
-                    return;
-                }
-
-                resetValidation();
-
-                for (var i = 0; i < data["errors"].length; i++) {
-                    var error = data["errors"][i];
-
-                    $("#id_" + error[0]).toggleClass("is-invalid", true);
-                    $("#id_" + error[0] + "_validation").text(error[1]);
-                }
-            });
-        });
-
-        $("#add-dataset").click(function(e){
-            e.preventDefault();
-
-            loadDataset(0)
-        });
-
     });
 </script>
 {% endblock %}
