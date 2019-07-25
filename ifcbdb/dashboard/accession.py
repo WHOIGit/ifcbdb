@@ -83,7 +83,8 @@ class Accession(object):
             with transaction.atomic():
                 for b in bins2save:
                     b.save()
-                for b in bins2save:
+                # add to dataset, unless the bin has no rois
+                for b in bins2save and not b.qc_no_rois:
                     self.dataset.bins.add(b)
                     bins_added += 1
                     most_recent_bin_id = b.pid

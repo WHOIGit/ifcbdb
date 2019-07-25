@@ -8,6 +8,7 @@ from django.http import HttpResponse, FileResponse, Http404, HttpResponseBadRequ
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_control
 
+from django.core.cache import cache
 from celery.result import AsyncResult
 
 from ifcb.data.imageio import format_image
@@ -479,17 +480,42 @@ def plot_data(request, bin_id):
 
 ## FIXME move these two views to secure
 
+# FIXME make an object locking decorator
+def dataset_sync_lock_key(dataset_id):
+    return 'dataset_sync_{}'.format(dataset_id)
+
+def dataset_sync_task_id_key(dataset_id):
+    return 'dataset_sync_task_{}'.format(dataset_id)
+
+def get_dataset_sync_task_id(dataset_id):
+    return cache.get(dataset_sync_task_id_key(dataset_id))
+    # if there's no task ID the task is just about to start
+
 def test_sync_dataset(request, dataset_id):
     from .tasks import sync_dataset
     # ensure that the dataset exists
     ds = get_object_or_404(Dataset, id=dataset_id)
-    # FIXME make sure we're not already syncing this dataset first
-    r = sync_dataset.delay(dataset_id)
-    return JsonResponse({
-        'task_id': r.task_id,
-        })
+    # attempt to lock the dataset
+    lock_key = dataset_sync_lock_key(dataset_id)
+    added = cache.add(lock_key, True) # this is atomic
+    if not added: # dataset is locked for syncing
+        return JsonResponse({ 'state': 'LOCKED' })
+    # start the task asynchronously
+    r = sync_dataset.delay(dataset_id, lock_key)
+    # cache the task id so we can look it up by dataset id
+    cache.set(dataset_sync_task_id_key(dataset_id), r.task_id)
+    # 
+    result = AsyncResult(r.task_id)
+    return JsonResponse({ 'state': result.state })
 
-def test_sync_dataset_status(request, task_id):
+def test_sync_dataset_status(request, dataset_id):
+    task_id = get_dataset_sync_task_id(dataset_id)
+    if task_id is None:
+        # there's no result, which means either
+        # - the cache entry for the task id has expired, or
+        # - it's the exact moment the task is starting
+        # report PENDING
+        return JsonResponse({ 'state': 'PENDING' })
     result = AsyncResult(task_id)
     return JsonResponse({
         'state': result.state,

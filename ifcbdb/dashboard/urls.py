@@ -80,5 +80,5 @@ urlpatterns = [
 
     # FIXME move these to secure and change URL patterns accordingly
     path('debug/sync/<int:dataset_id>', views.test_sync_dataset),
-    path('debug/sync/status/<slug:task_id>', views.test_sync_dataset_status),
+    path('debug/sync/status/<slug:dataset_id>', views.test_sync_dataset_status),
 ]
