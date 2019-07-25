@@ -318,7 +318,6 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         if next_bin is not None:
             next_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
 
-    # TODO: Volume Analyzed is using floatformat:3; is that ok?
     return {
         "scale": mosaic_scale,
         "shape": mosaic_shape,
@@ -335,6 +334,10 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         "has_features": bin.has_features(),
         "timestamp_iso": bin.timestamp.isoformat(),
         "instrument": "IFCB" + str(bin.instrument.number),
+        "num_triggers": bin.n_triggers,
+        "num_images": bin.n_images,
+        "trigger_freq": round(bin.trigger_frequency, 3),
+        "ml_analyzed": str(round(bin.ml_analyzed, 3)) + " ml",
     }
 
 
