@@ -1,6 +1,8 @@
 //************* Local Variables ***********************/
 var _bin = "";                  // Bin Id
 var _dataset = "";              // Dataset Name
+var _mosaic_page = 0;           // Current page being displayed in the mosaic
+var _mosaic_pages = -1;         // Total number of pages for the mosaic
 var _coordinates = [];          // Coordinates of images within the current mosaic
 var _isMosaicLoading = false;   // Whether the mosaic is in the process of loading
 var _isBinLoading = false;      // Whether the bin is in the process of loading
@@ -30,6 +32,58 @@ function updateBinStats(data) {
     $("#stat-instrument").html(data["instrument"]);
 }
 
+function updateBinDownloadLinks(data) {
+    $("#download-adc").attr("href", _dataset + "/" + _bin + ".adc");
+    $("#download-hdr").attr("href", _dataset + "/" + _bin + ".hdr");
+    $("#download-roi").attr("href", _dataset + "/" + _bin + ".roi");
+    $("#download-zip").attr("href", _dataset + "/" + _bin + ".zip");
+    $("#download-blobs").attr("href", _dataset + "/" + _bin + "_blob.zip");
+    $("#download-features").attr("href", _dataset + "/" + _bin + "_features.csv");
+
+    $("#download-blobs").toggle(data["has_blobs"]);
+    $("#download-blobs-disabled").toggle(!data["has_blobs"]);
+
+    $("#download-features").toggle(data["has_features"]);
+    $("#download-features-disabled").toggle(!data["has_features"]);
+
+    // TODO: Need to hook up link for "autoclass"
+}
+
+// TODO: Handle when dataset is empty
+function changeToClosestBin(targetDate) {
+    if (_isBinLoading || _isMosaicLoading)
+        return false;
+
+    _isBinLoading = true;
+    _isMosaicLoading = true;
+
+    var url = "/api/" + _dataset + "/closest_bin";
+    $.post(url, {"target_date": targetDate}, function(resp){
+        if (resp.bin_id != "")
+            changeBin(resp.bin_id, true);
+    });
+}
+
+// TODO: Handle when dataset is empty
+function changeToNearestBin(lat, lng) {
+    if (_isBinLoading || _isMosaicLoading)
+        return false;
+
+    _isBinLoading = true;
+    _isMosaicLoading = true;
+
+    var url = "/api/nearest_bin";
+    var data = {
+        dataset: _dataset,
+        latitude: lat,
+        longitude: lng
+    };
+
+    $.post(url, data, function(resp){
+        if (resp.bin_id != "")
+            changeBin(resp.bin_id, true);
+    });
+}
 
 //************* Mosaic Methods ***********************/
 function delayedMosaic(page) {
@@ -43,7 +97,7 @@ function delayedMosaic(page) {
 
 function rebuildMosaicPageIndexes() {
     $(".page-index").remove();
-    for (var i = 0; i < numBinPages + 1; i++) {
+    for (var i = 0; i < _mosaic_pages + 1; i++) {
         var li = $("<li class='page-item page-index' />").toggleClass("active", i == 0);
         var btn = $("<a class='page-link' />").text(i + 1).attr("data-page", i);
 
@@ -88,13 +142,13 @@ function loadMosaic(pageNumber) {
         enableMosaicPaginationButtons();
 
         // Update the paging
-        if (data["num_pages"] != numBinPages) {
-            numBinPages = data["num_pages"];
+        if (data["num_pages"] != _mosaic_pages) {
+            _mosaic_pages = data["num_pages"];
 
             rebuildMosaicPageIndexes();
         }
 
-        updatePaging();
+        updateMosaicPaging();
 
         _isMosaicLoading = false;
     });
@@ -113,11 +167,25 @@ function loadMosaic(pageNumber) {
 }
 
 function changeMosaicPage(pageNumber) {
-    currentBinPage = pageNumber;
+    _mosaic_page = pageNumber;
 
     delayedMosaic(pageNumber);
-    updatePaging();
+    updateMosaicPaging();
 }
+
+function updateMosaicPaging() {
+    $(".page-previous").toggleClass("disabled", (_mosaic_page <= 0));
+    $(".page-next").toggleClass("disabled", (_mosaic_page >= _mosaic_pages));
+
+    $.each($(".page-index a"), function() {
+        var isSelected = $(this).data("page") == _mosaic_page;
+
+        $(this).closest("li").toggleClass("active", isSelected);
+    });
+
+    $("#bin-paging").show();
+}
+
 
 //************* Map Methods ***********************/
 
@@ -176,6 +244,60 @@ function initEvents() {
     // Prevent users from clicking while the bin page is loading
     $("#bin-header").click(function() {
         $("#bin-header").css("pointer-events","none");
+    });
+
+    // Changing the view size of the mosaic
+    $("#view-size").change(function () {
+        var viewSize = $("#view-size").val();
+        var vs = viewSize.split("x");
+        var height = parseInt(vs[1]);
+
+        $('#mosaic-loading').height(height);
+
+        changeBin(currentBinId, true);
+    });
+
+    // Changing the scale factor for the mosaic
+    $("#scale-factor").change(function(e){
+        changeBin(currentBinId, true);
+    });
+
+    // Bin navigation (next/prev)
+    $("#previous-bin, #next-bin").click(function(e){
+        e.preventDefault();
+
+        changeBin($(this).data("bin"), true);
+    });
+
+    // Mosaic paging
+    $("#bin-paging")
+        .on("click", ".page-previous", function(e){
+            e.preventDefault();
+
+            if (_mosaic_page > 0)
+                changeMosaicPage(_mosaic_page - 1);
+        })
+        .on("click", ".page-next", function(e){
+            e.preventDefault();
+
+            if (_mosaic_page < _mosaic_pages)
+                changeMosaicPage(_mosaic_page + 1);
+        })
+        .on("click", ".page-index a", function(e){
+            e.preventDefault();
+
+            var pageNumber = $(this).data("page")
+
+            changeMosaicPage(pageNumber);
+        });
+
+    // Changing the metric shown on the timeline
+    $("#ts-tabs .nav-link").click(function() {
+        var metric = $(this).data("metric");
+
+        timelineValid = false;
+        timelineWaiting = false;
+        createTimeSeries(metric);
     });
 }
 

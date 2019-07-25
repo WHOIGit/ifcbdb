@@ -437,13 +437,10 @@ var dataset_name = "{% if dataset %}{{ dataset.name }}{% endif %}";
 var map;
 var mapMarker;
 var plot;
-var currentBinPage = 0;
-var numBinPages = -1;
 var currentBinId = "";
 var currentMetric = "";
 var currentResolution = "auto";
 var currentBinTimestamp = null;
-var currentPlotId = "ts-concentration";
 
 var timelineValid = true;
 var timelineRelayoutResponse;
@@ -455,57 +452,6 @@ var timelineWaitingSince = new Date();
 
 var _attempts = 0;
 var _requests = 0;
-
-
-
-function updatePaging() {
-    $(".page-previous").toggleClass("disabled", (currentBinPage <= 0));
-    $(".page-next").toggleClass("disabled", (currentBinPage >= numBinPages));
-
-    $.each($(".page-index a"), function() {
-        var isSelected = $(this).data("page") == currentBinPage;
-
-        $(this).closest("li").toggleClass("active", isSelected);
-    });
-
-    $("#bin-paging").show();
-}
-
-function changeToClosestBin(targetDate) {
-    if (_isBinLoading || _isMosaicLoading)
-        return false;
-
-    _isBinLoading = true;
-    _isMosaicLoading = true;
-
-    var url = "{% url 'closest_bin' 'DATASET_NAME' %}";
-    url = url.replace("DATASET_NAME", dataset_name);
-
-    $.post(url, {"target_date": targetDate}, function(resp){
-        if (resp.bin_id != "")
-            changeBin(resp.bin_id, true);
-    });
-}
-
-function changeToNearestBin(lat, lng) {
-    if (_isBinLoading || _isMosaicLoading)
-        return false;
-
-    _isBinLoading = true;
-    _isMosaicLoading = true;
-
-    var url = "{% url 'nearest_bin' %}";
-    var data = {
-        dataset: "{{ dataset.name }}",
-        latitude: lat,
-        longitude: lng
-    };
-
-    $.post(url, data, function(resp){
-        if (resp.bin_id != "")
-            changeBin(resp.bin_id, true);
-    });
-}
 
 function createTimeSeries(metric) {
     container = $("#primary-plot-container");
@@ -630,26 +576,7 @@ function queryTimeline(container, metric) {
     return true;
 }
 
-$("#ts-tabs .nav-link").click(function() {
-    $("#" + currentPlotId).hide();
 
-    currentPlotId = $(this).data("target");
-
-    $("#" + currentPlotId).show();
-
-    var metric = $(this).data("metric");
-
-    timelineValid = false;
-    timelineWaiting = false;
-    createTimeSeries(metric);
-});
-
-$("#view-size").change(function () {
-    var viewSize = $("#view-size").val();
-    var vs = viewSize.split("x");
-    var height = parseInt(vs[1]);
-    $('#mosaic-loading').height(height);
-});
 
 function changeBin(binId, updateHistory) {
     _coordinates = [];
@@ -687,11 +614,13 @@ function changeBin(binId, updateHistory) {
     $("#next-bin").addClass("disabled");
 
     currentBinId = binId;
-    currentBinPage = 0;
+    _mosaic_page = 0;
     delayedMosaic(0);
 
     $.get(dataUrl, function(data){
         updateBinStats(data);
+        updateBinDownloadLinks(data);
+
         currentBinTimestamp = moment(data["timestamp_iso"]);
 
         $("#previous-bin").data("bin", data.previous_bin_id);
@@ -700,20 +629,6 @@ function changeBin(binId, updateHistory) {
         // Update outline/blob links
         $("#detailed-image-blob-link").toggleClass("disabled", !data["has_blobs"]);
         $("#detailed-image-outline-link").toggleClass("disabled", !data["has_blobs"]);
-
-        // Update download links
-        $("#download-adc").attr("href", "{% url 'adc_csv' 'xxx' '_BIN_' %}".replace('_BIN_', binId));
-        $("#download-hdr").attr("href", "{% url 'hdr_text' 'xxx' '_BIN_' %}".replace('_BIN_', binId));
-        $("#download-roi").attr("href", "{% url 'roi_binary' 'xxx' '_BIN_' %}".replace('_BIN_', binId));
-        $("#download-zip").attr("href", "{% url 'zip' 'xxx' '_BIN_' %}".replace('_BIN_', binId));
-        $("#download-blobs").attr("href", "{% url 'blob_zip' 'xxx' '_BIN_' %}".replace('_BIN_', binId));
-        $("#download-features").attr("href", "{% url 'features_csv' 'xxx' '_BIN_' %}".replace('_BIN_', binId));
-
-        $("#download-blobs").toggle(data["has_blobs"]);
-        $("#download-blobs-disabled").toggle(!data["has_blobs"]);
-
-        $("#download-features").toggle(data["has_features"]);
-        $("#download-features-disabled").toggle(!data["has_features"]);
 
         // Update map location(s)
         if (!map) {
@@ -738,48 +653,16 @@ function changeBin(binId, updateHistory) {
     });
 }
 
-$("#previous-bin, #next-bin").click(function(e){
-    e.preventDefault();
 
-    changeBin($(this).data("bin"), true);
-});
 
-$("#bin-paging").on("click", ".page-previous", function(e){
-    e.preventDefault();
 
-    if (currentBinPage > 0)
-        changeMosaicPage(currentBinPage - 1);
-});
-
-$("#bin-paging").on("click", ".page-next", function(e){
-    e.preventDefault();
-
-    if (currentBinPage < numBinPages)
-        changeMosaicPage(currentBinPage + 1);
-});
-
-$("#bin-paging").on("click", ".page-index a", function(e){
-    e.preventDefault();
-
-    var pageNumber = $(this).data("page")
-
-    changeMosaicPage(pageNumber);
-});
-
-$("#view-size").change(function(e){
-    changeBin(currentBinId, true);
-});
-
-$("#scale-factor").change(function(e){
-    changeBin(currentBinId, true);
-});
 
 $("#mosaic").click(function(e){
     var x = e.pageX - $(this).offset().left;
     var y = e.pageY - $(this).offset().top;
 
     $.each(_coordinates, function(idx, img) {
-        if (currentBinPage == img.page &&
+        if (_mosaic_page == img.page &&
             x >= img.x && x <= img.x + img.width &&
             y >= img.y && y <= img.y + img.height) {
 
@@ -923,21 +806,9 @@ $("#show-map").click(function(e){
         }];
 
         var layout = {
-                margin: {
-                    l: 50,
-                    r: 50,
-                    b: 50,
-                    t: 00,
-                    pad: 2
-                },
-            xaxis: {
-                type: xType,
-                autorange: true
-            },
-            yaxis: {
-                type: yType,
-                fixedrange: true,
-            }
+            margin: { l: 50, r: 50, b: 50, t: 00, pad: 2 },
+            xaxis: { type: xType, autorange: true },
+            yaxis: { type: yType, fixedrange: true, }
         };
 
         Plotly.react('plot', trace, layout, config);
