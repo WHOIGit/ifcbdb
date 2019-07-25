@@ -94,6 +94,7 @@
 
                     <!-- Bin selection links/label -->
                     <div class="col-sm-9">
+                        {% if dataset %}
                         <div class="d-flex flex-row justify-content-between">
                             <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-previous w-25">Previous Bin</a>
                             <div class="flex-column text-center w-50">
@@ -104,6 +105,7 @@
                             </div>
                             <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-next w-25">Next Bin</a>
                         </div>
+                        {% endif %}
                     </div>
 
                     <!-- Bin view (mosaic/plot/map -->
@@ -136,68 +138,62 @@
 
                             <!-- Plot -->
                             <div id="plot-tab" class="card-body tab-pane py-1 d-none" role="tabpanel">
-<div class="row py-2 px-3">
-    <div class="col-md-7 text-center">
-                    <form class="form form-row">
-                        <div class="form-group mr-2">
-                            <label>X Axis</label>
-                            <select id="plot-x-axis" class="form-control" style="width:150px"></select>
-                        </div>
-                        <div class="form-group mr-2">
-                            <label>Y Axis</label>
-                            <select id="plot-y-axis" class="form-control" style="width:150px"></select>
-                        </div>
-                        <div class="form-group mr-2">
-                            <label>X Type</label>
-                            <select id="plot-x-type" class="form-control">
-                                <option value="">Linear</option>
-                                <option value="log">Log</option>
-                            </select>
-                        </div>
-                        <div class="form-group mr-2">
-                            <label>Y Type</label>
-                            <select id="plot-y-type" class="form-control">
-                                <option value="">Linear</option>
-                                <option value="log">Log</option>
-                            </select>
-                        </div>
-                        <div class="form-group mr-2">
-                            <label>X Offset</label>
-                            <input type="text" id="plot-x-offset" class="form-control" disabled style="width:100px" />
-                        </div>
-                        <div class="form-group">
-                            <label>Y Offset</label>
-                            <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
-                        </div>
-                    </form>
 
-                    <div id="plot" class="bin-plot"></div>
+                                <div class="row py-2 px-3">
+                                    <div class="col-md-7 text-center">
+                                        <form class="form form-row">
+                                            <div class="form-group mr-2">
+                                                <label>X Axis</label>
+                                                <select id="plot-x-axis" class="form-control" style="width:150px"></select>
+                                            </div>
+                                            <div class="form-group mr-2">
+                                                <label>Y Axis</label>
+                                                <select id="plot-y-axis" class="form-control" style="width:150px"></select>
+                                            </div>
+                                            <div class="form-group mr-2">
+                                                <label>X Type</label>
+                                                <select id="plot-x-type" class="form-control">
+                                                    <option value="">Linear</option>
+                                                    <option value="log">Log</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mr-2">
+                                                <label>Y Type</label>
+                                                <select id="plot-y-type" class="form-control">
+                                                    <option value="">Linear</option>
+                                                    <option value="log">Log</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mr-2">
+                                                <label>X Offset</label>
+                                                <input type="text" id="plot-x-offset" class="form-control" disabled style="width:100px" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Y Offset</label>
+                                                <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
+                                            </div>
+                                        </form>
 
-
-    </div>
-    <div class="col-md-5">
-        <div class="card h-100 z-depth-0 border" id="plotImages">
-            <div class="card-body text-center overflow-auto" id="plot-images-container">
-                <div>
-                    <div class="alert alert-danger" id="too-many-images" style="display:none">
-                        Too many images have been selected. Only the first <strong id="max-images"></strong> are shown
-                    </div>
-                    <div id="plot-images"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-            </div>
+                                        <div id="plot" class="bin-plot"></div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="card h-100 z-depth-0 border" id="plotImages">
+                                            <div class="card-body text-center overflow-auto" id="plot-images-container">
+                                                <div>
+                                                    <div class="alert alert-danger" id="too-many-images" style="display:none">
+                                                        Too many images have been selected. Only the first <strong id="max-images"></strong> are shown
+                                                    </div>
+                                                    <div id="plot-images"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             <!-- Map -->
                             <div id="map-tab" class="card-body tab-pane py-1 d-none" role="tabpanel">
-                                <div id="mapid" class="h-100"></div>
-                                <div id="map-loading" class="text-center">
-                                    <div class="spinner-border spinner-center" role="status">
-                                        <span class="sr-only">Loading...</span>
-                                    </div>
-                                </div>
+                                <div id="map-container" class="h-100"></div>
                             </div>
 
                             <!-- Mosaic -->
@@ -213,7 +209,7 @@
                             </div>
 
                             <!-- Footer for Mosaic -->
-                            <div class="card-footer text-center py-0">
+                            <div id="mosaic-footer" class="card-footer text-center py-0">
                                 <div class="row align-items-center">
                                     <nav aria-label="Bin Paging" class="w-50">
                                         <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-center" style="display:none">
@@ -308,57 +304,58 @@
                 <div class="row mt-3">
                     <!-- Metadata -->
                     <div class="col-lg-10 mt-2 mt-lg-0">
-        <div class="card vh-50 h-100">
-            <div class="card-header py-1 mdb-color lighten-5">
-                <span class="h5-responsive">Metadata</span>
-            </div>
-            <div class="card-body overflow-auto">
-                <div class="table-responsive text-nowrap">
-                    <table class="table table-striped table-sm table-hover">
-                        <thead>
-                            <tr>
-                                <th scope="col">Field</th>
-                                <th scope="col">Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for k, v in bin.metadata.items %}
-                            <tr>
-                                <th scope="row">{{ k }}</th>
-                                <td>{{ v }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                        <div class="card vh-50 h-100">
+                            <div class="card-header py-1 mdb-color lighten-5">
+                                <span class="h5-responsive">Metadata</span>
+                            </div>
+                            <div class="card-body overflow-auto">
+                                <div class="table-responsive text-nowrap">
+                                    <table class="table table-striped table-sm table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Field</th>
+                                                <th scope="col">Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for k, v in bin.metadata.items %}
+                                            <tr>
+                                                <th scope="row">{{ k }}</th>
+                                                <td>{{ v }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
 
-                </div>
-            </div>
-        </div>
-    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Tags -->
                     <div class="col-md-4 col-lg-2 mt-2 mt-lg-0">
-        <div class="card h-100">
-            <div class="card-header py-1 mdb-color lighten-5">
-                <div class="row">
-                    <div class="col">
-                        <span class="h5-responsive">Tags</span>
+                        <div class="card h-100">
+                            <div class="card-header py-1 mdb-color lighten-5">
+                                <div class="row">
+                                    <div class="col">
+                                        <span class="h5-responsive">Tags</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body overflow-auto">
+                                <ul>
+                                    {% for tag in details.tags %}
+                                    <li class="list-group-item">
+                                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>{{tag}}</a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="card-footer py-1 white">
+                                <a href="#" class="btn btn-mdb-color btn-block btn-sm"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="card-body overflow-auto">
-                    {% for tag in details.tags %}
-                    <li class="list-group-item">
-                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>{{tag}}</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="card-footer py-1 white">
-                <a href="#" class="btn btn-mdb-color btn-block btn-sm"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
-            </div>
-        </div>
-    </div>
                 </div>
             </div>
         </div>
@@ -434,10 +431,8 @@
 
 var dataset_name = "{% if dataset %}{{ dataset.name }}{% endif %}";
 
-var map;
-var mapMarker;
 var plot;
-var currentBinId = "";
+
 var currentMetric = "";
 var currentResolution = "auto";
 var currentBinTimestamp = null;
@@ -600,12 +595,6 @@ function changeBin(binId, updateHistory) {
     $("#mosaic-loading").show();
     $("#mosaic").hide().attr("src","");
 
-    // The map must be made invisible, rather than hidden, or the Leaflet will not render the map at the correct
-    //   position when it finishes loading. the leaflet control container must be hidden completely as well or there
-    //   will be a split second where the controls are visible but the map is not
-    $("#mapid").css("visibility", "hidden");
-    $("#mapid .leaflet-control-container").hide();
-
     // Update bin name/link
     $("#bin-header").attr("href", binUrl).html(binId);
 
@@ -613,7 +602,7 @@ function changeBin(binId, updateHistory) {
     $("#previous-bin").addClass("disabled");
     $("#next-bin").addClass("disabled");
 
-    currentBinId = binId;
+    _bin = binId;
     _mosaic_page = 0;
     delayedMosaic(0);
 
@@ -631,15 +620,9 @@ function changeBin(binId, updateHistory) {
         $("#detailed-image-outline-link").toggleClass("disabled", !data["has_blobs"]);
 
         // Update map location(s)
-        if (!map) {
-            map = createMap(data.lat, data.lng);
-            map.on("click", function(e){
-                changeToNearestBin(e.latlng.lat,e.latlng.lng);
-            });
-        }
-        mapMarker = changeMapLocation(map, data.lat, data.lng, data.depth, mapMarker);
-        $("#mapid").css("visibility", "visible");
-        $("#mapid .leaflet-control-container").show()
+        // TODO: This will fail if the map container has not been show yet because Leaflet is not able to determine
+        //   container dimentions on a div that is not visible
+        updateMapLocation(data);
 
         if (updateHistory) {
             history.pushState({"bin_id": binId}, null, "?bin_id=" + binId);
@@ -653,10 +636,6 @@ function changeBin(binId, updateHistory) {
     });
 }
 
-
-
-
-
 $("#mosaic").click(function(e){
     var x = e.pageX - $(this).offset().left;
     var y = e.pageY - $(this).offset().top;
@@ -669,8 +648,8 @@ $("#mosaic").click(function(e){
             // TODO: Need to handle routing from Django
             // TODO: Needs loading indicator
             // TODO: Is png the right default format
-            var baseUrl = "/{{ dataset.name }}/" + currentBinId + "_" + padDigits(img.pid, 5);
-            var metaUrl = "/api/image/" + currentBinId + "/" + img.pid;
+            var baseUrl = "/{{ dataset.name }}/" + _bin + "_" + padDigits(img.pid, 5);
+            var metaUrl = "/api/image/" + _bin + "/" + img.pid;
 
             changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
             $("#detailed-image").data("image-id", img.pid);
@@ -713,7 +692,7 @@ $(".change-image").click(function(e){
 
     // TODO: Implement Django routes instead of hardcoded ones
     if (target == "detailed-image-blob" && $("#detailed-image-blob").attr("src") === "") {
-        var blobUrl = "/api/blob/" + currentBinId + "/" + $("#detailed-image").data("image-id");
+        var blobUrl = "/api/blob/" + _bin + "/" + $("#detailed-image").data("image-id");
 
         $("#detailed-image-blob").attr("src", pixel);
 
@@ -724,7 +703,7 @@ $(".change-image").click(function(e){
     }
 
     if (target == "detailed-image-outline" && $("#detailed-image-outline").attr("src") === "") {
-        var outlineUrl = "/api/outline/" + currentBinId + "/" + $("#detailed-image").data("image-id");
+        var outlineUrl = "/api/outline/" + _bin + "/" + $("#detailed-image").data("image-id");
 
         $("#detailed-image-outline").attr("src", pixel);
 
@@ -742,27 +721,6 @@ $(function() {
     {% endif %}
 
     changeBin("{{ bin.pid }}", false);
-});
-
-
-
-
-$("#show-plot").click(function(e){
-    $("#image-tab").toggleClass("d-none", true);
-    $("#plot-tab").toggleClass("d-none", false);
-    $("#map-tab").toggleClass("d-none", true);
-});
-
-$("#show-mosaic").click(function(e){
-    $("#image-tab").toggleClass("d-none", false);
-    $("#plot-tab").toggleClass("d-none", true);
-    $("#map-tab").toggleClass("d-none", true);
-});
-
-$("#show-map").click(function(e){
-    $("#image-tab").toggleClass("d-none", true);
-    $("#plot-tab").toggleClass("d-none", true);
-    $("#map-tab").toggleClass("d-none", false);
 });
 
 
@@ -819,7 +777,7 @@ $("#show-map").click(function(e){
                 var idx = data.points[i].pointIndex;
 
                 var imageId = _plotData["target_number"][idx];
-                var baseUrl = "/" + dataset_name + "/" + currentBinId + "_" + padDigits(imageId, 5) + ".png";
+                var baseUrl = "/" + dataset_name + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 $("#plot-images").empty();
                 $("#plot-images").append(
@@ -841,7 +799,7 @@ $("#show-map").click(function(e){
 
                 var idx = data.points[i].pointIndex;
                 var imageId = _plotData["target_number"][idx];
-                var imageUrl = "/" + dataset_name + "/" + currentBinId + "_" + padDigits(imageId, 5) + ".png";
+                var imageUrl = "/" + dataset_name + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 urls.push({
                     "id": imageId,

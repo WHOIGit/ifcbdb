@@ -1,12 +1,14 @@
 //************* Local Variables ***********************/
 var _bin = "";                  // Bin Id
 var _dataset = "";              // Dataset Name
-var _mosaic_page = 0;           // Current page being displayed in the mosaic
-var _mosaic_pages = -1;         // Total number of pages for the mosaic
+var _mosaicPage = 0;           // Current page being displayed in the mosaic
+var _mosaicPages = -1;         // Total number of pages for the mosaic
 var _coordinates = [];          // Coordinates of images within the current mosaic
 var _isMosaicLoading = false;   // Whether the mosaic is in the process of loading
 var _isBinLoading = false;      // Whether the bin is in the process of loading
 var _plotData = null;           // Local storage of the current bin's plot data
+var _map = null;                // Current Leaflet map
+var _marker = null;             // Current marker shown on the map
 
 //************* Common Methods ***********************/
 
@@ -17,6 +19,22 @@ function createLink() {
         return  "/dataset/" +_dataset + "?bin_id=" + _bin;
 
     return "/bin/" + _bin + ".html";
+}
+
+// Switches between workspaces: map, plot, mosaic
+function showWorkspace(workspace) {
+    $("#image-tab").toggleClass("d-none", !(workspace == "mosaic"));
+    $("#mosaic-footer").toggleClass("d-none", !(workspace == "mosaic"));
+    $("#plot-tab").toggleClass("d-none", !(workspace == "plot"));
+    $("#map-tab").toggleClass("d-none", !(workspace == "map"));
+
+    // After showing the map, Leaflet needs to have invalidateSize called to recalculate the
+    //   dimensions of the map container (it cannot determine it when the container is hidden
+    if (workspace == "map") {
+        if (_map) {
+            _map.invalidateSize();
+        }
+    }
 }
 
 //************* Bin Methods ***********************/
@@ -97,7 +115,7 @@ function delayedMosaic(page) {
 
 function rebuildMosaicPageIndexes() {
     $(".page-index").remove();
-    for (var i = 0; i < _mosaic_pages + 1; i++) {
+    for (var i = 0; i < _mosaicPages + 1; i++) {
         var li = $("<li class='page-item page-index' />").toggleClass("active", i == 0);
         var btn = $("<a class='page-link' />").text(i + 1).attr("data-page", i);
 
@@ -142,8 +160,8 @@ function loadMosaic(pageNumber) {
         enableMosaicPaginationButtons();
 
         // Update the paging
-        if (data["num_pages"] != _mosaic_pages) {
-            _mosaic_pages = data["num_pages"];
+        if (data["num_pages"] != _mosaicPages) {
+            _mosaicPages = data["num_pages"];
 
             rebuildMosaicPageIndexes();
         }
@@ -167,18 +185,18 @@ function loadMosaic(pageNumber) {
 }
 
 function changeMosaicPage(pageNumber) {
-    _mosaic_page = pageNumber;
+    _mosaicPage = pageNumber;
 
     delayedMosaic(pageNumber);
     updateMosaicPaging();
 }
 
 function updateMosaicPaging() {
-    $(".page-previous").toggleClass("disabled", (_mosaic_page <= 0));
-    $(".page-next").toggleClass("disabled", (_mosaic_page >= _mosaic_pages));
+    $(".page-previous").toggleClass("disabled", (_mosaicPage <= 0));
+    $(".page-next").toggleClass("disabled", (_mosaicPage >= _mosaicPages));
 
     $.each($(".page-index a"), function() {
-        var isSelected = $(this).data("page") == _mosaic_page;
+        var isSelected = $(this).data("page") == _mosaicPage;
 
         $(this).closest("li").toggleClass("active", isSelected);
     });
@@ -186,9 +204,17 @@ function updateMosaicPaging() {
     $("#bin-paging").show();
 }
 
-
 //************* Map Methods ***********************/
+function updateMapLocation(data) {
+    if (!_map) {
+        _map = createMap(data.lat, data.lng);
+        _map.on("click", function(e){
+            changeToNearestBin(e.latlng.lat,e.latlng.lng);
+        });
+    }
 
+    _marker = changeMapLocation(_map, data.lat, data.lng, data.depth, _marker);
+}
 
 //************* Plotting Methods  ***********************/
 function initPlotData() {
@@ -254,12 +280,12 @@ function initEvents() {
 
         $('#mosaic-loading').height(height);
 
-        changeBin(currentBinId, true);
+        changeBin(_bin, true);
     });
 
     // Changing the scale factor for the mosaic
     $("#scale-factor").change(function(e){
-        changeBin(currentBinId, true);
+        changeBin(_bin, true);
     });
 
     // Bin navigation (next/prev)
@@ -274,14 +300,14 @@ function initEvents() {
         .on("click", ".page-previous", function(e){
             e.preventDefault();
 
-            if (_mosaic_page > 0)
-                changeMosaicPage(_mosaic_page - 1);
+            if (_mosaicPage > 0)
+                changeMosaicPage(_mosaicPage - 1);
         })
         .on("click", ".page-next", function(e){
             e.preventDefault();
 
-            if (_mosaic_page < _mosaic_pages)
-                changeMosaicPage(_mosaic_page + 1);
+            if (_mosaicPage < _mosaicPages)
+                changeMosaicPage(_mosaicPage + 1);
         })
         .on("click", ".page-index a", function(e){
             e.preventDefault();
@@ -298,6 +324,21 @@ function initEvents() {
         timelineValid = false;
         timelineWaiting = false;
         createTimeSeries(metric);
+    });
+
+    // Showing the plot workspace
+    $("#show-plot").click(function(e){
+        showWorkspace("plot");
+    });
+
+    // Showing the mosaic workspace
+    $("#show-mosaic").click(function(e){
+        showWorkspace("mosaic");
+    });
+
+    // Showing the map workspace
+    $("#show-map").click(function(e){
+        showWorkspace("map");
     });
 }
 
