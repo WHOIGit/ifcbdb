@@ -671,7 +671,7 @@ function changeBin(binId, updateHistory) {
     $("#previous-bin").addClass("disabled");
     $("#next-bin").addClass("disabled");
 
-    _mosaic_page = 0;
+    _mosaicPage = 0;
     delayedMosaic(0);
 
     updatePlotData();
@@ -721,9 +721,9 @@ function changeBin(binId, updateHistory) {
 $("#mosaic").click(function(e){
     var x = e.pageX - $(this).offset().left;
     var y = e.pageY - $(this).offset().top;
-
+    
     $.each(_coordinates, function(idx, img) {
-        if (_mosaic_page == img.page &&
+        if (_mosaicPage == img.page &&
             x >= img.x && x <= img.x + img.width &&
             y >= img.y && y <= img.y + img.height) {
 
