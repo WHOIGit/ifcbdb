@@ -510,7 +510,6 @@ def test_sync_dataset(request, dataset_id):
     r = sync_dataset.delay(dataset_id, lock_key)
     # cache the task id so we can look it up by dataset id
     cache.set(dataset_sync_task_id_key(dataset_id), r.task_id)
-    # 
     result = AsyncResult(r.task_id)
     return JsonResponse({ 'state': result.state })
 

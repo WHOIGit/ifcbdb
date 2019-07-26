@@ -36,25 +36,27 @@ urlpatterns = [
 
     path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.image_details, name='image'),
     path('<slug:dataset_name>/<pid:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy'),
-    path('<slug:dataset_name>/<slug:bin_id>.html', views.bin, name='bin'),
+    path('<slug:dataset_name>/<slug:bin_id>.html', views.bin, name='bin'), # legacy
+
+    # legacy urls all require dataset ID but new ones for bin-specific stuff need not
 
     # raw data access
-    path('<slug:dataset_name>/<slug:bin_id>.adc', views.adc_data, name='adc_csv'),
-    path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'),
-    path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary'),
+    path('<slug:dataset_name>/<slug:bin_id>.adc', views.adc_data, name='adc_csv'), # legacy
+    path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'), # legacy
+    path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary'), # legacy
 
     # blob zip access
-    path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'),
+    path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'), # legacy
 
     # features csv access
-    path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv'),
+    path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv'), # legacy
 
     # zip access
-    path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip'),
+    path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip'), # legacy
 
     # image access
-    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png'),
-    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg'),
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png'), # legacy
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg'), # legacy
 
 
     path('<slug:dataset_name>', views.dataset, name='dataset'),
@@ -73,6 +75,6 @@ urlpatterns = [
     path('api/plot/<slug:bin_id>', views.plot_data, name='plot_data'),
 
     # FIXME move these to secure and change URL patterns accordingly
-    path('debug/sync/<int:dataset_id>', views.test_sync_dataset),
-    path('debug/sync/status/<slug:dataset_id>', views.test_sync_dataset_status),
+    path('debug/sync/<int:dataset_id>', views.test_sync_dataset, name='sync_dataset'),
+    path('debug/sync/status/<slug:dataset_id>', views.test_sync_dataset_status, name='sync_dataset_status'),
 ]

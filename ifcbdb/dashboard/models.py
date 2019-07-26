@@ -193,7 +193,7 @@ class DataDirectory(models.Model):
     whitelist = models.CharField(max_length=512, default='data') # comma separated list of directory names to search
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
     # for product directories, the product version
-    version = models.IntegerField(null=True)
+    version = models.IntegerField(null=True, blank=True)
 
     def get_raw_directory(self):
         if self.kind != self.RAW:
