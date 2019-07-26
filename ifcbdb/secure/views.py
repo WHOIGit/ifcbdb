@@ -1,12 +1,14 @@
 from django.contrib.auth.decorators import login_required
-from django.views.decorators import http
-from django.core import serializers
-from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 
-from dashboard.models import Dataset, Instrument
-from .forms import DatasetForm, InstrumentForm
+from dashboard.models import Dataset, Instrument, DataDirectory
+from .forms import DatasetForm, InstrumentForm, DirectoryForm
 
+
+# TODO: All of these methods need to be locked down properly
 
 @login_required
 def index(request):
@@ -20,6 +22,14 @@ def dataset_management(request):
 
     return render(request, 'secure/dataset-management.html', {
         "form": form,
+    })
+
+
+def directory_management(request, dataset_id):
+    dataset = get_object_or_404(Dataset, pk=dataset_id)
+
+    return render(request, "secure/directory-management.html", {
+        "dataset": dataset,
     })
 
 
@@ -45,6 +55,14 @@ def dt_datasets(request):
     })
 
 
+def dt_directories(request, dataset_id):
+    directories = list(DataDirectory.objects.filter(dataset__id=dataset_id)
+                       .values_list("path", "kind", "priority", "whitelist", "blacklist", "id"))
+
+    return JsonResponse({
+        "data": directories,
+    })
+
 
 def edit_dataset(request, id):
     if int(id) > 0:
@@ -65,6 +83,42 @@ def edit_dataset(request, id):
         "form": form,
         "dataset": dataset,
     })
+
+
+def edit_directory(request, dataset_id, id):
+    if int(id) > 0:
+        directory = get_object_or_404(DataDirectory, pk=id)
+    else:
+        directory = DataDirectory(dataset_id=dataset_id)
+
+    if request.POST:
+        form = DirectoryForm(request.POST, instance=directory)
+        if form.is_valid():
+            form.save()
+
+            return redirect(reverse("secure:directory-management", kwargs={"dataset_id": dataset_id}))
+    else:
+        form = DirectoryForm(instance=directory)
+
+    return render(request, "secure/edit-directory.html", {
+        "directory": directory,
+        "dataset_id": dataset_id,
+        "form": form,
+    })
+
+
+# TODO: Remove the CSRF exmpt flag
+@require_POST
+@csrf_exempt
+def delete_directory(request, dataset_id, id):
+    directory = get_object_or_404(DataDirectory, pk=id)
+
+    if directory.dataset_id != dataset_id:
+        return Http404("No Data Directory matches the given query")
+
+    directory.delete()
+    return JsonResponse({})
+
 
 
 def dt_instruments(request):

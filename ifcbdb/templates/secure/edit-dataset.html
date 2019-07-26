@@ -2,6 +2,13 @@
 
 {% block content %}
 
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">{% if dataset.id > 0 %}Edit{% else %}Add New{% endif %} Dataset</span>
+    </div>
+</div>
+<hr class="my-2">
+
 {% if form.non_field_errors %}
   <div class="non-field-errors">
     {% for err in form.non_field_errors %}

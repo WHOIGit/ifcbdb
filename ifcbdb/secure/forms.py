@@ -1,6 +1,6 @@
 from django import forms
 
-from dashboard.models import Dataset, Instrument
+from dashboard.models import Dataset, Instrument, DataDirectory
 
 
 class DatasetForm(forms.ModelForm):
@@ -12,6 +12,27 @@ class DatasetForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "title": forms.Textarea(attrs={"class": "form-control form-control-sm", "placeholder": "Description", "rows": 3}),
             "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
+        }
+
+
+class DirectoryForm(forms.ModelForm):
+    class Meta:
+        model = DataDirectory
+        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", ]
+
+        widgets = {
+            "path": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Path"}),
+            "kind": forms.Select(
+                choices=[
+                    (DataDirectory.RAW, DataDirectory.RAW),
+                    (DataDirectory.BLOBS, DataDirectory.BLOBS),
+                    (DataDirectory.FEATURES, DataDirectory.FEATURES)
+                ],
+                attrs={"class": "form-control form-control-sm", "placeholder": "Kind"}),
+            "whitelist": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Whitelist"}),
+            "blacklist": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Blacklist"}),
+            "version": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Version"}),
+            "priority": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Priority"}),
         }
 
 
