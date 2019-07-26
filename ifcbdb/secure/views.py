@@ -126,7 +126,7 @@ def delete_directory(request, dataset_id, id):
 
 
 def dt_instruments(request):
-    instruments = list(Instrument.objects.all().values_list("number", "version", "nickname", "id"))
+    instruments = list(Instrument.objects.all().values_list("number", "nickname", "id"))
 
     return JsonResponse({
         "data": instruments
