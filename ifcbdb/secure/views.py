@@ -65,6 +65,8 @@ def dt_directories(request, dataset_id):
 
 
 def edit_dataset(request, id):
+    status = request.GET.get("status")
+
     if int(id) > 0:
         dataset = get_object_or_404(Dataset, pk=id)
     else:
@@ -73,13 +75,15 @@ def edit_dataset(request, id):
     if request.POST:
         form = DatasetForm(request.POST, instance=dataset)
         if form.is_valid():
-            form.save()
+            instance = form.save()
 
-            return redirect(reverse("secure:dataset-management"))
+            status = "created" if id == 0 else "updated"
+            return redirect(reverse("secure:edit-dataset", kwargs={"id": instance.id}) + "?status=" + status)
     else:
         form = DatasetForm(instance=dataset)
 
     return render(request, "secure/edit-dataset.html", {
+        "status": status,
         "form": form,
         "dataset": dataset,
     })

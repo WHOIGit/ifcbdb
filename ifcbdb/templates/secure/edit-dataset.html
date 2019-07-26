@@ -2,9 +2,18 @@
 
 {% block content %}
 
+{% if status %}
+<div class="alert alert-success">Dataset has been {{ status }} successfully</div>
+{% endif %}
+
 <div class="flex-row d-flex justify-content-between">
     <div class="flex-column">
         <span class="h3-responsive">{% if dataset.id > 0 %}Edit{% else %}Add New{% endif %} Dataset</span>
+    </div>
+    <div class="flex-column">
+        {% if dataset.id > 0 %}
+        <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:directory-management' dataset.id %}">Manage directories</a>
+        {% endif %}
     </div>
 </div>
 <hr class="my-2">
@@ -17,75 +26,80 @@
   </div>
 {% endif %}
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.id }}
-    <div class="form-row">
-        <div class="form-group col">
-            <div class="col custom-switch">
-                {{ form.is_active }}
-                <label class="custom-control-label" for="id_is_active">Active</label>
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.id }}
+            <div class="form-row">
+                <div class="form-group col">
+                    <div class="col custom-switch">
+                        {{ form.is_active }}
+                        <label class="custom-control-label" for="id_is_active">Active</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_name">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_title">Description</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row d-none">
+                <div class="form-group col">
+                    <label for="datasetType">Type</label>
+                    <select class="form-control form-control-sm" id="datasetType">
+                        <option>Time Series</option>
+                        <option>Other</option>
+                      </select>
+                    <label><small>Most Recent Data: 45 Minutes Ago</small></label>
+                </div>
+            </div>
+            <div class="form-row d-none">
+                <div class="col">
+                    <label for="datasetRawDataInput">Raw Data</label>
+                    <input type="text" id="datasetRawDataInput" class="form-control form-control-sm" placeholder="Raw Data">
+                </div>
+            </div>
+            <div class="form-row d-none">
+                <div class="form-group col">
+                    <button type="submit" class="btn btn-sm btn-mdb-color">Scan</button>
+                    <button type="submit" class="btn btn-sm btn-mdb-color">Schedule Scan</button>
+                    <label><small>456456 Fileset(s), 4.5TB</small></label>
+                </div>
+            </div>
+            <div class="form-row">
+                <a href="{% url 'secure:dataset-management' %}" class="btn btn-sm">Cancel</a>
+                <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-6">
+        {% if dataset.id > 0 %}
+        <div class="card card-body ">
+            <button id="sync-button" class="btn btn-sm btn-mdb-color col-sm-2">Sync</button>
+            <div id="sync-status" class="d-none">
+                <span id="sync-state"></span>
+                <span id="sync-total"></span> bins found,
+                <span id="sync-added"></span> bins added
             </div>
         </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col">
-            <label for="id_name">Name</label>
-            {{ form.name }}
-            {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col">
-            <label for="id_title">Description</label>
-            {{ form.title }}
-            {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
-        </div>
-    </div>
-    <div class="form-row d-none">
-        <div class="form-group col">
-            <label for="datasetType">Type</label>
-            <select class="form-control form-control-sm" id="datasetType">
-                <option>Time Series</option>
-                <option>Other</option>
-              </select>
-            <label><small>Most Recent Data: 45 Minutes Ago</small></label>
-        </div>
-    </div>
-    <div class="form-row d-none">
-        <div class="col">
-            <label for="datasetRawDataInput">Raw Data</label>
-            <input type="text" id="datasetRawDataInput" class="form-control form-control-sm" placeholder="Raw Data">
-        </div>
-    </div>
-    <div class="form-row d-none">
-        <div class="form-group col">
-            <button type="submit" class="btn btn-sm btn-mdb-color">Scan</button>
-            <button type="submit" class="btn btn-sm btn-mdb-color">Schedule Scan</button>
-            <label><small>456456 Fileset(s), 4.5TB</small></label>
-        </div>
-    </div>
-    <div class="form-row">
-        <a href="{% url 'secure:dataset-management' %}" class="btn btn-sm">Cancel</a>
-        <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
-    </div>
-</form>
-
-<div>
-    <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:directory-management' dataset.id %}">Manage directories</a>
-</div>
-<div>
-    <button id="sync-button" class="btn btn-sm btn-mdb-color">Sync</button>
-    <div id="sync-status" class="d-none">
-        <span id="sync-state"></span>
-        <span id="sync-total"></span> bins found,
-        <span id="sync-added"></span> bins added
+        {% endif %}
     </div>
 </div>
 
 {% endblock %} {% block scripts %}
 
 <script>
+    {% if dataset.id > 0 %}
     function dataset_sync_status() {
         $.getJSON("{% url 'sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'LOCKED') { // job hasn't started yet
@@ -124,7 +138,7 @@
             }
         });
     }, 100);
-
+    {% endif %}
 </script>
 
 {% endblock %}
