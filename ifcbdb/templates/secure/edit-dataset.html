@@ -72,6 +72,9 @@
 </form>
 
 <div>
+    <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:directory-management' dataset.id %}">Manage directories</a>
+</div>
+<div>
     <button id="sync-button" class="btn btn-sm btn-mdb-color">Sync</button>
     <div id="sync-status" class="d-none">
         <span id="sync-state"></span>
