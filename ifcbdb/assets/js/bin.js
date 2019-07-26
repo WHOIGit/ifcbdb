@@ -1,14 +1,16 @@
 //************* Local Variables ***********************/
 var _bin = "";                  // Bin Id
 var _dataset = "";              // Dataset Name
-var _mosaicPage = 0;           // Current page being displayed in the mosaic
-var _mosaicPages = -1;         // Total number of pages for the mosaic
+var _mosaicPage = 0;            // Current page being displayed in the mosaic
+var _mosaicPages = -1;          // Total number of pages for the mosaic
 var _coordinates = [];          // Coordinates of images within the current mosaic
 var _isMosaicLoading = false;   // Whether the mosaic is in the process of loading
 var _isBinLoading = false;      // Whether the bin is in the process of loading
 var _plotData = null;           // Local storage of the current bin's plot data
 var _map = null;                // Current Leaflet map
 var _marker = null;             // Current marker shown on the map
+var _workspace = "mosaic";      // The current workspace a user is seeing
+var _pendingMapLocation = null; // The next map position to render (see notes in updateMapLocation)
 
 //************* Common Methods ***********************/
 
@@ -23,6 +25,8 @@ function createLink() {
 
 // Switches between workspaces: map, plot, mosaic
 function showWorkspace(workspace) {
+    _workspace = workspace;
+
     $("#image-tab-content").toggleClass("d-none", !(workspace == "mosaic"));
     $("#mosaic-footer").toggleClass("d-none", !(workspace == "mosaic"));
     $("#plot-tab-content").toggleClass("d-none", !(workspace == "plot"));
@@ -33,6 +37,10 @@ function showWorkspace(workspace) {
     if (workspace == "map") {
         if (_map) {
             setTimeout(function(){ _map.invalidateSize() }, 100);
+        }
+
+        if (_pendingMapLocation != null) {
+            updateMapLocation(_pendingMapLocation);
         }
     }
 }
@@ -218,6 +226,7 @@ function updateMapLocation(data) {
     }
 
     _marker = changeMapLocation(_map, data.lat, data.lng, data.depth, _marker);
+    _pendingMapLocation = null;
 }
 
 //************* Plotting Methods  ***********************/
@@ -235,6 +244,17 @@ function initPlotData() {
 
         plotXAxis.val(PLOT_X_DEFAULT);
         plotYAxis.val(PLOT_Y_DEFAULT);
+
+        updatePlot();
+    });
+}
+
+function updatePlotData() {
+    // TODO: The plot container has a hard coded height on it that we should make dynamic. However, doing so causes
+    //   the plot, when rendering a second time, to revert back to the minimum height
+
+    $.get("/api/plot/" + _bin, function(data){
+        _plotData = data;
 
         updatePlot();
     });

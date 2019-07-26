@@ -5,10 +5,10 @@
     <!-- TODO: datasets is hard coded into the base file and should not be seen for a bin only view; also remove ** indicator -->
     {% if dataset %}
         **
-        <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset_combined' dataset.name %}">{{ dataset.name }}</a></li>
-        <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset_combined' dataset.name %}?bin_id={{ bin.pid }}">{{ bin.pid }}</a></li>
+        <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
+        <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}">{{ bin.pid }}</a></li>
     {% else %}
-        <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin_combined' bin.pid %}">{{ bin.pid }}</a></li>
+        <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' None bin.pid %}">{{ bin.pid }}</a></li>
     {% endif %}
 {% endblock %}
 
@@ -102,7 +102,7 @@
                             <div class="flex-column flex-shrink text-center">
                                 <span class="p">
                                     <strong>Selected Bin:</strong>
-                                    <a id="bin-header" href="{% url 'bin_combined' bin.pid %}">{{ bin.pid }}</a>
+                                    <a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a>
                                 </span>
                             </div>
                             <div class="flex-shrink-1 flex-md-shrink-0 flex-column">
@@ -277,7 +277,7 @@
                         </div>
                       </form>
 
-                      <div id="plot" class="bin-plot"></div>
+                      <div id="plot" class="bin-plot" style="height:450px"></div>
                     </div>
                     <div class="col-md-5">
                       <div class="card h-100 z-depth-0 border" id="plotImages">
@@ -500,8 +500,6 @@
 <script type="text/javascript" src="{% static 'js/bin.js' %}"></script>
 <script>
 
-var dataset_name = "{% if dataset %}{{ dataset.name }}{% endif %}";
-
 var plot;
 
 var currentMetric = "";
@@ -523,7 +521,7 @@ function createTimeSeries(metric) {
     container = $("#primary-plot-container");
 
     currentMetric = metric;
-    var dataUrl = "/api/{{ dataset.name }}/time-series/" + metric + "?resolution=auto";
+    var dataUrl = "/api/" + _dataset + "/time-series/" + metric + "?resolution=auto";
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
         currentResolution = response["resolution"];
@@ -603,7 +601,7 @@ function queryTimeline(container, metric) {
     var start = timelineRelayoutResponse["xaxis.range[0]"];
     var end = timelineRelayoutResponse["xaxis.range[1]"];
 
-    var url = "/api/{{ dataset.name }}/time-series/" + metric +
+    var url = "/api/" + _dataset + "/time-series/" + metric +
         "?resolution=" + "auto";
     if(start)
         url += "&start=" + start;
@@ -654,9 +652,9 @@ function changeBin(binId, updateHistory) {
 
     var viewSize = $("#view-size option:selected").val();
     var scaleFactor = $("#scale-factor option:selected").val();
+    var binUrl = _dataset + "/" + _bin + ".html";
+    var dataUrl = "api/" + _dataset + "/bin/" + _bin;
 
-    var binUrl = "{% url 'bin' '__DATASET_NAME__' '__BIN_PID__' %}".replace("__BIN_PID__", binId).replace("__DATASET_NAME__", dataset_name);
-    var dataUrl = "{% url 'bin_data' '__DATASET_NAME__' '__BIN_PID__' %}".replace("__BIN_PID__", binId).replace("__DATASET_NAME__", dataset_name);
     dataUrl += "?view_size=" + viewSize;
     dataUrl += "&scale_factor=" + scaleFactor;
     dataUrl += "&preload_adjacent_bins=" + true;
@@ -673,9 +671,10 @@ function changeBin(binId, updateHistory) {
     $("#previous-bin").addClass("disabled");
     $("#next-bin").addClass("disabled");
 
-    _bin = binId;
     _mosaic_page = 0;
     delayedMosaic(0);
+
+    updatePlotData();
 
     $.get(dataUrl, function(data){
         updateBinStats(data);
@@ -690,13 +689,25 @@ function changeBin(binId, updateHistory) {
         $("#detailed-image-blob-link").toggleClass("disabled", !data["has_blobs"]);
         $("#detailed-image-outline-link").toggleClass("disabled", !data["has_blobs"]);
 
-        // Update map location(s)
-        // TODO: This will fail if the map container has not been show yet because Leaflet is not able to determine
-        //   container dimentions on a div that is not visible
-        updateMapLocation(data);
+        // Update map location(s). If the map is not currently the visible workspace, we delay changing the map. If not
+        //   there are issues with Leaflet throwing errors because of how the dimensions of the container are
+        //   calculated. If the container has never been visible, Leaflet cannot get the dimensions and will fail
+        if (_workspace == "map") {
+            updateMapLocation(data);
+        } else {
+            _pendingMapLocation = {
+                "lat": data.lat,
+                "lng": data.lng,
+                "depth": data.lng
+            }
+        }
 
         if (updateHistory) {
-            history.pushState({"bin_id": binId}, null, "?bin_id=" + binId);
+            {% if route == "dataset" %}
+                history.pushState({"bin_id": binId}, null, "?bin_id=" + binId);
+            {% else %}
+                // TODO: This needs to be implemented as well as defining what the url history should be
+            {% endif %}
         }
 
         // Update the timeline to select the new bin
@@ -721,7 +732,7 @@ $("#mosaic").click(function(e){
             // TODO: Need to handle routing from Django
             // TODO: Needs loading indicator
             // TODO: Is png the right default format
-            var baseUrl = "/{{ dataset.name }}/" + _bin + "_" + padDigits(img.pid, 5);
+            var baseUrl = "/" + _dataset + "/" + _bin + "_" + padDigits(img.pid, 5);
             var metaUrl = "/api/image/" + _bin + "/" + img.pid;
 
             changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
@@ -850,7 +861,7 @@ $(function() {
                 var idx = data.points[i].pointIndex;
 
                 var imageId = _plotData["target_number"][idx];
-                var baseUrl = "/" + dataset_name + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
+                var baseUrl = "/" + _dataset + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 $("#plot-images").empty();
                 $("#plot-images").append(
@@ -872,7 +883,7 @@ $(function() {
 
                 var idx = data.points[i].pointIndex;
                 var imageId = _plotData["target_number"][idx];
-                var imageUrl = "/" + dataset_name + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
+                var imageUrl = "/" + _dataset + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 urls.push({
                     "id": imageId,
@@ -916,7 +927,7 @@ $(function() {
 
     $("#plot-images").on("click", "img", function(e){
         var target = $(this).data("target");
-        var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(target, 5);
+        var baseUrl = "/" + _dataset + "/" + _bin + "_" + padDigits(target, 5);
 
         location.href = baseUrl + ".html";
     });

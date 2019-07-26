@@ -62,14 +62,16 @@ def dataset_details(request, dataset_name, bin_id=None):
 
 
 def dataset(request, dataset_name):
-    return details(request, group_name=dataset_name, group_type="dataset")
+    return details(request, group_name=dataset_name, group_type="dataset", route="dataset")
 
 
-def bin(request, bin_id):
-    return details(request, bin_id=bin_id)
+def bin(request, dataset_name, bin_id):
+    # TODO: This needs to be cleaned up to allow bins w/o a dataset (and/or other grouping)
+    return details(request, group_name=dataset_name, group_type="dataset", route="bin")
+    #return details(request, bin_id=bin_id)
 
 
-def details(request, bin_id=None, group_name=None, group_type=None):
+def details(request, bin_id=None, group_name=None, group_type=None, route=None):
     if not bin_id and not group_name:
         # TODO: 404 error; don't have enough info to proceed
         pass
@@ -90,6 +92,7 @@ def details(request, bin_id=None, group_name=None, group_type=None):
         pass
 
     return render(request, "dashboard/bin.html", {
+        "route": route,
         "can_share_page": True,
         "dataset": dataset,
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
