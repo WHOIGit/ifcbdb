@@ -23,16 +23,16 @@ function createLink() {
 
 // Switches between workspaces: map, plot, mosaic
 function showWorkspace(workspace) {
-    $("#image-tab").toggleClass("d-none", !(workspace == "mosaic"));
+    $("#image-tab-content").toggleClass("d-none", !(workspace == "mosaic"));
     $("#mosaic-footer").toggleClass("d-none", !(workspace == "mosaic"));
-    $("#plot-tab").toggleClass("d-none", !(workspace == "plot"));
-    $("#map-tab").toggleClass("d-none", !(workspace == "map"));
+    $("#plot-tab-content").toggleClass("d-none", !(workspace == "plot"));
+    $("#map-tab-content").toggleClass("d-none", !(workspace == "map"));
 
     // After showing the map, Leaflet needs to have invalidateSize called to recalculate the
     //   dimensions of the map container (it cannot determine it when the container is hidden
     if (workspace == "map") {
         if (_map) {
-            _map.invalidateSize();
+            setTimeout(function(){ _map.invalidateSize() }, 100);
         }
     }
 }

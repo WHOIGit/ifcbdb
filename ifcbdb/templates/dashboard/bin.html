@@ -15,8 +15,9 @@
 {% block content %}
 
 {% if dataset %}
-    <div class="row d-flex justify-content-between">
+<div class="d-flex flex-row flex-wrap flex-md-nowrap justify-content-between align-items-center">
         <!-- Dataset header row -->
+        <div class="flex-column flex-grow-1 flex-md-grow-0 flex-wrap flex-md-nowrap">
         <div class="pl-3">
             <span class="h3-responsive">{{ dataset.title }}</span>
             <span>
@@ -31,40 +32,41 @@
             <a href="#" class="btn btn-sm btn-primary ml-3">Configure</a>
         </div>
         {% endif %}
-
+      </div>
+      <div class="flex-column flex-grow-1 flex-md-grow-0 flex-wrap flex-md-nowrap">
         <!-- Nav options for the timeline control -->
-        <ul class="nav justify-content-end collapse show ts-collapse" id="ts-tabs" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
+        <ul class="d-flex nav collapse show ts-collapse" id="ts-tabs" role="tablist">
+            <li class="nav-item flex-fill">
+                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
                    role="tab" data-target="ts-size" aria-selected="false">Data Size</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
+            <li class="nav-item flex-fill">
+                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
                    role="tab" data-target="ts-temperature" aria-selected="false">Temperature</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
+            <li class="nav-item flex-fill">
+                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
                    role="tab" data-target="ts-humidity" aria-selected="false">Humidity</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
+            <li class="nav-item flex-fill">
+                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
                    role="tab" data-target="ts-ml-analyzed" aria-selected="false">Volume Analyzed</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm active" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
+            <li class="nav-item flex-fill">
+                <a class="nav-link btn btn-mdb-color btn-sm active btn-block" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
                    role="tab" data-target="ts-concentration" aria-selected="true">ROIs / ml</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
+            <li class="nav-item flex-fill">
+                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
                    role="tab" data-target="ts-triggers" aria-selected="false">Trigger Count</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link btn btn-mdb-color btn-sm" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
+            <li class="nav-item flex-fill">
+                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
                    role="tab" data-target="ts-images" aria-selected="false">Image Count</a>
             </li>
         </ul>
     </div>
-
+    </div>
     <hr class="my-2">
 
     <!-- Timeline control -->
@@ -87,282 +89,352 @@
 <div class="row py-2">
     <div class="col-sm-12">
         <div class="card">
-
             <!-- Card Header -->
             <div class="card-header py-1 px-0 white">
-                <div class="d-flex flex-row justify-content-between">
-
+                <div class="d-flex flex-row flex-wrap flex-md-nowrap justify-content-between align-items-center">
                     <!-- Bin selection links/label -->
-                    <div class="col-sm-9">
+                    <div class="flex-column flex-grow-1 flex-md-grow-0">
                         {% if dataset %}
-                        <div class="d-flex flex-row justify-content-between">
-                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-previous w-25">Previous Bin</a>
-                            <div class="flex-column text-center w-50">
+                        <div class="d-flex flex-row justify-content-between align-items-center">
+                            <div class="flex-shrink-1 flex-md-shrink-0 flex-column">
+                            <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-previous">Previous Bin</a>
+                            </div>
+                            <div class="flex-column flex-shrink text-center">
                                 <span class="p">
                                     <strong>Selected Bin:</strong>
                                     <a id="bin-header" href="{% url 'bin_combined' bin.pid %}">{{ bin.pid }}</a>
                                 </span>
                             </div>
-                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-next w-25">Next Bin</a>
+                            <div class="flex-shrink-1 flex-md-shrink-0 flex-column">
+                            <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-next">Next Bin</a>
+                            </div>
                         </div>
                         {% endif %}
                     </div>
 
                     <!-- Bin view (mosaic/plot/map -->
-                    <div class="col-sm-3">
-                        <ul class="nav justify-content-end" id="myTab" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link btn btn-mdb-color btn-sm  btn-block active" id="show-mosaic"
-                                   data-toggle="tab" href="#" role="tab">Mosaic</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="show-plot"
-                                   data-toggle="tab" href="#" role="tab">Plot</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="show-map"
-                                   data-toggle="tab" href="#" role="tab">Map</a>
-                            </li>
-                        </ul>
+                    <div class="flex-column flex-grow-1 flex-md-grow-0">
+                      <ul class="nav justify-content-end d-flex" id="mosaicPlotMapTab" role="tablist">
+                        <li class="nav-item flex-fill">
+                          <a class="nav-link btn btn-mdb-color btn-sm btn-block active" id="show-mosaic"
+                            data-toggle="tab" href="#" role="tab">Mosaic</a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                          <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="show-plot" data-toggle="tab"
+                            href="#" role="tab">Plot</a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                          <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="show-map" data-toggle="tab"
+                            href="#map-tab-content" role="tab" aria-controls="map-tab-content" aria-selected="false">Map</a>
+                        </li>
+                      </ul>
                     </div>
                 </div>
             </div>
 
             <!-- Card body -->
             <div class="card-body">
-                <!-- Top half -->
-                <div class="row">
-                    <!-- Left side of outer card area )plot/map/mosaic -->
-                    <div class="col-xl-9">
-                        <div class="card h-100 min-vh-50">
+              <!-- Top half -->
+              <div id="mosaicPlotMapTabContent">
+              <!--Mosaic Tab-->
+              <div id="image-tab-content" class="tab-pane" role="tabpanel">
+                <div class="d-flex flex-row flex-wrap flex-lg-nowrap justify-content-between">
+                  <!-- Left side of outer card area )plot/map/mosaic -->
+                  <div class="flex-column order-1 py-2 px-1">
+                    <!-- Mosaic -->
+                    <div class="card h-100 min-vh-50">
+                      <div class="card-body text-center">
+                        <div class="overflow-auto">
+                          <img id="mosaic" src="" style="display:none" />
+                        </div>
+                        <div id="mosaic-loading" class="grey lighten-4" style="height:{{ mosaic_default_height }}px">
+                          <div class="spinner-border mt-10p" role="status">
+                            <span class="sr-only">Loading...</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div id="mosaic-footer" class="card-footer text-center py-0">
+                        <div class="row align-items-center">
+                          <nav aria-label="Bin Paging" class="w-50">
+                            <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-center"
+                              style="display:none">
+                              <li class="page-item page-previous disabled">
+                                <a class="page-link" tabindex="-1">Previous</a>
+                              </li>
+                              <li class="page-item page-next">
+                                <a class="page-link">Next</a>
+                              </li>
+                            </ul>
+                          </nav>
+                          <div class="dropdown w-50">
+                            <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
+                              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                              <i class="fas fa-cogs"></i>
+                            </a>
+                            <div class="dropdown-menu">
+                              <form class="px-4 py-3">
+                                <label class="my-1 mr-2" for="view-size">View Size:</label>
+                                <select id="view-size" class="custom-select custom-select-sm form-control"
+                                  name="view-size">
+                                  {% for size in mosaic_view_sizes %}
+                                  <option value="{{ size }}" autocomplete="off"
+                                    {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
+                                  {% endfor %}
+                                </select>
 
-                            <!-- Plot -->
-                            <div id="plot-tab" class="card-body tab-pane py-1 d-none" role="tabpanel">
-
-                                <div class="row py-2 px-3">
-                                    <div class="col-md-7 text-center">
-                                        <form class="form form-row">
-                                            <div class="form-group mr-2">
-                                                <label>X Axis</label>
-                                                <select id="plot-x-axis" class="form-control" style="width:150px"></select>
-                                            </div>
-                                            <div class="form-group mr-2">
-                                                <label>Y Axis</label>
-                                                <select id="plot-y-axis" class="form-control" style="width:150px"></select>
-                                            </div>
-                                            <div class="form-group mr-2">
-                                                <label>X Type</label>
-                                                <select id="plot-x-type" class="form-control">
-                                                    <option value="">Linear</option>
-                                                    <option value="log">Log</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group mr-2">
-                                                <label>Y Type</label>
-                                                <select id="plot-y-type" class="form-control">
-                                                    <option value="">Linear</option>
-                                                    <option value="log">Log</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group mr-2">
-                                                <label>X Offset</label>
-                                                <input type="text" id="plot-x-offset" class="form-control" disabled style="width:100px" />
-                                            </div>
-                                            <div class="form-group">
-                                                <label>Y Offset</label>
-                                                <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
-                                            </div>
-                                        </form>
-
-                                        <div id="plot" class="bin-plot"></div>
-                                    </div>
-                                    <div class="col-md-5">
-                                        <div class="card h-100 z-depth-0 border" id="plotImages">
-                                            <div class="card-body text-center overflow-auto" id="plot-images-container">
-                                                <div>
-                                                    <div class="alert alert-danger" id="too-many-images" style="display:none">
-                                                        Too many images have been selected. Only the first <strong id="max-images"></strong> are shown
-                                                    </div>
-                                                    <div id="plot-images"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>
+                                <select id="scale-factor" class="custom-select custom-select-sm form-control"
+                                  name="scale-factor">
+                                  {% for factor in mosaic_scale_factors %}
+                                  <option value="{{ factor }}" autocomplete="off"
+                                    {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%
+                                  </option>
+                                  {% endfor %}
+                                </select>
+                              </form>
                             </div>
-
-                            <!-- Map -->
-                            <div id="map-tab" class="card-body tab-pane py-1 d-none" role="tabpanel">
-                                <div id="map-container" class="h-100"></div>
-                            </div>
-
-                            <!-- Mosaic -->
-                            <div id="image-tab" class="card-body text-center py-1" role="tabpanel">
-                                <div class="overflow-auto">
-                                    <img id="mosaic" src="" style="display:none" />
-                                </div>
-                                <div id="mosaic-loading" class="grey lighten-4" style="height:{{ mosaic_default_height }}px">
-                                    <div class="spinner-border mt-10p" role="status">
-                                        <span class="sr-only">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Footer for Mosaic -->
-                            <div id="mosaic-footer" class="card-footer text-center py-0">
-                                <div class="row align-items-center">
-                                    <nav aria-label="Bin Paging" class="w-50">
-                                        <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-center" style="display:none">
-                                            <li class="page-item page-previous disabled">
-                                                <a class="page-link" tabindex="-1">Previous</a>
-                                            </li>
-                                            <li class="page-item page-next">
-                                                <a class="page-link">Next</a>
-                                            </li>
-                                        </ul>
-                                    </nav>
-                                    <div class="dropdown w-50">
-                                        <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
-                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            <i class="fas fa-cogs"></i>
-                                        </a>
-                                        <div class="dropdown-menu">
-                                            <form class="px-4 py-3">
-                                                <label class="my-1 mr-2" for="view-size">View Size:</label>
-                                                <select id="view-size" class="custom-select custom-select-sm form-control" name="view-size">
-                                                    {% for size in mosaic_view_sizes %}
-                                                    <option value="{{ size }}" autocomplete="off" {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
-                                                    {% endfor %}
-                                                </select>
-
-                                                <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>
-                                                <select id="scale-factor" class="custom-select custom-select-sm form-control" name="scale-factor">
-                                                    {% for factor in mosaic_scale_factors %}
-                                                    <option value="{{ factor }}" autocomplete="off" {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!--Mosaic Details Column-->
+                  <div class="flex-column flex-grow-1 order-2 py-2 px-1 justify-content-center overflow-auto d-none"
+                    style="height:{{ mosaic_default_height }}px" id="mosaic-details">
+                    <!--Mosaic Details Card-->
+                    <div class="card d-flex mh-100">
+                    <div class="card-header white text-center">
+                                            <div class="overflow-auto">
+                          <a id="detailed-image-link" href="#">
+                            <img class="fluid mb-2 align-middle" id="detailed-image"
+                              src="data:image/png;base64,{{image}}" />
+                            <img class="fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
+                            <img class="fluid mb-2 align-middle" id="detailed-image-outline" src=""
+                              style="display:none" />
+                          </a>
                         </div>
                     </div>
-
-                    <!-- Right side of outer card area (details/images/etc) -->
-                    <div class="col-xl-3 mt-2 mt-xl-0">
-                        <div class="card">
-                            <div class="card-body">
-                                <!-- Bin stats -->
-                                <dl class="row">
-                                    <dt class="col-sm-5">Date/Time:</dt>
-                                    <dd class="col-sm-7" id="stat-date-time"></dd>
-                                    <dt class="col-sm-5">Instrument:</dt>
-                                    <dd class="col-sm-7" id="stat-instrument"></dd>
-                                    <dt class="col-sm-5">Triggers:</dt>
-                                    <dd class="col-sm-7" id="stat-num-triggers"></dd>
-                                    <dt class="col-sm-5">Images:</dt>
-                                    <dd class="col-sm-7" id="stat-num-images"></dd>
-                                    <dt class="col-sm-5">Triggers / s:</dt>
-                                    <dd class="col-sm-7" id="stat-trigger-freq"></dd>
-                                    <dt class="col-sm-5">Volume Analyzed:</dt>
-                                    <dd class="col-sm-7" id="stat-ml-analyzed"></dd>
-                                </dl>
-
-                                <!-- Download links -->
-                                <p class="h5-responsive">Download:</p>
-                                <div class="row">
-                                    <div class="col">
-                                        <ul class="list-unstyled">
-                                            <li><a id="download-adc" href="#">ADC</a></li>
-                                            <li><a id="download-hdr" href="#">HDR</a></li>
-                                            <li><a id="download-roi" href="#">ROI</a></li>
-                                            <li><a id="download-zip" href="#">ZIP</a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="col">
-                                        <ul class="list-unstyled">
-                                            <li>
-                                                <a id="download-blobs" href="#" style="display:none">blobs</a>
-                                                <span id="download-blobs-disabled">blobs</span>
-                                            </li>
-                                            <li>
-                                                <a id="download-features" href="#" style="display:none">features</a>
-                                                <span id="download-features-disabled">features</span>
-                                            </li>
-                                            <li>autoclass</li>
-                                        </ul>
-                                    </div>
-                                </div>
+                      <div class="card-body flex-row overflow-auto">
+                        <div class="table-responsive text-nowrap">
+                        <table class="table table-striped table-sm table-hover" id="detailed-image-metadata">
+                                <tbody></tbody>
+                              </table>
                             </div>
-                        </div>
+                      </div>
+                      <div class="card-footer flex-row py-1">
+                        <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image"
+                          href="javascript:void(0)">Image</a>
+                        <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
+                          data-target="detailed-image-blob" href="javascript:void(0)"
+                          id="detailed-image-blob-link">Blob</a>
+                        <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
+                          data-target="detailed-image-outline" href="javascript:void(0)"
+                          id="detailed-image-outline-link">Outline</a>
+                      </div>
                     </div>
+                    <!--End of Mosaic Details Card-->
+                  </div>
+                  <!--End of Mosaic Details Column-->
                 </div>
-
-                <!-- Bottom half (metadata/tags) -->
-                <div class="row mt-3">
-                    <!-- Metadata -->
-                    <div class="col-lg-10 mt-2 mt-lg-0">
-                        <div class="card vh-50 h-100">
-                            <div class="card-header py-1 mdb-color lighten-5">
-                                <span class="h5-responsive">Metadata</span>
-                            </div>
-                            <div class="card-body overflow-auto">
-                                <div class="table-responsive text-nowrap">
-                                    <table class="table table-striped table-sm table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col">Field</th>
-                                                <th scope="col">Value</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for k, v in bin.metadata.items %}
-                                            <tr>
-                                                <th scope="row">{{ k }}</th>
-                                                <td>{{ v }}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-
-                                </div>
-                            </div>
+                <!--End of Mosaic Row-->
+              </div>
+              <!--End of Mosaic Tab-->
+              <!-- Plot Tab -->
+              <div id="plot-tab-content" class="tab-pane d-none" role="tabpanel">
+                <div class="card-body py-1">
+                  <div class="row py-2 px-3">
+                    <div class="col-md-7 text-center">
+                      <form class="form form-row">
+                        <div class="form-group mr-2">
+                          <label>X Axis</label>
+                          <select id="plot-x-axis" class="form-control" style="width:150px"></select>
                         </div>
-                    </div>
-
-                    <!-- Tags -->
-                    <div class="col-md-4 col-lg-2 mt-2 mt-lg-0">
-                        <div class="card h-100">
-                            <div class="card-header py-1 mdb-color lighten-5">
-                                <div class="row">
-                                    <div class="col">
-                                        <span class="h5-responsive">Tags</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body overflow-auto">
-                                <ul>
-                                    {% for tag in details.tags %}
-                                    <li class="list-group-item">
-                                        <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1" aria-hidden="true"></i>{{tag}}</a>
-                                    </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            <div class="card-footer py-1 white">
-                                <a href="#" class="btn btn-mdb-color btn-block btn-sm"><i class="fas fa-plus-circle" aria-hidden="true"></i>Add</a>
-                            </div>
+                        <div class="form-group mr-2">
+                          <label>Y Axis</label>
+                          <select id="plot-y-axis" class="form-control" style="width:150px"></select>
                         </div>
+                        <div class="form-group mr-2">
+                          <label>X Type</label>
+                          <select id="plot-x-type" class="form-control">
+                            <option value="">Linear</option>
+                            <option value="log">Log</option>
+                          </select>
+                        </div>
+                        <div class="form-group mr-2">
+                          <label>Y Type</label>
+                          <select id="plot-y-type" class="form-control">
+                            <option value="">Linear</option>
+                            <option value="log">Log</option>
+                          </select>
+                        </div>
+                        <div class="form-group mr-2">
+                          <label>X Offset</label>
+                          <input type="text" id="plot-x-offset" class="form-control" disabled style="width:100px" />
+                        </div>
+                        <div class="form-group">
+                          <label>Y Offset</label>
+                          <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
+                        </div>
+                      </form>
+
+                      <div id="plot" class="bin-plot"></div>
                     </div>
+                    <div class="col-md-5">
+                      <div class="card h-100 z-depth-0 border" id="plotImages">
+                        <div class="card-body text-center overflow-auto" id="plot-images-container">
+                          <div>
+                            <div class="alert alert-danger" id="too-many-images" style="display:none">
+                              Too many images have been selected. Only the first <strong id="max-images"></strong> are
+                              shown
+                            </div>
+                            <div id="plot-images"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+              <!--End Plot Tab-->
+              <!-- Map Tap -->
+              <div id="map-tab-content" class="tab-pane d-none" role="tabpanel">
+                <div class="card-body py-1">
+                  <div id="map-container" style="height:600px" ></div>
+                </div>
+              </div>
+              <!--End Map Tab-->
             </div>
+            <!--End Top Half-->
+
+              <!-- Bottom half (metadata/tags) -->
+              <div class="d-md-flex flex-md-row row mt-3">
+                <!-- Bin Basic Info -->
+                <div class="flex-md-column col-md-3 mt-2 mt-lg-0">
+                  <div class="card h-100">
+                    <div class="card-header py-1 mdb-color lighten-5">
+                      <span class="h5-responsive">Basic Info</span>
+                    </div>
+                    <div class="card-body overflow-auto">
+                      <!-- Bin stats -->
+                      <div class="d-flex flex-row">
+                        <div class="flex-column">Date/Time: <span id="stat-date-time"></span></div>
+                      </div>
+                      <div class="d-flex flex-row">
+                        <div class="flex-column">Instrument: <span id="stat-instrument"></span></div>
+                      </div>
+                      <div class="d-flex flex-row">
+                        <div class="flex-column">Triggers: <span id="stat-num-triggers"></span></div>
+                      </div>
+                      <div class="d-flex flex-row">
+                        <div class="flex-column">Images: <span id="stat-num-images"></span></div>
+                      </div>
+                      <div class="d-flex flex-row">
+                        <div class="flex-column">Triggers / s: <span id="stat-trigger-freq"></span>
+                        </div>
+                      </div>
+                      <div class="d-flex flex-row">
+                        <div class="flex-column">Volume Analyzed: <span id="stat-ml-analyzed"></span>
+                        </div>
+                      </div>
+                      <!-- Download links -->
+                      <p class="h5-responsive">Download:</p>
+                      <div class="d-flex flex-row">
+                        <div class="flex-column flex-fill">
+                          <ul class="list-unstyled">
+                            <li><a id="download-adc" href="#">ADC</a></li>
+                            <li><a id="download-hdr" href="#">HDR</a></li>
+                            <li><a id="download-roi" href="#">ROI</a></li>
+                            <li><a id="download-zip" href="#">ZIP</a></li>
+                          </ul>
+                        </div>
+                        <div class="flex-column flex-fill">
+                          <ul class="list-unstyled">
+                            <li>
+                              <a id="download-blobs" href="#" style="display:none">blobs</a>
+                              <span id="download-blobs-disabled">blobs</span>
+                            </li>
+                            <li>
+                              <a id="download-features" href="#" style="display:none">features</a>
+                              <span id="download-features-disabled">features</span>
+                            </li>
+                            <li>autoclass</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- End Bin Basic Info -->
+                <!-- Metadata -->
+                <div class="flex-md-column col-md-7 mt-2 mt-lg-0">
+                  <div class="card vh-50 h-100">
+                    <div class="card-header py-1 mdb-color lighten-5">
+                      <span class="h5-responsive">Metadata</span>
+                    </div>
+                    <div class="card-body h-75">
+                      <div class="table-responsive text-nowrap h-100 overflow-auto">
+                        <table class="table table-striped table-sm table-hover">
+                          <thead>
+                            <tr>
+                              <th scope="col">Field</th>
+                              <th scope="col">Value</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for k, v in bin.metadata.items %}
+                            <tr>
+                              <th scope="row">{{ k }}</th>
+                              <td>{{ v }}</td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- End Meta Data-->
+                <!-- Tags -->
+                <div class="flex-md-column col-md-2 mt-2 mt-lg-0">
+                  <div class="card h-100">
+                    <div class="card-header py-1 mdb-color lighten-5">
+                      <div class="row">
+                        <div class="col">
+                          <span class="h5-responsive">Tags</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="card-body overflow-auto">
+                      <ul>
+                        {% for tag in details.tags %}
+                        <li class="list-group-item">
+                          <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1"
+                              aria-hidden="true"></i>{{tag}}</a>
+                        </li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                    <div class="card-footer py-1 white">
+                      <a href="#" class="btn btn-mdb-color btn-block btn-sm"><i class="fas fa-plus-circle"
+                          aria-hidden="true"></i>Add</a>
+                    </div>
+                  </div>
+                </div>
+                <!-- End Tags -->
+              </div>
+              <!--End Second Row of Wrapper Card-->
+            </div>
+            <!--End Wrapper Card Body-->
         </div>
+        <!--End Wrapper Card-->
     </div>
+    <!--End Wrapper Col-->
 </div>
+<!--End Wrapper Row-->
 
 <!-- Image Modal -->
-<div class="modal" id="image-modal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal" id="image-modal2" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog modal-dialog-centered modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-body">
@@ -371,9 +443,9 @@
                                 <div class="row text-center">
                                 <div class="col">
                                 <a id="detailed-image-link" href="#">
-                                    <img class="img-fluid mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
-                                    <img class="img-fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
-                                    <img class="img-fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
+                                    <img class="mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
+                                    <img class="mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
+                                    <img class="mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
                                 </a>
                                 </div>
                             </div>
@@ -643,6 +715,8 @@ $("#mosaic").click(function(e){
         if (_mosaic_page == img.page &&
             x >= img.x && x <= img.x + img.width &&
             y >= img.y && y <= img.y + img.height) {
+
+            $("#mosaic-details").toggleClass("d-none", false);
 
             // TODO: Need to handle routing from Django
             // TODO: Needs loading indicator
