@@ -75,6 +75,6 @@ urlpatterns = [
     path('api/plot/<slug:bin_id>', views.plot_data, name='plot_data'),
 
     # FIXME move these to secure and change URL patterns accordingly
-    path('debug/sync/<int:dataset_id>', views.test_sync_dataset),
-    path('debug/sync/status/<slug:dataset_id>', views.test_sync_dataset_status),
+    path('debug/sync/<int:dataset_id>', views.test_sync_dataset, name='sync_dataset'),
+    path('debug/sync/status/<slug:dataset_id>', views.test_sync_dataset_status, name='sync_dataset_status'),
 ]

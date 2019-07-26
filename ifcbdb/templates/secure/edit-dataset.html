@@ -63,4 +63,58 @@
         <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
     </div>
 </form>
+
+<div>
+    <button id="sync-button" class="btn btn-sm btn-mdb-color">Sync</button>
+    <div id="sync-status" class="d-none">
+        <span id="sync-state"></span>
+        <span id="sync-total"></span> bins found,
+        <span id="sync-added"></span> bins added
+    </div>
+</div>
+
+{% endblock %} {% block scripts %}
+
+<script>
+    function dataset_sync_status() {
+        $.getJSON("{% url 'sync_dataset_status' dataset.id %}", function(data) {
+            if(data.state == 'LOCKED') { // job hasn't started yet
+                setTimeout(dataset_sync_status, 1000); // wait for it to start
+            } else if(data.state == 'PROGRESS') {
+                $('#sync-status').removeClass('d-none');
+                $('#sync-state').html('Syncing ...');
+                $('#sync-total').html(data.info.total);
+                $('#sync-added').html(data.info.added);
+                setTimeout(dataset_sync_status, 1000);
+            } else {
+                // job has either succeeded or failed
+                if(data.state == 'SUCCESS') {
+                    $('#sync-state').html('Synced.');
+                    $('#sync-total').html(data.info.total);
+                    $('#sync-added').html(data.info.added);
+                } else if(data.state == 'FAILURE') {
+                    $('#sync-state').html('Sync failed.');
+                }
+            }
+        });
+    }
+
+    $('#sync-button').click(function() {
+        $.getJSON("{% url 'sync_dataset' dataset.id %}", function(data) {
+            // ignore data
+            setTimeout(dataset_sync_status, 100);
+        });
+    })
+
+    setTimeout(function() {
+        // check dataset syncing status initially or when user reloads the page
+        $.getJSON("{% url 'sync_dataset_status' dataset.id %}", function(data) {
+            if(data.state == 'PROGRESS') {
+                dataset_sync_status();
+            }
+        });
+    }, 100);
+
+</script>
+
 {% endblock %}
