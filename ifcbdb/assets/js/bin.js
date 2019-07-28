@@ -62,6 +62,20 @@ function updateBinStats(data) {
     $("#stat-ml-analyzed").html(data["ml_analyzed"]);
 }
 
+function updateBinMetadata() {
+    $.get("/api/metadata/" + _bin, function(data){
+        tbody = $("#bin-metadata tbody");
+        tbody.empty();
+
+        for (key in data.metadata) {
+            row = $("<tr />");
+            row.append($("<td />", { "scope": "row", "text": key }))
+            row.append($("<td />", { "text": data.metadata[key] }))
+            tbody.append(row);
+        }
+    });
+}
+
 function updateBinDownloadLinks(data) {
     $("#download-adc").attr("href", _dataset + "/" + _bin + ".adc");
     $("#download-hdr").attr("href", _dataset + "/" + _bin + ".hdr");

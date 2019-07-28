@@ -484,6 +484,15 @@ def plot_data(request, bin_id):
             ia[fc] = features[fc].values
     return JsonResponse(ia.to_dict('list'))
 
+
+def bin_metadata(request, bin_id):
+    bin = get_object_or_404(Bin, pid=bin_id)
+
+    return JsonResponse({
+        "metadata": bin.metadata
+    })
+
+
 ## FIXME move these two views to secure
 
 # FIXME make an object locking decorator
