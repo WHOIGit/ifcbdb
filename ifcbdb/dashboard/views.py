@@ -343,6 +343,11 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         if next_bin is not None:
             next_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
 
+    try:
+        datasets = [d.name for d in bin.datasets.all()]
+    except:
+        datasets = []
+
     return {
         "scale": mosaic_scale,
         "shape": mosaic_shape,
@@ -363,6 +368,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "num_images": bin.n_images,
         "trigger_freq": round(bin.trigger_frequency, 3),
         "ml_analyzed": str(round(bin.ml_analyzed, 3)) + " ml",
+        "datasets": datasets,
     }
 
 

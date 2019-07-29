@@ -76,6 +76,19 @@ function updateBinMetadata() {
     });
 }
 
+function updateBinDatasets(data) {
+    $("#dataset-links").empty();
+
+    for (var i = 0; i < data.datasets.length; i++) {
+        // <a href="#" class="d-block">asdasd</a>
+        $("#dataset-links").append(
+            $("<a class='d-block' />")
+                .attr("href", "/bin?id=" + _bin + "&dataset=" + data.datasets[i])
+                .text(data.datasets[i])
+        )
+    }
+}
+
 function updateBinDownloadLinks(data) {
     $("#download-adc").attr("href", _dataset + "/" + _bin + ".adc");
     $("#download-hdr").attr("href", _dataset + "/" + _bin + ".hdr");

@@ -361,6 +361,10 @@
                           </ul>
                         </div>
                       </div>
+
+                        <!-- Dataset Links -->
+                        <p class="h5-responsive">Datasets:</p>
+                        <div id="dataset-links"></div>
                     </div>
                   </div>
                 </div>
@@ -677,6 +681,7 @@ function changeBin(binId, updateHistory) {
     $.get(dataUrl, function(data){
         updateBinStats(data);
         updateBinDownloadLinks(data);
+        updateBinDatasets(data);
 
         currentBinTimestamp = moment(data["timestamp_iso"]);
 
