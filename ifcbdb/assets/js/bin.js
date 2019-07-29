@@ -18,9 +18,9 @@ var _pendingMapLocation = null; // The next map position to render (see notes in
 // TODO: Verify these URLs match the current Django routes
 function createLink() {
     if (_dataset != "")
-        return  "/dataset/" +_dataset + "?bin_id=" + _bin;
+        return  "/" +_dataset + "/" + _bin + ".html";
 
-    return "/bin/" + _bin + ".html";
+    return "/bin?id=" + _bin;
 }
 
 // Switches between workspaces: map, plot, mosaic
