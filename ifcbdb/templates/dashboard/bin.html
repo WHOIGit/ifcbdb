@@ -859,7 +859,7 @@ $(function() {
                 var idx = data.points[i].pointIndex;
 
                 var imageId = _plotData["target_number"][idx];
-                var baseUrl = "/" + _dataset + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
+                var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 $("#plot-images").empty();
                 $("#plot-images").append(
@@ -881,7 +881,7 @@ $(function() {
 
                 var idx = data.points[i].pointIndex;
                 var imageId = _plotData["target_number"][idx];
-                var imageUrl = "/" + _dataset + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
+                var imageUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 urls.push({
                     "id": imageId,
