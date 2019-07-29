@@ -228,6 +228,7 @@
                         <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
                           data-target="detailed-image-outline" href="javascript:void(0)"
                           id="detailed-image-outline-link">Outline</a>
+                        <a id="close-image" class="float-right btn btn-light text-dark btn-sm">X</a>
                       </div>
                     </div>
                     <!--End of Mosaic Details Card-->
@@ -753,6 +754,9 @@ $(".change-image").click(function(e){
     }
 });
 
+$("#close-image").click(function() {
+  $("#mosaic-details").addClass("d-none");
+});
 
 $(function() {
     {% if dataset %}
