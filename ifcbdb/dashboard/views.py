@@ -508,6 +508,7 @@ def plot_data(request, bin_id):
     ia = bin.images_adc.copy(deep=False)
     ia.columns = schema_names(bin.schema)
     ia['target_number'] = bin.images.keys()
+    ia = ia.drop_duplicates(subset=['roi_x','roi_y']) # reduce redundant data
     if b.has_features():
         features = b.features().fillna(0)
         to_drop = set(bin.images.keys()) - set(features.index)
