@@ -657,8 +657,9 @@ function changeBin(binId, updateHistory) {
     $("#mosaic-loading").show();
     $("#mosaic").hide().attr("src","");
 
-    // Hide any selected image fro mthe mosaic
+    // Hide any selected images
     $("#mosaic-details").toggleClass("d-none", true);
+    $("#plot-images").empty();
 
     // Update bin name/link
     $("#bin-header").attr("href", binUrl).html(binId);
