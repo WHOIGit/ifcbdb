@@ -8,7 +8,7 @@
         <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
         <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}">{{ bin.pid }}</a></li>
     {% else %}
-        <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' None bin.pid %}">{{ bin.pid }}</a></li>
+        <li class="breadcrumb-item"><a class="black-text" href="/bin?id={{ bin.pid }}">{{ bin.pid }}</a></li>
     {% endif %}
 {% endblock %}
 
@@ -102,7 +102,7 @@
                             <div class="flex-column flex-shrink text-center">
                                 <span class="p">
                                     <strong>Selected Bin:</strong>
-                                    <a id="bin-header" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a>
+                                    <a id="bin-header" href="#">{{ bin.pid }}</a>
                                 </span>
                             </div>
                             <div class="flex-shrink-1 flex-md-shrink-0 flex-column">
@@ -645,9 +645,8 @@ function changeBin(binId, updateHistory) {
 
     var viewSize = $("#view-size option:selected").val();
     var scaleFactor = $("#scale-factor option:selected").val();
-    var binUrl = _dataset + "/" + _bin + ".html";
-    var dataUrl = "api/" + _dataset + "/bin/" + _bin;
 
+    var dataUrl = "/api" + (_dataset != "" ? "/" + _dataset : "") + "/bin/" + _bin;
     dataUrl += "?view_size=" + viewSize;
     dataUrl += "&scale_factor=" + scaleFactor;
     dataUrl += "&preload_adjacent_bins=" + true;
@@ -662,6 +661,7 @@ function changeBin(binId, updateHistory) {
     $("#plot-images").empty();
 
     // Update bin name/link
+    var binUrl = "/bin?id=" + _bin;
     $("#bin-header").attr("href", binUrl).html(binId);
 
     // disable next/previous buttons
@@ -709,8 +709,10 @@ function changeBin(binId, updateHistory) {
         }
 
         // Update the timeline to select the new bin
-        var timeline = $("#primary-plot-container")[0];
-        highlightSelectedBinByDate(timeline.data[0].x, currentBinTimestamp);
+        if (_dataset != "") {
+            var timeline = $("#primary-plot-container")[0];
+            highlightSelectedBinByDate(timeline.data[0].x, currentBinTimestamp);
+        }
 
         _isBinLoading = false;
     });
@@ -727,10 +729,8 @@ $("#mosaic").click(function(e){
 
             $("#mosaic-details").toggleClass("d-none", false);
 
-            // TODO: Need to handle routing from Django
             // TODO: Needs loading indicator
-            // TODO: Is png the right default format
-            var baseUrl = "/" + _dataset + "/" + _bin + "_" + padDigits(img.pid, 5);
+            var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(img.pid, 5);
             var metaUrl = "/api/image/" + _bin + "/" + img.pid;
 
             changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
@@ -925,7 +925,7 @@ $(function() {
 
     $("#plot-images").on("click", "img", function(e){
         var target = $(this).data("target");
-        var baseUrl = "/" + _dataset + "/" + _bin + "_" + padDigits(target, 5);
+        var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(target, 5);
 
         location.href = baseUrl + ".html";
     });

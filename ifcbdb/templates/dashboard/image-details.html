@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
 
 {% block breadcrumbs %}
+{% if dataset %}
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}">{{ dataset.name }}</a></li>
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></li>
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'image' dataset.name bin.pid image_id %}">{{ image_id }}</a></li>
+{% else %}
+<li class="breadcrumb-item"><a class="black-text" href="/bin?id={{ bin.pid }}">{{ bin.pid }}</a></li>
+<li class="breadcrumb-item"><a class="black-text" href="{% url 'image_legacy_alt' bin.pid image_id %}">{{ image_id }}</a></li>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -248,7 +253,11 @@
           </button>
             </div>
             <div class="modal-body">
+                {% if dataset %}
                 <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}{% url 'image_legacy' dataset.name bin.pid image_id %}">
+                {% else %}
+                <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}{% url 'image_legacy_alt' bin.pid image_id %}">
+                {% endif %}
             </div>
             <div class="modal-footer">
                 <button id="copy-share-link" type="button" class="btn btn-mdb-color btn-sm">Copy to clipboard</button>

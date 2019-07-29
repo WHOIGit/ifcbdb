@@ -61,15 +61,33 @@ def dataset_details(request, dataset_name, bin_id=None):
     })
 
 
-def dataset(request, dataset_name):
-    return details(request, group_name=dataset_name, group_type="dataset", route="dataset")
+def dataset_page(request, dataset_name):
+    bin_id = request.GET.get("bin_id")
+
+    return details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="dataset")
 
 
-def bin(request, dataset_name, bin_id):
+def bin_page(request, dataset_name, bin_id):
     # TODO: This needs to be cleaned up to allow bins w/o a dataset (and/or other grouping)
     return details(request, group_name=dataset_name, group_type="dataset", route="bin")
     #return details(request, bin_id=bin_id)
 
+
+def bin_mode(request):
+    bin_id = request.GET.get("id")
+    dataset_name = request.GET.get("dataset")
+
+    # TODO: The below are not implemented yet
+    tag_names = request.GET.get("tags")
+    instrument_name = request.GET.get("instrument")
+
+    return details(
+        request,
+        group_name=dataset_name,
+        group_type="dataset" if dataset_name else None,
+        route="dataset" if dataset_name else "bin",
+        bin_id=bin_id
+    )
 
 def details(request, bin_id=None, group_name=None, group_type=None, route=None):
     if not bin_id and not group_name:
@@ -101,7 +119,7 @@ def details(request, bin_id=None, group_name=None, group_type=None, route=None):
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
         "bin": bin,
-        "details": _bin_details(dataset, bin, preload_adjacent_bins=False, include_coordinates=False),
+        "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False),
     })
 
 
@@ -121,14 +139,18 @@ def bin_details(request, dataset_name, bin_id):
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
         "bin": bin,
-        "details": _bin_details(dataset, bin, preload_adjacent_bins=False, include_coordinates=False),
+        "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False),
     })
 
 
 # TODO: Hook up add to annotations area
 # TODO: Hook up add to tags area
-def image_details(request, dataset_name, bin_id, image_id):
-    dataset = get_object_or_404(Dataset, name=dataset_name)
+def image_details(request, bin_id, image_id,  dataset_name=None):
+    if dataset_name:
+        dataset = get_object_or_404(Dataset, name=dataset_name)
+    else:
+        dataset = None
+
     bin = get_object_or_404(Bin, pid=bin_id)
 
     image_number = int(image_id)
@@ -147,7 +169,7 @@ def image_details(request, dataset_name, bin_id, image_id):
         "image_width": image_width,
         "image_id": image_number,
         "metadata": metadata,
-        "details": _bin_details(dataset, bin, include_coordinates=False),
+        "details": _bin_details(bin, dataset, include_coordinates=False),
     })
 
 
@@ -286,7 +308,7 @@ def zip(request, bin_id, dataset_name=None):
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
 
-def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjacent_bins=False, include_coordinates=True):
+def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_adjacent_bins=False, include_coordinates=True):
     if not view_size:
         view_size = Bin.MOSAIC_DEFAULT_VIEW_SIZE
     if not scale_factor:
@@ -312,7 +334,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
     previous_bin = None
     next_bin = None
 
-    if preload_adjacent_bins:
+    if dataset and preload_adjacent_bins:
         previous_bin = Timeline(dataset.bins).previous_bin(bin)
         next_bin = Timeline(dataset.bins).next_bin(bin)
 
@@ -416,15 +438,19 @@ def generate_time_series(request, dataset_name, metric,):
 
 # TODO: This call needs a lot of clean up, standardization with other methods and cutting out some dup code
 # TODO: This is also where page caching could occur...
-def bin_data(request, dataset_name, bin_id):
-    dataset = get_object_or_404(Dataset, name=dataset_name)
+def bin_data(request, bin_id, dataset_name=None):
+    if dataset_name:
+        dataset = get_object_or_404(Dataset, name=dataset_name)
+    else:
+        dataset = None
+
     bin = get_object_or_404(Bin, pid=bin_id)
     view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
     scale_factor = request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
     preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
     include_coordinates = request.GET.get("include_coordinates", "true").lower() == "true"
 
-    details = _bin_details(dataset, bin, view_size, scale_factor, preload_adjacent_bins, include_coordinates)
+    details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates)
 
     return JsonResponse(details)
 

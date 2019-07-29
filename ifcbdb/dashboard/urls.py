@@ -32,38 +32,51 @@ urlpatterns = [
 
     # legacy "dataset with bin selected" permalink
     # e.g. http://ifcb-data.whoi.edu/mvco/dashboard/http://ifcb-data.whoi.edu/mvco/D20140101T123456_IFCB010
-    re_path(r'(?P<dataset_name>[\w-]+)/dashboard/http.*/(?P<bin_id>\w+)', views.dataset),
+    re_path(r'(?P<dataset_name>[\w-]+)/dashboard/http.*/(?P<bin_id>\w+)', views.dataset_page),
 
     path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.image_details, name='image'),
-    path('<slug:dataset_name>/<pid:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy'),
-    path('<slug:dataset_name>/<slug:bin_id>.html', views.bin, name='bin'), # legacy
+    path('<slug:dataset_name>/<pid:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy'),  # legacy
+    path('<pid:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy_alt'),  # legacy
+    path('<slug:dataset_name>/<slug:bin_id>.html', views.bin_page, name='bin'),  # legacy
+
+    # Main entry point for combined bin/dataset page. Querystring parameters will include id (Bin PID), and one
+    #   of: dataset, tags, instrument
+    path('bin', views.bin_mode, name='bin_mode'),
 
     # legacy urls all require dataset ID but new ones for bin-specific stuff need not
 
     # raw data access
-    path('<slug:dataset_name>/<slug:bin_id>.adc', views.adc_data, name='adc_csv'), # legacy
-    path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'), # legacy
-    path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary'), # legacy
+    path('<slug:dataset_name>/<slug:bin_id>.adc', views.adc_data, name='adc_csv_legacy'),  # legacy
+    path('<slug:bin_id>.adc', views.adc_data, name='adc_csv'),
+    path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text_legacy'),  # legacy
+    path('<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'),
+    path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary_legacy'),  # legacy
+    path('<slug:bin_id>.roi', views.roi_data, name='roi_binary'),
 
     # blob zip access
-    path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'), # legacy
+    path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip_legacy'),  # legacy
+    path('<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'),
 
     # features csv access
-    path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv'), # legacy
+    path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv_legacy'),  # legacy
+    path('<slug:bin_id>_features.csv', views.features_csv, name='features_csv'),
 
     # zip access
-    path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip'), # legacy
+    path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip_legacy'),  # legacy
+    path('<slug:bin_id>.zip', views.zip, name='zip'),
 
     # image access
-    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png'), # legacy
-    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg'), # legacy
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png_legacy'),  # legacy
+    path('<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png'),
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg_legacy'),  # legacy
+    path('<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg'),
 
-
-    path('<slug:dataset_name>', views.dataset, name='dataset'),
+    path('<slug:dataset_name>', views.dataset_page, name='dataset'),
 
     # Paths used for API/Ajax requests
     path('api/<slug:dataset_name>/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
     path('api/<slug:dataset_name>/bin/<slug:bin_id>', views.bin_data, name='bin_data'),
+    path('api/bin/<slug:bin_id>', views.bin_data),
     path('api/<slug:dataset_name>/closest_bin', views.closest_bin, name='closest_bin'), # closest bin in time
     path('api/nearest_bin', views.nearest_bin, name='nearest_bin'),
     path('api/mosaic/coordinates/<slug:bin_id>', views.mosaic_coordinates, name='mosaic_coordintes'),

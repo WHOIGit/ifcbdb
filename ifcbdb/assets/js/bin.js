@@ -170,7 +170,7 @@ function loadMosaic(pageNumber) {
     // indicate to the user that coordinates are loading
     $("#mosaic").css("cursor","wait");
 
-    var binDataUrl = "/api/" + _dataset + "/bin/" + _bin +
+    var binDataUrl = "/api" + (_dataset != "" ? "/" + _dataset : "") + "/bin/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor;
 
