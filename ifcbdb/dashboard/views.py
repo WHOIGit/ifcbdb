@@ -118,6 +118,7 @@ def details(request, bin_id=None, group_name=None, group_type=None, route=None):
         "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
+        "mosaic_default_width": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[0],
         "bin": bin,
         "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False),
     })
