@@ -28,7 +28,7 @@
         </div>
 
         {% if user.is_authenticated %}
-        <div>
+        <div class="d-none"><!-- until implemented, don't display -->
             <a href="#" class="btn btn-sm btn-primary ml-3">Configure</a>
         </div>
         {% endif %}
@@ -663,6 +663,7 @@ function changeBin(binId, updateHistory) {
     // Hide any selected images
     $("#mosaic-details").toggleClass("d-none", true);
     $("#plot-images").empty();
+    $("#too-many-images").toggle(false);
 
     // Update bin name/link
     var binUrl = "/bin?id=" + _bin;
