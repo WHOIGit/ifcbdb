@@ -257,17 +257,27 @@ function updateMapLocation(data) {
 }
 
 //************* Plotting Methods  ***********************/
+function updatePlotVariables(plotData) {
+    var plotXAxis = $("#plot-x-axis");
+    var plotYAxis = $("#plot-y-axis");
+
+    plotXAxis.empty();
+    plotYAxis.empty();
+
+    $.each(plotData, function(key) {
+        plotXAxis.append($("<option />").text(key));
+        plotYAxis.append($("<option />").text(key));
+    });
+}
+
 function initPlotData() {
     $.get("/api/plot/" + _bin, function(data){
         _plotData = data;
-
+        
         var plotXAxis = $("#plot-x-axis");
         var plotYAxis = $("#plot-y-axis");
 
-        $.each(data, function(key) {
-            plotXAxis.append($("<option />").text(key));
-            plotYAxis.append($("<option />").text(key));
-        });
+        updatePlotVariables(data);
 
         plotXAxis.val(PLOT_X_DEFAULT);
         plotYAxis.val(PLOT_Y_DEFAULT);
@@ -282,6 +292,8 @@ function updatePlotData() {
 
     $.get("/api/plot/" + _bin, function(data){
         _plotData = data;
+
+        updatePlotVariables(data);
 
         updatePlot();
     });
