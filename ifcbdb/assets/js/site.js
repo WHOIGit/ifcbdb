@@ -27,7 +27,7 @@ function createMap(lat, lng) {
         lng = defaultLng;
     }
 
-    var map = L.map('mapid').setView([lat, lng], zoomLevel);
+    var map = L.map('map-container').setView([lat, lng], zoomLevel);
     L.esri.basemapLayer('Oceans').addTo(map);
     L.esri.basemapLayer('OceansLabels').addTo(map);
 
@@ -47,12 +47,14 @@ function addMapMarker(map, lat, lng, depth) {
             closeOnEscapeKey: false,
             keepInView: true
         }
+
         var popup = L.popup(options)
             .setLatLng([defaultLat, defaultLng])
             .setContent("Unknown Location")
             .openOn(map)
 
-        $("#mapid .leaflet-popup-tip-container").hide()
+        $("#map-container .leaflet-popup-tip-container").hide()
+
         return popup;
     }
 

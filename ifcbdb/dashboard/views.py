@@ -61,6 +61,69 @@ def dataset_details(request, dataset_name, bin_id=None):
     })
 
 
+def dataset_page(request, dataset_name):
+    bin_id = request.GET.get("bin_id")
+
+    return details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="dataset")
+
+
+def bin_page(request, dataset_name, bin_id):
+    # TODO: This needs to be cleaned up to allow bins w/o a dataset (and/or other grouping)
+    return details(request, group_name=dataset_name, group_type="dataset", route="bin")
+    #return details(request, bin_id=bin_id)
+
+
+def bin_mode(request):
+    bin_id = request.GET.get("id")
+    dataset_name = request.GET.get("dataset")
+
+    # TODO: The below are not implemented yet
+    tag_names = request.GET.get("tags")
+    instrument_name = request.GET.get("instrument")
+
+    return details(
+        request,
+        group_name=dataset_name,
+        group_type="dataset" if dataset_name else None,
+        route="dataset" if dataset_name else "bin",
+        bin_id=bin_id
+    )
+
+def details(request, bin_id=None, group_name=None, group_type=None, route=None):
+    if not bin_id and not group_name:
+        # TODO: 404 error; don't have enough info to proceed
+        pass
+
+    # TODO: Currently only handles grouping by dataset
+    if group_name and group_type == "dataset":
+        dataset = get_object_or_404(Dataset, name=group_name)
+    else:
+        dataset = None
+
+    if bin_id:
+        bin = get_object_or_404(Bin, pid=bin_id)
+    else:
+        bin = Timeline(dataset.bins).most_recent_bin()
+
+    if not bin:
+        # TODO: Do something
+        pass
+
+    return render(request, "dashboard/bin.html", {
+        "route": route,
+        "can_share_page": True,
+        "dataset": dataset,
+        "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
+        "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
+        "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
+        "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
+        "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
+        "mosaic_default_width": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[0],
+        "bin": bin,
+        "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False),
+    })
+
+
 # TODO: bin.instrument is not filled in?
 def bin_details(request, dataset_name, bin_id):
     dataset = get_object_or_404(Dataset, name=dataset_name)
@@ -77,14 +140,18 @@ def bin_details(request, dataset_name, bin_id):
         "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
         "bin": bin,
-        "details": _bin_details(dataset, bin, preload_adjacent_bins=False, include_coordinates=False),
+        "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False),
     })
 
 
 # TODO: Hook up add to annotations area
 # TODO: Hook up add to tags area
-def image_details(request, dataset_name, bin_id, image_id):
-    dataset = get_object_or_404(Dataset, name=dataset_name)
+def image_details(request, bin_id, image_id,  dataset_name=None):
+    if dataset_name:
+        dataset = get_object_or_404(Dataset, name=dataset_name)
+    else:
+        dataset = None
+
     bin = get_object_or_404(Bin, pid=bin_id)
 
     image_number = int(image_id)
@@ -103,7 +170,7 @@ def image_details(request, dataset_name, bin_id, image_id):
         "image_width": image_width,
         "image_id": image_number,
         "metadata": metadata,
-        "details": _bin_details(dataset, bin, include_coordinates=False),
+        "details": _bin_details(bin, dataset, include_coordinates=False),
     })
 
 
@@ -174,15 +241,15 @@ def _image_data(bin_id, target, mimetype):
     image_data = format_image(arr, mimetype)
     return HttpResponse(image_data, content_type=mimetype)
 
-def image_data_png(request, dataset_name, bin_id, target):
+def image_data_png(request, bin_id, target, dataset_name=None):
     # ignore dataset name
     return _image_data(bin_id, target, 'image/png')
 
-def image_data_jpg(request, dataset_name, bin_id, target):
+def image_data_jpg(request, bin_id, target, dataset_name=None):
     # ignore dataset name
     return _image_data(bin_id, target, 'image/jpeg')
 
-def adc_data(request, dataset_name, bin_id):
+def adc_data(request, bin_id, dataset_name=None):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     adc_path = b.adc_path()
@@ -190,7 +257,7 @@ def adc_data(request, dataset_name, bin_id):
     fin = open(adc_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
-def hdr_data(request, dataset_name, bin_id):
+def hdr_data(request, bin_id, dataset_name=None):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     hdr_path = b.hdr_path()
@@ -198,7 +265,7 @@ def hdr_data(request, dataset_name, bin_id):
     fin = open(hdr_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/plain')
 
-def roi_data(request, dataset_name, bin_id):
+def roi_data(request, bin_id, dataset_name=None):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     roi_path = b.roi_path()
@@ -206,7 +273,7 @@ def roi_data(request, dataset_name, bin_id):
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
 
-def blob_zip(request, dataset_name, bin_id):
+def blob_zip(request, bin_id, dataset_name=None):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         version = int(request.GET.get('v',2))
@@ -220,7 +287,7 @@ def blob_zip(request, dataset_name, bin_id):
     fin = open(blob_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/zip')
 
-def features_csv(request, dataset_name, bin_id):
+def features_csv(request, bin_id, dataset_name=None):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         version = int(request.GET.get('v',2))
@@ -234,7 +301,7 @@ def features_csv(request, dataset_name, bin_id):
     fin = open(features_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
-def zip(request, dataset_name, bin_id):
+def zip(request, bin_id, dataset_name=None):
     # ignore dataset name
     b = get_object_or_404(Bin, pid=bin_id)
     zip_buf = b.zip()
@@ -242,7 +309,7 @@ def zip(request, dataset_name, bin_id):
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
 
-def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjacent_bins=False, include_coordinates=True):
+def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_adjacent_bins=False, include_coordinates=True):
     if not view_size:
         view_size = Bin.MOSAIC_DEFAULT_VIEW_SIZE
     if not scale_factor:
@@ -268,7 +335,7 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
     previous_bin = None
     next_bin = None
 
-    if preload_adjacent_bins:
+    if dataset and preload_adjacent_bins:
         previous_bin = Timeline(dataset.bins).previous_bin(bin)
         next_bin = Timeline(dataset.bins).next_bin(bin)
 
@@ -277,7 +344,11 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         if next_bin is not None:
             next_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
 
-    # TODO: Volume Analyzed is using floatformat:3; is that ok?
+    try:
+        datasets = [d.name for d in bin.datasets.all()]
+    except:
+        datasets = []
+
     return {
         "scale": mosaic_scale,
         "shape": mosaic_shape,
@@ -293,6 +364,12 @@ def _bin_details(dataset, bin, view_size=None, scale_factor=None, preload_adjace
         "has_blobs": bin.has_blobs(),
         "has_features": bin.has_features(),
         "timestamp_iso": bin.timestamp.isoformat(),
+        "instrument": "IFCB" + str(bin.instrument.number),
+        "num_triggers": bin.n_triggers,
+        "num_images": bin.n_images,
+        "trigger_freq": round(bin.trigger_frequency, 3),
+        "ml_analyzed": str(round(bin.ml_analyzed, 3)) + " ml",
+        "datasets": datasets,
     }
 
 
@@ -368,15 +445,19 @@ def generate_time_series(request, dataset_name, metric,):
 
 # TODO: This call needs a lot of clean up, standardization with other methods and cutting out some dup code
 # TODO: This is also where page caching could occur...
-def bin_data(request, dataset_name, bin_id):
-    dataset = get_object_or_404(Dataset, name=dataset_name)
+def bin_data(request, bin_id, dataset_name=None):
+    if dataset_name:
+        dataset = get_object_or_404(Dataset, name=dataset_name)
+    else:
+        dataset = None
+
     bin = get_object_or_404(Bin, pid=bin_id)
     view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
     scale_factor = request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
     preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
     include_coordinates = request.GET.get("include_coordinates", "true").lower() == "true"
 
-    details = _bin_details(dataset, bin, view_size, scale_factor, preload_adjacent_bins, include_coordinates)
+    details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates)
 
     return JsonResponse(details)
 
@@ -434,7 +515,17 @@ def plot_data(request, bin_id):
         ia.drop(to_drop, inplace=True)
         for fc in features.columns:
             ia[fc] = features[fc].values
+    ia = ia.drop_duplicates(subset=['roi_x','roi_y']) # reduce redundant data
     return JsonResponse(ia.to_dict('list'))
+
+
+def bin_metadata(request, bin_id):
+    bin = get_object_or_404(Bin, pid=bin_id)
+
+    return JsonResponse({
+        "metadata": bin.metadata
+    })
+
 
 ## FIXME move these two views to secure
 

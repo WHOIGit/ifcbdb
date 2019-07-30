@@ -123,7 +123,7 @@
     <div class="col-xl-3 mt-2 mt-xl-0">
         <div class="card h300 mb-1">
             <div class="card-body">
-                <div id="mapid" class="h-100"></div>
+                <div id="map-container" class="h-100"></div>
                 <div id="map-loading" class="text-center">
                     <div class="spinner-border spinner-center" role="status">
                         <span class="sr-only">Loading...</span>
@@ -500,8 +500,8 @@ function changeBin(binId, updateHistory) {
     // The map must be made invisible, rather than hidden, or the Leaflet will not render the map at the correct
     //   position when it finishes loading. the leaflet control container must be hidden completely as well or there
     //   will be a split second where the controls are visible but the map is not
-    $("#mapid").css("visibility", "hidden");
-    $("#mapid .leaflet-control-container").hide();
+    $("#map-container").css("visibility", "hidden");
+    $("#map-container .leaflet-control-container").hide();
 
     // Update bin name/link
     $("#bin-header").attr("href", binUrl).html(binId);
@@ -546,8 +546,8 @@ function changeBin(binId, updateHistory) {
             });
         }
         mapMarker = changeMapLocation(map, data.lat, data.lng, data.depth, mapMarker);
-        $("#mapid").css("visibility", "visible");
-        $("#mapid .leaflet-control-container").show()
+        $("#map-container").css("visibility", "visible");
+        $("#map-container .leaflet-control-container").show()
 
         if (updateHistory) {
             history.pushState({"bin_id": binId}, null, "?bin_id=" + binId);
