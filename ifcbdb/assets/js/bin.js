@@ -260,14 +260,21 @@ function updateMapLocation(data) {
 function updatePlotVariables(plotData) {
     var plotXAxis = $("#plot-x-axis");
     var plotYAxis = $("#plot-y-axis");
+    var selectedX = plotXAxis.val();
+    var selectedY = plotYAxis.val();
 
     plotXAxis.empty();
     plotYAxis.empty();
 
+    var keys = [];
     $.each(plotData, function(key) {
+        keys.push(key);
         plotXAxis.append($("<option />").text(key));
         plotYAxis.append($("<option />").text(key));
     });
+
+    plotXAxis.val(keys.includes(selectedX) ? selectedX : PLOT_X_DEFAULT);
+    plotYAxis.val(keys.includes(selectedY) ? selectedY : PLOT_Y_DEFAULT);
 }
 
 function initPlotData() {
@@ -289,7 +296,6 @@ function initPlotData() {
 function updatePlotData() {
     // TODO: The plot container has a hard coded height on it that we should make dynamic. However, doing so causes
     //   the plot, when rendering a second time, to revert back to the minimum height
-
     $.get("/api/plot/" + _bin, function(data){
         _plotData = data;
 
