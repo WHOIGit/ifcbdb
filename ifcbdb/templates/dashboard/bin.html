@@ -4,7 +4,6 @@
 {% block breadcrumbs %}
     <!-- TODO: datasets is hard coded into the base file and should not be seen for a bin only view; also remove ** indicator -->
     {% if dataset %}
-        **
         <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
         <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}">{{ bin.pid }}</a></li>
     {% else %}
@@ -662,9 +661,7 @@ function changeBin(binId, updateHistory) {
 
         if (updateHistory) {
             {% if route == "dataset" %}
-                history.pushState({"bin_id": binId}, null, "?bin_id=" + binId);
-            {% else %}
-                // TODO: This needs to be implemented as well as defining what the url history should be
+                history.pushState({"bin_id": _bin, "dataset": _dataset}, null, "?id=" + _bin + "&dataset=" + _dataset);
             {% endif %}
         }
 
