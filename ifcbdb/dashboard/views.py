@@ -507,7 +507,13 @@ def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     bin = b._get_bin()
     ia = bin.images_adc.copy(deep=False)
-    ia.columns = schema_names(bin.schema)
+    # use named columns
+    column_names = schema_names(bin.schema)
+    # now deal with ADC files with extra columns, by removing them
+    if len(ia.columns) > len(column_names):
+        for i in range(len(ia.columns) - len(column_names)):
+            column_names.append('unknown_{}'.format(i))
+    ia.columns = column_names
     ia['target_number'] = bin.images.keys()
     if b.has_features():
         features = b.features().fillna(0)
