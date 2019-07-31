@@ -522,3 +522,12 @@ class TagEvent(models.Model):
 
     def __str__(self):
         return '{} tagged {}'.format(self.bin, self.tag)
+
+# comments
+
+class Comment(models.Model):
+    bin = models.ForeignKey(Bin, on_delete=models.CASCADE, related_name='comments')
+    content = models.CharField(max_length=8192)
+
+    timestamp = models.DateTimeField(auto_now_add=True)
+    # FIXME add user (which can be null)
