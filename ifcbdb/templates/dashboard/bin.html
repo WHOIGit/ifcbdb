@@ -825,6 +825,7 @@ $(function() {
                     $("<img />")
                         .attr("src", baseUrl)
                         .attr("data-target", imageId)
+                        .css("cursor","pointer")
                 );
             }
         });
@@ -852,7 +853,9 @@ $(function() {
             $.each(urls, function(key, val){
                 $("#plot-images").append($("<img />")
                     .attr("src", val.url)
-                    .attr("data-target", val.id));
+                    .attr("data-target", val.id)
+                    .css("cursor","pointer")
+                  );
             });
             $("#too-many-images").toggle(maxImages);
         });
