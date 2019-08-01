@@ -87,9 +87,16 @@
         <div class="card card-body ">
             <button id="sync-button" class="btn btn-sm btn-mdb-color col-sm-2">Sync</button>
             <div id="sync-status" class="d-none">
-                <span id="sync-state"></span>
-                <span id="sync-total"></span> bins found,
-                <span id="sync-added"></span> bins added
+                <div>
+                    <span id="sync-spinner" class="d-none">
+                        <i class="fa fa-spinner fa-spin"></i> 
+                    </span>
+                    <span id="sync-state"></span>
+                    <span id="sync-total"></span> bins synced,
+                    <span id="sync-existing"></span> existing / 
+                    <span id="sync-added"></span> new
+                </div>
+                <div id="sync-bin-id"></div>
             </div>
         </div>
         {% endif %}
@@ -105,17 +112,23 @@
             if(data.state == 'LOCKED') { // job hasn't started yet
                 setTimeout(dataset_sync_status, 1000); // wait for it to start
             } else if(data.state == 'PROGRESS') {
+                $('#sync-spinner').removeClass('d-none');
                 $('#sync-status').removeClass('d-none');
                 $('#sync-state').html('Syncing ...');
                 $('#sync-total').html(data.info.total);
                 $('#sync-added').html(data.info.added);
+                $('#sync-existing').html(data.info.existing);
+                $('#sync-bin-id').html(data.info.bin_id);
                 setTimeout(dataset_sync_status, 1000);
             } else {
                 // job has either succeeded or failed
                 if(data.state == 'SUCCESS') {
+                    $('#sync-spinner').addClass('d-none');
                     $('#sync-state').html('Synced.');
                     $('#sync-total').html(data.info.total);
                     $('#sync-added').html(data.info.added);
+                    $('#sync-existing').html(data.info.existing);
+                    $('#sync-bin-id').empty();
                 } else if(data.state == 'FAILURE') {
                     $('#sync-state').html('Sync failed.');
                 }

@@ -18,6 +18,7 @@ def progress(bin_id, added, total):
         'bin_id': bin_id,
         'added': added,
         'total': total,
+        'existing': total - added,
     }
 
 def do_nothing(*args, **kwargs):
