@@ -164,7 +164,7 @@ function rebuildMosaicPageIndexes() {
     $("#bin-paging").show();
 }
 
-function enableMosaicPaginationButtons() {
+function enableNextPreviousBinButtons() {
     var prevBin = $("#previous-bin").data("bin");
     $("#previous-bin").toggleClass("disabled", prevBin === "");
 
@@ -196,7 +196,7 @@ function loadMosaic(pageNumber) {
         $("#mosaic").css("cursor","pointer");
 
         // Re-enable next/previous buttons
-        enableMosaicPaginationButtons();
+        enableNextPreviousBinButtons();
 
         // Update the paging
         if (data["num_pages"] != _mosaicPages) {
