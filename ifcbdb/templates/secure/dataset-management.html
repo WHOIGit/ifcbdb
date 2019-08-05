@@ -1,0 +1,87 @@
+{% extends 'base.html' %} {% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Dataset Management</span>
+    </div>
+    <div class="flex-column">
+        <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:edit-dataset' 0 %}"><i class="fas fa-plus magic mr-1"></i> Add New Dataset</a>
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <div class="col">
+        <table id="datasets" class="table table-sm table-striped table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Active?</th>
+                    <th></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal" id="datasetDeleteModal" tabindex="-1" role="dialog" aria-labelledby="datasetDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="datasetDeleteModalLabel">Confirm Deletion</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+                <p class="h3">Are you certain you wish to delete this dataset?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-mdb-color" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-sm btn-danger">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Delete Modal -->
+{% endblock %} {% block scripts %}
+<script>
+    $(function(){
+        $('#datasets').DataTable({
+            searching: false,
+            lengthChange: false,
+            ajax: {
+                url: "{% url 'secure:datasets_dt' %}"
+            },
+            columns: [
+                {}, // Name
+                {}, // Description
+                {
+                    targets: 2,
+                    render: function(data, type, row) {
+                        return data ? "Yes" : "No";
+                    }
+                }, // Is Active
+                { // Edit and datasets
+                    targets: -1,
+                    render: function ( data, type, row ) {
+                        return (
+                            "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/edit-dataset/" + data + "'>" +
+                            "<i class='fas fa-edit magic mr-1'></i>Manage" +
+                            "</a>"
+                        );
+                    }
+                }
+            ]
+        });
+    });
+</script>
+{% endblock %}

@@ -2,62 +2,48 @@
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}">{{ dataset.name }}</a></li>
 <li class="breadcrumb-item"><a class="black-text" href="{% url 'bin' dataset.name bin.pid %}">{{ bin.pid }}</a></li>
 {% endblock %} {% block content %}
-<div class="row d-flex justify-content-between">
+<div class="d-flex flex-row justify-content-between align-middle">
     <div class="pl-3">
         <span class="h3-responsive">{{ bin.sample_time|date:'Y-m-d H:i:s e' }}
             <span id="bin-date-relative"></span>
             by IFCB{{ bin.instrument.number }}
         </span>
     </div>
-    <div class="pl-3 align-self-center">
-        <a id="share-button" title="Share This Bin"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Bin</a>
-    </div>
+    <div>
+ <ul class="nav justify-content-end" id="myTab" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link btn btn-mdb-color btn-sm  btn-block active" id="bd-images-tab" data-toggle="tab" href="#bd-images" role="tab" aria-controls="bd-images"
+      aria-selected="true">Mosaic</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="bd-plot-tab" data-toggle="tab" href="#bd-plot" role="tab" aria-controls="bd-plot"
+      aria-selected="true">Plot</a>
+  </li>          
+  </ul>
+  </div>    
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-    <div class="col">
-        <div class="card h-100">
-            <div class="card-header py-1 mdb-color lighten-5">
-            <div class="row col justify-content-between">
-                <span class="h5-responsive">Images</span>
-                        <form class="form-inline">
-                                <label class="my-1 mr-2" for="view-size">View Size:</label>
-                                <select id="view-size" class="custom-select custom-select-sm form-control flex-fill" name="view-size">                                  
-                                {% for size in mosaic_view_sizes %}
-                                <option value="{{ size }}" autocomplete="off" {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
-                                {% endfor %}
-                            </select>
-                                <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>                                    
-                                <select id="scale-factor" class="custom-select custom-select-sm form-control flex-fill" name="scale-factor">                                  
-                                {% for factor in mosaic_scale_factors %}
-                                <option value="{{ factor }}" autocomplete="off" {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%</option>
-                                {% endfor %}                                 
-                                </select>
-                            </form>                 
-                </div>
-            </div>
-            <div class="card-body text-center">
-                <div class="tab-content" id="imageTabContent">
-                    <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab">
+<div class="col-12">
+<div class="card">
+<div class="tab-content" id="bdTabContent">
+        <div class="tab-pane show active" id="bd-images" role="tabpanel" aria-labelledby="bd-images-tab">
+<div class="row py-2 px-3">
+    <div class="col text-center">
+           
+                        <div class="overflow-auto">
                         <img id="mosaic" src="" style="display:none" />
+                        </div>
                         <div id="mosaic-loading" style="height:{{ mosaic_default_height }}px">
                             <div class="spinner-border spinner-center" role="status">
                                 <span class="sr-only">Loading...</span>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab">
-                        <img class="img-fluid" src="https://via.placeholder.com/450?text=Image2">
-                    </div>
-                    <div class="tab-pane" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab">
-                        <img class="img-fluid" src="https://via.placeholder.com/450?text=Image3">
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer py-1 text-center white">
+                <div class="d-flex justify-content-between pt-1 pb-0 border-top mt-1">
+                <div class="col">
                 <nav aria-label="Bin Paging" class="text-center">
-                    <ul id="bin-paging" class="pagination pg-dark justify-content-center">
+                    <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-center">
                         <li class="page-item page-previous">
                             <a class="page-link" tabindex="-1">Previous</a>
                         </li>
@@ -72,9 +58,96 @@
                     </ul>
                 </nav>
             </div>
+            <div class="col">
+                <div class="dropdown">
+                    <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-cogs"></i>
+                    </a>
+                
+                    <div class="dropdown-menu">
+                        <form class="px-4 py-3">
+                            <label class="my-1 mr-2" for="view-size">View Size:</label>
+                            <select id="view-size" class="custom-select custom-select-sm form-control flex-fill" name="view-size">
+                                {% for size in mosaic_view_sizes %}
+                                <option value="{{ size }}" autocomplete="off"
+                                    {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
+                                {% endfor %}
+                            </select>
+                            <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>
+                            <select id="scale-factor" class="custom-select custom-select-sm form-control flex-fill" name="scale-factor">
+                                {% for factor in mosaic_scale_factors %}
+                                <option value="{{ factor }}" autocomplete="off"
+                                    {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+
+    </div>
+</div>
+        </div>
+        <div class="tab-pane" id="bd-plot" role="tabpanel" aria-labelledby="bd-plot-tab">
+<div class="row py-2 px-3">
+    <div class="col-md-7 text-center">
+                    <form class="form form-row">
+                        <div class="form-group mr-2">
+                            <label>X Axis</label>
+                            <select id="plot-x-axis" class="form-control" style="width:150px"></select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label>Y Axis</label>
+                            <select id="plot-y-axis" class="form-control" style="width:150px"></select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label>X Type</label>
+                            <select id="plot-x-type" class="form-control">
+                                <option value="">Linear</option>
+                                <option value="log">Log</option>
+                            </select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label>Y Type</label>
+                            <select id="plot-y-type" class="form-control">
+                                <option value="">Linear</option>
+                                <option value="log">Log</option>
+                            </select>
+                        </div>
+                        <div class="form-group mr-2">
+                            <label>X Offset</label>
+                            <input type="text" id="plot-x-offset" class="form-control" disabled style="width:100px" />
+                        </div>
+                        <div class="form-group">
+                            <label>Y Offset</label>
+                            <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
+                        </div>
+                    </form>
+
+                    <div id="plot" class="bin-plot"></div>
+
+
+    </div>
+    <div class="col-md-5">
+        <div class="card h-100 z-depth-0 border" id="plotImages">
+            <div class="card-body text-center overflow-auto" id="plot-images-container">
+                <div>
+                    <div class="alert alert-danger" id="too-many-images" style="display:none">
+                        Too many images have been selected. Only the first <strong id="max-images"></strong> are shown
+                    </div>
+                    <div id="plot-images"></div>
+                </div>
+            </div>
         </div>
     </div>
-
+</div>
+            </div>        
+    </div>
+</div>
+</div>
 </div>
 <div class="row py-2 px-3">
         <div class="col-md-12">
@@ -113,14 +186,18 @@
                                         {% else %}
                                         <li>blobs</li>
                                         {% endif %}
-                                        <li>features</li> 
+                                        {% if details.has_features %}
+                                        <li><a href="{% url 'features_csv' dataset.name bin.pid %}">features</a></li>
+                                        {% else %}
+                                        <li>features</li>
+                                        {% endif %} 
                                         <li>autoclass</li>
                                     </ul>
                                 </div>
                             </div>
                         </div>                        
                         <div class="col-md-4 mt-1">
-                            <div id="mapid" style="height:200px"></div>
+                            <div id="map-container" style="height:200px"></div>
                         </div>
                     </div>
                 </div>
@@ -221,27 +298,32 @@
     </div>
 </div>
 
-<!-- Modal -->
+<!-- Image Modal -->
 <div class="modal" id="image-modal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog modal-dialog-centered modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-body">
-                <div class="card">
-                    <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 align-self-center text-center h-100" id="images">
+                                <div class="row text-center">
+                                <div class="col">
                                 <a id="detailed-image-link" href="#">
-                                    <img class="img-fluid mb-2 align-middle" id="detailed-image" src="" />
+                                    <img class="img-fluid mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
                                     <img class="img-fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
                                     <img class="img-fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
                                 </a>
-                                <br />
-                                <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image" href="javascript:void(0)">Image</a>
-                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-blob" href="javascript:void(0)">Blob</a>
-                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-outline" href="javascript:void(0)">Outline</a>
+                                </div>
                             </div>
+                            <div class="row text-center">
+                            <div class="col">
+                                <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image" href="javascript:void(0)">Image</a>
+                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-blob" href="javascript:void(0)" id="detailed-image-blob-link">Blob</a>
+                                <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}" data-target="detailed-image-outline" href="javascript:void(0)" id="detailed-image-outline-link">Outline</a>
+                            </div>
+                            </div>
+                        </div>
                             <div class="col-md-6 h-100">
-                                <span class="h5-responsive">Metadata</span>
+                                <p class="h5-responsive border-bottom">Metadata</p>
                                 <div class="h300 overflow-auto">
                                     <div class="table-responsive text-nowrap overflow-auto">
                                         <table class="table table-striped table-sm table-hover" id="detailed-image-metadata">
@@ -251,12 +333,10 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-footer white text-center">
-                        <a id="detailed-image-button" href="#" class="btn btn-mdb-color btn-sm">View Details</a>
-                        <button type="button" class="btn btn-mdb-color btn-sm" data-dismiss="modal">Close</button>
-                    </div>
-                </div>
+            </div>
+            <div class="modal-footer py-0">
+                    <a id="detailed-image-button" href="#" class="btn btn-mdb-color btn-sm">View Details</a>
+                    <button type="button" class="btn btn-mdb-color btn-sm" data-dismiss="modal">Close</button>                
             </div>
         </div>
     </div>
@@ -267,6 +347,7 @@
     var currentBinPage = 0;
     var numBinPages = 1; // placeholder until mosaic load
     var coordinates = []; // placeholder until mosaic load
+    var plotData = null;
 
     function delayedMosaic(page) {
         $("#mosaic").hide();
@@ -476,6 +557,142 @@
         document.execCommand("Copy");
     });
 
+    function updatePlot() {
+        var xAxis = $("#plot-x-axis").val();
+        var yAxis = $("#plot-y-axis").val();
+        var xType = $("#plot-x-type").val();
+        var yType = $("#plot-y-type").val();
+        var xOffset = $("#plot-x-offset").val();
+        var yOffset = $("#plot-y-offset").val();
+        var xData = plotData[xAxis];
+        var yData = plotData[yAxis];
+
+        if ($.isNumeric(xOffset) && xOffset != 0) {
+            xData = $.map(xData, function(value) { return value + parseFloat(xOffset); });
+        }
+
+        if ($.isNumeric(yOffset) && yOffset != 0) {
+            yData = $.map(yData, function(value) { return value + parseFloat(yOffset); });
+        }
+
+        var config = {
+            responsive: true,
+            displaylogo: false,
+            scrollZoom: true,
+            modeBarButtonsToRemove: [
+                "sendDataToCloud",
+                "hoverCompareCartesian",
+                "hoverClosestCartesian",
+                "toImage",
+                "toggleSpikelines",
+                "resetScale2d"
+            ]
+        };
+
+        var trace = [{
+            x: xData,
+            y: yData,
+            mode: 'markers',
+            type: 'scatter'
+        }];
+
+        var layout = {
+                margin: {
+                    l: 50,
+                    r: 50,
+                    b: 50,
+                    t: 00,
+                    pad: 2
+                },            
+            xaxis: {
+                type: xType,
+                autorange: true
+            },
+            yaxis: {
+                type: yType,
+                fixedrange: true,
+            }
+        };
+
+        Plotly.react('plot', trace, layout, config);
+
+        $("#plot")[0].on('plotly_click', function(data){
+            var pts = '';
+            for(var i=0; i < data.points.length; i++){
+                var idx = data.points[i].pointIndex;
+
+                var imageId = plotData["target_number"][idx];
+                var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(imageId, 5) + ".png";
+
+                $("#plot-images").empty();
+                $("#plot-images").append(
+                    $("<img />")
+                        .attr("src", baseUrl)
+                        .attr("data-target", imageId)
+                );
+            }
+        });
+
+        $("#plot")[0].on("plotly_selected", function(data){
+            var urls = [];
+            var maxImages = false;
+            for(var i = 0; i < data.points.length; i++){
+                if (i == MAX_SELECTABLE_IMAGES) {
+                    maxImages = true;
+                    break;
+                }
+
+                var idx = data.points[i].pointIndex;
+                var imageId = plotData["target_number"][idx];
+                var imageUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(imageId, 5) + ".png";
+
+                urls.push({
+                    "id": imageId,
+                    "url": imageUrl
+                });
+            }
+
+            $("#plot-images").empty();
+            $.each(urls, function(key, val){
+                $("#plot-images").append($("<img />")
+                    .attr("src", val.url)
+                    .attr("data-target", val.id));
+            });
+            $("#too-many-images").toggle(maxImages);
+        });
+    }
+
+    $("#plot-x-axis, #plot-y-axis, #plot-x-offset, #plot-y-offset").change(function(e){
+        updatePlot();
+    });
+
+    $("#plot-x-type").change(function(e){
+        if ($(this).val() == "log") {
+            $("#plot-x-offset").prop("disabled", false);
+        } else {
+            $("#plot-x-offset").prop("disabled", true).val("");;
+        }
+
+        updatePlot();
+    });
+
+    $("#plot-y-type").change(function(e){
+        if ($(this).val() == "log") {
+            $("#plot-y-offset").prop("disabled", false);
+        } else {
+            $("#plot-y-offset").prop("disabled", true).val("");;
+        }
+
+        updatePlot();
+    });
+
+    $("#plot-images").on("click", "img", function(e){
+        var target = $(this).data("target");
+        var baseUrl = "/{{ dataset.name }}/{{ bin.pid }}_" + padDigits(target, 5);
+
+        location.href = baseUrl + ".html";
+    });
+
     $(function() {
         var map = createMap({{ bin.latitude }}, {{ bin.longitude }});
         addMapMarker(map, {{ bin.latitude }}, {{ bin.longitude }}, {{ bin.depth }});
@@ -484,6 +701,24 @@
 
         var binDate = "{{ bin.timestamp|date:'c' }}";
         $("#bin-date-relative").text(" (" + moment(binDate).fromNow() + ")");
+
+        $("#max-images").text(MAX_SELECTABLE_IMAGES);
+
+        $.get("/api/plot/{{ bin.pid }}", function(data){
+            plotData = data;
+            var plotXAxis = $("#plot-x-axis");
+            var plotYAxis = $("#plot-y-axis");
+
+            $.each(data, function(key) {
+                plotXAxis.append($("<option />").text(key));
+                plotYAxis.append($("<option />").text(key));
+            });
+
+            plotXAxis.val(PLOT_X_DEFAULT);
+            plotYAxis.val(PLOT_Y_DEFAULT);
+
+            updatePlot();
+        });
     });
 
 </script>

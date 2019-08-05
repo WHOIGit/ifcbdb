@@ -29,6 +29,7 @@ from ifcb.viz.mosaic import Mosaic
 from ifcb.viz.blobs import blob_outline
 from ifcb.data.adc import schema_names
 from ifcb.data.products.blobs import BlobDirectory
+from ifcb.data.products.features import FeaturesDirectory
 from ifcb.data.zip import bin2zip_stream
 
 from .crypto import AESCipher
@@ -100,7 +101,7 @@ class Timeline(object):
     def next_bin(self, bin):
         return self.bins.filter(sample_time__gt=bin.sample_time).order_by("sample_time").first()
 
-    def closest_bin(self, longitude, latitude):
+    def nearest_bin(self, longitude, latitude):
         location = Point(longitude, latitude, srid=SRID)
         return self.bins.annotate(
             distance=Distance('location', location)
@@ -152,9 +153,24 @@ class Timeline(object):
     def metric_label(self, metric):
         return self.TIMELINE_METRICS.get(metric,'')
 
+def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None):
+    qs = Bin.objects
+    if start is not None or end is not None:
+        qs = Timeline(qs).time_range(start, end)
+    if dataset_name is not None:
+        dataset = Dataset.objects.get(name=dataset_name)
+        qs = qs.filter(datasets=dataset)
+    if tags:
+        qs = qs.filter(tags=tags) # FIXME untested
+    if instrument_number is not None:
+        instrument = Instrument.objects.get(number=instrument_number)
+        qs = qs.filter(instrument=instrument)
+    return qs
+
 class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=256)
+    is_active = models.BooleanField(blank=False, null=False, default=True)
 
     def tag_cloud(self, instrument=None):
         return Tag.cloud(dataset=self, instrument=instrument)
@@ -162,23 +178,25 @@ class Dataset(models.Model):
     def __str__(self):
         return self.name
 
-DATA_DIRECTORY_RAW = 'raw'
-DATA_DIRECTORY_BLOBS = 'blobs'
-
 class DataDirectory(models.Model):
+    # directory types
+    RAW = 'raw'
+    BLOBS = 'blobs'
+    FEATURES = 'features'
+
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='directories')
     path = models.CharField(max_length=512) # absolute path
-    kind = models.CharField(max_length=32, default=DATA_DIRECTORY_RAW)
+    kind = models.CharField(max_length=32, default=RAW)
     priority = models.IntegerField(default=1) # order in which directories are searched (lower ealier)
     last_synced = models.DateTimeField('time of last db sync', blank=True, null=True)
     # parameters controlling searching (simple comma separated fields because we don't have to query on these)
     whitelist = models.CharField(max_length=512, default='data') # comma separated list of directory names to search
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
     # for product directories, the product version
-    version = models.IntegerField(null=True)
+    version = models.IntegerField(null=True, blank=True)
 
     def get_raw_directory(self):
-        if self.kind != DATA_DIRECTORY_RAW:
+        if self.kind != self.RAW:
             raise ValueError('not a raw directory')
         # return the underlying ifcb.DataDirectory
         whitelist = re.split(',', self.whitelist)
@@ -186,9 +204,14 @@ class DataDirectory(models.Model):
         return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist)
 
     def get_blob_directory(self):
-        if self.kind != DATA_DIRECTORY_BLOBS:
+        if self.kind != self.BLOBS:
             raise ValueError('not a blobs directory')
         return BlobDirectory(self.path, self.version)
+
+    def get_features_directory(self):
+        if self.kind != self.FEATURES:
+            raise ValueError('not a features directory')
+        return FeaturesDirectory(self.path, self.version)
 
     def __str__(self):
         return '{} ({})'.format(self.path, self.kind)
@@ -214,7 +237,7 @@ class Bin(models.Model):
     # metadata JSON
     metadata_json = models.CharField(max_length=8192, default='{}', db_column='metadata')
     # metrics
-    size = models.IntegerField(default=0) # size of raw data in bytes
+    size = models.BigIntegerField(default=0) # size of raw data in bytes
     n_triggers = models.IntegerField(default=0)
     n_images = models.IntegerField(default=0)
     temperature = models.FloatField(default=FILL_VALUE)
@@ -261,7 +284,7 @@ class Bin(models.Model):
     
     # access to underlying FilesetBin objects
 
-    def _directories(self, kind=DATA_DIRECTORY_RAW, version=None):
+    def _directories(self, kind=DataDirectory.RAW, version=None):
         for dataset in self.datasets.all():
             qs = dataset.directories.filter(kind=kind)
             if version is not None:
@@ -272,7 +295,7 @@ class Bin(models.Model):
     @lru_cache()
     def _get_bin(self):
         # return the underlying ifcb.Bin object backed by the raw filesets
-        for directory in self._directories(kind=DATA_DIRECTORY_RAW):
+        for directory in self._directories(kind=DataDirectory.RAW):
             dd = directory.get_raw_directory()
             try:
                 return dd[self.pid]
@@ -320,12 +343,12 @@ class Bin(models.Model):
     # access to blobs
 
     def blob_file(self, version=2):
-        for directory in self._directories(kind=DATA_DIRECTORY_BLOBS, version=version):
+        for directory in self._directories(kind=DataDirectory.BLOBS, version=version):
             bd = directory.get_blob_directory()
             try:
                 return bd[self.pid]
             except KeyError as e:
-                raise KeyError('no blobs found for {}'.format(self.pid)) from e
+                pass
         raise KeyError('no blobs found for {}'.format(self.pid))
 
     def has_blobs(self, version=2):
@@ -350,6 +373,30 @@ class Bin(models.Model):
         blob = self.blob(target_number, version=blob_version)
         out = blob_outline(image, blob, outline_color=outline_color)
         return out
+
+    # features
+
+    def features_file(self, version=2):
+        for directory in self._directories(kind=DataDirectory.FEATURES, version=version):
+            fd = directory.get_features_directory()
+            try:
+                return fd[self.pid]
+            except KeyError:
+                pass
+        raise KeyError('no features found for {}'.format(self.pid))
+
+    def has_features(self, version=2):
+        try:
+            self.features_file(version=version)
+            return True
+        except KeyError:
+            return False
+
+    def features_path(self, version=2):
+        return self.features_file(version=version).path
+
+    def features(self, version=2):
+        return self.features_file(version=version).features(prune=True)
 
     # mosaics
 
@@ -404,16 +451,17 @@ class Bin(models.Model):
     def __str__(self):
         return self.pid
 
+
 class Instrument(models.Model):
     number = models.IntegerField(unique=True)
     version = models.IntegerField(default=2)
     # nickname is optional, not everyone names their IFCB
-    nickname = models.CharField(max_length=64)
+    nickname = models.CharField(max_length=64, blank=True)
     # connection parameters for Samba
-    address = models.CharField(max_length=128) # ip address or dns name
-    username = models.CharField(max_length=64)
-    _password = models.CharField(max_length=128, db_column='password')
-    share_name = models.CharField(max_length=128, default='Data')
+    address = models.CharField(max_length=128, blank=True) # ip address or dns name
+    username = models.CharField(max_length=64, blank=True)
+    _password = models.CharField(max_length=128, db_column='password', blank=True)
+    share_name = models.CharField(max_length=128, default='Data', blank=True)
 
     @staticmethod
     def _get_cipher():
@@ -437,6 +485,11 @@ class Instrument(models.Model):
 
     def __str__(self):
         return 'IFCB{}'.format(self.number)
+
+    @staticmethod
+    def determine_version(number):
+        return 1 if number < 10 else 2
+
 
 # tags
 
@@ -469,3 +522,12 @@ class TagEvent(models.Model):
 
     def __str__(self):
         return '{} tagged {}'.format(self.bin, self.tag)
+
+# comments
+
+class Comment(models.Model):
+    bin = models.ForeignKey(Bin, on_delete=models.CASCADE, related_name='comments')
+    content = models.CharField(max_length=8192)
+
+    timestamp = models.DateTimeField(auto_now_add=True)
+    # FIXME add user (which can be null)

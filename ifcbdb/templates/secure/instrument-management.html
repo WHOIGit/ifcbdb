@@ -1,0 +1,86 @@
+{% extends 'base.html' %} {% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Instrument Management</span>
+    </div>
+    <div class="flex-column">
+        <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:edit-instrument' 0 %}"><i class="fas fa-plus magic mr-1"></i> Add New Instrument</a>
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <div class="col">
+        <table id="instruments" class="table table-sm table-striped table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Number</th>
+                    <th>Nickname</th>
+                    <th></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+</div>
+
+<!-- End Add/Edit Modal -->
+<!-- Delete Confirm Modal -->
+<div class="modal" id="confirm-delete-modal" tabindex="-1" role="dialog" aria-labelledby="add-instrument-header" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="add-instrument-header">Confirm Deletion</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+                <p class="h3">Are you certain you wish to delete this instrument?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-mdb-color" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-sm btn-danger">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Delete Modal -->
+
+{% endblock %} {% block scripts %}
+<script>
+    $(function(){
+        $('#instruments').DataTable({
+            searching: false,
+            lengthChange: false,
+            ajax: {
+                url: "{% url 'secure:instruments_dt' %}"
+            },
+            columns: [
+                {
+                    render: function (data, type, row) {
+                        return "IFCB" + data;
+                    }
+                }, // Number
+                {}, // Nickname
+                { // Edit
+                    targets: -1,
+                    render: function ( data, type, row ) {
+                        return (
+                            "<a class='btn btn-sm btn-mdb-color' href='/secure/edit-instrument/" + data + "'>" +
+                            "<i class='fas fa-edit magic mr-1'></i>Edit" +
+                            "</a>"
+                        );
+                    }
+                }
+            ]
+        });
+    });
+</script>
+{% endblock %}

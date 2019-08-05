@@ -4,6 +4,11 @@ var defaultLng = -70.6593102;
 var minLatitude = -180;
 var minLongitude = -180;
 var zoomLevel = 6;
+var GPS_PRECISION = 4;
+var DEPTH_PRECISION = 1;
+var PLOT_X_DEFAULT = "roi_x";
+var PLOT_Y_DEFAULT = "roi_y";
+var MAX_SELECTABLE_IMAGES = 25;
 
 $(function(){
     $("#dataset-switcher").change(function(){
@@ -22,9 +27,13 @@ function createMap(lat, lng) {
         lng = defaultLng;
     }
 
-    var map = L.map('mapid').setView([lat, lng], zoomLevel);
+    var map = L.map('map-container').setView([lat, lng], zoomLevel);
     L.esri.basemapLayer('Oceans').addTo(map);
     L.esri.basemapLayer('OceansLabels').addTo(map);
+
+    map.on("zoomend", function(e) {
+        zoomLevel = this.getZoom();
+    });
 
     return map;
 }
@@ -38,21 +47,23 @@ function addMapMarker(map, lat, lng, depth) {
             closeOnEscapeKey: false,
             keepInView: true
         }
+
         var popup = L.popup(options)
             .setLatLng([defaultLat, defaultLng])
             .setContent("Unknown Location")
             .openOn(map)
 
-        $("#mapid .leaflet-popup-tip-container").hide()
+        $("#map-container .leaflet-popup-tip-container").hide()
+
         return popup;
     }
 
     return L.marker([lat, lng])
         .addTo(map)
         .bindPopup(
-            "Latitude: <strong>" + lat + "</strong><br />" +
-            "Longitude: <strong>" + lng + "</strong><br />" +
-            "Depth: <strong>" + parseFloat(depth).toFixed(1) + "m</strong>"
+            "Latitude: <strong>" + parseFloat(lat).toFixed(GPS_PRECISION) + "</strong><br />" +
+            "Longitude: <strong>" + parseFloat(lng).toFixed(GPS_PRECISION) + "</strong><br />" +
+            "Depth: <strong>" + parseFloat(depth).toFixed(DEPTH_PRECISION) + "m</strong>"
         )
         .openPopup();
 }
@@ -141,7 +152,7 @@ function getTimelineData(data, selectedDate) {
 
 function getTimelineLayout(data, range) {
     var layout =  {
-        bargap: .05,
+        bargap: 0,
         margin: {
             l: 75,
             r: 50,
@@ -260,21 +271,24 @@ function getDataPointIndex(dataPoints, selectedDate) {
             break;
     }
 
+    // If the end of the list was reached, then the selected bin is not visible and we should
+    //   not try to highlight it
+    if (idx == dataPoints.length)
+        return -1;
+
     return idx - 1;
 }
 
 function highlightSelectedBinByIndex(dataPoints, index) {
-    $("#ts-data .tab-pane").each(function(){
-        var plot = $(".ts-plot-container", $(this))[0]
-        if (!plot.data)
-            return;
+    var plot = $("#primary-plot-container")[0];
+    if (!plot.data)
+        return;
 
-        Plotly.restyle(plot, {
-            "marker": {
-                "color": buildColorArray(dataPoints, index)
-            }
-        });
-    })
+    Plotly.restyle(plot, {
+        "marker": {
+            "color": buildColorArray(dataPoints, index)
+        }
+    });
 }
 
 function highlightSelectedBinByDate(dataPoints, selectedDate) {

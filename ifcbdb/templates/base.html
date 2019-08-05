@@ -11,8 +11,11 @@
     <link href="{% static 'vendor/fontawesome/css/all.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/mdbootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/mdbootstrap/css/mdb.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/DataTables/datatables.min.css' %}" rel="stylesheet"> 
     <link href="{% static 'css/site.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/leaflet/leaflet.css' %}" rel="stylesheet">
+
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}"> 
 </head>
 
 <body class="white">
@@ -40,10 +43,10 @@
                         <span class="sr-only">(current)</span>
                     </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link waves-effect" href="#">Settings</a>
-                    </li>
                 {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link waves-effect" href="/secure/">Settings</a>
+                    </li>                
                 <li class="nav-item">
                 <a href="{% url 'secure:logout' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log Out</a>
                 </li>
@@ -56,6 +59,9 @@
 
                 <!-- Right -->
                 {% dataset_switcher %}
+                {% if can_share_page %}
+                <a id="share-button" title="Share This Page" class="pl-2"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Page</a>
+                {% endif %}
             </div>
 
         </div>
@@ -65,7 +71,7 @@
     <div class="container-fluid">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mdb-color lighten-5 py-2">
-                <li class="breadcrumb-item"><a class="black-text" href="{% url 'datasets' %}">Datasets</a></li>
+                <li class="breadcrumb-item"><a class="black-text" href="{% url 'datasets' %}">Dashboard</a></li>
                 {% block breadcrumbs %}{% endblock %}
             </ol>
         </nav>
@@ -119,7 +125,7 @@
         </div>
         <div class="footer-copyright text-center py-3 stylish-color-dark">
             <div>
-                Version 0.1.1-alpha - 30 May 2019 -
+                Version 0.1.2-alpha - 30 July 2019 -
                 <a href="{% url 'secure:login' %}">Log in</a>
             </div>
         </div>
@@ -132,8 +138,9 @@
     <script type="text/javascript" src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/esrileaflet/esri-leaflet.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/plotly/plotly-latest.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'vendor/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/moment/moment.min.js' %}"></script>   
     <script type="text/javascript" src="{% static 'js/site.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/DataTables/datatables.min.js' %}"></script>
 
 
     <script>
