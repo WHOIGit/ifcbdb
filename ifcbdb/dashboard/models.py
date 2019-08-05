@@ -10,6 +10,7 @@ from django.conf import settings
 
 from django.db.models import F, Count, Sum, Avg, Min, Max
 from django.db.models.functions import Trunc
+from django.contrib.auth.models import User
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
@@ -437,16 +438,22 @@ class Bin(models.Model):
     def tag_names(self):
         return [t.name for t in self.tags.all()]
 
-    def add_tag(self, tag_name):
+    def add_tag(self, tag_name, user=None):
         tag, created = Tag.objects.get_or_create(name=tag_name)
         # don't add this tag if was already added
-        event, created = TagEvent.objects.get_or_create(bin=self, tag=tag)
+        event, created = TagEvent.objects.get_or_create(bin=self, tag=tag, user=user)
         return event
 
     def delete_tag(self, tag_name):
         tag = Tag.objects.get(name=tag_name)
         event = TagEvent.objects.get(bin=self, tag=tag)
         event.delete()
+
+    # comments
+
+    def add_comment(self, content, user=None):
+        comment = Comment(bin=self, content=content, user=user)
+        comment.save()
 
     def __str__(self):
         return self.pid
@@ -516,9 +523,9 @@ class Tag(models.Model):
 class TagEvent(models.Model):
     bin = models.ForeignKey(Bin, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
     timestamp = models.DateTimeField(auto_now_add=True, null=True)
-    # FIXME add user (which can be null)]
 
     def __str__(self):
         return '{} tagged {}'.format(self.bin, self.tag)
@@ -528,6 +535,13 @@ class TagEvent(models.Model):
 class Comment(models.Model):
     bin = models.ForeignKey(Bin, on_delete=models.CASCADE, related_name='comments')
     content = models.CharField(max_length=8192)
+    user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
     timestamp = models.DateTimeField(auto_now_add=True)
-    # FIXME add user (which can be null)
+
+    def __str__(self):
+        max_length = 20
+        if len(self.content) > max_length:
+            return self.content[:max_length] + '...'
+        else:
+            return self.content
