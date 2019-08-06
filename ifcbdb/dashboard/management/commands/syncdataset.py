@@ -28,4 +28,4 @@ class Command(BaseCommand):
             self.stderr.write('No such dataset "{}"'.format(dataset_name))
             return
         acc = Accession(d, lat=lat, lon=lon, depth=depth)
-        acc.sync()
+        acc.sync(progress_callback=print, log_callback=print)

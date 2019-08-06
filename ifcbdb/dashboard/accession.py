@@ -39,7 +39,7 @@ class Accession(object):
             directory = ifcb.DataDirectory(dd.path)
             for b in directory:
                 yield b
-    def sync(self, progress_callback=do_nothing):
+    def sync(self, progress_callback=do_nothing, log_callback=do_nothing):
         progress_callback(progress('',0,0))
         bins_added = 0
         total_bins = 0
@@ -65,6 +65,7 @@ class Accession(object):
             bins2save = []
             for bin in bins:
                 pid = bin.lid
+                log_callback('{} found'.format(pid))
                 most_recent_bin_id = pid
                 instrument = instruments[bin.pid.instrument]
                 timestamp = bin.timestamp
@@ -80,12 +81,18 @@ class Accession(object):
                 if b2s is not None:
                     bins2save.append(b2s)
                 elif created: # created, but bad! delete
+                    log_callback('{} deleting bad bin'.format(b.pid))
                     b.delete()
+                else:
+                    log_callback('{} not adding bin'.format(b.pid))
             with transaction.atomic():
                 for b in bins2save:
                     b.save()
+                    log_callback('{} saved'.format(b.pid))
                 # add to dataset, unless the bin has no rois
-                for b in bins2save and not b.qc_no_rois:
+                for b in bins2save:
+                    if b.qc_no_rois:
+                        continue
                     self.dataset.bins.add(b)
                     bins_added += 1
                     most_recent_bin_id = b.pid
