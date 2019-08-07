@@ -835,6 +835,15 @@ $(function() {
             }
         });
 
+        // When changing tools, clear any existing selection (and shown images)
+        $("#plot")[0].addEventListener('click', function(event) {
+            if ($(event.target).parents(".modebar").length > 0) {
+                $("#too-many-images").toggle(false);
+                $("#plot-images").empty();
+                Plotly.restyle($("#plot")[0], {selectedpoints: [null]});
+            }
+        });
+
         $("#plot")[0].on("plotly_selected", function(data){
             var urls = [];
             var maxImages = false;
