@@ -11,6 +11,7 @@ var _map = null;                // Current Leaflet map
 var _marker = null;             // Current marker shown on the map
 var _workspace = "mosaic";      // The current workspace a user is seeing
 var _pendingMapLocation = null; // The next map position to render (see notes in updateMapLocation)
+var _csrf = null;               // CSRF token from Django for post requests
 
 //************* Common Methods ***********************/
 
@@ -140,6 +141,59 @@ function changeToNearestBin(lat, lng) {
         if (resp.bin_id != "")
             changeBin(resp.bin_id, true);
     });
+}
+
+function addTag() {
+    var tag = $("#tag").val();
+    if (tag.trim() === "")
+        return;
+
+    var payload = {
+        "csrfmiddlewaretoken": _csrf,
+        "tag_name": tag
+    };
+
+    $.post("/secure/api/add-tag/" + _bin, payload, function(data){
+        displayTags(data.tags);
+        $("#tag").val("");
+    });
+}
+
+function removeTag(tag) {
+    if (tag.trim() === "")
+        return;
+
+    var payload = {
+        "csrfmiddlewaretoken": _csrf,
+        "tag_name": tag
+    };
+
+    $.post("/secure/api/remove-tag/" + _bin, payload, function(data){
+        displayTags(data.tags);
+    });
+}
+
+function displayTags(tags) {
+    var list = $("#tags");
+    list.empty();
+
+    for (var i = 0; i < tags.length; i++) {
+        var tag = tags[i];
+
+        var li = $("<li class='list-group-item'>");
+        var icon = $("<i class='fas fa-tag fa-2x mr-1' aria-hidden='true'></i>");
+        var link = $("<a href='javascript:;' class='badge badge-pill badge-primary'>" + tag + "</a>");
+        var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "'>X</a>");
+
+        link.prepend(icon);
+        li.append(link);
+        li.append(remove);
+        list.append(li);
+    }
+
+
+
+    console.log(tags);
 }
 
 //************* Mosaic Methods ***********************/
@@ -408,6 +462,16 @@ function initEvents() {
     // Showing the map workspace
     $("#show-map").click(function(e){
         showWorkspace("map");
+    });
+
+    // Add a tag to a bin
+    $("#add-tag").click(function(e){
+        addTag();
+    });
+
+    // Remove a tag from a bin
+    $("#tags").on("click", ".remove-tag", function(e){
+        removeTag($(this).data("tag"));
     });
 }
 

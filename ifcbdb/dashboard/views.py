@@ -575,3 +575,4 @@ def test_sync_dataset_status(request, dataset_id):
         'state': result.state,
         'info': result.info,
         })
+

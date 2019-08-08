@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 
-from dashboard.models import Dataset, Instrument, DataDirectory
+from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin
 from .forms import DatasetForm, InstrumentForm, DirectoryForm
 
 
@@ -158,4 +158,29 @@ def edit_instrument(request, id):
     return render(request, "secure/edit-instrument.html", {
         "instrument": instrument,
         "form": form,
+    })
+
+
+# TODO: Handle login_required decorator better; currently returns HTML instead of JSON
+@require_POST
+@login_required
+def add_tag(request, bin_id):
+    tag_name = request.POST.get("tag_name", "")
+    bin = get_object_or_404(Bin, pid=bin_id)
+    bin.add_tag(tag_name, user=request.user)
+
+    return JsonResponse({
+        "tags": bin.tag_names,
+    })
+
+
+@require_POST
+@login_required
+def remove_tag(request, bin_id):
+    tag_name = request.POST.get("tag_name", "")
+    bin = get_object_or_404(Bin, pid=bin_id)
+    bin.delete_tag(tag_name)
+
+    return JsonResponse({
+        "tags": bin.tag_names,
     })

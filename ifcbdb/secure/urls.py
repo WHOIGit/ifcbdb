@@ -21,5 +21,7 @@ urlpatterns = [
     path('api/dt/instruments', views.dt_instruments, name='instruments_dt'),
     path('api/dt/directories/<int:dataset_id>', views.dt_directories, name='directories_dt'),
     path('api/delete-directory/<int:dataset_id>/<int:id>', views.delete_directory, name='delete-directory'),
+    path('api/add-tag/<slug:bin_id>', views.add_tag, name='add_tag'),
+    path('api/remove-tag/<slug:bin_id>', views.remove_tag, name='remove_tag'),
 
 ]

@@ -405,17 +405,20 @@
                       </div>
                     </div>
                     <div class="card-body overflow-auto">
-                      <ul>
+
+                      <ul id="tags">
                         {% for tag in details.tags %}
                         <li class="list-group-item">
-                          <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1"
+                          <a href="javascript:;" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1"
                               aria-hidden="true"></i>{{tag}}</a>
+                            <a href="javascript:;" class="remove-tag" data-tag="{{ tag }}">X</a>
                         </li>
                         {% endfor %}
                       </ul>
                     </div>
-                    <div class="card-footer py-1 white">
-                      <a href="#" class="btn btn-mdb-color btn-block btn-sm"><i class="fas fa-plus-circle"
+                    <div class="card-footer py-1 mdb-color lighten-5">
+                        <input type="text" id="tag" name="tag" class="form-control mb-2" />
+                      <a id="add-tag" href="javascript:;" class="btn btn-mdb-color btn-block btn-sm"><i class="fas fa-plus-circle"
                           aria-hidden="true"></i>Add</a>
                     </div>
                   </div>
@@ -910,6 +913,7 @@ $(function() {
         _dataset = "{{ dataset.name }}";
     {% endif %}
     _bin = "{{ bin.pid }}";
+    _csrf = "{{ csrf_token }}";
 
 </script>
 {% endblock %}
