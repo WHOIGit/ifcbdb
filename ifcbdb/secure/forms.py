@@ -23,7 +23,8 @@ class DirectoryForm(forms.ModelForm):
         if not self._match_folder_names(whitelist):
             raise forms.ValidationError("Whitelist must be a comma separated list of names (not full paths)")
 
-        return whitelist
+        # Return a list with each entried stripped of beginning/ending spaces
+        return ",".join([name.strip() for name in whitelist.split(",")])
 
     def clean_blacklist(self):
         blacklist = self.cleaned_data['blacklist']
@@ -31,7 +32,7 @@ class DirectoryForm(forms.ModelForm):
         if not self._match_folder_names(blacklist):
             raise forms.ValidationError("Blacklist must be a comma separated list of names (not full paths)")
 
-        return blacklist
+        return ",".join([name.strip() for name in blacklist.split(",")])
 
     def _match_folder_names(self, value):
         return re.match(r'^[A-Za-z0-9,\s]*$', value)
