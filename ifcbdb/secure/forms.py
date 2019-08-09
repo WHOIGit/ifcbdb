@@ -1,3 +1,4 @@
+import re
 from django import forms
 
 from dashboard.models import Dataset, Instrument, DataDirectory
@@ -16,6 +17,25 @@ class DatasetForm(forms.ModelForm):
 
 
 class DirectoryForm(forms.ModelForm):
+
+    def clean_whitelist(self):
+        whitelist = self.cleaned_data['whitelist']
+        if not self._match_folder_names(whitelist):
+            raise forms.ValidationError("Whitelist must be a comma separated list of names (not full paths)")
+
+        return whitelist
+
+    def clean_blacklist(self):
+        blacklist = self.cleaned_data['blacklist']
+
+        if not self._match_folder_names(blacklist):
+            raise forms.ValidationError("Blacklist must be a comma separated list of names (not full paths)")
+
+        return blacklist
+
+    def _match_folder_names(self, value):
+        return re.match(r'^[A-Za-z0-9,\s]*$', value)
+
     class Meta:
         model = DataDirectory
         fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", ]
