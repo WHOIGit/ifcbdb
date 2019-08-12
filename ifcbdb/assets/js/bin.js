@@ -29,7 +29,7 @@ function showWorkspace(workspace) {
     _workspace = workspace;
 
     $("#image-tab-content").toggleClass("d-none", !(workspace == "mosaic"));
-    $("#mosaic-footer").toggleClass("d-none", !(workspace == "mosaic"));
+    //$("#mosaic-footer").toggleClass("d-none", !(workspace == "mosaic"));
     $("#plot-tab-content").toggleClass("d-none", !(workspace == "plot"));
     $("#map-tab-content").toggleClass("d-none", !(workspace == "map"));
 
@@ -143,8 +143,15 @@ function changeToNearestBin(lat, lng) {
     });
 }
 
+function toggleTagInput(isAdding) {
+    $("#add-tag").toggleClass("d-none", isAdding)
+    $("#tag-name").toggleClass("d-none", !isAdding)
+    $("#tag-confirm").toggleClass("d-none", !isAdding)
+    $("#tag-cancel").toggleClass("d-none", !isAdding)
+}
+
 function addTag() {
-    var tag = $("#tag").val();
+    var tag = $("#tag-name").val();
     if (tag.trim() === "")
         return;
 
@@ -155,12 +162,13 @@ function addTag() {
 
     $.post("/secure/api/add-tag/" + _bin, payload, function(data){
         displayTags(data.tags);
-        $("#tag").val("");
+        $("#tag-name").val("");
+        toggleTagInput(false);
     });
 }
 
 function removeTag(tag) {
-    if (tag.trim() === "")
+    if (String(tag).trim() === "")
         return;
 
     var payload = {
@@ -179,21 +187,17 @@ function displayTags(tags) {
 
     for (var i = 0; i < tags.length; i++) {
         var tag = tags[i];
+        var li = $("<li class='list-group-item d-inline  p-2 mr-2'>");
+        var span = $("<span>" + tag + "</span>");
+        var icon = $("<i class='fas fa-trash pl-1 pr-1'></i>");
+        var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "' />");
 
-        var li = $("<li class='list-group-item'>");
-        var icon = $("<i class='fas fa-tag fa-2x mr-1' aria-hidden='true'></i>");
-        var link = $("<a href='javascript:;' class='badge badge-pill badge-primary'>" + tag + "</a>");
-        var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "'>X</a>");
-
-        link.prepend(icon);
-        li.append(link);
+        li.append(span);
         li.append(remove);
+        remove.append(icon);
+
         list.append(li);
     }
-
-
-
-    console.log(tags);
 }
 
 //************* Mosaic Methods ***********************/
@@ -466,7 +470,22 @@ function initEvents() {
 
     // Add a tag to a bin
     $("#add-tag").click(function(e){
+        toggleTagInput(true);
+        $("#tag-name").focus();
+    });
+
+    $("#tag-cancel").click(function(e){
+        toggleTagInput(false);
+    });
+
+    $("#tag-confirm").click(function(e){
         addTag();
+    });
+
+    $("#tag-name").on("keyup", function(e){
+        if (e.keyCode == 13) {
+            addTag();
+        }
     });
 
     // Remove a tag from a bin
