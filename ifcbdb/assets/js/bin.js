@@ -1,17 +1,17 @@
 //************* Local Variables ***********************/
-var _bin = "";                  // Bin Id
-var _dataset = "";              // Dataset Name
-var _mosaicPage = 0;            // Current page being displayed in the mosaic
-var _mosaicPages = -1;          // Total number of pages for the mosaic
-var _coordinates = [];          // Coordinates of images within the current mosaic
-var _isMosaicLoading = false;   // Whether the mosaic is in the process of loading
-var _isBinLoading = false;      // Whether the bin is in the process of loading
-var _plotData = null;           // Local storage of the current bin's plot data
-var _map = null;                // Current Leaflet map
-var _marker = null;             // Current marker shown on the map
-var _workspace = "mosaic";      // The current workspace a user is seeing
+var _bin = ""; // Bin Id
+var _dataset = ""; // Dataset Name
+var _mosaicPage = 0; // Current page being displayed in the mosaic
+var _mosaicPages = -1; // Total number of pages for the mosaic
+var _coordinates = []; // Coordinates of images within the current mosaic
+var _isMosaicLoading = false; // Whether the mosaic is in the process of loading
+var _isBinLoading = false; // Whether the bin is in the process of loading
+var _plotData = null; // Local storage of the current bin's plot data
+var _map = null; // Current Leaflet map
+var _marker = null; // Current marker shown on the map
+var _workspace = "mosaic"; // The current workspace a user is seeing
 var _pendingMapLocation = null; // The next map position to render (see notes in updateMapLocation)
-var _csrf = null;               // CSRF token from Django for post requests
+var _csrf = null; // CSRF token from Django for post requests
 
 //************* Common Methods ***********************/
 
@@ -19,7 +19,7 @@ var _csrf = null;               // CSRF token from Django for post requests
 // TODO: Verify these URLs match the current Django routes
 function createLink() {
     if (_dataset != "")
-        return  "/" +_dataset + "/" + _bin + ".html";
+        return "/" + _dataset + "/" + _bin + ".html";
 
     return "/bin?id=" + _bin;
 }
@@ -37,7 +37,7 @@ function showWorkspace(workspace) {
     //   dimensions of the map container (it cannot determine it when the container is hidden
     if (workspace == "map") {
         if (_map) {
-            setTimeout(function(){ _map.invalidateSize() }, 100);
+            setTimeout(function() { _map.invalidateSize() }, 100);
         }
 
         if (_pendingMapLocation != null) {
@@ -64,7 +64,7 @@ function updateBinStats(data) {
 }
 
 function updateBinMetadata() {
-    $.get("/api/metadata/" + _bin, function(data){
+    $.get("/api/metadata/" + _bin, function(data) {
         tbody = $("#bin-metadata tbody");
         tbody.empty();
 
@@ -84,8 +84,8 @@ function updateBinDatasets(data) {
         // <a href="#" class="d-block">asdasd</a>
         $("#dataset-links").append(
             $("<a class='d-block' />")
-                .attr("href", "/bin?id=" + _bin + "&dataset=" + data.datasets[i])
-                .text(data.datasets[i])
+            .attr("href", "/bin?id=" + _bin + "&dataset=" + data.datasets[i])
+            .text(data.datasets[i])
         )
     }
 }
@@ -116,7 +116,7 @@ function changeToClosestBin(targetDate) {
     _isMosaicLoading = true;
 
     var url = "/api/" + _dataset + "/closest_bin";
-    $.post(url, {"target_date": targetDate}, function(resp){
+    $.post(url, { "target_date": targetDate }, function(resp) {
         if (resp.bin_id != "")
             changeBin(resp.bin_id, true);
     });
@@ -137,7 +137,7 @@ function changeToNearestBin(lat, lng) {
         longitude: lng
     };
 
-    $.post(url, data, function(resp){
+    $.post(url, data, function(resp) {
         if (resp.bin_id != "")
             changeBin(resp.bin_id, true);
     });
@@ -160,7 +160,7 @@ function addTag() {
         "tag_name": tag
     };
 
-    $.post("/secure/api/add-tag/" + _bin, payload, function(data){
+    $.post("/secure/api/add-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
         $("#tag-name").val("");
         toggleTagInput(false);
@@ -176,7 +176,7 @@ function removeTag(tag) {
         "tag_name": tag
     };
 
-    $.post("/secure/api/remove-tag/" + _bin, payload, function(data){
+    $.post("/secure/api/remove-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
     });
 }
@@ -187,9 +187,9 @@ function displayTags(tags) {
 
     for (var i = 0; i < tags.length; i++) {
         var tag = tags[i];
-        var li = $("<li class='list-group-item d-inline  p-2 mr-2'>");
-        var span = $("<span>" + tag + "</span>");
-        var icon = $("<i class='fas fa-trash pl-1 pr-1'></i>");
+        var li = $("<span class='badge badge-pill badge-light mx-1'>");
+        var span = li.text(tag);
+        var icon = $("<i class='fas fa-trash pl-1'></i>");
         var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "' />");
 
         li.append(span);
@@ -205,7 +205,7 @@ function delayedMosaic(page) {
     $("#mosaic").hide();
     $("#mosaic-loading").show();
 
-    setTimeout(function(){
+    setTimeout(function() {
         loadMosaic(page);
     }, 50);
 }
@@ -239,19 +239,19 @@ function loadMosaic(pageNumber) {
     _coordinates = [];
 
     // indicate to the user that coordinates are loading
-    $("#mosaic").css("cursor","wait");
+    $("#mosaic").css("cursor", "wait");
 
     var binDataUrl = "/api" + (_dataset != "" ? "/" + _dataset : "") + "/bin/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor;
 
-    $.get(binDataUrl, function(data){
+    $.get(binDataUrl, function(data) {
 
         // Update the coordinates for the image
         _coordinates = JSON.parse(data["coordinates"]);
 
         // Indicate to the user that the mosaic is clickable
-        $("#mosaic").css("cursor","pointer");
+        $("#mosaic").css("cursor", "pointer");
 
         // Re-enable next/previous buttons
         enableNextPreviousBinButtons();
@@ -274,7 +274,7 @@ function loadMosaic(pageNumber) {
         "&scale_factor=" + scaleFactor +
         "&page=" + pageNumber;
 
-    $.get(mosaicUrl, function(data){
+    $.get(mosaicUrl, function(data) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
@@ -305,8 +305,8 @@ function updateMosaicPaging() {
 function updateMapLocation(data) {
     if (!_map) {
         _map = createMap(data.lat, data.lng);
-        _map.on("click", function(e){
-            changeToNearestBin(e.latlng.lat,e.latlng.lng);
+        _map.on("click", function(e) {
+            changeToNearestBin(e.latlng.lat, e.latlng.lng);
         });
     }
 
@@ -336,9 +336,9 @@ function updatePlotVariables(plotData) {
 }
 
 function initPlotData() {
-    $.get("/api/plot/" + _bin, function(data){
+    $.get("/api/plot/" + _bin, function(data) {
         _plotData = data;
-        
+
         var plotXAxis = $("#plot-x-axis");
         var plotYAxis = $("#plot-y-axis");
 
@@ -354,7 +354,7 @@ function initPlotData() {
 function updatePlotData() {
     // TODO: The plot container has a hard coded height on it that we should make dynamic. However, doing so causes
     //   the plot, when rendering a second time, to revert back to the minimum height
-    $.get("/api/plot/" + _bin, function(data){
+    $.get("/api/plot/" + _bin, function(data) {
         _plotData = data;
 
         updatePlotVariables(data);
@@ -376,7 +376,7 @@ function initEvents() {
     });
 
     // Open the share dialog window
-    $("#share-button").click(function (e) {
+    $("#share-button").click(function(e) {
         e.preventDefault();
 
         var link = $("#share-link");
@@ -396,11 +396,11 @@ function initEvents() {
 
     // Prevent users from clicking while the bin page is loading
     $("#bin-header").click(function() {
-        $("#bin-header").css("pointer-events","none");
+        $("#bin-header").css("pointer-events", "none");
     });
 
     // Changing the view size of the mosaic
-    $("#view-size").change(function () {
+    $("#view-size").change(function() {
         var viewSize = $("#view-size").val();
         var vs = viewSize.split("x");
         var height = parseInt(vs[1]);
@@ -411,12 +411,12 @@ function initEvents() {
     });
 
     // Changing the scale factor for the mosaic
-    $("#scale-factor").change(function(e){
+    $("#scale-factor").change(function(e) {
         changeBin(_bin, true);
     });
 
     // Bin navigation (next/prev)
-    $("#previous-bin, #next-bin").click(function(e){
+    $("#previous-bin, #next-bin").click(function(e) {
         e.preventDefault();
 
         changeBin($(this).data("bin"), true);
@@ -424,19 +424,19 @@ function initEvents() {
 
     // Mosaic paging
     $("#bin-paging")
-        .on("click", ".page-previous", function(e){
+        .on("click", ".page-previous", function(e) {
             e.preventDefault();
 
             if (_mosaicPage > 0)
                 changeMosaicPage(_mosaicPage - 1);
         })
-        .on("click", ".page-next", function(e){
+        .on("click", ".page-next", function(e) {
             e.preventDefault();
 
             if (_mosaicPage < _mosaicPages)
                 changeMosaicPage(_mosaicPage + 1);
         })
-        .on("click", ".page-index a", function(e){
+        .on("click", ".page-index a", function(e) {
             e.preventDefault();
 
             var pageNumber = $(this).data("page")
@@ -454,48 +454,48 @@ function initEvents() {
     });
 
     // Showing the plot workspace
-    $("#show-plot").click(function(e){
+    $("#show-plot").click(function(e) {
         showWorkspace("plot");
     });
 
     // Showing the mosaic workspace
-    $("#show-mosaic").click(function(e){
+    $("#show-mosaic").click(function(e) {
         showWorkspace("mosaic");
     });
 
     // Showing the map workspace
-    $("#show-map").click(function(e){
+    $("#show-map").click(function(e) {
         showWorkspace("map");
     });
 
     // Add a tag to a bin
-    $("#add-tag").click(function(e){
+    $("#add-tag").click(function(e) {
         toggleTagInput(true);
         $("#tag-name").focus();
     });
 
-    $("#tag-cancel").click(function(e){
+    $("#tag-cancel").click(function(e) {
         toggleTagInput(false);
     });
 
-    $("#tag-confirm").click(function(e){
+    $("#tag-confirm").click(function(e) {
         addTag();
     });
 
-    $("#tag-name").on("keyup", function(e){
+    $("#tag-name").on("keyup", function(e) {
         if (e.keyCode == 13) {
             addTag();
         }
     });
 
     // Remove a tag from a bin
-    $("#tags").on("click", ".remove-tag", function(e){
+    $("#tags").on("click", ".remove-tag", function(e) {
         removeTag($(this).data("tag"));
     });
 }
 
 //************* Initialization methods and page hooks ***********************/
-$(function(){
+$(function() {
 
     // Misc UI elements based on constants
     $("#max-images").text(MAX_SELECTABLE_IMAGES);

@@ -137,12 +137,12 @@
               <div id="mosaicPlotMapTabContent">
               <!--Mosaic Tab-->
               <div id="image-tab-content" class="tab-pane" role="tabpanel">
-                <div class="d-flex flex-row flex-wrap-reverse justify-content-between">
+                <div class="d-lg-flex flex-row flex-wrap-reverse justify-content-between">
                   <!-- Left side of outer card area )plot/map/mosaic Mosaic Column -->
-                  <div class="flex-column order-1 py-2 px-1">
+                  <div class="col-xs-12 flex-lg-column order-1 py-2 px-1">
                     <!-- Mosaic -->
                     <div class="card h-100 min-vh-50">
-                      <div class="card-body text-center">
+                      <div class="card-body mw-100 text-center">
                         <div class="overflow-auto">
                           <img id="mosaic" src="" style="display:none" />
                         </div>
@@ -153,9 +153,9 @@
                         </div>
                       </div>
                       <div class="card-footer text-center py-0">
-                        <div class="row align-items-center" id="mosaic-footer">
+                        <div class="d-flex flex-row align-items-top justify-content-between pt-1" id="mosaic-footer">
                           <nav aria-label="Bin Paging" class="w-50">
-                            <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-center"
+                            <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-left"
                               style="display:none">
                               <li class="page-item page-previous disabled">
                                 <a class="page-link" tabindex="-1">Previous</a>
@@ -164,8 +164,8 @@
                                 <a class="page-link">Next</a>
                               </li>
                             </ul>
-                          </nav>
-                          <div class="dropdown w-50">
+                          </nav>                     
+                          <div class="dropdown w-50 text-right">
                             <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                               <i class="fas fa-cogs"></i>
@@ -193,33 +193,6 @@
                               </form>
                             </div>
                           </div>
-                        </div>
-                        <div class="row ml-1">
-                            Tags:
-                            <ul id="tags" class="pl-2">
-                            {% for tag in bin.tag_names %}
-                                <li class="list-group-item d-inline p-2 mr-2">
-                                    <span>{{ tag }}</span>
-                                    {% if user.is_authenticated %}
-                                    <a href="javascript:;" class="remove-tag" data-tag="{{ tag }}">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                            </ul>
-                            {% if user.is_authenticated %}
-                            <div class="d-inline">
-                                <a class="btn btn-sm btn-mdb-color" id="add-tag">Add</a>
-                                <input type="text" placeholder="tag name" id="tag-name" class="d-none" />
-                                <a class="btn btn-sm btn-mdb-color ml-0 d-none pt-1 pb-1 pl-2 pr-2" id="tag-confirm">
-                                    <i class="fas fa-check"></i>
-                                </a>
-                                <a class="btn btn-sm btn-mdb-color ml-0 d-none pt-1 pb-1 pl-2 pr-2" id="tag-cancel">
-                                    <i class="fas fa-times"></i>
-                                </a>
-                            </div>
-                            {% endif %}
                         </div>
                       </div>
                     </div>
@@ -334,7 +307,35 @@
               <!--End Map Tab-->
             </div>
             <!--End Top Half-->
-
+            <!--Tags Row-->
+            <div class="d-md-flex flex-md-row row mt-3 border">
+              <div class="flex-column">
+                <div id="tags" class="pl-2">
+                  <span>Tags:</span>
+                  {% for tag in bin.tag_names %}
+                  <span class="badge badge-pill badge-light mx-1">
+                    {{ tag }}
+                    {% if user.is_authenticated %}
+                    <a href="javascript:;" class="remove-tag" data-tag="{{ tag }}">
+                      <i class="fas fa-trash pl-1" aria-hidden="true"></i>
+                    </a>
+                    {% endif %}
+                  </span>
+                  {% endfor %}
+                  {% if user.is_authenticated %}
+                  <a class="btn btn-sm btn-mdb-color px-2 py-1" id="add-tag"><i class="fas fa-plus"></i></a>
+                  <input type="text" placeholder="tag name" id="tag-name" class="d-none" />
+                  <a class="btn btn-sm btn-mdb-color ml-0 d-none pt-1 pb-1 pl-2 pr-2" id="tag-confirm">
+                    <i class="fas fa-check"></i>
+                  </a>
+                  <a class="btn btn-sm btn-mdb-color ml-0 d-none pt-1 pb-1 pl-2 pr-2" id="tag-cancel">
+                    <i class="fas fa-times"></i>
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <!--End Tags Row-->
               <!-- Bottom half (metadata/tags) -->
               <div class="d-md-flex flex-md-row row mt-3">
                 <!-- Bin Basic Info -->
