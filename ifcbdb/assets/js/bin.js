@@ -212,7 +212,7 @@ function displayTags(tags) {
         var tag = tags[i];
         var li = $("<span class='badge badge-pill badge-light mx-1'>");
         var span = li.text(tag);
-        var icon = $("<i class='fas fa-trash pl-1'></i>");
+        var icon = $("<i class='fas fa-times pl-1'></i>");
         var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "' />");
 
         li.append(span);
