@@ -349,6 +349,11 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
     except:
         datasets = []
 
+    comments = bin.comments.\
+        select_related('user').\
+        all().\
+        values("id", "content", "timestamp", "user__username")
+
     return {
         "scale": mosaic_scale,
         "shape": mosaic_shape,
@@ -370,6 +375,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "trigger_freq": round(bin.trigger_frequency, 3),
         "ml_analyzed": str(round(bin.ml_analyzed, 3)) + " ml",
         "datasets": datasets,
+        "comments": list(comments),
     }
 
 

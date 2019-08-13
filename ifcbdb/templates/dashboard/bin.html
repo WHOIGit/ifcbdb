@@ -310,18 +310,9 @@
             <!--Tags Row-->
             <div class="d-md-flex flex-md-row row mt-3 border">
               <div class="flex-column">
-                <div id="tags" class="pl-2">
+                <div class="pl-2">
                   <span>Tags:</span>
-                  {% for tag in bin.tag_names %}
-                  <span class="badge badge-pill badge-light mx-1">
-                    {{ tag }}
-                    {% if user.is_authenticated %}
-                    <a href="javascript:;" class="remove-tag" data-tag="{{ tag }}">
-                      <i class="fas fa-trash pl-1" aria-hidden="true"></i>
-                    </a>
-                    {% endif %}
-                  </span>
-                  {% endfor %}
+                    <span id="tags" ></span>
                   {% if user.is_authenticated %}
                   <a class="btn btn-sm btn-mdb-color px-2 py-1" id="add-tag"><i class="fas fa-plus"></i></a>
                   <input type="text" placeholder="tag name" id="tag-name" class="d-none" />
@@ -403,9 +394,29 @@
                 <div class="flex-md-column col-md-9 mt-2 mt-lg-0">
                   <div class="card vh-50 h-100">
                     <div class="card-header py-1 mdb-color lighten-5">
-                      <span class="h5-responsive">Metadata</span>
+                        <span id="metadata-header" class="h5-responsive">Metadata | <a href="javascript:;" class="show-comments">Comments (0)</a></span>
+                        <span id="comments-header" class="h5-responsive d-none"><a href="javascript:;" class="show-metadata">Metadata</a> | Comments (0)</span>
+
                     </div>
-                    <div class="card-body h-75">
+                      <div class="card-body h-75 d-none" id="comments-panel">
+                          <ul>
+                          {% for comment in bin.comments.all %}
+
+                              <li>
+
+                                  <span>2017-05-09 23:10:11 UTC</span> - <span>Admin</span>:
+                                  <div>
+                                      {{comment.content}}
+                                  </div>
+                              </li>
+                          {% endfor %}
+                          </ul>
+
+
+                          <textarea id="comment-input"></textarea>
+                          <button class="btn btn-sm btn-mdb-color" id="confirm-comment">Add</button>
+                      </div>
+                    <div class="card-body h-75" id="metadata-panel">
                       <div class="table-responsive text-nowrap h-100 overflow-auto">
                         <table class="table table-striped table-sm table-hover" id="bin-metadata">
                           <thead>
@@ -643,6 +654,8 @@ function changeBin(binId, updateHistory) {
         updateBinStats(data);
         updateBinDownloadLinks(data);
         updateBinDatasets(data);
+        updateBinTags(data);
+        updateBinComments(data);
 
         currentBinTimestamp = moment(data["timestamp_iso"]);
 
@@ -912,6 +925,9 @@ $(function() {
     {% endif %}
     _bin = "{{ bin.pid }}";
     _csrf = "{{ csrf_token }}";
+    {% if user.is_authenticated %}
+    _userId = {{ user.id }};
+    {% endif %}
 
 </script>
 {% endblock %}

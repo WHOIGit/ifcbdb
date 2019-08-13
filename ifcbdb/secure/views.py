@@ -184,3 +184,15 @@ def remove_tag(request, bin_id):
     return JsonResponse({
         "tags": bin.tag_names,
     })
+
+
+@require_POST
+@login_required
+def add_comment(request, bin_id):
+    text = request.POST.get("comment")
+    bin = get_object_or_404(Bin, pid=bin_id)
+    bin.add_comment(text, request.user)
+
+    return JsonResponse({
+        "Hello": "World",
+    })

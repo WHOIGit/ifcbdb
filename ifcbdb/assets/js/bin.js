@@ -12,6 +12,7 @@ var _marker = null; // Current marker shown on the map
 var _workspace = "mosaic"; // The current workspace a user is seeing
 var _pendingMapLocation = null; // The next map position to render (see notes in updateMapLocation)
 var _csrf = null; // CSRF token from Django for post requests
+var _userId = null; // Id of the currently logged in user
 
 //************* Common Methods ***********************/
 
@@ -90,6 +91,16 @@ function updateBinDatasets(data) {
     }
 }
 
+function updateBinTags(data) {
+    displayTags(data.tags);
+    toggleTagInput(false);
+}
+
+function updateBinComments(data) {
+    // TODO: Implement
+    console.log(data);
+}
+
 function updateBinDownloadLinks(data) {
     $("#download-adc").attr("href", _dataset + "/" + _bin + ".adc");
     $("#download-hdr").attr("href", _dataset + "/" + _bin + ".hdr");
@@ -163,7 +174,6 @@ function addTag() {
     $.post("/secure/api/add-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
         $("#tag-name").val("");
-        toggleTagInput(false);
     });
 }
 
@@ -181,6 +191,19 @@ function removeTag(tag) {
     });
 }
 
+function addComment() {
+    // TODO: Pull actual input
+    var payload = {
+        "csrfmiddlewaretoken": _csrf,
+        "comment": "This is a test"
+    };
+
+    // TODO: Refresh comment list and count
+    $.post("/secure/api/add-comment/" + _bin, payload, function(data){
+        console.log(data);
+    });
+}
+
 function displayTags(tags) {
     var list = $("#tags");
     list.empty();
@@ -193,8 +216,11 @@ function displayTags(tags) {
         var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "' />");
 
         li.append(span);
-        li.append(remove);
-        remove.append(icon);
+
+        if (_userId != null) {
+            li.append(remove);
+            remove.append(icon);
+        }
 
         list.append(li);
     }
@@ -491,6 +517,24 @@ function initEvents() {
     // Remove a tag from a bin
     $("#tags").on("click", ".remove-tag", function(e) {
         removeTag($(this).data("tag"));
+    });
+
+    $(".show-metadata").click(function(e){
+        $("#metadata-header").toggleClass("d-none", false);
+        $("#comments-header").toggleClass("d-none", true);
+        $("#metadata-panel").toggleClass("d-none", false);
+        $("#comments-panel").toggleClass("d-none", true);
+    });
+
+    $(".show-comments").click(function(e){
+        $("#metadata-header").toggleClass("d-none", true);
+        $("#comments-header").toggleClass("d-none", false);
+        $("#metadata-panel").toggleClass("d-none", true);
+        $("#comments-panel").toggleClass("d-none", false);
+    });
+
+    $("#confirm-comment").click(function(e){
+        addComment();
     });
 }
 
