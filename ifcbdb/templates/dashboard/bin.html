@@ -399,22 +399,38 @@
 
                     </div>
                       <div class="card-body h-75 d-none" id="comments-panel">
-                          <ul>
+                      <div class="row col-sm-12 h-75 mb-3 border-bottom overflow-auto">
+                         <table class="table table-striped table-sm table-hover" id="binCommentsTable" style="width:100%">
+                          <thead>
+                            <tr>
+                              <th scope="col">Date</th>
+                              <th scope="col">Comment</th>
+                              <th scope="col">Author</th>
+                              <th scope="col">Edit</th>
+                            </tr>
+                          </thead>
+                          <tbody>                    
                           {% for comment in bin.comments.all %}
-
-                              <li>
-
-                                  <span>2017-05-09 23:10:11 UTC</span> - <span>Admin</span>:
-                                  <div>
-                                      {{comment.content}}
-                                  </div>
-                              </li>
+                            <tr>
+                              <th scope="row">2017-05-09 23:10:11 UTC</th>
+                              <td>{{comment.content}}</td>
+                              <td>Admin</td>
+                              <td><button class="btn btn-sm py-1 px-2"><i class="fas fa-edit"></i></button><button class="btn btn-sm py-1 px-2"><i class="fas fa-minus-circle"></i></button></td>
+                            </tr>
                           {% endfor %}
-                          </ul>
-
-
-                          <textarea id="comment-input"></textarea>
+                          </tbody>
+                          </table>
+                          </div>
+                          <div class="row">
+                          <div class="form-group col-12">
+                          <textarea class="form-control w100" id="comment-input" rows="1"></textarea>
+                          </div>
+                          </div>
+                          <div class="row text-right">
+                          <div class="col-12">
                           <button class="btn btn-sm btn-mdb-color" id="confirm-comment">Add</button>
+                          </div>
+                          </div>
                       </div>
                     <div class="card-body h-75" id="metadata-panel">
                       <div class="table-responsive text-nowrap h-100 overflow-auto">
