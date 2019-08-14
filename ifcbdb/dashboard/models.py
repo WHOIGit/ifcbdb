@@ -158,6 +158,13 @@ class Timeline(object):
     def metric_label(self, metric):
         return self.TIMELINE_METRICS.get(metric,'')
 
+    def __len__(self):
+        return self.bins.count()
+
+    def total_data_volume(self):
+        # total data size in bytes for everything in this Timeline
+        return self.bins.aggregate(Sum('size'))['size__sum']        
+
 def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None):
     qs = Bin.objects
     if start is not None or end is not None:
@@ -176,6 +183,14 @@ class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
     title = models.CharField(max_length=256)
     is_active = models.BooleanField(blank=False, null=False, default=True)
+
+    def __len__(self):
+        # number of bins
+        return self.bins.count()
+
+    def data_volume(self):
+        # total data volume in bytes
+        return Timeline(self.bins).total_data_volume()
 
     def tag_cloud(self, instrument=None):
         return Tag.cloud(dataset=self, instrument=instrument)

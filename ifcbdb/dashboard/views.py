@@ -374,6 +374,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "num_images": bin.n_images,
         "trigger_freq": round(bin.trigger_frequency, 3),
         "ml_analyzed": str(round(bin.ml_analyzed, 3)) + " ml",
+        "size": bin.size,
         "datasets": datasets,
         "comments": list(comments),
     }
