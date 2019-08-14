@@ -32,6 +32,7 @@ from ifcb.data.adc import schema_names
 from ifcb.data.products.blobs import BlobDirectory
 from ifcb.data.products.features import FeaturesDirectory
 from ifcb.data.zip import bin2zip_stream
+from ifcb.data.transfer import RemoteIfcb
 
 from .crypto import AESCipher
 from .tasks import mosaic_coordinates_task
@@ -40,6 +41,9 @@ logger = logging.getLogger(__name__)
 
 FILL_VALUE = -9999999
 SRID = 4326
+
+def do_nothing(*args, **kw):
+    pass
 
 class Timeline(object):
 
@@ -203,6 +207,10 @@ class DataDirectory(models.Model):
         whitelist = re.split(',', self.whitelist)
         blacklist = re.split(',', self.blacklist)
         return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist)
+
+    def raw_destination(self, bin_id):
+        # where to put an incoming bin with the given id
+        return self.path # FIXME support year/day directories
 
     def get_blob_directory(self):
         if self.kind != self.BLOBS:
@@ -469,6 +477,7 @@ class Instrument(models.Model):
     username = models.CharField(max_length=64, blank=True)
     _password = models.CharField(max_length=128, db_column='password', blank=True)
     share_name = models.CharField(max_length=128, default='Data', blank=True)
+    timeout = models.IntegerField(default=30)
 
     @staticmethod
     def _get_cipher():
@@ -497,6 +506,31 @@ class Instrument(models.Model):
     def determine_version(number):
         return 1 if number < 10 else 2
 
+    # live instrument access
+
+    def _get_remote(self):
+        return RemoteIfcb(self.address, self.username, self.password,
+            share=self.share_name, timeout=self.timeout)
+
+    def is_responding(self):
+        ifcb = self._get_remote()
+        return ifcb.is_responding()
+
+    def list_shares(self):
+        with self._get_remote() as ifcb:
+            return list(ifcb.list_shares())
+
+    def share_exists(self):
+        with self._get_remote() as ifcb:
+            return ifcb.share_exists()
+
+    def sync(self, data_directory, progress_callback=do_nothing):
+        if not data_directory.kind == DataDirectory.RAW:
+            raise TypeError('cannot sync raw data to product directory {}'.format(data_directory))
+        def destination_directory(lid):
+            return data_directory.raw_destination(lid)
+        with self._get_remote() as ifcb:
+            ifcb.sync(destination_directory, progress_callback=progress_callback)
 
 # tags
 
