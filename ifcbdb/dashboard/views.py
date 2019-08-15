@@ -413,12 +413,14 @@ def generate_time_series(request, dataset_name, metric,):
     dataset = get_object_or_404(Dataset, name=dataset_name)
 
     # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
-    while True:
-        time_series, resolution = Timeline(dataset.bins).metrics(metric, start, end, resolution=resolution)
-        if len(time_series) > 1 or resolution == "bin":
-            break
+    #while True:
+    #    time_series, resolution = Timeline(dataset.bins).metrics(metric, start, end, resolution=resolution)
+    #    if len(time_series) > 1 or resolution == "bin":
+    #        break
 
-        resolution = get_finer_resolution(resolution)
+    #     resolution = get_finer_resolution(resolution)
+
+    time_series, resolution = Timeline(dataset.bins).metrics(metric, start, end, resolution=resolution)
 
     # TODO: Temporary workaround constraints to rule out bad data for humidity and temperature
     if metric == "temperature":
