@@ -7,6 +7,8 @@ from django.shortcuts import render, get_object_or_404, redirect, reverse
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin
 from .forms import DatasetForm, InstrumentForm, DirectoryForm
 
+from django.core.cache import cache
+from celery.result import AsyncResult
 
 # TODO: All of these methods need to be locked down properly
 
@@ -160,7 +162,6 @@ def edit_instrument(request, id):
         "form": form,
     })
 
-
 # TODO: Handle login_required decorator better; currently returns HTML instead of JSON
 @require_POST
 @login_required
@@ -209,3 +210,47 @@ def delete_comment(request, bin_id):
     return JsonResponse({
         "comments": bin.comment_list,
     })
+
+# dataset syncing
+def dataset_sync_lock_key(dataset_id):
+    return 'dataset_sync_{}'.format(dataset_id)
+
+def dataset_sync_task_id_key(dataset_id):
+    return 'dataset_sync_task_{}'.format(dataset_id)
+
+def get_dataset_sync_task_id(dataset_id):
+    return cache.get(dataset_sync_task_id_key(dataset_id))
+    # if there's no task ID the task is just about to start
+
+@require_POST
+@login_required
+def sync_dataset(request, dataset_id):
+    from dashboard.tasks import sync_dataset
+    # ensure that the dataset exists
+    ds = get_object_or_404(Dataset, id=dataset_id)
+    # attempt to lock the dataset
+    lock_key = dataset_sync_lock_key(dataset_id)
+    added = cache.add(lock_key, True) # this is atomic
+    if not added: # dataset is locked for syncing
+        return JsonResponse({ 'state': 'LOCKED' })
+    # start the task asynchronously
+    r = sync_dataset.delay(dataset_id, lock_key)
+    # cache the task id so we can look it up by dataset id
+    cache.set(dataset_sync_task_id_key(dataset_id), r.task_id)
+    result = AsyncResult(r.task_id)
+    return JsonResponse({ 'state': result.state })
+
+@login_required
+def sync_dataset_status(request, dataset_id):
+    task_id = get_dataset_sync_task_id(dataset_id)
+    if task_id is None:
+        # there's no result, which means either
+        # - the cache entry for the task id has expired, or
+        # - it's the exact moment the task is starting
+        # report PENDING
+        return JsonResponse({ 'state': 'PENDING' })
+    result = AsyncResult(task_id)
+    return JsonResponse({
+        'state': result.state,
+        'info': result.info,
+        })

@@ -88,7 +88,4 @@ urlpatterns = [
     path('api/plot/<slug:bin_id>', views.plot_data, name='plot_data'),
     path('api/metadata/<slug:bin_id>', views.bin_metadata, name='bin_metadata'),
 
-    # FIXME move these to secure and change URL patterns accordingly
-    path('debug/sync/<int:dataset_id>', views.test_sync_dataset, name='sync_dataset'),
-    path('debug/sync/status/<slug:dataset_id>', views.test_sync_dataset_status, name='sync_dataset_status'),
-]
+ ]

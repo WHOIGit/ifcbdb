@@ -85,7 +85,7 @@
     <div class="col-md-6">
         {% if dataset.id > 0 %}
         <div class="card card-body ">
-            <button id="sync-button" class="btn btn-sm btn-mdb-color col-sm-2">Sync</button>
+            <button id="sync-button" class="btn btn-sm btn-mdb-color col-sm-2 disabled">Sync</button>
             <div id="sync-status" class="d-none">
                 <div>
                     <span id="sync-spinner" class="d-none">
@@ -106,12 +106,16 @@
 {% endblock %} {% block scripts %}
 
 <script>
+    var _csrf = "{{ csrf_token }}";
+
     {% if dataset.id > 0 %}
     function dataset_sync_status() {
-        $.getJSON("{% url 'sync_dataset_status' dataset.id %}", function(data) {
+        $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'LOCKED') { // job hasn't started yet
+                $("#sync-button").addCLass("disabled");
                 setTimeout(dataset_sync_status, 1000); // wait for it to start
             } else if(data.state == 'PROGRESS') {
+                $("#sync-button").addClass("disabled");
                 $('#sync-spinner').removeClass('d-none');
                 $('#sync-status').removeClass('d-none');
                 $('#sync-state').html('Syncing ...');
@@ -121,6 +125,7 @@
                 $('#sync-bin-id').html(data.info.bin_id);
                 setTimeout(dataset_sync_status, 1000);
             } else {
+                $("#sync-button").removeClass("disabled");
                 // job has either succeeded or failed
                 if(data.state == 'SUCCESS') {
                     $('#sync-spinner').addClass('d-none');
@@ -137,7 +142,10 @@
     }
 
     $('#sync-button').click(function() {
-        $.getJSON("{% url 'sync_dataset' dataset.id %}", function(data) {
+        var payload = {
+            "csrfmiddlewaretoken": _csrf
+        };
+        $.post("{% url 'secure:sync_dataset' dataset.id %}", payload, function(data) {
             // ignore data
             setTimeout(dataset_sync_status, 100);
         });
@@ -145,12 +153,15 @@
 
     setTimeout(function() {
         // check dataset syncing status initially or when user reloads the page
-        $.getJSON("{% url 'sync_dataset_status' dataset.id %}", function(data) {
+        $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'PROGRESS') {
+                $("#sync-button").addClass("disabled");
                 dataset_sync_status();
+            } else {
+                $("#sync-button").removeClass("disabled");
             }
         });
-    }, 100);
+    }, 10);
     {% endif %}
 </script>
 
