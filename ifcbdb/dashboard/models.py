@@ -161,6 +161,9 @@ class Timeline(object):
     def __len__(self):
         return self.bins.count()
 
+    def n_images(self):
+        return self.bins.aggregate(Sum('n_images'))['n_images__sum']
+
     def total_data_volume(self):
         # total data size in bytes for everything in this Timeline
         return self.bins.aggregate(Sum('size'))['size__sum']        
