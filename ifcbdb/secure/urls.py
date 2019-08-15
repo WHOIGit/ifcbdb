@@ -24,5 +24,6 @@ urlpatterns = [
     path('api/add-tag/<slug:bin_id>', views.add_tag, name='add_tag'),
     path('api/remove-tag/<slug:bin_id>', views.remove_tag, name='remove_tag'),
     path('api/add-comment/<slug:bin_id>', views.add_comment, name='add_comment'),
+    path('api/delete-comment/<slug:bin_id>', views.delete_comment, name='delete_comment'),
 
 ]

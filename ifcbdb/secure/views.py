@@ -194,5 +194,18 @@ def add_comment(request, bin_id):
     bin.add_comment(text, request.user)
 
     return JsonResponse({
-        "Hello": "World",
+        "comments": bin.comment_list,
+    })
+
+
+@require_POST
+@login_required
+def delete_comment(request, bin_id):
+    id = request.POST.get("id")
+    bin = get_object_or_404(Bin, pid=bin_id)
+    bin.delete_comment(id, request.user)
+
+    # TODO: Implement
+    return JsonResponse({
+        "comments": bin.comment_list,
     })
