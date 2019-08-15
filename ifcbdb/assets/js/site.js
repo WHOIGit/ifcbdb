@@ -12,7 +12,7 @@ var MAX_SELECTABLE_IMAGES = 25;
 
 $(function(){
     $("#dataset-switcher").change(function(){
-        location.href = "/" + $(this).val();
+        location.href = "/timeline?dataset=" + $(this).val();
     });
 })
 

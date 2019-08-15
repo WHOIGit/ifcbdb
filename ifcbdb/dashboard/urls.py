@@ -1,6 +1,7 @@
-from django.urls import include, path, re_path, register_converter
+from django.urls import path, re_path, register_converter
 
 from . import views
+
 
 class BinPidConverter:
     regex = r'(IFCB\d_\d{4}_\d{3}_\d{6}|D\d{8}T\d{6}_IFCB\d{3})'
@@ -11,6 +12,7 @@ class BinPidConverter:
     def to_url(self, value):
         return value
 
+
 class ImageIdConverter:
     regex = r'\d+'
 
@@ -20,64 +22,70 @@ class ImageIdConverter:
     def to_url(self, value):
         return '{:05d}'.format(value)
 
+
 register_converter(BinPidConverter, 'pid')
 register_converter(ImageIdConverter, 'image_id')
 
 urlpatterns = [
+    ##########################################################################################
+    # Main entry point URLs
+    #   Details of some of the more complex routes are described in a dedicated wiki document:
+    #   https://github.com/WHOIGit/ifcbdb/wiki/URL-routes-(development)
+    ##########################################################################################
+
+    # TODO: Handle trailing slashes
+    # TODO: The slugs for the images need to be left padded with zeros
     path('', views.index),
     path('dashboard', views.datasets, name='datasets'),
+    path('timeline', views.timeline_page, name='timeline_page'),
+    path('bin', views.bin_page, name='bin_page'),
+    path('image', views.image_page, name='image_page'),
 
-    # The urls below must remain in this specific order (by granularity)
-    # TODO: The slugs for the images need to be left padded with zeros
+    # raw data access
+    path('data/<slug:bin_id>.adc', views.adc_data, name='adc_csv'),
+    path('data/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'),
+    path('data/<slug:bin_id>.roi', views.roi_data, name='roi_binary'),
+    path('data/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'),
+    path('data/<slug:bin_id>_features.csv', views.features_csv, name='features_csv'),
+    path('data/<slug:bin_id>.zip', views.zip, name='zip'),
+
+    # image access
+    path('data/<slug:bin_id>_<int:target>.png', views.image_png, name='image_png'),
+    path('data/<slug:bin_id>_<int:target>.jpg', views.image_jpg, name='image_jpg'),
+
+    ##################################################################
+    # Legacy URLs
+    #   Urls below must remain in this specific order (by granularity)
+    ##################################################################
 
     # legacy "dataset with bin selected" permalink
     # e.g. http://ifcb-data.whoi.edu/mvco/dashboard/http://ifcb-data.whoi.edu/mvco/D20140101T123456_IFCB010
-    re_path(r'(?P<dataset_name>[\w-]+)/dashboard/http.*/(?P<bin_id>\w+)', views.dataset_page),
+    re_path(r'(?P<dataset_name>[\w-]+)/dashboard/http.*/(?P<bin_id>\w+)', views.legacy_dataset_page),
 
-    path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.image_details, name='image'),
-    path('<slug:dataset_name>/<pid:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy'),  # legacy
-    path('<pid:bin_id>_<image_id:image_id>.html', views.image_details, name='image_legacy_alt'),  # legacy
-    path('<slug:dataset_name>/<slug:bin_id>.html', views.bin_page, name='bin'),  # legacy
+    path('<slug:dataset_name>/<slug:bin_id>/<slug:image_id>.html', views.legacy_image_page, name='image'),
+    path('<slug:dataset_name>/<pid:bin_id>_<image_id:image_id>.html', views.legacy_image_page, name='image_legacy'),
+    path('<pid:bin_id>_<image_id:image_id>.html', views.legacy_image_page_alt, name='image_legacy_alt'),
+    path('<slug:dataset_name>/<slug:bin_id>.html', views.legacy_dataset_page, name='bin_legacy'),
 
-    # Main entry point for combined bin/dataset page. Querystring parameters will include id (Bin PID), and one
-    #   of: dataset, tags, instrument
-    path('bin', views.bin_mode, name='bin_mode'),
+    # legacy raw data access
+    path('<slug:dataset_name>/<slug:bin_id>.adc', views.adc_data, name='adc_csv_legacy'),
+    path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text_legacy'),
+    path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary_legacy'),
+    path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip_legacy'),
+    path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv_legacy'),
+    path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip_legacy'),
 
-    # legacy urls all require dataset ID but new ones for bin-specific stuff need not
+    # legacy image access
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_png_legacy, name='image_png_legacy'),
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_jpg_legacy, name='image_jpg_legacy'),
 
-    # raw data access
-    path('<slug:dataset_name>/<slug:bin_id>.adc', views.adc_data, name='adc_csv_legacy'),  # legacy
-    path('<slug:bin_id>.adc', views.adc_data, name='adc_csv'),
-    path('<slug:dataset_name>/<slug:bin_id>.hdr', views.hdr_data, name='hdr_text_legacy'),  # legacy
-    path('<slug:bin_id>.hdr', views.hdr_data, name='hdr_text'),
-    path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary_legacy'),  # legacy
-    path('<slug:bin_id>.roi', views.roi_data, name='roi_binary'),
-
-    # blob zip access
-    path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip_legacy'),  # legacy
-    path('<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'),
-
-    # features csv access
-    path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv_legacy'),  # legacy
-    path('<slug:bin_id>_features.csv', views.features_csv, name='features_csv'),
-
-    # zip access
-    path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip_legacy'),  # legacy
-    path('<slug:bin_id>.zip', views.zip, name='zip'),
-
-    # image access
-    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png_legacy'),  # legacy
-    path('<slug:bin_id>_<int:target>.png', views.image_data_png, name='image_png'),
-    path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg_legacy'),  # legacy
-    path('<slug:bin_id>_<int:target>.jpg', views.image_data_jpg, name='image_jpg'),
-
-    path('<slug:dataset_name>', views.dataset_page, name='dataset'),
-
+    ##################################
     # Paths used for API/Ajax requests
+    ##################################
     path('api/<slug:dataset_name>/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
     path('api/<slug:dataset_name>/bin/<slug:bin_id>', views.bin_data, name='bin_data'),
     path('api/bin/<slug:bin_id>', views.bin_data),
-    path('api/<slug:dataset_name>/closest_bin', views.closest_bin, name='closest_bin'), # closest bin in time
+    path('api/<slug:dataset_name>/closest_bin', views.closest_bin, name='closest_bin'),  # closest bin in time
     path('api/nearest_bin', views.nearest_bin, name='nearest_bin'),
     path('api/mosaic/coordinates/<slug:bin_id>', views.mosaic_coordinates, name='mosaic_coordintes'),
     path('api/mosaic/encoded_image/<slug:bin_id>', views.mosaic_page_encoded_image, name='mosaic_page_encoded_image'),

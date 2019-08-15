@@ -4,7 +4,9 @@ from datetime import timedelta, datetime
 
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, reverse
-from django.http import HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, HttpResponseRedirect
+from django.http import \
+    HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
+    HttpResponseRedirect, HttpResponseNotFound
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_control
 
@@ -37,51 +39,34 @@ def datasets(request):
     })
 
 
-# TODO: Configure link needs proper permissions (more than just user is authenticated)
-# TODO: Handle a dataset with no bins? Is that possible?
-def dataset_details(request, dataset_name, bin_id=None):
-    dataset = get_object_or_404(Dataset, name=dataset_name)
-    if not bin_id:
-        bin_id = request.GET.get("bin_id")
-
-    if bin_id is None:
-        bin = Timeline(dataset.bins).most_recent_bin()
-    else:
-        bin = get_object_or_404(Bin, pid=bin_id)
-
-    return render(request, 'dashboard/dataset-details.html', {
-        "can_share_page": True,
-        "dataset": dataset,
-        "bin": bin,
-        "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
-        "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
-        "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
-        "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
-        "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
-    })
-
-
-def dataset_page(request, dataset_name):
-    bin_id = request.GET.get("bin_id")
-
-    return details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="dataset")
-
-
-def bin_page(request, dataset_name, bin_id):
-    # TODO: This needs to be cleaned up to allow bins w/o a dataset (and/or other grouping)
-    return details(request, group_name=dataset_name, group_type="dataset", route="bin")
-    #return details(request, bin_id=bin_id)
-
-
-def bin_mode(request):
-    bin_id = request.GET.get("id")
+def timeline_page(request):
+    bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
+    tags = request.GET.get("tags")
+    instrument_number = request.GET.get("instrument")
 
-    # TODO: The below are not implemented yet
-    tag_names = request.GET.get("tags")
-    instrument_name = request.GET.get("instrument")
+    if dataset_name:
+        return _details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="timeline")
 
-    return details(
+    # TODO: Implement
+    if tags:
+        return HttpResponseNotFound()
+        #return _details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="timeline")
+
+    # TODO: Implement
+    if instrument_number:
+        return HttpResponseNotFound()
+        #return _details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="timeline")
+
+    # If all optional parameters are missing, we don't have anywhere to go
+    return HttpResponseNotFound()
+
+
+def bin_page(request):
+    dataset_name = request.GET.get("dataset")
+    bin_id = request.GET.get("bin")
+
+    return _details(
         request,
         group_name=dataset_name,
         group_type="dataset" if dataset_name else None,
@@ -89,7 +74,93 @@ def bin_mode(request):
         bin_id=bin_id
     )
 
-def details(request, bin_id=None, group_name=None, group_type=None, route=None):
+
+def image_page(request):
+    bin_id = request.GET.get("bin")
+    image_id = request.GET.get("image")
+
+    dataset_name = request.GET.get("dataset")
+    instrument_number = request.GET.get("instrument")
+    tags = request.GET.get("tags")
+
+    return _image_details(
+        request,
+        image_id,
+        bin_id,
+        dataset_name,
+        instrument_number,
+        tags
+    )
+
+
+def _image_details(request, image_id, bin_id, dataset_name=None, instrument_number=None, tags=None):
+    group_type = ""
+    image_number = int(image_id)
+    bin = get_object_or_404(Bin, pid=bin_id)
+    if dataset_name:
+        dataset = get_object_or_404(Dataset, name=dataset_name)
+        group_type = "dataset"
+    else:
+        dataset = None
+
+    if instrument_number:
+        # TODO: Implement
+        group_type = "instrument"
+
+    if tags:
+        # TODO: implement
+        group_type = "tags"
+
+    # TODO: Add validation checks/error handling
+    image = bin.image(image_number)
+    image_width = image.shape[1];
+
+    metadata = json.loads(json.dumps(bin.target_metadata(image_number), default=dict_to_json))
+
+    # TODO: Only timeline route is working so far
+    return render(request, 'dashboard/image.html', {
+        "route": "timeline",
+        "group_type": group_type,
+        "can_share_page": True,
+        "dataset": dataset,
+        "bin": bin,
+        "image": embed_image(image),
+        "image_width": image_width,
+        "image_id": image_number,
+        "metadata": metadata,
+        "details": _bin_details(bin, dataset, include_coordinates=False),
+    })
+
+
+def legacy_dataset_page(request, dataset_name, bin_id):
+    return _details(
+        request,
+        bin_id=bin_id,
+        group_name=dataset_name,
+        group_type="dataset",
+        route="dataset"
+    )
+
+
+def legacy_bin_page(request, dataset_name, bin_id):
+    return _details(
+        request,
+        bin_id=bin_id,
+        group_name=dataset_name,
+        group_type="dataset",
+        route="dataset"
+    )
+
+
+def legacy_image_page(request, dataset_name, bin_id, image_id):
+    return _image_details(request, image_id, bin_id, dataset_name)
+
+
+def legacy_image_page_alt(request, bin_id, image_id):
+    return _image_details(request, image_id, bin_id)
+
+
+def _details(request, bin_id=None, group_name=None, group_type=None, route=None):
     if not bin_id and not group_name:
         # TODO: 404 error; don't have enough info to proceed
         pass
@@ -111,6 +182,7 @@ def details(request, bin_id=None, group_name=None, group_type=None, route=None):
 
     return render(request, "dashboard/bin.html", {
         "route": route,
+        "group_type": group_type,
         "can_share_page": True,
         "dataset": dataset,
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
@@ -121,56 +193,6 @@ def details(request, bin_id=None, group_name=None, group_type=None, route=None):
         "mosaic_default_width": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[0],
         "bin": bin,
         "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False),
-    })
-
-
-# TODO: bin.instrument is not filled in?
-def bin_details(request, dataset_name, bin_id):
-    dataset = get_object_or_404(Dataset, name=dataset_name)
-    bin = get_object_or_404(Bin, pid=bin_id)
-
-    # TODO: bin.depth is coming out to 0. Check to see if the depth will be 0 when there is no lat/lng found, and handle
-    # TODO: Mockup for lat/lng under the map had something like "41 north, 82 east (41.31, -70.39)"
-    return render(request, 'dashboard/bin-details.html', {
-        "can_share_page": True,
-        "dataset": dataset,
-        "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
-        "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
-        "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
-        "mosaic_default_view_size": Bin.MOSAIC_DEFAULT_VIEW_SIZE,
-        "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
-        "bin": bin,
-        "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False),
-    })
-
-
-# TODO: Hook up add to annotations area
-# TODO: Hook up add to tags area
-def image_details(request, bin_id, image_id,  dataset_name=None):
-    if dataset_name:
-        dataset = get_object_or_404(Dataset, name=dataset_name)
-    else:
-        dataset = None
-
-    bin = get_object_or_404(Bin, pid=bin_id)
-
-    image_number = int(image_id)
-
-    # TODO: Add validation checks/error handling
-    image = bin.image(image_number)
-    image_width = image.shape[1];
-
-    metadata = json.loads(json.dumps(bin.target_metadata(image_number), default=dict_to_json))
-
-    return render(request, 'dashboard/image-details.html', {
-        "can_share_page": True,
-        "dataset": dataset,
-        "bin": bin,
-        "image": embed_image(image),
-        "image_width": image_width,
-        "image_id": image_number,
-        "metadata": metadata,
-        "details": _bin_details(bin, dataset, include_coordinates=False),
     })
 
 
@@ -220,6 +242,7 @@ def mosaic_coordinates(request, bin_id):
     coords = b.mosaic_coordinates(shape, scale)
     return JsonResponse(coords.to_dict('list'))
 
+
 @cache_control(max_age=31557600) # client cache for 1y
 def mosaic_page_image(request, bin_id):
     arr = _mosaic_page_image(request, bin_id)
@@ -241,39 +264,48 @@ def _image_data(bin_id, target, mimetype):
     image_data = format_image(arr, mimetype)
     return HttpResponse(image_data, content_type=mimetype)
 
-def image_data_png(request, bin_id, target, dataset_name=None):
-    # ignore dataset name
+
+def image_png(request, bin_id, target):
     return _image_data(bin_id, target, 'image/png')
 
-def image_data_jpg(request, bin_id, target, dataset_name=None):
-    # ignore dataset name
+
+def image_jpg(request, bin_id, target):
     return _image_data(bin_id, target, 'image/jpeg')
 
-def adc_data(request, bin_id, dataset_name=None):
-    # ignore dataset name
+
+def image_png_legacy(request, bin_id, target, dataset_name):
+    return _image_data(bin_id, target, 'image/png')
+
+
+def image_jpg_legacy(request, bin_id, target, dataset_name):
+    return _image_data(bin_id, target, 'image/jpeg')
+
+
+def adc_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     adc_path = b.adc_path()
     filename = '{}.adc'.format(bin_id)
     fin = open(adc_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
-def hdr_data(request, bin_id, dataset_name=None):
-    # ignore dataset name
+
+def hdr_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     hdr_path = b.hdr_path()
     filename = '{}.hdr'.format(bin_id)
     fin = open(hdr_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/plain')
 
-def roi_data(request, bin_id, dataset_name=None):
-    # ignore dataset name
+
+def roi_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     roi_path = b.roi_path()
     filename = '{}.roi'.format(bin_id)
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
 
-def blob_zip(request, bin_id, dataset_name=None):
+
+def blob_zip(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         version = int(request.GET.get('v',2))
@@ -287,7 +319,8 @@ def blob_zip(request, bin_id, dataset_name=None):
     fin = open(blob_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/zip')
 
-def features_csv(request, bin_id, dataset_name=None):
+
+def features_csv(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         version = int(request.GET.get('v',2))
@@ -301,8 +334,8 @@ def features_csv(request, bin_id, dataset_name=None):
     fin = open(features_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
-def zip(request, bin_id, dataset_name=None):
-    # ignore dataset name
+
+def zip(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     zip_buf = b.zip()
     filename = '{}.zip'.format(bin_id)
