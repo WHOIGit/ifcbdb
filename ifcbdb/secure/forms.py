@@ -75,7 +75,7 @@ class InstrumentForm(forms.ModelForm):
 
     class Meta:
         model = Instrument
-        fields = ["id", "number", "nickname", "address", "username", "share_name", ]
+        fields = ["id", "number", "nickname", "address", "username", "share_name", "timeout", ]
 
         widgets = {
             "number": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Number"}),
@@ -83,4 +83,5 @@ class InstrumentForm(forms.ModelForm):
             "address": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Domain or IP Address"}),
             "username": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Username"}),
             "share_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Share Name"}),
+            "timeout": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Timeout"}),
         }
