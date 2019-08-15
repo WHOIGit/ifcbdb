@@ -478,6 +478,23 @@ class Bin(models.Model):
         comment = Comment(bin=self, content=content, user=user)
         comment.save()
 
+    def delete_comment(self, comment_id, user):
+        try:
+            comment = Comment.objects.get(bin=self, pk=comment_id)
+            if comment.user == user:
+                comment.delete()
+        except:
+            pass
+
+    @property
+    def comment_list(self):
+        return list(
+            self.comments.all()
+                .select_related('user')
+                .values_list("timestamp", "content", "user__username", "id", "user_id")
+                .order_by("-timestamp")
+        )
+        
     def __str__(self):
         return self.pid
 

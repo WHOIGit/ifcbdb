@@ -13,6 +13,7 @@ var _workspace = "mosaic"; // The current workspace a user is seeing
 var _pendingMapLocation = null; // The next map position to render (see notes in updateMapLocation)
 var _csrf = null; // CSRF token from Django for post requests
 var _userId = null; // Id of the currently logged in user
+var _commentTable = null; // Variable to keep track of the DataTables object once created
 
 //************* Common Methods ***********************/
 
@@ -98,8 +99,7 @@ function updateBinTags(data) {
 }
 
 function updateBinComments(data) {
-    // TODO: Implement
-    console.log(data);
+    displayComments(data.comments);
 }
 
 function updateBinDownloadLinks(data) {
@@ -155,6 +155,7 @@ function changeToNearestBin(lat, lng) {
     });
 }
 
+//************* Tagging Methods ***********************/
 function toggleTagInput(isAdding) {
     $("#add-tag").toggleClass("d-none", isAdding)
     $("#tag-name").toggleClass("d-none", !isAdding)
@@ -192,19 +193,6 @@ function removeTag(tag) {
     });
 }
 
-function addComment() {
-    // TODO: Pull actual input
-    var payload = {
-        "csrfmiddlewaretoken": _csrf,
-        "comment": "This is a test"
-    };
-
-    // TODO: Refresh comment list and count
-    $.post("/secure/api/add-comment/" + _bin, payload, function(data){
-        console.log(data);
-    });
-}
-
 function displayTags(tags) {
     var list = $("#tags");
     list.empty();
@@ -225,6 +213,84 @@ function displayTags(tags) {
 
         list.append(li);
     }
+}
+
+//************* Comment Methods ***********************/
+function addComment() {
+    var content = $("#comment-input").val().trim();
+    if (content === "") {
+        return;
+    }
+
+    var payload = {
+        "csrfmiddlewaretoken": _csrf,
+        "comment": content
+    };
+
+    $.post("/secure/api/add-comment/" + _bin, payload, function(data){
+        $("#comment-input").val("");
+        displayComments(data.comments);
+    });
+}
+
+function deleteComment(id) {
+    if (id == null || id == "")
+        return;
+
+    if (!confirm("Are you sure you want to delete this comment?"))
+        return;
+
+    var payload = {
+        "csrfmiddlewaretoken": _csrf,
+        "id": id
+    };
+
+    $.post("/secure/api/delete-comment/" + _bin, payload, function(data){
+        displayComments(data.comments);
+    });
+}
+
+function displayComments(comments) {
+    $(".comment-total").text(comments.length);
+    if (_commentTable != null) {
+        _commentTable.clear();
+        _commentTable.rows.add(comments);
+        _commentTable.draw();
+        return;
+    }
+    _commentTable = $("#binCommentsTable").DataTable({
+        searching: false,
+        lengthChange: false,
+        data: comments,
+        order: [[ 1, "desc" ]],
+        columns: [
+            { // Date
+                render: function(data, type, row) {
+                    return moment.utc(data).format("YYYY-MM-DD HH:mm:ss z");
+                }
+            },
+            {}, // Comment
+            {}, // User
+            { // Edit/Delete
+                targets: -1,
+                render: function(data, type, row ) {
+                    var html = "";
+                    // Only show edit/delete if the comment was posted by the user viewing them
+                    if (row[4] == _userId) {
+                        html +=
+                            // TODO: Implement
+                            //"<button class='btn btn-sm py-1 px-2 edit-comment' data-id='" + data + "'><i class='fas fa-edit'></i></button>" +
+                            "<button class='btn btn-sm py-1 px-2 delete-comment' data-id='" + data + "'><i class='fas fa-minus-circle'></i></button>";
+                    }
+
+                    return html;
+                }
+            },
+            { // User ID
+                visible: false
+            }
+        ]
+    });
 }
 
 //************* Mosaic Methods ***********************/
@@ -536,6 +602,10 @@ function initEvents() {
 
     $("#confirm-comment").click(function(e){
         addComment();
+    });
+
+    $("#binCommentsTable").on("click", ".delete-comment", function(e){
+        deleteComment($(this).data("id"));
     });
 }
 
