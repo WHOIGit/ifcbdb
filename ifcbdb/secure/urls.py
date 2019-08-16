@@ -25,5 +25,7 @@ urlpatterns = [
     path('api/remove-tag/<slug:bin_id>', views.remove_tag, name='remove_tag'),
     path('api/add-comment/<slug:bin_id>', views.add_comment, name='add_comment'),
     path('api/delete-comment/<slug:bin_id>', views.delete_comment, name='delete_comment'),
+    path('api/sync/<int:dataset_id>', views.sync_dataset, name='sync_dataset'),
+    path('api/sync/status/<int:dataset_id>', views.sync_dataset_status, name='sync_dataset_status'),
 
 ]

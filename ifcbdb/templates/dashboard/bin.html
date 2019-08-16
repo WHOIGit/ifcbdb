@@ -676,7 +676,7 @@ function changeBin(binId, updateHistory) {
             _pendingMapLocation = {
                 "lat": data.lat,
                 "lng": data.lng,
-                "depth": data.lng
+                "depth": data.depth
             }
         }
 
@@ -779,6 +779,7 @@ $(".change-image").click(function(e){
 });
 
 $("#close-image").click(function() {
+  $("#images img").attr("src","");
   $("#mosaic-details").addClass("d-none");
 });
 
