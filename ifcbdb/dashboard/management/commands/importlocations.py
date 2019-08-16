@@ -6,9 +6,10 @@ import pandas as pd
 
 from dashboard.models import Bin
 
-BIN_ID_COLUMNS = ['id','pid','lid','bin','bin_id']
-LAT_COLUMNS = ['latitude','lat']
-LON_COLUMNS = ['longitude','lon','lng','lg']
+BIN_ID_COLUMNS = ['id','pid','lid','bin','bin_id','sample','sample_id']
+LAT_COLUMNS = ['latitude','lat','y']
+LON_COLUMNS = ['longitude','lon','lng','lg','x']
+DEPTH_COLUMNS = ['depth','dep','z']
 
 class Command(BaseCommand):
     help = 'import location data'
@@ -36,6 +37,11 @@ class Command(BaseCommand):
             if lc in df.columns:
                 lon_col = lc
 
+        depth_column = None
+        for dc in DEPTH_COLUMNS:
+            if dc in df.columns:
+                depth_column = dc
+
         for row in df.itertuples():
             pid = getattr(row, pid_col)
             lat = getattr(row, lat_col)
@@ -43,9 +49,18 @@ class Command(BaseCommand):
 
             try:
                 b = Bin.objects.get(pid=pid)
+
+                if depth_column is not None:
+                    depth = getattr(row, depth_column)
+                    b.depth = depth
+
                 b.set_location(lon, lat)
                 b.save()
 
-                print('{} lat={} lon={}'.format(pid, lat, lon))
+                msg = '{} lat={} lon={}'.format(pid, lat, lon)
+                if depth_column is not None:
+                    msg = '{} depth={}'.format(msg, depth)
+
+                print(msg)
             except Bin.DoesNotExist:
                 pass
