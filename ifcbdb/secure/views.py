@@ -96,11 +96,15 @@ def edit_directory(request, dataset_id, id):
         directory = get_object_or_404(DataDirectory, pk=id)
     else:
         directory = DataDirectory(dataset_id=dataset_id)
+        directory.version = DataDirectory.DEFAULT_VERSION
 
     if request.POST:
         form = DirectoryForm(request.POST, instance=directory)
         if form.is_valid():
-            form.save()
+            instance = form.save(commit=False)
+            if instance.kind == "raw":
+                instance.version = None
+            instance.save()
 
             return redirect(reverse("secure:directory-management", kwargs={"dataset_id": dataset_id}))
     else:

@@ -29,7 +29,7 @@
     </div>
     <div class="form-row">
         <div class="form-group col">
-            <label for="id_title">Kind</label>
+            <label for="id_kind">Kind</label>
             {{ form.kind }}
             {% if form.kind.errors %}<span class="text-danger">{{ form.kind.errors.as_text }}</span>{% endif %}
         </div>
@@ -48,7 +48,7 @@
             {% if form.blacklist.errors %}<span class="text-danger">{{ form.blacklist.errors.as_text }}</span>{% endif %}
         </div>
     </div>
-    <div class="form-row">
+    <div id="version-container" class="form-row d-none">
         <div class="form-group col">
             <label for="id_version">Version</label>
             {{ form.version }}
@@ -67,4 +67,21 @@
         <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
     </div>
 </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateKind() {
+        console.log("ASD");
+        var kind = $("#id_kind").val();
+        $("#version-container").toggleClass("d-none", kind == "raw");
+    }
+    $(function(){
+        updateKind();
+        $("#id_kind").change(function(e){
+            updateKind();
+        });
+    });
+
+</script>
 {% endblock %}

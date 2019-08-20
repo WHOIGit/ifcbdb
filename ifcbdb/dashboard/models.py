@@ -207,6 +207,8 @@ class DataDirectory(models.Model):
     BLOBS = 'blobs'
     FEATURES = 'features'
 
+    DEFAULT_VERSION = 2
+
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='directories')
     path = models.CharField(max_length=512) # absolute path
     kind = models.CharField(max_length=32, default=RAW)
