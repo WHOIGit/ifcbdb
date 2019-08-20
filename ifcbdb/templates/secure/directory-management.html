@@ -94,7 +94,11 @@
                 var datasetId = $(this).data("dataset");
                 var directoryId = $(this).data("id");
 
-                $.post("/secure/api/delete-directory/" + datasetId + "/" + directoryId, {}, function(data){
+                var payload = {
+                    csrfmiddlewaretoken: "{{ csrf_token }}",
+                }
+
+                $.post("/secure/api/delete-directory/" + datasetId + "/" + directoryId, payload, function(data){
                     directoriesTable.ajax.reload();
                 });
             }

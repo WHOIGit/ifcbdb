@@ -1,6 +1,5 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 
@@ -11,6 +10,7 @@ from django.core.cache import cache
 from celery.result import AsyncResult
 
 # TODO: All of these methods need to be locked down properly
+
 
 @login_required
 def index(request):
@@ -113,9 +113,7 @@ def edit_directory(request, dataset_id, id):
     })
 
 
-# TODO: Remove the CSRF exmpt flag
 @require_POST
-@csrf_exempt
 def delete_directory(request, dataset_id, id):
     directory = get_object_or_404(DataDirectory, pk=id)
 

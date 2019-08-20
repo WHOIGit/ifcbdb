@@ -1,16 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block breadcrumbs %}
-    <!-- TODO: datasets is hard coded into the base file and should not be seen for a bin only view; also remove ** indicator -->
-    {% if dataset %}
-        <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
-        <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}" id="bin-crumb">{{ bin.pid }}</a></li>
-    {% else %}
-        <li class="breadcrumb-item"><a class="black-text" href="/bin?id={{ bin.pid }}">{{ bin.pid }}</a></li>
-    {% endif %}
-{% endblock %}
-
 {% block content %}
 
 {% if dataset %}
@@ -499,7 +489,7 @@ function createTimeSeries(metric) {
     container = $("#primary-plot-container");
 
     currentMetric = metric;
-    var dataUrl = "/api/" + _dataset + "/time-series/" + metric + "?resolution=auto";
+    var dataUrl = "/api/time-series/" + metric + "?resolution=auto&dataset=" + _dataset;
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
         currentResolution = response["resolution"];
@@ -579,8 +569,8 @@ function queryTimeline(container, metric) {
     var start = timelineRelayoutResponse["xaxis.range[0]"];
     var end = timelineRelayoutResponse["xaxis.range[1]"];
 
-    var url = "/api/" + _dataset + "/time-series/" + metric +
-        "?resolution=" + "auto";
+    var url = "/api/time-series/" + metric +
+        "?resolution=auto&dataset=" + _dataset;
     if(start)
         url += "&start=" + start;
     if(end)
@@ -618,8 +608,6 @@ function queryTimeline(container, metric) {
     return true;
 }
 
-
-
 function changeBin(binId, updateHistory) {
     _coordinates = [];
 
@@ -631,11 +619,12 @@ function changeBin(binId, updateHistory) {
     var viewSize = $("#view-size option:selected").val();
     var scaleFactor = $("#scale-factor option:selected").val();
 
-    var dataUrl = "/api" + (_dataset != "" ? "/" + _dataset : "") + "/bin/" + _bin;
+    var dataUrl = "/api/bin/" + _bin;
     dataUrl += "?view_size=" + viewSize;
     dataUrl += "&scale_factor=" + scaleFactor;
     dataUrl += "&preload_adjacent_bins=" + true;
     dataUrl += "&include_coordinates=" + false;
+    dataUrl += "&dataset=" + _dataset;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
@@ -647,9 +636,9 @@ function changeBin(binId, updateHistory) {
     $("#too-many-images").toggle(false);
 
     // Update bin name/link
-    var binUrl = "/bin?id=" + _bin;
-    $("#bin-header").attr("href", binUrl).html(binId);
-    $("#bin-crumb").attr("href", binUrl).html(binId);
+    $("#bin-header")
+        .attr("href", createBinModeLink())
+        .html(binId);
 
     // disable next/previous buttons
     $("#previous-bin").addClass("disabled");
@@ -691,8 +680,8 @@ function changeBin(binId, updateHistory) {
         }
 
         if (updateHistory) {
-            {% if route == "dataset" %}
-                history.pushState({"bin_id": _bin, "dataset": _dataset}, null, "?id=" + _bin + "&dataset=" + _dataset);
+            {% if route == "timeline" and group_type == "dataset" %}
+                history.pushState({"bin_id": _bin, "dataset": _dataset}, null, "?dataset=" + _dataset + "&bin=" + _bin);
             {% endif %}
         }
 
@@ -718,13 +707,19 @@ $("#mosaic").click(function(e){
             $("#mosaic-details").toggleClass("d-none", false);
 
             // TODO: Needs loading indicator
-            var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(img.pid, 5);
+            var sourceUrl = "/data/" + _bin + "_" + padDigits(img.pid, 5) + ".png";
             var metaUrl = "/api/image/" + _bin + "/" + img.pid;
+            var imageUrl = createImageLink(padDigits(img.pid, 5));
 
-            changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
+            changeImage(
+                $("#detailed-image"),
+                sourceUrl,
+                $("#detailed-image-blob"),
+                $("#detailed-image-outline")
+            );
             $("#detailed-image").data("image-id", img.pid);
-            $("#detailed-image-link").attr("href", baseUrl + ".html");
-            $("#detailed-image-button").attr("href", baseUrl + ".html");
+            $("#detailed-image-link").attr("href", imageUrl);
+            $("#detailed-image-button").attr("href", imageUrl);
             $("#image-modal").modal();
 
             $("#detailed-image-metadata tbody").empty();
@@ -849,7 +844,7 @@ $(function() {
                 var idx = data.points[i].pointIndex;
 
                 var imageId = _plotData["target_number"][idx];
-                var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
+                var baseUrl = "/data/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 $("#plot-images").empty();
                 $("#plot-images").append(
@@ -881,7 +876,7 @@ $(function() {
 
                 var idx = data.points[i].pointIndex;
                 var imageId = _plotData["target_number"][idx];
-                var imageUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
+                var imageUrl = "/data/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 urls.push({
                     "id": imageId,
@@ -927,15 +922,16 @@ $(function() {
 
     $("#plot-images").on("click", "img", function(e){
         var target = $(this).data("target");
-        var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(target, 5);
 
-        location.href = baseUrl + ".html";
+        location.href = createImageLink(padDigits(target, 5));
     });
 
     {% if dataset %}
         _dataset = "{{ dataset.name }}";
     {% endif %}
     _bin = "{{ bin.pid }}";
+    _route = "{{ route }}";
+    _groupType = "{{ group_type }}";
     _csrf = "{{ csrf_token }}";
     {% if user.is_authenticated %}
     _userId = {{ user.id }};

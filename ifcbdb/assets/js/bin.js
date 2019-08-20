@@ -14,6 +14,8 @@ var _pendingMapLocation = null; // The next map position to render (see notes in
 var _csrf = null; // CSRF token from Django for post requests
 var _userId = null; // Id of the currently logged in user
 var _commentTable = null; // Variable to keep track of the DataTables object once created
+var _route = ""; // Tracks the route used to render this page (timeline or bin)
+var _groupType = ""; // For timelines, tracks the grouping (dataset, tags, instrument)
 
 //************* Common Methods ***********************/
 
@@ -24,6 +26,52 @@ function createLink() {
         return "/" + _dataset + "/" + _bin + ".html";
 
     return "/bin?id=" + _bin;
+}
+
+function createBinModeLink() {
+    return "/bin?bin=" + _bin;
+}
+
+function createBinLink(bin) {
+    if (_route == "bin") {
+        return "/bin?bin=" + bin;
+    }
+
+    switch (_groupType) {
+        case "dataset":
+            return "/timeline?dataset=" + _dataset + "&bin=" + bin;
+            break;
+        case "instrument":
+            // TODO: Implement
+            break;
+        case "tags":
+            // TODO: Implement
+            break;
+    }
+
+    // Fallback; should not occur
+    return "#";
+}
+
+function createImageLink(imageId) {
+    if (_route == "bin") {
+        return "/image?image=" + imageId + "&bin=" + _bin;
+    }
+
+    switch (_groupType) {
+        case "dataset":
+            return "/image?image=" + imageId + "&bin=" + _bin + "&dataset=" + _dataset;
+            break;
+        case "instrument":
+            // TODO: Implement
+            break;
+        case "tags":
+            // TODO: Implement
+            break;
+    }
+
+    // Fallback; should not occur
+    return "#";
 }
 
 // Switches between workspaces: map, plot, mosaic
@@ -103,12 +151,12 @@ function updateBinComments(data) {
 }
 
 function updateBinDownloadLinks(data) {
-    $("#download-adc").attr("href", _dataset + "/" + _bin + ".adc");
-    $("#download-hdr").attr("href", _dataset + "/" + _bin + ".hdr");
-    $("#download-roi").attr("href", _dataset + "/" + _bin + ".roi");
-    $("#download-zip").attr("href", _dataset + "/" + _bin + ".zip");
-    $("#download-blobs").attr("href", _dataset + "/" + _bin + "_blob.zip");
-    $("#download-features").attr("href", _dataset + "/" + _bin + "_features.csv");
+    $("#download-adc").attr("href", "/data/" + _bin + ".adc");
+    $("#download-hdr").attr("href", "/data/" + _bin + ".hdr");
+    $("#download-roi").attr("href", "/data/" + _bin + ".roi");
+    $("#download-zip").attr("href", "/data/" + _bin + ".zip");
+    $("#download-blobs").attr("href", "/data/" + _bin + "_blob.zip");
+    $("#download-features").attr("href", "/data/" + _bin + "_features.csv");
 
     $("#download-blobs").toggle(data["has_blobs"]);
     $("#download-blobs-disabled").toggle(!data["has_blobs"]);
@@ -127,8 +175,13 @@ function changeToClosestBin(targetDate) {
     _isBinLoading = true;
     _isMosaicLoading = true;
 
-    var url = "/api/" + _dataset + "/closest_bin";
-    $.post(url, { "target_date": targetDate }, function(resp) {
+    var payload = {
+        "csrfmiddlewaretoken": _csrf,
+        "target_date": targetDate,
+        "dataset": _dataset
+    }
+
+    $.post("/api/closest_bin", payload, function(resp) {
         if (resp.bin_id != "")
             changeBin(resp.bin_id, true);
     });
@@ -142,14 +195,14 @@ function changeToNearestBin(lat, lng) {
     _isBinLoading = true;
     _isMosaicLoading = true;
 
-    var url = "/api/nearest_bin";
-    var data = {
+    var payload = {
+        csrfmiddlewaretoken: _csrf,
         dataset: _dataset,
         latitude: lat,
         longitude: lng
     };
 
-    $.post(url, data, function(resp) {
+    $.post("/api/nearest_bin", payload, function(resp) {
         if (resp.bin_id != "")
             changeBin(resp.bin_id, true);
     });
@@ -334,9 +387,10 @@ function loadMosaic(pageNumber) {
     // indicate to the user that coordinates are loading
     $("#mosaic").css("cursor", "wait");
 
-    var binDataUrl = "/api" + (_dataset != "" ? "/" + _dataset : "") + "/bin/" + _bin +
+    var binDataUrl = "/api/bin/" + _bin +
         "?view_size=" + viewSize +
-        "&scale_factor=" + scaleFactor;
+        "&scale_factor=" + scaleFactor +
+        "&dataset=" + _dataset;
 
     $.get(binDataUrl, function(data) {
 
