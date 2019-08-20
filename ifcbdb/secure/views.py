@@ -232,13 +232,13 @@ def sync_dataset(request, dataset_id):
     ds = get_object_or_404(Dataset, id=dataset_id)
     # attempt to lock the dataset
     lock_key = dataset_sync_lock_key(dataset_id)
-    added = cache.add(lock_key, True) # this is atomic
+    added = cache.add(lock_key, True, timeout=None) # this is atomic
     if not added: # dataset is locked for syncing
         return JsonResponse({ 'state': 'LOCKED' })
     # start the task asynchronously
     r = sync_dataset.delay(dataset_id, lock_key)
     # cache the task id so we can look it up by dataset id
-    cache.set(dataset_sync_task_id_key(dataset_id), r.task_id)
+    cache.set(dataset_sync_task_id_key(dataset_id), r.task_id, timeout=None)
     result = AsyncResult(r.task_id)
     return JsonResponse({ 'state': result.state })
 
