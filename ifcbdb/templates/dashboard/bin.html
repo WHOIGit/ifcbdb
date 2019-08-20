@@ -636,9 +636,9 @@ function changeBin(binId, updateHistory) {
     $("#too-many-images").toggle(false);
 
     // Update bin name/link
-    var binUrl = createBinLink(_bin);
-    $("#bin-header").attr("href", binUrl).html(binId);
-    $("#bin-crumb").attr("href", binUrl).html(binId);
+    $("#bin-header")
+        .attr("href", createBinModeLink())
+        .html(binId);
 
     // disable next/previous buttons
     $("#previous-bin").addClass("disabled");

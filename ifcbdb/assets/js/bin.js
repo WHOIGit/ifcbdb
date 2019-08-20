@@ -28,6 +28,10 @@ function createLink() {
     return "/bin?id=" + _bin;
 }
 
+function createBinModeLink() {
+    return "/bin?bin=" + _bin;
+}
+
 function createBinLink(bin) {
     if (_route == "bin") {
         return "/bin?bin=" + bin;
