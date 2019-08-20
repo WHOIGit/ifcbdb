@@ -472,7 +472,6 @@ var plot;
 
 var currentMetric = "";
 var currentResolution = "auto";
-var currentBinTimestamp = null;
 
 var timelineValid = true;
 var timelineRelayoutResponse;
@@ -495,14 +494,12 @@ function createTimeSeries(metric) {
         currentResolution = response["resolution"];
 
         var initialConfig = getTimelineConfig();
-        var initialData = getTimelineData(response, currentBinTimestamp);
+        var initialData = getTimelineData(response, _binTimestamp);
         var initialLayout = getTimelineLayout(response);
 
         Plotly.newPlot(container[0], initialData, initialLayout, initialConfig);
 
-        if (currentBinTimestamp != null) {
-            highlightSelectedBinByDate(container[0].data[0].x, currentBinTimestamp);
-        }
+        highlightSelectedBinByDate();
 
         // Add event to locate nearest bin to user's click
         container[0].addEventListener('mousemove', function(event) {
@@ -593,7 +590,7 @@ function queryTimeline(container, metric) {
         currentResolution = dataResponse["resolution"];
 
         var updatedConfig = getTimelineConfig();
-        var updatedData = getTimelineData(dataResponse, currentBinTimestamp);
+        var updatedData = getTimelineData(dataResponse, _binTimestamp);
         var updatedLayout = getTimelineLayout(dataResponse, timelineRelayoutResponse);
 
         Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
@@ -657,7 +654,7 @@ function changeBin(binId, updateHistory) {
         updateBinTags(data);
         updateBinComments(data);
 
-        currentBinTimestamp = moment(data["timestamp_iso"]);
+        _binTimestamp = moment(data["timestamp_iso"]);
 
         $("#previous-bin").data("bin", data.previous_bin_id);
         $("#next-bin").data("bin", data.next_bin_id);
@@ -687,8 +684,7 @@ function changeBin(binId, updateHistory) {
 
         // Update the timeline to select the new bin
         if (_dataset != "") {
-            var timeline = $("#primary-plot-container")[0];
-            highlightSelectedBinByDate(timeline.data[0].x, currentBinTimestamp);
+            highlightSelectedBinByDate();
         }
 
         _isBinLoading = false;
@@ -783,6 +779,8 @@ $("#close-image").click(function() {
 });
 
 $(function() {
+    _binTimestamp = moment("{{ details.timestamp_iso }}");
+
     {% if dataset %}
     createTimeSeries("concentration");
     {% endif %}

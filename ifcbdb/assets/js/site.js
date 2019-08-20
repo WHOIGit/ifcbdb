@@ -87,6 +87,21 @@ function padDigits(number, digits) {
     return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
 }
 
+function getTimelineIndicatorShape() {
+    return {
+        type: "line",
+        yref: "paper",
+        x0: _binTimestamp.utc().format(),
+        y0: 0,
+        x1: _binTimestamp.utc().format(),
+        y1: 1,
+        line: {
+            color: "rgb(192, 32, 32)",
+            width: 3
+        }
+    }
+}
+
 function getTimelineConfig() {
     return {
         responsive: true,
@@ -131,15 +146,6 @@ function getTimelineData(data, selectedDate) {
         },
     };
 
-    if (selectedDate != null) {
-        var idx = getDataPointIndex(data.x, selectedDate);
-        var colors = buildColorArray(data.x, idx);
-
-        series["marker"] = {
-            color: colors
-        }
-    }
-
     // For bar graphs with only one data point, the width of the bar needs to be set explicitly or
     //   Plotly will not render anything visible to the user. The x range on a single entry plot is
     //   set to 24hours, so the bar is set to a width of 1 hour
@@ -180,7 +186,14 @@ function getTimelineLayout(data, range) {
             },
             "color": "#0f0"
         }
+
     };
+
+    if (_binTimestamp != null) {
+        layout.shapes = [
+            getTimelineIndicatorShape()
+        ];
+    }
 
     if (range !== undefined) {
         layout["xaxis"]["range"] = [
@@ -264,34 +277,15 @@ function buildColorArray(dataPoints, index) {
     return colors;
 }
 
-function getDataPointIndex(dataPoints, selectedDate) {
-    var idx;
-    for (idx = 0; idx < dataPoints.length; idx++) {
-        if (moment(dataPoints[idx]) > selectedDate)
-            break;
-    }
-
-    // If the end of the list was reached, then the selected bin is not visible and we should
-    //   not try to highlight it
-    if (idx == dataPoints.length)
-        return -1;
-
-    return idx - 1;
-}
-
-function highlightSelectedBinByIndex(dataPoints, index) {
-    var plot = $("#primary-plot-container")[0];
-    if (!plot.data)
+function highlightSelectedBinByDate() {
+    if (_binTimestamp == null)
         return;
 
-    Plotly.restyle(plot, {
-        "marker": {
-            "color": buildColorArray(dataPoints, index)
-        }
-    });
-}
+    var timeline = $("#primary-plot-container")[0];
 
-function highlightSelectedBinByDate(dataPoints, selectedDate) {
-    var idx = getDataPointIndex(dataPoints, selectedDate);
-    highlightSelectedBinByIndex(dataPoints, idx);
+    Plotly.relayout(timeline, {
+        shapes: [
+            getTimelineIndicatorShape()
+        ]
+    });
 }

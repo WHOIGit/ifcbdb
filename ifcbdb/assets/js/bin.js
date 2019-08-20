@@ -16,6 +16,7 @@ var _userId = null; // Id of the currently logged in user
 var _commentTable = null; // Variable to keep track of the DataTables object once created
 var _route = ""; // Tracks the route used to render this page (timeline or bin)
 var _groupType = ""; // For timelines, tracks the grouping (dataset, tags, instrument)
+var _binTimestamp = null; // Timestamp for the currently selected bin
 
 //************* Common Methods ***********************/
 
