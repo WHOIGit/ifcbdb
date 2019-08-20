@@ -7,7 +7,6 @@ from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
     HttpResponseRedirect, HttpResponseNotFound
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_control
 
 from django.core.cache import cache
@@ -19,14 +18,10 @@ from ifcb.data.adc import schema_names
 from .models import Dataset, Bin, Timeline, bin_query
 from common.utilities import *
 
-from .tasks import mosaic_coordinates_task
-
-# TODO: The naming convensions for the dataset, bin and image ID's needs to be cleaned up and be made
-#   more consistent
 
 def index(request):
     if settings.DEFAULT_DATASET:
-        return HttpResponseRedirect(reverse("dataset", kwargs={"dataset_name": settings.DEFAULT_DATASET}))
+        return HttpResponseRedirect(reverse("timeline_page") + "?dataset=" + settings.DEFAULT_DATASET)
 
     return HttpResponseRedirect(reverse("datasets"))
 
@@ -426,7 +421,9 @@ def _mosaic_page_image(request, bin_id):
 #   it causes the UI to need to download data on each zoom level when scroll up, only to then ignore the data. Updates
 #   are needed to let the UI know that certain levels are "off limits" and avoid re-running data when we know it's
 #   just going to force us down to a finer resolution anyway
-def generate_time_series(request, dataset_name, metric,):
+# TODO: Handle tag/instrument grouping
+def generate_time_series(request, metric,):
+    dataset_name = request.GET.get("dataset")
     resolution = request.GET.get("resolution", "auto")
     start = request.GET.get("start")
     end = request.GET.get("end")
@@ -480,9 +477,10 @@ def generate_time_series(request, dataset_name, metric,):
     })
 
 
-# TODO: This call needs a lot of clean up, standardization with other methods and cutting out some dup code
 # TODO: This is also where page caching could occur...
-def bin_data(request, bin_id, dataset_name=None):
+# TODO: Handle different grouping (tag/instrument)
+def bin_data(request, bin_id):
+    dataset_name = request.GET.get("dataset")
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
     else:
@@ -499,9 +497,9 @@ def bin_data(request, bin_id, dataset_name=None):
     return JsonResponse(details)
 
 
-# TODO: Using a proper API, the CSRF exempt decorator probably won't be needed
-@csrf_exempt
-def closest_bin(request, dataset_name):
+# TODO: Handle different grouping (tag/instrument)
+def closest_bin(request):
+    dataset_name = request.POST.get("dataset")
     dataset = get_object_or_404(Dataset, name=dataset_name)
     target_date = request.POST.get("target_date", None)
 
@@ -516,13 +514,13 @@ def closest_bin(request, dataset_name):
         "bin_id": bin.pid,
     })
 
-@csrf_exempt
+
 def nearest_bin(request):
-    dataset = request.POST.get('dataset') # limit to dataset
-    instrument = request.POST.get('instrument') # limit to instrument
-    start = request.POST.get('start') # limit to start time
-    end = request.POST.get('end') # limit to end time
-    tags = request.POST.get('tags') # limit to tag(s)
+    dataset = request.POST.get('dataset')  # limit to dataset
+    instrument = request.POST.get('instrument')  # limit to instrument
+    start = request.POST.get('start')  # limit to start time
+    end = request.POST.get('end')  # limit to end time
+    tags = request.POST.get('tags')  # limit to tag(s)
     lat = request.POST.get('latitude')
     lon = request.POST.get('longitude')
     if lat is None or lon is None:
@@ -539,7 +537,7 @@ def nearest_bin(request):
         'bin_id': bin_id
     })
 
-@csrf_exempt
+
 def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     bin = b._get_bin()

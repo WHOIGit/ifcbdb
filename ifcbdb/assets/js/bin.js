@@ -171,8 +171,13 @@ function changeToClosestBin(targetDate) {
     _isBinLoading = true;
     _isMosaicLoading = true;
 
-    var url = "/api/" + _dataset + "/closest_bin";
-    $.post(url, { "target_date": targetDate }, function(resp) {
+    var payload = {
+        "csrfmiddlewaretoken": _csrf,
+        "target_date": targetDate,
+        "dataset": _dataset
+    }
+
+    $.post("/api/closest_bin", payload, function(resp) {
         if (resp.bin_id != "")
             changeBin(resp.bin_id, true);
     });
@@ -186,14 +191,14 @@ function changeToNearestBin(lat, lng) {
     _isBinLoading = true;
     _isMosaicLoading = true;
 
-    var url = "/api/nearest_bin";
-    var data = {
+    var payload = {
+        csrfmiddlewaretoken: _csrf,
         dataset: _dataset,
         latitude: lat,
         longitude: lng
     };
 
-    $.post(url, data, function(resp) {
+    $.post("/api/nearest_bin", payload, function(resp) {
         if (resp.bin_id != "")
             changeBin(resp.bin_id, true);
     });
@@ -378,9 +383,10 @@ function loadMosaic(pageNumber) {
     // indicate to the user that coordinates are loading
     $("#mosaic").css("cursor", "wait");
 
-    var binDataUrl = "/api" + (_dataset != "" ? "/" + _dataset : "") + "/bin/" + _bin +
+    var binDataUrl = "/api/bin/" + _bin +
         "?view_size=" + viewSize +
-        "&scale_factor=" + scaleFactor;
+        "&scale_factor=" + scaleFactor +
+        "&dataset=" + _dataset;
 
     $.get(binDataUrl, function(data) {
 

@@ -82,10 +82,10 @@ urlpatterns = [
     ##################################
     # Paths used for API/Ajax requests
     ##################################
-    path('api/<slug:dataset_name>/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
-    path('api/<slug:dataset_name>/bin/<slug:bin_id>', views.bin_data, name='bin_data'),
+    path('api/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
+    path('api/bin/<slug:bin_id>', views.bin_data, name='bin_data'),
     path('api/bin/<slug:bin_id>', views.bin_data),
-    path('api/<slug:dataset_name>/closest_bin', views.closest_bin, name='closest_bin'),  # closest bin in time
+    path('api/closest_bin', views.closest_bin, name='closest_bin'),  # closest bin in time
     path('api/nearest_bin', views.nearest_bin, name='nearest_bin'),
     path('api/mosaic/coordinates/<slug:bin_id>', views.mosaic_coordinates, name='mosaic_coordintes'),
     path('api/mosaic/encoded_image/<slug:bin_id>', views.mosaic_page_encoded_image, name='mosaic_page_encoded_image'),

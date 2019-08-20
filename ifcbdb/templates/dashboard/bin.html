@@ -489,7 +489,7 @@ function createTimeSeries(metric) {
     container = $("#primary-plot-container");
 
     currentMetric = metric;
-    var dataUrl = "/api/" + _dataset + "/time-series/" + metric + "?resolution=auto";
+    var dataUrl = "/api/time-series/" + metric + "?resolution=auto&dataset=" + _dataset;
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
         currentResolution = response["resolution"];
@@ -569,8 +569,8 @@ function queryTimeline(container, metric) {
     var start = timelineRelayoutResponse["xaxis.range[0]"];
     var end = timelineRelayoutResponse["xaxis.range[1]"];
 
-    var url = "/api/" + _dataset + "/time-series/" + metric +
-        "?resolution=" + "auto";
+    var url = "/api/time-series/" + metric +
+        "?resolution=auto&dataset=" + _dataset;
     if(start)
         url += "&start=" + start;
     if(end)
@@ -608,8 +608,6 @@ function queryTimeline(container, metric) {
     return true;
 }
 
-
-
 function changeBin(binId, updateHistory) {
     _coordinates = [];
 
@@ -621,11 +619,12 @@ function changeBin(binId, updateHistory) {
     var viewSize = $("#view-size option:selected").val();
     var scaleFactor = $("#scale-factor option:selected").val();
 
-    var dataUrl = "/api" + (_dataset != "" ? "/" + _dataset : "") + "/bin/" + _bin;
+    var dataUrl = "/api/bin/" + _bin;
     dataUrl += "?view_size=" + viewSize;
     dataUrl += "&scale_factor=" + scaleFactor;
     dataUrl += "&preload_adjacent_bins=" + true;
     dataUrl += "&include_coordinates=" + false;
+    dataUrl += "&dataset=" + _dataset;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
