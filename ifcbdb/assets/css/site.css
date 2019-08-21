@@ -215,3 +215,7 @@ div.scale-bar {
     content: "\f061";
     padding-left: 5px;
 }
+
+table .btn-mdb-color {
+    color: #fff !important;
+}
