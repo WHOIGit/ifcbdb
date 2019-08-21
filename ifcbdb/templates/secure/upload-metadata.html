@@ -1,0 +1,55 @@
+{% extends 'base.html' %} {% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Upload Metadata</span>
+    </div>
+</div>
+<hr class="my-2">
+<div class="container">
+    <div class="row py-2 px-3">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <strong>{{ field.label_tag }} {{ error|escape }}</strong><br />
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <strong>{{ error|escape }}</strong><br />
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if confirm %}
+                    <div class="alert alert-success">File imported successfully</div>
+                    {% endif %}
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Metadata File (*.csv)</label>
+                            <div class="custom-file">
+                                {{ form.file }}
+                                <label class="custom-file-label" for="id_file">Choose file</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <input type="submit" value="Submit" class="btn btn-sm btn-mdb-color" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+</div>
+
+{% endblock %}

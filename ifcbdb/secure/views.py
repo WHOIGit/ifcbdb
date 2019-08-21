@@ -1,10 +1,13 @@
 from django.contrib.auth.decorators import login_required
+from django import forms
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 
+import pandas as pd
+
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin
-from .forms import DatasetForm, InstrumentForm, DirectoryForm
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -43,9 +46,29 @@ def instrument_management(request):
     })
 
 
-def upload_geospatial(request):
-    return render(request, 'secure/upload-geospatial.html', {
+def upload_metadata(request):
+    if request.method == "POST":
+        confirm = ""
+        form = MetadataUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
 
+            # TODO: Do something with the data
+            df = pd.read_csv(file)
+
+            # Redirect if successful
+            # TODO: update condition
+            if 1 == 1:
+                return redirect(reverse("secure:upload-metadata") + "?confirm=true")
+
+            form.add_error(None, "Error goes here")
+    else:
+        confirm = request.GET.get("confirm")
+        form = MetadataUploadForm()
+
+    return render(request, 'secure/upload-metadata.html', {
+        "form": form,
+        "confirm": confirm,
     })
 
 

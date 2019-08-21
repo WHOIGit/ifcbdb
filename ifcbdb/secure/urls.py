@@ -12,7 +12,7 @@ urlpatterns = [
     path('edit-dataset/<int:id>', views.edit_dataset, name='edit-dataset'),
     path('instrument-management', views.instrument_management, name='instrument-management'),
     path('edit-instrument/<int:id>', views.edit_instrument, name='edit-instrument'),
-    path('upload-geospatial', views.upload_geospatial, name='upload-geospatial'),
+    path('upload-metadata', views.upload_metadata, name='upload-metadata'),
     path('directory-management/<int:dataset_id>', views.directory_management, name='directory-management'),
     path('edit-directory/<int:dataset_id>/<int:id>', views.edit_directory, name='edit-directory'),
 

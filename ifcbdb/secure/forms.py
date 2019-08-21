@@ -85,3 +85,7 @@ class InstrumentForm(forms.ModelForm):
             "share_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Share Name"}),
             "timeout": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Timeout"}),
         }
+
+
+class MetadataUploadForm(forms.Form):
+    file = forms.FileField(label="Choose file", widget=forms.ClearableFileInput(attrs={"class": "custom-file-input"}))
