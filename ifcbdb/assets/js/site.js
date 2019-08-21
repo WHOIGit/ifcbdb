@@ -97,7 +97,8 @@ function getTimelineIndicatorShape() {
         y1: 1,
         line: {
             color: "rgb(192, 32, 32)",
-            width: 3
+            width: 3,
+            dash: "dash"
         }
     }
 }
