@@ -1,4 +1,4 @@
-import re
+import re, os
 from django import forms
 
 from dashboard.models import Dataset, Instrument, DataDirectory
@@ -17,6 +17,14 @@ class DatasetForm(forms.ModelForm):
 
 
 class DirectoryForm(forms.ModelForm):
+
+    def clean_path(self):
+        path = self.cleaned_data["path"]
+
+        if not os.path.exists(path):
+            raise forms.ValidationError("The specified path does not exist")
+
+        return path
 
     def clean_whitelist(self):
         whitelist = self.cleaned_data['whitelist']
