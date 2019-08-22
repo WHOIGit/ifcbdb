@@ -263,6 +263,7 @@ class Bin(models.Model):
     # qaqc flags
     qc_bad = models.BooleanField(default=False) # is this bin invalid
     qc_no_rois = models.BooleanField(default=False)
+    skip = models.BooleanField(default=False) # user wants to ignore this file
     # metadata JSON
     metadata_json = models.CharField(max_length=8192, default='{}', db_column='metadata')
     # metrics
@@ -311,6 +312,10 @@ class Bin(models.Model):
     def metadata(self):
         return json.loads(self.metadata_json)
     
+    def set_ml_analyzed(self, ml_analyzed):
+        self.ml_analyzed = ml_analyzed
+        self.concentration = self.n_images / ml_analyzed
+
     # access to underlying FilesetBin objects
 
     def _directories(self, kind=DataDirectory.RAW, version=None):
