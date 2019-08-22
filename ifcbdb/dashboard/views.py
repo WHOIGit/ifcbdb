@@ -391,7 +391,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "coordinates": coordinates_json,
         "has_blobs": bin.has_blobs(),
         "has_features": bin.has_features(),
-        "timestamp_iso": bin.timestamp.isoformat(),
+        "timestamp_iso": bin.sample_time.isoformat(),
         "instrument": "IFCB" + str(bin.instrument.number),
         "num_triggers": bin.n_triggers,
         "num_images": bin.n_images,
