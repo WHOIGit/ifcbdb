@@ -26,7 +26,6 @@ def sync_dataset(self, dataset_id, lock_key):
     print('syncing dataset {}'.format(ds.name))
     acc = Accession(ds)
     def progress_callback(p):
-        cache.touch(lock_key) # try to prevent the lock from expiring
         self.update_state(state='PROGRESS', meta=p)
     try:
         result = acc.sync(progress_callback=progress_callback)
