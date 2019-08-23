@@ -279,3 +279,19 @@ def sync_dataset_status(request, dataset_id):
         'state': result.state,
         'info': result.info,
         })
+
+
+@require_POST
+@login_required
+def toggle_skip(request):
+    bin_id = request.POST.get("bin_id")
+    skipped = request.POST.get("skipped") == "true"
+
+    bin = get_object_or_404(Bin, pid=bin_id)
+    bin.skip = not skipped
+    bin.save()
+
+    return JsonResponse({
+        "bin_id": bin_id,
+        "skipped": not skipped,
+    })
