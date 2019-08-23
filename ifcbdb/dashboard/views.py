@@ -15,7 +15,7 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Timeline, bin_query
+from .models import Dataset, Bin, Instrument, Timeline, bin_query
 from .forms import DatasetSearchForm
 from common.utilities import *
 
@@ -59,21 +59,13 @@ def timeline_page(request):
     tags = request.GET.get("tags")
     instrument_number = request.GET.get("instrument")
 
-    if dataset_name:
-        return _details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="timeline")
+    # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
+    if not dataset_name and not tags and not instrument_number:
+        return bin_page(request)
 
-    # TODO: Implement
-    if tags:
-        return HttpResponseNotFound()
-        #return _details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="timeline")
-
-    # TODO: Implement
-    if instrument_number:
-        return HttpResponseNotFound()
-        #return _details(request, bin_id=bin_id, group_name=dataset_name, group_type="dataset", route="timeline")
-
-    # If all optional parameters are missing, we don't have anywhere to go
-    return HttpResponseNotFound()
+    return _details(request,
+                    bin_id=bin_id, route="timeline",
+                    dataset_name=dataset_name, tags=tags, instrument_number=instrument_number)
 
 
 def bin_page(request):
@@ -82,10 +74,9 @@ def bin_page(request):
 
     return _details(
         request,
-        group_name=dataset_name,
-        group_type="dataset" if dataset_name else None,
         route="dataset" if dataset_name else "bin",
-        bin_id=bin_id
+        bin_id=bin_id,
+        dataset_name=dataset_name,
     )
 
 
@@ -108,22 +99,12 @@ def image_page(request):
 
 
 def _image_details(request, image_id, bin_id, dataset_name=None, instrument_number=None, tags=None):
-    group_type = ""
     image_number = int(image_id)
     bin = get_object_or_404(Bin, pid=bin_id)
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
-        group_type = "dataset"
     else:
         dataset = None
-
-    if instrument_number:
-        # TODO: Implement
-        group_type = "instrument"
-
-    if tags:
-        # TODO: implement
-        group_type = "tags"
 
     # TODO: Add validation checks/error handling
     image = bin.image(image_number)
@@ -134,7 +115,6 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
     # TODO: Only timeline route is working so far
     return render(request, 'dashboard/image.html', {
         "route": "timeline",
-        "group_type": group_type,
         "can_share_page": True,
         "dataset": dataset,
         "bin": bin,
@@ -142,28 +122,16 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
         "image_width": image_width,
         "image_id": image_number,
         "metadata": metadata,
-        "details": _bin_details(bin, dataset, include_coordinates=False),
+        "details": _bin_details(bin, dataset, include_coordinates=False, instrument_number=instrument_number, tags=tags),
     })
 
 
 def legacy_dataset_page(request, dataset_name, bin_id):
-    return _details(
-        request,
-        bin_id=bin_id,
-        group_name=dataset_name,
-        group_type="dataset",
-        route="dataset"
-    )
+    return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name )
 
 
 def legacy_bin_page(request, dataset_name, bin_id):
-    return _details(
-        request,
-        bin_id=bin_id,
-        group_name=dataset_name,
-        group_type="dataset",
-        route="dataset"
-    )
+    return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)
 
 
 def legacy_image_page(request, dataset_name, bin_id, image_id):
@@ -174,21 +142,18 @@ def legacy_image_page_alt(request, bin_id, image_id):
     return _image_details(request, image_id, bin_id)
 
 
-def _details(request, bin_id=None, group_name=None, group_type=None, route=None):
-    if not bin_id and not group_name:
+def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None):
+    if not (bin_id or dataset_name or tags or instrument_number):
         # TODO: 404 error; don't have enough info to proceed
         pass
-
-    # TODO: Currently only handles grouping by dataset
-    if group_name and group_type == "dataset":
-        dataset = get_object_or_404(Dataset, name=group_name)
-    else:
-        dataset = None
 
     if bin_id:
         bin = get_object_or_404(Bin, pid=bin_id)
     else:
         bin = Timeline(dataset.bins).most_recent_bin()
+
+    dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
+    instrument = get_object_or_404(Instrument, number=instrument_number) if instrument_number else None
 
     if not bin:
         # TODO: Do something
@@ -196,9 +161,10 @@ def _details(request, bin_id=None, group_name=None, group_type=None, route=None)
 
     return render(request, "dashboard/bin.html", {
         "route": route,
-        "group_type": group_type,
         "can_share_page": True,
         "dataset": dataset,
+        "instrument": instrument,
+        "tags": tags,
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
         "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
@@ -206,7 +172,8 @@ def _details(request, bin_id=None, group_name=None, group_type=None, route=None)
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
         "mosaic_default_width": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[0],
         "bin": bin,
-        "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False),
+        "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False,
+                                instrument_number=instrument_number, tags=tags),
     })
 
 
@@ -356,7 +323,8 @@ def zip(request, bin_id):
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
 
-def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_adjacent_bins=False, include_coordinates=True):
+def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_adjacent_bins=False,
+                 include_coordinates=True, instrument_number=None, tags=None):
     if not view_size:
         view_size = Bin.MOSAIC_DEFAULT_VIEW_SIZE
     if not scale_factor:
@@ -382,7 +350,8 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
     previous_bin = None
     next_bin = None
 
-    if dataset and preload_adjacent_bins:
+    if (dataset or instrument_number or tags) and preload_adjacent_bins:
+        # TODO: Handle grouping by instrument and tags
         previous_bin = Timeline(dataset.bins).previous_bin(bin)
         next_bin = Timeline(dataset.bins).next_bin(bin)
 
@@ -445,6 +414,8 @@ def _mosaic_page_image(request, bin_id):
 # TODO: Handle tag/instrument grouping
 def generate_time_series(request, metric,):
     dataset_name = request.GET.get("dataset")
+    instrument_number = request.GET.get("instrument")
+    tags = request.GET.get("tags")
     resolution = request.GET.get("resolution", "auto")
     start = request.GET.get("start")
     end = request.GET.get("end")
@@ -466,6 +437,7 @@ def generate_time_series(request, metric,):
 
     #     resolution = get_finer_resolution(resolution)
 
+    # TODO: Handle grouping by tags and instrument
     time_series, resolution = Timeline(dataset.bins).metrics(metric, start, end, resolution=resolution)
 
     # TODO: Temporary workaround constraints to rule out bad data for humidity and temperature
@@ -499,9 +471,11 @@ def generate_time_series(request, metric,):
 
 
 # TODO: This is also where page caching could occur...
-# TODO: Handle different grouping (tag/instrument)
 def bin_data(request, bin_id):
     dataset_name = request.GET.get("dataset")
+    instrument_number = request.GET.get("instrument")
+    tags = request.GET.get("tags")
+
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
     else:
@@ -513,22 +487,29 @@ def bin_data(request, bin_id):
     preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
     include_coordinates = request.GET.get("include_coordinates", "true").lower() == "true"
 
-    details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates)
+    details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates,
+                           instrument_number=instrument_number, tags=tags)
 
     return JsonResponse(details)
 
 
-# TODO: Handle different grouping (tag/instrument)
 def closest_bin(request):
     dataset_name = request.POST.get("dataset")
+    instrument = request.POST.get('instrument')  # limit to instrument
+    tags = request.POST.get('tags')  # limit to tag(s)
     dataset = get_object_or_404(Dataset, name=dataset_name)
     target_date = request.POST.get("target_date", None)
+    if tags is None:
+        tags = []
+    else:
+        tags = ','.split(tags)
 
     try:
         dte = pd.to_datetime(target_date, utc='True')
     except:
         dte = None
 
+    # TODO: Handle instrument and tag filtering and also if dataset is not passed in
     bin = Timeline(dataset.bins).bin_closest_in_time(dte)
 
     return JsonResponse({
