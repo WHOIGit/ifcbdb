@@ -42,8 +42,9 @@ function getGroupingParameters(bin) {
         parameters.push("dataset=" + _dataset);
     if (_instrument != "")
         parameters.push("instrument=" + _instrument);
-    if (_tags != "")
+    if (_tags != "") {
         parameters.push("tags=" + _tags);
+    }
 
     if (parameters.length == 0)
         return "";

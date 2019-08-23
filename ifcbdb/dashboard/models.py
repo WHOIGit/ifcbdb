@@ -179,7 +179,7 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_numbe
         qs = Timeline(qs).time_range(start, end)
     if dataset_name is not None:
         qs = qs.filter(datasets__name=dataset_name)
-    if tags:
+    if tags is not None:
         for tag in tags:
             qs = qs.filter(tags__name=tag)
     if instrument_number is not None:

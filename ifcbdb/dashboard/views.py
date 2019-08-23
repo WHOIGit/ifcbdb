@@ -53,14 +53,26 @@ def datasets(request):
     })
 
 
+def request_get_instrument(request):
+    i = request.GET.get('instrument')
+    if i is not None and i:
+        return int(i)
+
+def request_get_tags(request):
+    t = request.GET.get('tags')
+    if t is not None:
+        if not t:
+            return []
+        return t.split(',')
+
 def timeline_page(request):
     bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
-    tags = request.GET.get("tags")
-    instrument_number = request.GET.get("instrument")
+    tags = request_get_tags(request)
+    instrument_number = request_get_instrument(request)
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
-    if not dataset_name and not tags and not instrument_number:
+    if dataset_name is None and tags is None and instrument_number is None:
         return bin_page(request)
 
     return _details(request,
@@ -69,12 +81,12 @@ def timeline_page(request):
 
 
 def bin_page(request):
-    dataset_name = request.GET.get("dataset")
-    bin_id = request.GET.get("bin")
+    dataset_name = request.GET.get("dataset",None)
+    bin_id = request.GET.get("bin",None)
 
     return _details(
         request,
-        route="dataset" if dataset_name else "bin",
+        route="dataset" if dataset_name is not None else "bin",
         bin_id=bin_id,
         dataset_name=dataset_name,
     )
@@ -143,28 +155,30 @@ def legacy_image_page_alt(request, bin_id, image_id):
 
 
 def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None):
-    if not (bin_id or dataset_name or tags or instrument_number):
+    if bin_id is None and dataset_name is None and tags is None and instrument_number is None:
         # TODO: 404 error; don't have enough info to proceed
         pass
 
-    if bin_id:
+    if bin_id is not None:
         bin = get_object_or_404(Bin, pid=bin_id)
     else:
-        bin = Timeline(dataset.bins).most_recent_bin()
+        bin_qs = bin_query(dataset_name=dataset_name,
+            tags=tags,
+            instrument_number=instrument_number)
+        bin = Timeline(bin_qs).most_recent_bin()
 
     dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
     instrument = get_object_or_404(Instrument, number=instrument_number) if instrument_number else None
 
-    if not bin:
-        # TODO: Do something
-        pass
+    if bin is None:
+        pass # TODO do something
 
     return render(request, "dashboard/bin.html", {
         "route": route,
         "can_share_page": True,
         "dataset": dataset,
         "instrument": instrument,
-        "tags": tags,
+        "tags": ','.join(tags) if tags is not None else '',
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
         "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
@@ -351,9 +365,14 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
     next_bin = None
 
     if (dataset or instrument_number or tags) and preload_adjacent_bins:
-        # TODO: Handle grouping by instrument and tags
-        previous_bin = Timeline(dataset.bins).previous_bin(bin)
-        next_bin = Timeline(dataset.bins).next_bin(bin)
+        if dataset is not None:
+            dataset_name = dataset.name
+        else:
+            dataset_name = None
+        bin_qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number,
+            tags=tags)
+        previous_bin = Timeline(bin_qs).previous_bin(bin)
+        next_bin = Timeline(bin_qs).next_bin(bin)
 
         if previous_bin is not None:
             previous_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
@@ -413,32 +432,33 @@ def _mosaic_page_image(request, bin_id):
 #   just going to force us down to a finer resolution anyway
 # TODO: Handle tag/instrument grouping
 def generate_time_series(request, metric,):
-    dataset_name = request.GET.get("dataset")
-    instrument_number = request.GET.get("instrument")
-    tags = request.GET.get("tags")
+    dataset_name = request.GET.get("dataset",None)
+    instrument_number = request.GET.get("instrument",None)
+    tags = request.GET.get("tags",None)
     resolution = request.GET.get("resolution", "auto")
-    start = request.GET.get("start")
-    end = request.GET.get("end")
+    start = request.GET.get("start",None)
+    end = request.GET.get("end",None)
     if start is not None:
         start = pd.to_datetime(start, utc=True)
     if end is not None:
         end = pd.to_datetime(end, utc=True)
 
-    # Allows us to keep consistant url names
+    # Allows us to keep consistent url names
     metric = metric.replace("-", "_")
 
-    dataset = get_object_or_404(Dataset, name=dataset_name)
+    if instrument_number:
+        instrument_number = int(instrument_number)
+    else:
+        instrument_number = None
 
-    # TODO: Possible performance issues in the way we're pivoting the data before it gets returned
-    #while True:
-    #    time_series, resolution = Timeline(dataset.bins).metrics(metric, start, end, resolution=resolution)
-    #    if len(time_series) > 1 or resolution == "bin":
-    #        break
+    if tags is not None and tags:
+        tags = tags.split(',')
 
-    #     resolution = get_finer_resolution(resolution)
+    bin_qs = bin_query(dataset_name=dataset_name,
+        tags=tags,
+        instrument_number=instrument_number)
 
-    # TODO: Handle grouping by tags and instrument
-    time_series, resolution = Timeline(dataset.bins).metrics(metric, start, end, resolution=resolution)
+    time_series, resolution = Timeline(bin_qs).metrics(metric, start, end, resolution=resolution)
 
     # TODO: Temporary workaround constraints to rule out bad data for humidity and temperature
     if metric == "temperature":
@@ -473,8 +493,9 @@ def generate_time_series(request, metric,):
 # TODO: This is also where page caching could occur...
 def bin_data(request, bin_id):
     dataset_name = request.GET.get("dataset")
-    instrument_number = request.GET.get("instrument")
-    tags = request.GET.get("tags")
+
+    instrument_number = request_get_instrument(request)
+    tags = request_get_tags(request)
 
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
@@ -495,22 +516,18 @@ def bin_data(request, bin_id):
 
 def closest_bin(request):
     dataset_name = request.POST.get("dataset")
-    instrument = request.POST.get('instrument')  # limit to instrument
-    tags = request.POST.get('tags')  # limit to tag(s)
+    instrument = request_get_instrument(request)  # limit to instrument
+    tags = request_get_tags(request)  # limit to tag(s)
     dataset = get_object_or_404(Dataset, name=dataset_name)
     target_date = request.POST.get("target_date", None)
-    if tags is None:
-        tags = []
-    else:
-        tags = ','.split(tags)
 
     try:
         dte = pd.to_datetime(target_date, utc='True')
     except:
         dte = None
 
-    # TODO: Handle instrument and tag filtering and also if dataset is not passed in
-    bin = Timeline(dataset.bins).bin_closest_in_time(dte)
+    bin_qs = bin_query(dataset_name=dataset_name, instrument_number=instrument, tags=tags)
+    bin = Timeline(bin_qs).bin_closest_in_time(dte)
 
     return JsonResponse({
         "bin_id": bin.pid,
@@ -519,10 +536,10 @@ def closest_bin(request):
 
 def nearest_bin(request):
     dataset = request.POST.get('dataset')  # limit to dataset
-    instrument = request.POST.get('instrument')  # limit to instrument
+    instrument = request_get_instrument(request)  # limit to instrument
     start = request.POST.get('start')  # limit to start time
     end = request.POST.get('end')  # limit to end time
-    tags = request.POST.get('tags')  # limit to tag(s)
+    tags = request_get_tags(request)  # limit to tag(s)
     lat = request.POST.get('latitude')
     lon = request.POST.get('longitude')
     if lat is None or lon is None:
