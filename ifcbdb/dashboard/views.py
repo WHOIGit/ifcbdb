@@ -419,6 +419,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "size": bin.size,
         "datasets": datasets,
         "comments": bin.comment_list,
+        "concentration": round(bin.concentration, 3),
         "skip": bin.skip,
     }
 

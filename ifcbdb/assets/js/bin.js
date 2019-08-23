@@ -112,6 +112,7 @@ function updateBinStats(data) {
     $("#stat-num-images").html(data["num_images"]);
     $("#stat-trigger-freq").html(data["trigger_freq"]);
     $("#stat-ml-analyzed").html(data["ml_analyzed"]);
+    $("#stat-concentration").html(data["concentration"]);
     $("#stat-size").html(filesize(data["size"]));
     $("#stat-skip")
         .text(data["skip"] ? "Yes" : "No")
