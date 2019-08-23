@@ -1,6 +1,6 @@
 import json
 import pandas as pd
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, reverse
@@ -16,6 +16,7 @@ from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
 from .models import Dataset, Bin, Timeline, bin_query
+from .forms import DatasetSearchForm
 from common.utilities import *
 
 
@@ -27,10 +28,28 @@ def index(request):
 
 
 def datasets(request):
-    datasets = Dataset.objects.filter(is_active=True).order_by('title')
+    datasets = None
+
+    if request.POST:
+        form = DatasetSearchForm(request.POST)
+        if form.is_valid():
+            min_depth = form.cleaned_data["min_depth"]
+            max_depth = form.cleaned_data["max_depth"]
+            start_date = form.cleaned_data["start_date"]
+            end_date = form.cleaned_data["end_date"]
+            if end_date:
+                end_date = end_date + timedelta(days=1)
+
+            datasets = Dataset.search(start_date, end_date, min_depth, max_depth)
+    else:
+        form = DatasetSearchForm()
+
+    if not datasets:
+        datasets = Dataset.objects.filter(is_active=True).order_by('title')
 
     return render(request, 'dashboard/datasets.html', {
         "datasets": datasets,
+        "form": form,
     })
 
 
@@ -400,6 +419,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "size": bin.size,
         "datasets": datasets,
         "comments": bin.comment_list,
+        "skip": bin.skip,
     }
 
 

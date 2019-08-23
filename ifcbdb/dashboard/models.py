@@ -198,6 +198,30 @@ class Dataset(models.Model):
     def tag_cloud(self, instrument=None):
         return Tag.cloud(dataset=self, instrument=instrument)
 
+    @staticmethod
+    def search(start_date=None, end_date=None, min_depth=None, max_depth=None):
+        # TODO: Need to handle tag/keyword filter
+        # TODO: Check into optimizing query
+        datasets = Dataset.objects.filter(is_active=True).prefetch_related("bins")
+
+        # Handle start/end dates
+        if start_date and end_date:
+            datasets = datasets.filter(bins__timestamp__range=[start_date, end_date])
+        elif start_date:
+            datasets = datasets.filter(bins__timestamp__gte=start_date)
+        elif end_date:
+            datasets = datasets.filter(bins__timestamp__lt=end_date)
+
+        # Handle min/max depth
+        if min_depth and max_depth:
+            datasets = datasets.filter(bins__depth__range=[min_depth, max_depth])
+        elif min_depth:
+            datasets = datasets.filter(bins__depth__gte=min_depth)
+        elif max_depth:
+            datasets = datasets.filter(bins__depth__lte=max_depth)
+
+        return datasets.order_by("title").distinct("title")
+
     def __str__(self):
         return self.name
 

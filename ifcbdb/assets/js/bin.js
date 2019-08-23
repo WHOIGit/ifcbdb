@@ -113,6 +113,7 @@ function updateBinStats(data) {
     $("#stat-trigger-freq").html(data["trigger_freq"]);
     $("#stat-ml-analyzed").html(data["ml_analyzed"]);
     $("#stat-size").html(filesize(data["size"]));
+    $("#stat-skip").text(data["skip"] ? "Yes" : "No");
 }
 
 function updateBinMetadata() {

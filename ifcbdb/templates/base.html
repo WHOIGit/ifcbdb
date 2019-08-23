@@ -65,6 +65,9 @@
                 {% if can_share_page %}
                 <a id="share-button" title="Share This Page" class="pl-2"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Page</a>
                 {% endif %}
+    <button class="btn btn-sm btn-outline-white" type="button" data-toggle="popover">
+      <i class="fas fa-search"></i>
+    </button>                
             </div>
 
         </div>
@@ -123,6 +126,31 @@
         </div>
     </footer>
 
+    <!-- Search Input Popover -->
+    <div id="SearchPopoverContent" class="d-none">
+      <div class="form-row">
+        <div class="col">
+          <input type="text" class="form-control form-control-sm" placeholder="Comment or Tag"
+            aria-label="Search Input for Comment or Tag Searches" aria-describedby="button-addon1">
+        </div>
+      </div>
+      <div class="form-row align-items-center">
+        <div class="col-auto">
+          <select class="form-control form-control-sm" id="commentTagSelect">
+            <option>Comments</option>
+            <option>Tags</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-sm btn-outline-mdb-color" type="button" data-toggle="popover" data-placement="bottom"
+            data-html="true" data-title="Search">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- End Search Input Popover -->
+
     <script type="text/javascript" src="{% static 'vendor/jquery/jquery-3.4.0.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/popper.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/bootstrap.min.js' %}"></script>
@@ -146,6 +174,21 @@
             }
 
         });
+    </script>
+    <script>
+    //search input popover scripts
+$(function () {
+  $('[data-toggle="popover"]').popover({
+      container: 'body',
+      title: 'Search For Tag or Comment',
+      html: true,
+      placement: 'bottom',
+      sanitize: false,
+      content: function () {
+          return $("#SearchPopoverContent").html();
+      }
+  });
+})
     </script>
     {% block scripts %}{% endblock %}
 </body>
