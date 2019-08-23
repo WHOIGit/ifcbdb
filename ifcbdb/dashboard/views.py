@@ -492,7 +492,7 @@ def generate_time_series(request, metric,):
             "end": time_end,
         },
         "y": metric_data,
-        "y-axis": Timeline(dataset.bins).metric_label(metric),
+        "y-axis": Timeline.metric_label(metric),
         "resolution": resolution,
     })
 

@@ -157,8 +157,9 @@ class Timeline(object):
 
         return result, resolution
 
-    def metric_label(self, metric):
-        return self.TIMELINE_METRICS.get(metric,'')
+    @classmethod
+    def metric_label(cls, metric):
+        return cls.TIMELINE_METRICS.get(metric,'')
 
     def __len__(self):
         return self.bins.count()
