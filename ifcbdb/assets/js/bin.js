@@ -113,7 +113,9 @@ function updateBinStats(data) {
     $("#stat-trigger-freq").html(data["trigger_freq"]);
     $("#stat-ml-analyzed").html(data["ml_analyzed"]);
     $("#stat-size").html(filesize(data["size"]));
-    $("#stat-skip").text(data["skip"] ? "Yes" : "No");
+    $("#stat-skip")
+        .text(data["skip"] ? "Yes" : "No")
+        .data("skipped", data["skip"]);
 }
 
 function updateBinMetadata() {
@@ -662,6 +664,27 @@ function initEvents() {
 
     $("#binCommentsTable").on("click", ".delete-comment", function(e){
         deleteComment($(this).data("id"));
+    });
+
+    $("#stat-skip").click(function(e){
+        if (_userId == null)
+            return;
+
+        var skipped = $(this).data("skipped");
+        if (!skipped && !confirm("Are you sure you want to mark this bin as skipped?"))
+            return;
+
+        var payload = {
+            "csrfmiddlewaretoken": _csrf,
+            "bin_id": _bin,
+            "skipped": skipped
+        }
+
+        $.post("/secure/api/toggle-skip", payload, function(resp) {
+            $("#stat-skip")
+                .text(resp["skipped"] ? "Yes" : "No")
+                .data("skipped", resp["skipped"]);
+        });
     });
 }
 
