@@ -485,9 +485,20 @@ class Bin(models.Model):
 
     def target_metadata(self, target_number):
         b = self._get_bin()
-        metadata = b[target_number]
+        try:
+            raw_metadata = b[target_number]
+        except KeyError:
+            return {}
         names = schema_names(b.schema)
-        return dict(zip(names, metadata))
+        metadata = dict(zip(names, raw_metadata))
+        if self.has_features():
+            df = self.features()
+            try:
+                target_features = df.loc[target_number].to_dict()
+                metadata.update(target_features)
+            except KeyError:
+                pass
+        return metadata
 
     # zip file
     def zip(self):
