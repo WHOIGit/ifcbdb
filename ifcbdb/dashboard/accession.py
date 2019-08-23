@@ -71,9 +71,9 @@ class Accession(object):
                 timestamp = bin.timestamp
                 b, created = Bin.objects.get_or_create(pid=pid, defaults={
                     'timestamp': timestamp,
-                    'sample_time': timestamp, # FIXME read from schema 2 header files
+                    'sample_time': timestamp,
                     'instrument': instrument,
-                    'skip': True,
+                    'skip': True, # in case accession is interrupted
                 })
                 if not created:
                     self.dataset.bins.add(b)
@@ -88,7 +88,7 @@ class Accession(object):
                     log_callback('{} not adding bin'.format(b.pid))
             with transaction.atomic():
                 for b in bins2save:
-                    b.skip = False
+                    b.skip = False # unskip because we're ready to save
                     b.save()
                     log_callback('{} saved'.format(b.pid))
                 # add to dataset, unless the bin has no rois
