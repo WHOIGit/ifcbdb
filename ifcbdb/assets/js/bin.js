@@ -1,6 +1,8 @@
 //************* Local Variables ***********************/
 var _bin = ""; // Bin Id
-var _dataset = ""; // Dataset Name
+var _dataset = ""; // Dataset Name (for grouping)
+var _tags = ""; // Tags, comma separated (for grouping)
+var _instrument = ""; // Instrument name (for grouping)
 var _mosaicPage = 0; // Current page being displayed in the mosaic
 var _mosaicPages = -1; // Total number of pages for the mosaic
 var _coordinates = []; // Coordinates of images within the current mosaic
@@ -15,7 +17,6 @@ var _csrf = null; // CSRF token from Django for post requests
 var _userId = null; // Id of the currently logged in user
 var _commentTable = null; // Variable to keep track of the DataTables object once created
 var _route = ""; // Tracks the route used to render this page (timeline or bin)
-var _groupType = ""; // For timelines, tracks the grouping (dataset, tags, instrument)
 var _binTimestamp = null; // Timestamp for the currently selected bin
 
 //************* Common Methods ***********************/
@@ -33,25 +34,29 @@ function createBinModeLink() {
     return "/bin?bin=" + _bin;
 }
 
+function getGroupingParameters(bin) {
+    var parameters = []
+    if (bin != "")
+        parameters.push("bin=" + bin);
+    if (_dataset != "")
+        parameters.push("dataset=" + _dataset);
+    if (_instrument != "")
+        parameters.push("instrument=" + _instrument);
+    if (_tags != "")
+        parameters.push("tags=" + _tags);
+
+    if (parameters.length == 0)
+        return "";
+
+    return parameters.join("&");
+}
+
 function createBinLink(bin) {
     if (_route == "bin") {
         return "/bin?bin=" + bin;
     }
 
-    switch (_groupType) {
-        case "dataset":
-            return "/timeline?dataset=" + _dataset + "&bin=" + bin;
-            break;
-        case "instrument":
-            // TODO: Implement
-            break;
-        case "tags":
-            // TODO: Implement
-            break;
-    }
-
-    // Fallback; should not occur
-    return "#";
+    return "/timeline?" + getGroupingParameters(bin);
 }
 
 function createImageLink(imageId) {
@@ -59,20 +64,12 @@ function createImageLink(imageId) {
         return "/image?image=" + imageId + "&bin=" + _bin;
     }
 
-    switch (_groupType) {
-        case "dataset":
-            return "/image?image=" + imageId + "&bin=" + _bin + "&dataset=" + _dataset;
-            break;
-        case "instrument":
-            // TODO: Implement
-            break;
-        case "tags":
-            // TODO: Implement
-            break;
-    }
+    var url = "/image?image=" + imageId;
+    var parameters = getGroupingParameters(_bin);
+    if (parameters != "")
+        url += "&" + parameters;
 
-    // Fallback; should not occur
-    return "#";
+    return url;
 }
 
 // Switches between workspaces: map, plot, mosaic
@@ -172,7 +169,6 @@ function updateBinDownloadLinks(data) {
     // TODO: Need to hook up link for "autoclass"
 }
 
-// TODO: Handle when dataset is empty
 function changeToClosestBin(targetDate) {
     if (_isBinLoading || _isMosaicLoading)
         return false;
@@ -183,7 +179,9 @@ function changeToClosestBin(targetDate) {
     var payload = {
         "csrfmiddlewaretoken": _csrf,
         "target_date": targetDate,
-        "dataset": _dataset
+        "dataset": _dataset,
+        "instrument": _instrument,
+        "tags": _tags
     }
 
     $.post("/api/closest_bin", payload, function(resp) {
@@ -192,7 +190,6 @@ function changeToClosestBin(targetDate) {
     });
 }
 
-// TODO: Handle when dataset is empty
 function changeToNearestBin(lat, lng) {
     if (_isBinLoading || _isMosaicLoading)
         return false;
@@ -204,7 +201,9 @@ function changeToNearestBin(lat, lng) {
         csrfmiddlewaretoken: _csrf,
         dataset: _dataset,
         latitude: lat,
-        longitude: lng
+        longitude: lng,
+        instrument: _instrument,
+        tags: _tags
     };
 
     $.post("/api/nearest_bin", payload, function(resp) {
@@ -395,7 +394,9 @@ function loadMosaic(pageNumber) {
     var binDataUrl = "/api/bin/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor +
-        "&dataset=" + _dataset;
+        "&dataset=" + _dataset +
+        "&instrument=" + _instrument +
+        "&tags=" + _tags;
 
     $.get(binDataUrl, function(data) {
 
