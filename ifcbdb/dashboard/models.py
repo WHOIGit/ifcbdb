@@ -59,8 +59,10 @@ class Timeline(object):
         'n_images': 'Count',
     }
 
-    def __init__(self, bin_qs):
+    def __init__(self, bin_qs, filter_skip=True):
         self.bins = bin_qs
+        if filter_skip:
+            self.bins = self.bins.filter(skip=False)
 
     def time_range(self, start_time=None, end_time=None):
         qs = self.bins
@@ -168,8 +170,10 @@ class Timeline(object):
         # total data size in bytes for everything in this Timeline
         return self.bins.aggregate(Sum('size'))['size__sum']        
 
-def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None):
+def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None, filter_skip=True):
     qs = Bin.objects
+    if filter_skip:
+        qs = qs.filter(skip=False)
     if start is not None or end is not None:
         qs = Timeline(qs).time_range(start, end)
     if dataset_name is not None:
