@@ -17,6 +17,7 @@
     <link href="{% static 'vendor/DataTables/datatables.min.css' %}" rel="stylesheet"> 
     <link href="{% static 'css/site.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/leaflet/leaflet.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/chosen/chosen.min.css' %}" rel="stylesheet" />
 
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}"> 
 </head>
@@ -41,21 +42,10 @@
 
                 <!-- Left -->
                 <ul class="navbar-nav mr-auto white-text">
-                    <li class="nav-item active">
-                    <a class="nav-link waves-effect" href="{% url 'datasets' %}">Datasets
-                        <span class="sr-only">(current)</span>
-                    </a>
-                    </li>
                     <li class="nav-item">
-                    <a class="nav-link waves-effect" href="{% url 'datasets' %}">Instruments
-                        <span class="sr-only">(current)</span>
-                    </a>
+                        <a class="nav-link waves-effect" href="{% url 'datasets' %}">Datasets</a>
                     </li>
-                    <li class="nav-item">
-                    <a class="nav-link waves-effect" href="{% url 'datasets' %}">Tags
-                        <span class="sr-only">(current)</span>
-                    </a>
-                    </li>
+                {% dataset_switcher %}
                 {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link waves-effect" href="/secure/">Settings</a>
@@ -71,13 +61,12 @@
                 </ul>
 
                 <!-- Right -->
-                {% dataset_switcher %}
+                <a data-toggle="popover" title="Update Filters" class="pl-2"><span class="h5-responsive fa fa-filter"></span>&nbsp;Filters</a>
                 {% if can_share_page %}
+                <span class="d-inline-block ml-2">|</span>
                 <a id="share-button" title="Share This Page" class="pl-2"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Page</a>
                 {% endif %}
-    <button class="btn btn-sm btn-outline-white" type="button" data-toggle="popover">
-      <i class="fas fa-search"></i>
-    </button>                
+
             </div>
 
         </div>
@@ -138,25 +127,42 @@
 
     <!-- Search Input Popover -->
     <div id="SearchPopoverContent" class="d-none">
+        <div class="form-row mb-2">
+            <div class="col-md-4">Dataset:</div>
+            <div class="col-md-8">
+                <select class="form-control form-control-sm"></select>
+            </div>
+        </div>
+        <div class="form-row mb-2">
+            <div class="col-md-4">Instrument</div>
+            <div class="col-md-8">
+                <select class="form-control form-control-sm"></select>
+            </div>
+        </div>
+        <div class="form-row mb-2">
+            <div class="col-md-4">Tags</div>
+            <div class="col-md-8">
+                <select class="form-control form-control-sm tag-filter" multiple>
+                    <option>Tag #1</option>
+                    <option>Tag #2</option>
+                    <option>Tag #3</option>
+                    <option>Tag #4</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row mb-2">
+            <div class="col-md-4">Comments</div>
+            <div class="col-md-8">
+                <input type="text" class="form-control form-control-sm" />
+            </div>
+        </div>
+
+
       <div class="form-row">
-        <div class="col">
-          <input type="text" class="form-control form-control-sm" placeholder="Comment or Tag"
-            aria-label="Search Input for Comment or Tag Searches" aria-describedby="button-addon1">
-        </div>
-      </div>
-      <div class="form-row align-items-center">
-        <div class="col-auto">
-          <select class="form-control form-control-sm" id="commentTagSelect">
-            <option>Tags</option>
-            <option>Comments</option>
-          </select>
-        </div>
-        <div class="col-auto">
-          <button class="btn btn-sm btn-outline-mdb-color" type="button" data-toggle="popover" data-placement="bottom"
+          <button class="btn btn-sm btn-mdb-color" type="button" data-toggle="popover" data-placement="bottom"
             data-html="true" data-title="Search">
-            <i class="fas fa-search"></i>
+            <i class="fas fa-check"></i> Apply
           </button>
-        </div>
       </div>
     </div>
     <!-- End Search Input Popover -->
@@ -171,6 +177,7 @@
     <script type="text/javascript" src="{% static 'vendor/moment/moment.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/DataTables/datatables.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/filesize/filesize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'vendor/chosen/chosen.jquery.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/site.js' %}"></script>
 
     <script>
@@ -184,21 +191,25 @@
             }
 
         });
-    </script>
-    <script>
-    //search input popover scripts
-$(function () {
-  $('[data-toggle="popover"]').popover({
-      container: 'body',
-      title: 'Search For Tag or Comment',
-      html: true,
-      placement: 'bottom',
-      sanitize: false,
-      content: function () {
-          return $("#SearchPopoverContent").html();
-      }
-  });
-})
+
+        //search input popover scripts
+        $(function () {
+            $('[data-toggle="popover"]').popover({
+              container: 'body',
+              title: 'Update Filters',
+              html: true,
+              placement: 'bottom',
+              sanitize: false,
+              content: function () {
+                  return $("#SearchPopoverContent").html();
+              }
+            });
+
+            $('[data-toggle="popover"]').on('shown.bs.popover', function () {
+                $(".tag-filter").chosen({
+                });
+            })
+        })
     </script>
     {% block scripts %}{% endblock %}
 </body>
