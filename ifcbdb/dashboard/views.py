@@ -72,7 +72,7 @@ def timeline_page(request):
     instrument_number = request_get_instrument(request)
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
-    if dataset_name is None and tags is None and instrument_number is None:
+    if not dataset_name and not tags and not instrument_number:
         return bin_page(request)
 
     return _details(request,
@@ -155,11 +155,11 @@ def legacy_image_page_alt(request, bin_id, image_id):
 
 
 def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None):
-    if bin_id is None and dataset_name is None and tags is None and instrument_number is None:
+    if not bin_id and not dataset_name and not tags and not instrument_number:
         # TODO: 404 error; don't have enough info to proceed
         pass
 
-    if bin_id is not None:
+    if bin_id:
         bin = get_object_or_404(Bin, pid=bin_id)
     else:
         bin_qs = bin_query(dataset_name=dataset_name,
@@ -178,7 +178,7 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         "can_share_page": True,
         "dataset": dataset,
         "instrument": instrument,
-        "tags": ','.join(tags) if tags is not None else '',
+        "tags": ','.join(tags) if tags else '',
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
         "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
