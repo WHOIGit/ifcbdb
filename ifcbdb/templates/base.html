@@ -39,13 +39,38 @@
 
             <!-- Links -->
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-
+<ul class="navbar-nav">
+  <li class="nav-item dropdown">
+    <a id="dataset-nav-dropdown" class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Dataset</a>
+    <div class="dropdown-menu">
+    <ul class="list-unstyled" id="dataset-nav-menu">
+      <li><a class="dropdown-item" href="#">Dataset 1</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 2</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 3</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 4</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 5</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 6</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 7</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 8</a></li>      
+      <li><a class="dropdown-item" href="#">Dataset 9</a></li>      
+      <li><a class="dropdown-item" href="#">Dataset 10</a></li>      
+      <li><a class="dropdown-item" href="#">Dataset 11</a></li>      
+      <li><a class="dropdown-item" href="#">Dataset 12</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 13</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 14</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 15</a></li>
+      <li><a class="dropdown-item" href="#">Dataset 16</a></li>                              
+      </ul>
+    </div>
+  </li>
+  </ul>
                 <!-- Left -->
                 <ul class="navbar-nav mr-auto white-text">
-                    <li class="nav-item">
+                   <!--<li class="nav-item">
                         <a class="nav-link waves-effect" href="{% url 'datasets' %}">Datasets</a>
                     </li>
                 {% dataset_switcher %}
+                 -->
                 {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link waves-effect" href="/secure/">Settings</a>

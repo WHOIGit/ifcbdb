@@ -219,3 +219,14 @@ div.scale-bar {
 table .btn-mdb-color {
     color: #fff !important;
 }
+
+#dataset-nav-dropdown {
+    color: #fff;
+}
+
+#dataset-nav-menu {
+    -webkit-columns: 4;
+    -moz-columns: 4;
+    columns: 4;
+    list-style-position: inside;
+}
