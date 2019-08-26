@@ -53,13 +53,13 @@ def datasets(request):
     })
 
 
-def request_get_instrument(request):
-    i = request.GET.get('instrument')
+def request_get_instrument(instrument_string):
+    i = instrument_string
     if i is not None and i:
         return int(i)
 
-def request_get_tags(request):
-    t = request.GET.get('tags')
+def request_get_tags(tags_string):
+    t = tags_string
     if t is not None:
         if not t:
             return []
@@ -68,8 +68,8 @@ def request_get_tags(request):
 def timeline_page(request):
     bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
-    tags = request_get_tags(request)
-    instrument_number = request_get_instrument(request)
+    tags = request_get_tags(request.GET.get("tags"))
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
     if not dataset_name and not tags and not instrument_number:
@@ -494,8 +494,8 @@ def generate_time_series(request, metric,):
 def bin_data(request, bin_id):
     dataset_name = request.GET.get("dataset")
 
-    instrument_number = request_get_instrument(request)
-    tags = request_get_tags(request)
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    tags = request_get_tags(request.GET.get("tags"))
 
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
@@ -516,13 +516,12 @@ def bin_data(request, bin_id):
 
 def closest_bin(request):
     dataset_name = request.POST.get("dataset")
-    instrument = request_get_instrument(request)  # limit to instrument
-    tags = request_get_tags(request)  # limit to tag(s)
-    dataset = get_object_or_404(Dataset, name=dataset_name)
+    instrument = request_get_instrument(request.POST.get("instrument"))  # limit to instrument
+    tags = request_get_tags(request.POST.get("tags"))  # limit to tag(s)
     target_date = request.POST.get("target_date", None)
 
     try:
-        dte = pd.to_datetime(target_date, utc='True')
+        dte = pd.to_datetime(target_date, utc=True)
     except:
         dte = None
 
@@ -536,10 +535,10 @@ def closest_bin(request):
 
 def nearest_bin(request):
     dataset = request.POST.get('dataset')  # limit to dataset
-    instrument = request_get_instrument(request)  # limit to instrument
+    instrument = request_get_instrument(request.POST.get("instrument"))  # limit to instrument
     start = request.POST.get('start')  # limit to start time
     end = request.POST.get('end')  # limit to end time
-    tags = request_get_tags(request)  # limit to tag(s)
+    tags = request_get_tags(request.POST.get("tags"))  # limit to tag(s)
     lat = request.POST.get('latitude')
     lon = request.POST.get('longitude')
     if lat is None or lon is None:
