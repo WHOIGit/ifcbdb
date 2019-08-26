@@ -18,6 +18,7 @@ var _userId = null; // Id of the currently logged in user
 var _commentTable = null; // Variable to keep track of the DataTables object once created
 var _route = ""; // Tracks the route used to render this page (timeline or bin)
 var _binTimestamp = null; // Timestamp for the currently selected bin
+var _preventTimelineRelayout = false; // Used to prevent a relayout on the timeline when switching metrics
 
 //************* Common Methods ***********************/
 
@@ -604,6 +605,7 @@ function initEvents() {
 
         timelineValid = false;
         timelineWaiting = false;
+        _preventTimelineRelayout = true;
         createTimeSeries(metric);
     });
 

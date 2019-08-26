@@ -196,11 +196,13 @@ function getTimelineLayout(data, range) {
         ];
     }
 
-    if (range !== undefined) {
-        layout["xaxis"]["range"] = [
-            range["xaxis.range[0]"],
-            range["xaxis.range[1]"]
-        ]
+    if (range !== undefined && range !== null) {
+        if (range["xaxis.range[0]"] != undefined && range["xaxis.range[1]"] != undefined) {
+            layout["xaxis"]["range"] = [
+                range["xaxis.range[0]"],
+                range["xaxis.range[1]"]
+            ]
+        }
     }
 
     // TODO: Special handling is needed when there is only one datapoint
@@ -284,6 +286,7 @@ function highlightSelectedBinByDate() {
 
     var timeline = $("#primary-plot-container")[0];
 
+    _preventTimelineRelayout = true;
     Plotly.relayout(timeline, {
         shapes: [
             getTimelineIndicatorShape()

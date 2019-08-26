@@ -504,14 +504,22 @@ function createTimeSeries(metric) {
         "&instrument=" + _instrument +
         "&tags=" + _tags;
 
+    var currentRange = null;
+    if (plot) {
+        currentRange = {
+            "xaxis.range[0]": container[0].layout.xaxis.range[0],
+            "xaxis.range[1]": container[0].layout.xaxis.range[1]
+        }
+    }
+
     plot = Plotly.d3.json(dataUrl, function(err, response) {
         currentResolution = response["resolution"];
 
         var initialConfig = getTimelineConfig();
         var initialData = getTimelineData(response, _binTimestamp);
-        var initialLayout = getTimelineLayout(response);
+        timelineRelayoutResponse = getTimelineLayout(response, currentRange);
 
-        Plotly.newPlot(container[0], initialData, initialLayout, initialConfig);
+        Plotly.newPlot(container[0], initialData, timelineRelayoutResponse, initialConfig);
 
         highlightSelectedBinByDate();
 
@@ -546,6 +554,12 @@ function createTimeSeries(metric) {
             // Prevent relayout's when switching to pan or zoom "mode"
             if (relayoutResponse && (relayoutResponse.dragmode == "pan" || relayoutResponse.dragmode == "zoom")) {
                 return
+            }
+
+            // Prevent relaying out when switching metrics
+            if (_preventTimelineRelayout) {
+                _preventTimelineRelayout = false;
+                return;
             }
 
             queryTimeline(container, metric);
