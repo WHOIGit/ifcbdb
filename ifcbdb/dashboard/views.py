@@ -180,7 +180,7 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
     instrument = get_object_or_404(Instrument, number=instrument_number) if instrument_number else None
 
     if bin is None:
-        pass # TODO do something
+        return render(request, "dashboard/no-bins.html", {})
 
     return render(request, "dashboard/bin.html", {
         "route": route,
