@@ -107,6 +107,7 @@ function updateBinStats(data) {
     );
 
     $("#stat-instrument").html(data["instrument"]);
+    $("#stat-instrument-link").attr('href','/timeline?instrument='+data["instrument"]);
     $("#stat-num-triggers").html(data["num_triggers"]);
     $("#stat-num-images").html(data["num_images"]);
     $("#stat-trigger-freq").html(data["trigger_freq"]);
@@ -139,7 +140,7 @@ function updateBinDatasets(data) {
         // <a href="#" class="d-block">asdasd</a>
         $("#dataset-links").append(
             $("<a class='d-block' />")
-            .attr("href", "/bin?id=" + _bin + "&dataset=" + data.datasets[i])
+            .attr("href", "/timeline?bin=" + _bin + "&dataset=" + data.datasets[i])
             .text(data.datasets[i])
         )
     }
