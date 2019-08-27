@@ -72,7 +72,7 @@ def timeline_page(request):
     instrument_number = request_get_instrument(request.GET.get("instrument"))
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
-    if not dataset_name and not tags and not instrument_number:
+    if not dataset_name and not tags and instrument_number is None:
         return bin_page(request)
 
     return _details(request,

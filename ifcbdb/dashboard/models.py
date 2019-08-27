@@ -169,7 +169,7 @@ class Timeline(object):
 
     def total_data_volume(self):
         # total data size in bytes for everything in this Timeline
-        return self.bins.aggregate(Sum('size'))['size__sum']        
+        return self.bins.aggregate(Sum('size'))['size__sum']       
 
 def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None, filter_skip=True):
     qs = Bin.objects
@@ -177,7 +177,7 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_numbe
         qs = qs.filter(skip=False)
     if start is not None or end is not None:
         qs = Timeline(qs).time_range(start, end)
-    if dataset_name is not None:
+    if dataset_name:
         qs = qs.filter(datasets__name=dataset_name)
     if tags is not None:
         for tag in tags:
