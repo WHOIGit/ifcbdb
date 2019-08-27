@@ -76,7 +76,14 @@
         </div>
     </div>
 {% endif %}
-
+{% if bin_reset %}
+<div class="alert alert-info alert-dismissible">
+    The selected bin was not found in the list of bins matching the currently applied filters. The latest bin within that list has been selected instead
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}
 <div class="row py-2">
     <div class="col-sm-12">
         <div class="card">

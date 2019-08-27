@@ -75,8 +75,15 @@ def timeline_page(request):
     if not dataset_name and not tags and instrument_number is None:
         return bin_page(request)
 
+    # Verify that the selecting bin is actually within the grouping options. If its not, pick the latest one
+    bin_reset = False
+    qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
+    if not qs.filter(pid=bin_id).exists():
+        bin_id = None
+        bin_reset = True
+
     return _details(request,
-                    bin_id=bin_id, route="timeline",
+                    bin_id=bin_id, route="timeline", bin_reset=bin_reset,
                     dataset_name=dataset_name, tags=tags, instrument_number=instrument_number)
 
 
@@ -154,7 +161,7 @@ def legacy_image_page_alt(request, bin_id, image_id):
     return _image_details(request, image_id, bin_id)
 
 
-def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None):
+def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, bin_reset=False):
     if not bin_id and not dataset_name and not tags and not instrument_number:
         # TODO: 404 error; don't have enough info to proceed
         pass
@@ -187,6 +194,7 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         "mosaic_default_height": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[1],
         "mosaic_default_width": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[0],
         "bin": bin,
+        "bin_reset": bin_reset,
         "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False,
                                 instrument_number=instrument_number, tags=tags),
     })
