@@ -72,17 +72,18 @@ def timeline_page(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
+    bin_reset = False
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
     if not dataset_name and not tags and instrument_number is None:
         return bin_page(request)
 
     # Verify that the selecting bin is actually within the grouping options. If its not, pick the latest one
-    bin_reset = False
-    qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
-    if not qs.filter(pid=bin_id).exists():
-        bin_id = None
-        bin_reset = True
+    if bin_id:
+        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
+        if not qs.filter(pid=bin_id).exists():
+            bin_id = None
+            bin_reset = True
 
     return _details(request,
                     bin_id=bin_id, route="timeline", bin_reset=bin_reset,
