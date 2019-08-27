@@ -76,7 +76,14 @@
         </div>
     </div>
 {% endif %}
-
+{% if bin_reset %}
+<div class="alert alert-info alert-dismissible">
+    The selected bin was not found in the list of bins matching the currently applied filters. The latest bin within that list has been selected instead
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}
 <div class="row py-2">
     <div class="col-sm-12">
         <div class="card">
@@ -875,7 +882,7 @@ $(function() {
         var layout = {
             margin: { l: 50, r: 50, b: 50, t: 00, pad: 2 },
             xaxis: { type: xType, autorange: true },
-            yaxis: { type: yType, fixedrange: true, }
+            yaxis: { type: yType, autorange: true, }
         };
 
         Plotly.react('plot', trace, layout, config);

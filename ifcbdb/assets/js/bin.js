@@ -19,6 +19,7 @@ var _commentTable = null; // Variable to keep track of the DataTables object onc
 var _route = ""; // Tracks the route used to render this page (timeline or bin)
 var _binTimestamp = null; // Timestamp for the currently selected bin
 var _preventTimelineRelayout = false; // Used to prevent a relayout on the timeline when switching metrics
+var _filterPopover; // Tracks the container created by the popover library for applying filters
 
 //************* Common Methods ***********************/
 
@@ -94,6 +95,41 @@ function showWorkspace(workspace) {
             updateMapLocation(_pendingMapLocation);
         }
     }
+}
+
+function initTimelineFilter() {
+    _filterPopover = $('[data-toggle="popover"]').popover({
+      container: 'body',
+      title: 'Update Filters',
+      html: true,
+      placement: 'bottom',
+      sanitize: false,
+      content: function () {
+          return $("#SearchPopoverContent").html();
+      }
+    });
+
+    _filterPopover.on('shown.bs.popover', function () {
+        $(".popover .tag-filter").chosen({
+            placeholder_text_multiple: "Select Tags..."
+        });
+    });
+}
+
+function applyFilters() {
+    var dataset = $(".popover .dataset-filter").val();
+    var instrument = $(".popover .instrument-filter").val();
+    var tags = $(".popover .tag-filter option:selected")
+        .map(function() {return $(this).val()}).get()
+        .join();
+
+    _dataset = dataset;
+    _instrument = _instrument;
+    _tags = tags;
+
+    location.href = createBinLink(_bin);
+
+    return false;
 }
 
 //************* Bin Methods ***********************/
@@ -701,6 +737,6 @@ $(function() {
     $("#max-images").text(MAX_SELECTABLE_IMAGES);
 
     initEvents();
-
     initPlotData();
+    initTimelineFilter();
 });
