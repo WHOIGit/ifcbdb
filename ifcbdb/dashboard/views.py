@@ -55,7 +55,9 @@ def datasets(request):
 
 def request_get_instrument(instrument_string):
     i = instrument_string
-    if i is not None and i:
+    if i is not None and i:    
+        if i.lower().startswith('ifcb'):
+            i = i[4:]
         return int(i)
 
 def request_get_tags(tags_string):
@@ -447,13 +449,8 @@ def generate_time_series(request, metric,):
     # Allows us to keep consistent url names
     metric = metric.replace("-", "_")
 
-    if instrument_number:
-        instrument_number = int(instrument_number)
-    else:
-        instrument_number = None
-
-    if tags is not None and tags:
-        tags = tags.split(',')
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    tags = request_get_tags(request.GET.get("tags"))
 
     bin_qs = bin_query(dataset_name=dataset_name,
         tags=tags,

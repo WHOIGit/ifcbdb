@@ -107,7 +107,7 @@ function updateBinStats(data) {
     );
 
     $("#stat-instrument").html(data["instrument"]);
-    $("#stat-instrument-link").attr('href','/timeline?instrument='+data["instrument"]);
+    $("#stat-instrument-link").attr('href','/timeline?instrument='+data["instrument"]+'&bin='+_bin);
     $("#stat-num-triggers").html(data["num_triggers"]);
     $("#stat-num-images").html(data["num_images"]);
     $("#stat-trigger-freq").html(data["trigger_freq"]);
