@@ -1,10 +1,15 @@
-<li class="nav-item dropdown">
-    <a id="dataset-nav-dropdown" class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Datasets</a>
+<li class="nav-item">
+<div class="btn-group">
+    <a class="nav-link" href="/dashboard">Datasets</a>
+    <a class="dropdown-toggle dropdown-toggle-split nav-link" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="sr-only">Toggle Dropdown</span>
+  </a>
     <div class="dropdown-menu">
         <ul class="list-unstyled" id="dataset-nav-menu">
             {% for dataset in datasets %}
             <li><a class="dropdown-item" href="{% url 'timeline_page' %}?dataset={{ dataset.name }}">{{ dataset.title }}</a></li>
             {% endfor %}
         </ul>
+    </div>
     </div>
 </li>
