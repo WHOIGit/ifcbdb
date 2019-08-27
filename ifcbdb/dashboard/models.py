@@ -181,7 +181,7 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_numbe
         qs = qs.filter(datasets__name=dataset_name)
     if tags is not None:
         for tag in tags:
-            qs = qs.filter(tags__name=tag)
+            qs = qs.filter(tags__name__iexact=tag)
     if instrument_number is not None:
         qs = qs.filter(instrument__number=instrument_number)
     return qs
