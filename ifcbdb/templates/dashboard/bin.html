@@ -991,5 +991,17 @@ $(function() {
     _userId = {{ user.id }};
     {% endif %}
 
+    {% if bin_reset and route == "timeline" %}
+        var parameters = getGroupingParameters(_bin);
+        var state = {
+            "bin_id": _bin,
+            "dataset": _dataset,
+            "instrument": _instrument,
+            "tags": _tags
+        };
+
+        history.pushState(state, null, "?" + parameters);
+    {% endif %}
+
 </script>
 {% endblock %}
