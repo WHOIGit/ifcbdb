@@ -114,7 +114,7 @@ class Timeline(object):
             distance=Distance('location', location)
         ).order_by('distance').first()
 
-    def metrics(self, metric, start_time=None, end_time=None, resolution='day'):
+    def metrics(self, metric, start_time=None, end_time=None, resolution='day', apply_offset=True):
         if resolution not in ['month', 'week', 'day', 'hour', 'bin', 'auto']:
             raise ValueError('unsupported time resolution {}'.format(resolution))
 
@@ -137,10 +137,13 @@ class Timeline(object):
                 resolution = 'bin'
             elif time_range < pd.Timedelta('60d'):
                 resolution = 'hour'
+                offset = pd.Timedelta('30m')
             elif time_range < pd.Timedelta('3y'):
                 resolution = 'day'
+                offset = pd.Timedelta('12h')
             else:
                 resolution = 'week'
+                offset = pd.Timedelta('3.5d')
 
         qs = self.time_range(start_time, end_time)
 
@@ -154,6 +157,10 @@ class Timeline(object):
         else:
             result = qs.annotate(dt=Trunc('sample_time', resolution)). \
                     values('dt').annotate(metric=aggregate_fn(metric)).order_by('dt')
+
+            if apply_offset:
+                for record in result:
+                    record['dt'] += offset
 
         return result, resolution
 
