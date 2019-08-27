@@ -124,47 +124,7 @@
         </div>
     </footer>
 
-    <!-- Search Input Popover -->
-    <div id="SearchPopoverContent" class="d-none">
-        <div class="form-row mb-2">
-            <div class="col-md-4">Dataset:</div>
-            <div class="col-md-8">
-                <select class="form-control form-control-sm"></select>
-            </div>
-        </div>
-        <div class="form-row mb-2">
-            <div class="col-md-4">Instrument</div>
-            <div class="col-md-8">
-                <select class="form-control form-control-sm"></select>
-            </div>
-        </div>
-        <div class="form-row mb-2">
-            <div class="col-md-4">Tags</div>
-            <div class="col-md-8">
-                <select class="form-control form-control-sm tag-filter" multiple>
-                    <option>Tag #1</option>
-                    <option>Tag #2</option>
-                    <option>Tag #3</option>
-                    <option>Tag #4</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-row mb-2">
-            <div class="col-md-4">Comments</div>
-            <div class="col-md-8">
-                <input type="text" class="form-control form-control-sm" />
-            </div>
-        </div>
-
-
-      <div class="form-row">
-          <button class="btn btn-sm btn-mdb-color" type="button" data-toggle="popover" data-placement="bottom"
-            data-html="true" data-title="Search">
-            <i class="fas fa-check"></i> Apply
-          </button>
-      </div>
-    </div>
-    <!-- End Search Input Popover -->
+    {% timeline_filters %}
 
     <script type="text/javascript" src="{% static 'vendor/jquery/jquery-3.4.0.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'vendor/mdbootstrap/js/popper.min.js' %}"></script>
@@ -190,25 +150,6 @@
             }
 
         });
-
-        //search input popover scripts
-        $(function () {
-            $('[data-toggle="popover"]').popover({
-              container: 'body',
-              title: 'Update Filters',
-              html: true,
-              placement: 'bottom',
-              sanitize: false,
-              content: function () {
-                  return $("#SearchPopoverContent").html();
-              }
-            });
-
-            $('[data-toggle="popover"]').on('shown.bs.popover', function () {
-                $(".tag-filter").chosen({
-                });
-            })
-        })
     </script>
     {% block scripts %}{% endblock %}
 </body>

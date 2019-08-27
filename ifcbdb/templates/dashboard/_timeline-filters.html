@@ -1,0 +1,50 @@
+    <div id="SearchPopoverContent" class="d-none">
+        <div id="filter-content">
+            <div class="form-row mb-2">
+                <div class="col-md-4">Dataset:</div>
+                <div class="col-md-8">
+                    <select class="form-control form-control-sm dataset-filter">
+                        <option value=""></option>
+                        {% for option in datasets_options %}
+                            <option value="{{ option.name }}" {% if option.name == dataset %}selected{% endif %}>{{ option.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row mb-2">
+                <div class="col-md-4">Instrument</div>
+                <div class="col-md-8">
+                    <select class="form-control form-control-sm instrument-filter">
+                        <option value=""></option>
+                        {% for option in instruments_options %}
+                            <option value="{{ option.number }}" {% if option.number|stringformat:"s" == instrument %}selected{% endif %}>{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row mb-2">
+                <div class="col-md-4">Tags</div>
+                <div class="col-md-8">
+                    <select class="form-control form-control-sm tag-filter" multiple>
+                        {% for option in tag_options %}
+                            <option value="{{ option.name }}" {% if option.name|lower in tags %}selected{% endif %}>{{ option.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row mb-2">
+                <div class="col-md-4">Comments</div>
+                <div class="col-md-8">
+                    <input type="text" class="form-control form-control-sm" />
+                </div>
+            </div>
+
+
+          <div class="form-row">
+              <button class="btn btn-sm btn-mdb-color" type="button" data-toggle="popover" data-placement="bottom"
+                data-html="true" data-title="Search" onclick="return applyFilters()">
+                <i class="fas fa-check"></i> Apply
+              </button>
+          </div>
+        </div>
+    </div>
