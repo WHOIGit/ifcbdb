@@ -878,7 +878,7 @@ $(function() {
         var layout = {
             margin: { l: 50, r: 50, b: 50, t: 00, pad: 2 },
             xaxis: { type: xType, autorange: true },
-            yaxis: { type: yType, fixedrange: true, }
+            yaxis: { type: yType, autorange: true, }
         };
 
         Plotly.react('plot', trace, layout, config);
