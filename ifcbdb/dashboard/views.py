@@ -183,15 +183,6 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
     if bin is None:
         return render(request, "dashboard/no-bins.html", {})
 
-    breadcrumb = []
-    if dataset:
-        breadcrumb.append(dataset.title)
-    if instrument:
-        breadcrumb.append('IFCB{}'.format(instrument.number))
-    if tags:
-        breadcrumb.append(', '.join(tags))
-    breadcrumb_text = ' » '.join(breadcrumb)
-
     return render(request, "dashboard/bin.html", {
         "route": route,
         "can_share_page": True,
@@ -199,7 +190,6 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         "dataset": dataset,
         "instrument": instrument,
         "tags": ','.join(tags) if tags else '',
-        "breadcrumb": breadcrumb_text,
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
         "mosaic_default_scale_factor": Bin.MOSAIC_DEFAULT_SCALE_FACTOR,
