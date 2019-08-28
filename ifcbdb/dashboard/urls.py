@@ -95,5 +95,5 @@ urlpatterns = [
     path('api/outline/<slug:bin_id>/<int:target>', views.image_outline, name='image_outline'),
     path('api/plot/<slug:bin_id>', views.plot_data, name='plot_data'),
     path('api/metadata/<slug:bin_id>', views.bin_metadata, name='bin_metadata'),
-
+    path('api/bin_exists', views.bin_exists, name='bin_exists'),
  ]
