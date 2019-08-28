@@ -632,12 +632,13 @@ class Tag(models.Model):
     # Timeline()
     @staticmethod
     def cloud(dataset=None, instrument=None):
-        qs = TagEvent.objects
-        if dataset is not None:
-            qs = qs.filter(bin__datasets=dataset)
-        if instrument is not None:
-            qs = qs.filter(bin__instrument=instrument)
+        qs = TagEvent.query(dataset, instrument)
         return qs.values('tag').annotate(count=Count('tag')).values('tag__name','count')
+
+    @staticmethod
+    def list(dataset=None, instrument=None):
+        qs = TagEvent.query(dataset, instrument)
+        return [t['tag__name'] for t in qs.values('tag__name').distinct()]
 
     def __str__(self):
         return self.name
@@ -648,6 +649,15 @@ class TagEvent(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
     timestamp = models.DateTimeField(auto_now_add=True, null=True)
+
+    @staticmethod
+    def query(dataset=None, instrument=None):
+        qs = TagEvent.objects
+        if dataset is not None:
+            qs = qs.filter(bin__datasets=dataset)
+        if instrument is not None:
+            qs = qs.filter(bin__instrument=instrument)
+        return qs
 
     def __str__(self):
         return '{} tagged {}'.format(self.bin, self.tag)
