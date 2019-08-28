@@ -134,7 +134,7 @@ function getTimelineTypeByMetric(metric) {
         }
     }
 }
-function getTimelineData(data, selectedDate) {
+function getTimelineData(data, selectedDate, resolution) {
     plotlyType = getTimelineTypeByMetric(currentMetric);
 
     var series = {
@@ -147,12 +147,25 @@ function getTimelineData(data, selectedDate) {
         },
     };
 
+    /*
+    // This fix should not be needed now that we always enforce the width of the bars on the plot
     // For bar graphs with only one data point, the width of the bar needs to be set explicitly or
     //   Plotly will not render anything visible to the user. The x range on a single entry plot is
     //   set to 24hours, so the bar is set to a width of 1 hour
     if (data["x"].length == 1) {
         series["width"] = [60*60*1000]
     }
+    */
+
+    var duration;
+    switch (resolution) {
+        case "week": duration = 7*24*60*60*1000; break;
+        case "day": duration = 24*60*60*1000; break;
+        case "hour": duration = 60*60*1000; break;
+        default: /* bin */ duration = 20*60*1000; break;
+    }
+
+    series["width"] = Array(data["x"].length).fill(duration)
 
     return [series];
 }
