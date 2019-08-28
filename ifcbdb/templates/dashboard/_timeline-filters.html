@@ -1,7 +1,7 @@
     <div id="SearchPopoverContent" class="d-none">
         <div id="filter-content">
             <div class="form-row mb-2">
-                <div class="col-md-4">Dataset:</div>
+                <div class="col-md-4">Dataset</div>
                 <div class="col-md-8">
                     <select class="form-control form-control-sm dataset-filter">
                         <option value=""></option>
@@ -17,7 +17,7 @@
                     <select class="form-control form-control-sm instrument-filter">
                         <option value=""></option>
                         {% for option in instruments_options %}
-                            <option value="{{ option.number }}" {% if option.number|stringformat:"s" == instrument %}selected{% endif %}>{{ option }}</option>
+                            <option value="{{ option }}" {% if option|stringformat:"s" == instrument %}selected{% endif %}>IFCB{{ option }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -27,7 +27,7 @@
                 <div class="col-md-8">
                     <select class="form-control form-control-sm tag-filter" multiple>
                         {% for option in tag_options %}
-                            <option value="{{ option.name }}" {% if option.name|lower in tags %}selected{% endif %}>{{ option.name }}</option>
+                            <option value="{{ option }}" {% if option|lower in tags %}selected{% endif %}>{{ option }}</option>
                         {% endfor %}
                     </select>
                 </div>
