@@ -15,7 +15,7 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag
 from .forms import DatasetSearchForm
 from common.utilities import *
 
@@ -608,3 +608,31 @@ def bin_exists(request):
     return JsonResponse({
         "exists": exists
     })
+
+def filter_options(request):
+    dataset_name = request.GET.get("dataset")
+    tags = request_get_tags(request.GET.get("tags"))
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+
+    if dataset_name:
+        ds = Dataset.objects.get(name=dataset_name)
+    else:
+        ds = None
+    if instrument_number:
+        instr = Instrument.objects.get(number=instrument_number)
+    else:
+        instr = None
+
+    tag_options = Tag.list(ds, instr)
+
+    bq = bin_query(dataset_name=dataset_name, tags=tags)
+    qs = bq.values('instrument__number').order_by('instrument__number').distinct()
+
+    instruments_options = [i['instrument__number'] for i in qs]
+    datasets_options = [ds.name for ds in Dataset.objects.order_by('name').all()]
+
+    return JsonResponse({
+        "instrument_options": instruments_options,
+        "dataset_options": datasets_options,
+        "tag_options": tag_options,
+        })
