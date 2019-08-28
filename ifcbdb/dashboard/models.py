@@ -588,12 +588,16 @@ class Instrument(models.Model):
         return Tag.cloud(instrument=self, dataset=dataset)
 
     def __str__(self):
-        return 'IFCB{}'.format(self.number)
+        return self.name
 
     @staticmethod
     def determine_version(number):
         return 1 if number < 10 else 2
 
+    @property
+    def name(self):
+        return 'IFCB{}'.format(self.number)
+    
     # live instrument access
 
     def _get_remote(self):
