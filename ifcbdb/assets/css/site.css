@@ -230,3 +230,7 @@ table .btn-mdb-color {
     columns: 4;
     list-style-position: inside;
 }
+
+#filter-content {
+    min-width: 250px;
+}
