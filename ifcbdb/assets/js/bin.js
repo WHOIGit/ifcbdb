@@ -148,7 +148,7 @@ function applyFilters() {
         }
 
         _dataset = dataset;
-        _instrument = _instrument;
+        _instrument = instrument;
         _tags = tags;
         location.href = createBinLink(_bin);
     });
