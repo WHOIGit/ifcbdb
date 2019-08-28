@@ -54,6 +54,22 @@ function getGroupingParameters(bin) {
     return parameters.join("&");
 }
 
+function getQuerystringFromParameters(dataset, instrument, tags) {
+    var parameters = []
+    if (dataset != "")
+        parameters.push("dataset=" + dataset);
+    if (instrument != "")
+        parameters.push("instrument=" + instrument);
+    if (tags != "") {
+        parameters.push("tags=" + tags);
+    }
+
+    if (parameters.length == 0)
+        return "";
+
+    return parameters.join("&");
+}
+
 function createBinLink(bin) {
     if (_route == "bin") {
         return "/bin?bin=" + bin;
@@ -123,11 +139,19 @@ function applyFilters() {
         .map(function() {return $(this).val()}).get()
         .join();
 
-    _dataset = dataset;
-    _instrument = _instrument;
-    _tags = tags;
+    var qs = getQuerystringFromParameters(dataset, instrument, tags);
 
-    location.href = createBinLink(_bin);
+    $.get("/api/bin_exists?" + qs, function(data){
+        if (!data.exists) {
+            alert("No bins were found matching the specified filters. Please update the filters and try again")
+            return;
+        }
+
+        _dataset = dataset;
+        _instrument = _instrument;
+        _tags = tags;
+        location.href = createBinLink(_bin);
+    });
 
     return false;
 }

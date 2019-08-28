@@ -597,3 +597,14 @@ def bin_metadata(request, bin_id):
     return JsonResponse({
         "metadata": bin.metadata
     })
+
+
+def bin_exists(request):
+    dataset_name = request.GET.get("dataset")
+    tags = request_get_tags(request.GET.get("tags"))
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    exists = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags).exists()
+
+    return JsonResponse({
+        "exists": exists
+    })
