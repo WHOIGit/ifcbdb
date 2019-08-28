@@ -1,6 +1,7 @@
 from django import template
 
-from dashboard.models import Dataset, Instrument, Tag
+from dashboard.models import Dataset, Instrument, Tag, bin_query
+from dashboard.views import request_get_instrument, request_get_tags
 
 register = template.Library()
 
@@ -26,20 +27,29 @@ def dataset_nav():
 @register.inclusion_tag("dashboard/_timeline-filters.html", takes_context=True)
 def timeline_filters(context):
     dataset = context["request"].GET.get("dataset")
-    instrument = context["request"].GET.get("instrument")
-    tags = context["request"].GET.get("tags")
-    if tags and tags != "":
-        tags = [tag.strip().lower() for tag in tags.split(",")]
-    else:
-        tags = []
+    instrument = request_get_instrument(context["request"].GET.get("instrument"))
+    tags = request_get_tags(context["request"].GET.get("tags"))
 
-    datasets_options = Dataset.objects.all()
-    instruments_options = Instrument.objects.all()
-    tag_options = Tag.objects.all()
+    if dataset:
+        ds = Dataset.objects.get(name=dataset)
+    else:
+        ds = None
+    if instrument:
+        instr = Instrument.objects.get(number=instrument)
+    else:
+        instr = None
+
+    tag_options = Tag.list(ds, instr)
+
+    bq = bin_query(dataset_name=dataset, tags=tags)
+    qs = bq.values('instrument__number').distinct()
+    instruments_options = [i['instrument__number'] for i in qs]
+
+    datasets_options = Dataset.objects.order_by('name').all()
 
     return {
         "dataset": dataset,
-        "instrument": instrument,
+        "instrument": 'IFCB{}'.format(instrument),
         "tags": tags,
         "datasets_options": datasets_options,
         "instruments_options": instruments_options,
