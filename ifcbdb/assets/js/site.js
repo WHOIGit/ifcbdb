@@ -162,7 +162,7 @@ function getTimelineData(data, selectedDate, resolution) {
         case "week": duration = 7*24*60*60*1000; break;
         case "day": duration = 24*60*60*1000; break;
         case "hour": duration = 60*60*1000; break;
-        default: /* bin */ duration = 20*60*1000; break;
+        default: /* bin */ duration = 5*60*1000; break;
     }
 
     series["width"] = Array(data["x"].length).fill(duration)
