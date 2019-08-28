@@ -42,14 +42,14 @@ def timeline_filters(context):
     tag_options = Tag.list(ds, instr)
 
     bq = bin_query(dataset_name=dataset, tags=tags)
-    qs = bq.values('instrument__number').distinct()
+    qs = bq.values('instrument__number').order_by('instrument__number').distinct()
     instruments_options = [i['instrument__number'] for i in qs]
 
     datasets_options = Dataset.objects.order_by('name').all()
 
     return {
         "dataset": dataset,
-        "instrument": 'IFCB{}'.format(instrument),
+        "instrument": instr.number if instr else None,
         "tags": tags,
         "datasets_options": datasets_options,
         "instruments_options": instruments_options,

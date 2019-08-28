@@ -17,7 +17,7 @@
                     <select class="form-control form-control-sm instrument-filter">
                         <option value=""></option>
                         {% for option in instruments_options %}
-                            <option value="{{ option }}" {% if option|stringformat:"s" == instrument %}selected{% endif %}>IFCB{{ option }}</option>
+                            <option value="{{ option }}" {% if option == instrument %}selected{% endif %}>IFCB{{ option }}</option>
                         {% endfor %}
                     </select>
                 </div>
