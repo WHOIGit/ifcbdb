@@ -754,7 +754,9 @@ function changeBin(binId, updateHistory) {
         }
 
         // Update the timeline to select the new bin
-        highlightSelectedBinByDate();
+        if ("{{ route }}" == "timeline") {
+            highlightSelectedBinByDate();
+        }
 
         _isBinLoading = false;
     });
@@ -850,7 +852,9 @@ $("#close-image").click(function() {
 $(function() {
     _binTimestamp = moment("{{ details.timestamp_iso }}");
 
-    createTimeSeries("concentration");
+    if ("{{ route }}" == "timeline") {
+        createTimeSeries("concentration");
+    }
 
     changeBin("{{ bin.pid }}", false);
 });

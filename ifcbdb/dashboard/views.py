@@ -186,7 +186,7 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
     return render(request, "dashboard/bin.html", {
         "route": route,
         "can_share_page": True,
-        "can_filter_page": True,
+        "can_filter_page": (route == "timeline"),
         "dataset": dataset,
         "instrument": instrument,
         "tags": ','.join(tags) if tags else '',

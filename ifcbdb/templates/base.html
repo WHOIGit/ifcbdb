@@ -60,9 +60,10 @@
                 {% if can_filter_page %}
                 <a data-toggle="popover" title="Update Filters" class="pl-2"><span class="h5-responsive fa fa-filter"></span>&nbsp;Filters</a>
                 {% endif %}
-
-                {% if can_share_page %}
+                {% if can_filter_page and can_share_page %}
                 <span class="d-inline-block ml-2">|</span>
+                {% endif %}
+                {% if can_share_page %}
                 <a id="share-button" title="Share This Page" class="pl-2"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Page</a>
                 {% endif %}
 
