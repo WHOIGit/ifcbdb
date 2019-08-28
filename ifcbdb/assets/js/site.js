@@ -137,11 +137,17 @@ function getTimelineTypeByMetric(metric) {
 function getTimelineData(data, selectedDate) {
     plotlyType = getTimelineTypeByMetric(currentMetric);
 
+    var x_data = data["x"];
+    var y_data = data["y"];
+
+    x_data.push(data["x-range"].start, data["x-range"].end);
+    y_data.push(0,0);
+
     var series = {
         type: plotlyType.type,
         mode: plotlyType.mode,
-        x: data["x"],
-        y: data["y"],
+        x: x_data,
+        y: y_data,
         line: {
             color: '#17BECF'
         },
@@ -150,9 +156,10 @@ function getTimelineData(data, selectedDate) {
     // For bar graphs with only one data point, the width of the bar needs to be set explicitly or
     //   Plotly will not render anything visible to the user. The x range on a single entry plot is
     //   set to 24hours, so the bar is set to a width of 1 hour
+    /*
     if (data["x"].length == 1) {
         series["width"] = [60*60*1000]
-    }
+    }*/
 
     return [series];
 }
@@ -208,7 +215,7 @@ function getTimelineLayout(data, range) {
     // TODO: Special handling is needed when there is only one datapoint
     //   Go through to finer resolutions until we find one with more data
     //   If we get to a case where there is just a single bin, force a 24 hour xrange
-    if (data["x"].length == 1) {
+    if (data["x"].length <= 1) {
         layout["xaxis"]["range"] = [
             data["x-range"]["start"],
             data["x-range"]["end"]

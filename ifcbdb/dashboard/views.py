@@ -445,8 +445,6 @@ def _mosaic_page_image(request, bin_id):
 # TODO: Handle tag/instrument grouping
 def generate_time_series(request, metric,):
     dataset_name = request.GET.get("dataset",None)
-    instrument_number = request.GET.get("instrument",None)
-    tags = request.GET.get("tags",None)
     resolution = request.GET.get("resolution", "auto")
     start = request.GET.get("start",None)
     end = request.GET.get("end",None)
@@ -478,9 +476,17 @@ def generate_time_series(request, metric,):
 
     time_data = [item["dt"] for item in time_series]
     metric_data = [item["metric"] for item in time_series]
-    if resolution == "bin" and len(time_data) == 1:
-        time_start = time_data[0] + timedelta(hours=-12)
-        time_end = time_data[0] + timedelta(hours=12)
+
+    if start is not None:
+        time_start = start
+    if end is not None:
+        time_end = end
+
+    if not time_data:
+        pass
+    elif len(time_data) == 1:
+        time_start = time_data[0] - pd.Timedelta('12h')
+        time_end = time_data[0] + pd.Timedelta('12h')
     else:
         time_start = min(time_data)
         time_end = max(time_data)
