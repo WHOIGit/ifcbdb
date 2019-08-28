@@ -623,7 +623,6 @@ function queryTimeline(container, metric) {
     timelineValid = true;
 
     $.get(url, function(dataResponse) {
-
         // the timeline has been invalidated so this response is out of date
         // if we're not already deferring an attempt, do so
         if (!timelineValid) {
@@ -638,7 +637,9 @@ function queryTimeline(container, metric) {
         var updatedData = getTimelineData(dataResponse, _binTimestamp);
         var updatedLayout = getTimelineLayout(dataResponse, timelineRelayoutResponse);
 
-        Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
+        if (dataResponse.x.length > 0) {
+            Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
+        }
 
         // success, unlock the timeline
         timelineValid = true;
