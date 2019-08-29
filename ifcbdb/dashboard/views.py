@@ -467,15 +467,6 @@ def generate_time_series(request, metric,):
 
     time_series, resolution = Timeline(bin_qs).metrics(metric, start, end, resolution=resolution)
 
-    # TODO: Temporary workaround constraints to rule out bad data for humidity and temperature
-    if metric == "temperature":
-        # Restrict temperature to freezing/boiling point of sea water (0C to 100C)
-        time_series = time_series.filter(metric__range=[0, 100])
-
-    if metric == "humidity":
-        # Restrict humidity to 0% to 100%
-        time_series = time_series.filter(metric__range=[0, 100])
-
     time_data = [item["dt"] for item in time_series]
     metric_data = [item["metric"] for item in time_series]
 

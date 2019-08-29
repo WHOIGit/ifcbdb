@@ -240,7 +240,11 @@ function setYAxisRangeForMetric(layout, metric) {
         layout.yaxis.range = [0, 10500];
     } else if (metric == "ml-analyzed") {
         layout.yaxis.range = [0, 5.5];
-    }    
+    } else if (metric == "temperature") {
+        layout.yaxis.range = [0, 55];
+    } else if (metric == "humidity") {
+        layout.yaxis.range = [0, 120];
+    }
 }
 
 /*
