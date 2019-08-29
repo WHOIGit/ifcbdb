@@ -12,7 +12,7 @@ from django.db.models import F, Count, Sum, Avg, Min, Max
 from django.db.models.functions import Trunc
 from django.contrib.auth.models import User
 from django.contrib.gis.db.models import PointField
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, Polygon
 from django.contrib.gis.db.models.functions import Distance
 
 from django.db.models.signals import pre_save
@@ -208,6 +208,13 @@ class Dataset(models.Model):
 
     def tag_cloud(self, instrument=None):
         return Tag.cloud(dataset=self, instrument=instrument)
+
+    @staticmethod
+    def in_bounding_box(sw_lon, sw_lat, ne_lon, ne_lat):
+        # return the ids of all datasets in the bounding box
+        bbox = Polygon.from_bbox((sw_lon, sw_lat, ne_lon, ne_lat))
+        ds = Bin.objects.filter(location__contained=bbox).values('datasets').distinct()
+        return ds
 
     @staticmethod
     def search(start_date=None, end_date=None, min_depth=None, max_depth=None):
