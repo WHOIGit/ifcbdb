@@ -218,8 +218,7 @@ class Dataset(models.Model):
         return ds
 
     @staticmethod
-    def search(start_date=None, end_date=None, min_depth=None, max_depth=None):
-        # TODO: Need to handle tag/keyword filter
+    def search(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None):
         # TODO: Check into optimizing query
         datasets = Dataset.objects.filter(is_active=True).prefetch_related("bins")
 
@@ -238,6 +237,11 @@ class Dataset(models.Model):
             datasets = datasets.filter(bins__depth__gte=min_depth)
         elif max_depth:
             datasets = datasets.filter(bins__depth__lte=max_depth)
+
+        # Handle region; requires an array of sw_lon, sw_lat, ne_lon, ne_lat
+        if region:
+            bbox = Polygon.from_bbox(region)
+            datasets = datasets.filter(bins__location__contained=bbox)
 
         return datasets.order_by("title").distinct("title")
 

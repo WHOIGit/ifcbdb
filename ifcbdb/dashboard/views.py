@@ -8,6 +8,7 @@ from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
     HttpResponseRedirect, HttpResponseNotFound
 from django.views.decorators.cache import cache_control
+from django.views.decorators.http import require_POST
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -37,10 +38,20 @@ def datasets(request):
             max_depth = form.cleaned_data["max_depth"]
             start_date = form.cleaned_data["start_date"]
             end_date = form.cleaned_data["end_date"]
+            region_sw_lat = form.cleaned_data["region_sw_lat"]
+            region_sw_lon = form.cleaned_data["region_sw_lon"]
+            region_ne_lat = form.cleaned_data["region_ne_lat"]
+            region_ne_lon = form.cleaned_data["region_ne_lon"]
+
+            if region_sw_lat and region_sw_lon and region_ne_lat and region_ne_lon:
+                region = (region_sw_lon, region_sw_lat, region_ne_lon, region_ne_lat)
+            else:
+                region = None
+
             if end_date:
                 end_date = end_date + timedelta(days=1)
 
-            datasets = Dataset.search(start_date, end_date, min_depth, max_depth)
+            datasets = Dataset.search(start_date, end_date, min_depth, max_depth, region=region)
     else:
         form = DatasetSearchForm()
 
@@ -50,6 +61,33 @@ def datasets(request):
     return render(request, 'dashboard/datasets.html', {
         "datasets": datasets,
         "form": form,
+    })
+
+
+@require_POST
+def search_datasets(request):
+    min_depth = request.POST.get("min_depth")
+    max_depth = request.POST.get("max_depth")
+    start_date = request.POST.get("start_date")
+    end_date = request.POST.get("end_date")
+    region_sw_lat = request.POST.get("region_sw_lat")
+    region_sw_lon = request.POST.get("region_sw_lon")
+    region_ne_lat = request.POST.get("region_ne_lat")
+    region_ne_lon = request.POST.get("region_ne_lon")
+
+    if region_sw_lat and region_sw_lon and region_ne_lat and region_ne_lon:
+        region = (region_sw_lon, region_sw_lat, region_ne_lon, region_ne_lat)
+    else:
+        region = None
+
+    if end_date:
+        end_date = end_date + timedelta(days=1)
+
+    datasets = Dataset.search(start_date, end_date, min_depth, max_depth, region=region)
+    datasets = list(datasets.values("name", "title"))
+
+    return JsonResponse({
+        "datasets": datasets
     })
 
 

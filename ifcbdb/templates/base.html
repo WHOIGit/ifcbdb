@@ -18,6 +18,7 @@
     <link href="{% static 'css/site.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/leaflet/leaflet.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/chosen/chosen.min.css' %}" rel="stylesheet" />
+    {% block extra_head %}{% endblock %}
 
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}"> 
 </head>
