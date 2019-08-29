@@ -465,21 +465,27 @@ def generate_time_series(request, metric,):
         tags=tags,
         instrument_number=instrument_number)
 
-    time_series, resolution = Timeline(bin_qs).metrics(metric, start, end, resolution=resolution)
+    def query_timeline(metric, start, end, resolution):
+        time_series, resolution = Timeline(bin_qs).metrics(metric, start, end, resolution=resolution)
 
-    time_data = [item["dt"] for item in time_series]
-    metric_data = [item["metric"] for item in time_series]
+        time_data = [item["dt"] for item in time_series]
+        metric_data = [item["metric"] for item in time_series]
+
+        return time_series, resolution, time_data, metric_data
 
     if start is not None:
         time_start = start
     if end is not None:
         time_end = end
 
+    time_series, resolution, time_data, metric_data = query_timeline(metric, start, end, resolution)
+
     if not time_data:
         pass
     elif len(time_data) == 1:
-        time_start = time_data[0] - pd.Timedelta('12h')
-        time_end = time_data[0] + pd.Timedelta('12h')
+        time_start = time_data[0] - pd.Timedelta('20m')
+        time_end = time_data[0] + pd.Timedelta('20m')
+        time_series, resolution, time_data, metric_data = query_timeline(metric, time_start, time_end, resolution)
     else:
         time_start = min(time_data)
         time_end = max(time_data)
