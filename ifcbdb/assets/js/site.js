@@ -206,7 +206,7 @@ function getTimelineLayout(data, range, metric) {
     if (_binTimestamp != null) {
         layout.shapes = [
             getTimelineIndicatorShape()
-        ];
+        ]
     }
 
     if (range !== undefined && range !== null) {
@@ -228,15 +228,19 @@ function getTimelineLayout(data, range, metric) {
         ]
     }
 
-    if (metric == "concentration") {
-        layout.yaxis.range = [0, 8000];
-    } else if (metric == "n_triggers" || metric == "n_images") {
-        layout.yaxis.range = [0, 10000];
-    } else if (metric == "ml_analyzed") {
-        layout.yaxis.range = [0, 5];
-    }
+    setYAxisRangeForMetric(layout, metric);
 
     return layout;
+}
+
+function setYAxisRangeForMetric(layout, metric) {
+    if (metric == "concentration") {
+        layout.yaxis.range = [0, 8500];
+    } else if (metric == "n-triggers" || metric == "n-images") {
+        layout.yaxis.range = [0, 10500];
+    } else if (metric == "ml-analyzed") {
+        layout.yaxis.range = [0, 5.5];
+    }    
 }
 
 /*
