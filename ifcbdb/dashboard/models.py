@@ -519,7 +519,11 @@ class Bin(models.Model):
             return pd.DataFrame.from_dict(cached)
         task = mosaic_coordinates_task.delay(self.pid, shape, scale, cache_key)
         if block:
-            return pd.DataFrame.from_dict(task.get())
+            try:
+                d = task.get()
+                return pd.DataFrame.from_dict(d)
+            except:
+                return pd.DataFrame()
         return None
 
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):

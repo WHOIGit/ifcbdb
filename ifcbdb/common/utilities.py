@@ -42,6 +42,8 @@ def coordinates_to_json(coordinates):
     """
     Converts the coordinates from a mosaic image and puts them into a JSON serializable dictionary
     """
+    if coordinates.empty:
+        return '{}'
     c = coordinates.copy(deep=False)
     c.columns = ['page','y','x','height','width','pid']
     return c.to_json(orient='records')

@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import pandas as pd
 from datetime import timedelta
 
@@ -488,7 +489,11 @@ def _mosaic_page_image(request, bin_id):
     bin = get_object_or_404(Bin, pid=bin_id)
     shape = parse_view_size(view_size)
     scale = parse_scale_factor(scale_factor)
-    arr, _ = bin.mosaic(page=page, shape=shape, scale=scale)
+    try:
+        arr, _ = bin.mosaic(page=page, shape=shape, scale=scale)
+    except KeyError: # raw data not found
+        #return np.array([[0]], dtype='uint8')
+        raise Http404('raw data not found')
 
     return arr
 
@@ -624,7 +629,10 @@ def nearest_bin(request):
 
 def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
-    bin = b._get_bin()
+    try:
+        bin = b._get_bin()
+    except KeyError:
+        raise Http404('raw data not found')
     ia = bin.images_adc.copy(deep=False)
     # use named columns
     column_names = schema_names(bin.schema)
