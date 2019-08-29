@@ -43,6 +43,9 @@
                 <!-- Left -->
             <ul class="navbar-nav mr-auto white-text">
                 {% dataset_nav %}
+                <li class="nav-item">
+                    <a class="nav-link waves-effect" href="{% url 'comment_page' %}">Comments</a>
+                </li>
               {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link waves-effect" href="/secure/">Settings</a>

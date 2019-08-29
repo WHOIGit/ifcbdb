@@ -8,10 +8,69 @@
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-    content
+    <form class="form-inline">
+        Search for comments containing:
+        <input type="text" class="form-control ml-2" id="query" />
+        <button type="button" class="btn btn-mdb-color" id="search">Search</button>
+    </form>
+</div>
+<div class="row">
+    <table class="table table-striped table-sm table-hover d-none" id="comments" style="width:100%">
+        <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Comment</th>
+                <th scope="col">Author</th>
+                <th scope="col">Bin</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 </div>
 {% endblock %} {% block scripts %}
 <script>
+    var commentsTable;
+    $("#search").click(function(){
+        if (commentsTable) {
+            commentsTable.ajax.reload();
+            return;
+        }
+
+        commentsTable = $("#comments").DataTable({
+            searching: false,
+            lengthChange: false,
+            ajax: {
+                method: "POST",
+                url: "/api/search_comments",
+                data: function(){
+                    return {
+                        "csrfmiddlewaretoken": "{{ csrf_token }}",
+                        "query": $("#query").val()
+                    }
+                }
+            },
+            order: [[ 1, "desc" ]],
+            columns: [
+                { // Date
+                    render: function(data, type, row) {
+                        return moment.utc(data).format("YYYY-MM-DD HH:mm:ss z");
+                    }
+                },
+                {}, // Comment
+                {}, // User
+                { // Edit/Delete
+                    targets: -1,
+                    render: function(data, type, row ) {
+                        return "<a href='/bin?bin=" + data + "'>" + data + "</a>";
+                    }
+                }
+            ]
+        });
+
+        $("#comments").toggleClass("d-none", false);
+        $("#comments_wrapper").css("width","100%")
+    });
+
     $(function() {
 
     });
