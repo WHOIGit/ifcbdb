@@ -170,7 +170,7 @@ function getTimelineData(data, selectedDate, resolution) {
     return [series];
 }
 
-function getTimelineLayout(data, range) {
+function getTimelineLayout(data, range, metric) {
     var layout =  {
         bargap: 0,
         margin: {
@@ -226,6 +226,14 @@ function getTimelineLayout(data, range) {
             data["x-range"]["start"],
             data["x-range"]["end"]
         ]
+    }
+
+    if (metric == "concentration") {
+        layout.yaxis.range = [0, 8000];
+    } else if (metric == "n_triggers" || metric == "n_images") {
+        layout.yaxis.range = [0, 10000];
+    } else if (metric == "ml_analyzed") {
+        layout.yaxis.range = [0, 5];
     }
 
     return layout;

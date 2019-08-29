@@ -545,7 +545,7 @@ function createTimeSeries(metric) {
 
         var initialConfig = getTimelineConfig();
         var initialData = getTimelineData(response, _binTimestamp, currentResolution);
-        timelineRelayoutResponse = getTimelineLayout(response, currentRange);
+        timelineRelayoutResponse = getTimelineLayout(response, currentRange, metric);
 
         Plotly.newPlot(container[0], initialData, timelineRelayoutResponse, initialConfig);
 
@@ -650,7 +650,7 @@ function queryTimeline(container, metric) {
 
         var updatedConfig = getTimelineConfig();
         var updatedData = getTimelineData(dataResponse, _binTimestamp, currentResolution);
-        var updatedLayout = getTimelineLayout(dataResponse, timelineRelayoutResponse);
+        var updatedLayout = getTimelineLayout(dataResponse, timelineRelayoutResponse, metric);
 
         if (dataResponse.x.length > 0) {
             Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
