@@ -1,4 +1,9 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_head %}
+<link href="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.css' %}" rel="stylesheet" />
+{% endblock %}
+{% block content %}
 <div class="row">
     <div class="col">
         <span class="h3-responsive">Locate a Dataset</span>
@@ -11,7 +16,7 @@
             <div class="card-body text-primary">
                 <div class="row">
                     <div class="col-xs-12 col-md-4 col-lg-6 col-xl-4 order-2 order-md-1 pt-2 pt-md-0">
-                        <form method="post" class="form black-text">
+                        <form method="post" class="form black-text" id="search-form">
                             {% csrf_token %}
                             <div class="form-group">
                                 <label for="id_start_date">Start Date:</label>
@@ -30,6 +35,23 @@
                                 <label for="id_max_depth">Max Depth:</label>
                                 {{ form.max_depth }}
                             </div>
+                            <div class="form-group">
+                                <label>Region:</label><br />
+                                <a href="javascript:;" id="select-region" class="btn btn-sm btn-mdb-color">Select a Region</a>
+                                <div id="region" class="d-none card p-2">
+                                    <div class="row">
+                                        <div class="col-md-5">Southwest:</div>
+                                        <div class="col-md-3 p-0 mr-1">{{ form.region_sw_lat }}</div>
+                                        <div class="col-md-3 p-0">{{ form.region_sw_lon }}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-5">Northeast:</div>
+                                        <div class="col-md-3 p-0 mr-1">{{ form.region_ne_lat }}</div>
+                                        <div class="col-md-3 p-0">{{ form.region_ne_lon }}</div>
+                                    </div>
+                                    <a href="javascript:;" id="cancel-region" class="btn btn-sm btn-mdb-color">Cancel</a>
+                                </div>
+                            </div>
                             <button type="submit" class="btn btn-mdb-color btn-block">Search</button>
                         </form>
                     </div>
@@ -47,7 +69,7 @@
             </div>
             <div class="card-body overflow-auto">
                 <div>
-                    <ul class="list-group list-group-flush">
+                    <ul class="list-group list-group-flush" id="dataset-list">
                         {% for dataset in datasets %}
                         <li class="list-group-item">
                             <a href="{% url 'timeline_page' %}?dataset={{ dataset.name }}">{{ dataset.title }}</a>
@@ -61,9 +83,62 @@
     <div id="debug"></div>
 </div>
 {% endblock %} {% block scripts %}
+<script type="text/javascript" src="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.js' %}"></script>
 <script>
+    var map;
+    var areaSelect;
+
+    function enableRegionSelection() {
+        areaSelect = L.areaSelect({width:200, height:250});
+        areaSelect.on("change", function() {
+            var bounds = this.getBounds();
+            $("#id_region_sw_lat").val(bounds.getSouthWest().lat);
+            $("#id_region_sw_lon").val(bounds.getSouthWest().lng);
+            $("#id_region_ne_lat").val(bounds.getNorthEast().lat);
+            $("#id_region_ne_lon").val(bounds.getNorthEast().lng);
+        });
+        areaSelect.addTo(map);
+
+        $("#select-region").toggleClass("d-none", true);
+        $("#region").toggleClass("d-none", false);
+    }
+
+    function cancelRegionSelection() {
+        areaSelect.remove();
+        $("#id_region_sw_lat").val("");
+        $("#id_region_sw_lon").val("");
+        $("#id_region_ne_lat").val("");
+        $("#id_region_ne_lon").val("");
+        $("#select-region").toggleClass("d-none", false);
+        $("#region").toggleClass("d-none", true);
+    }
+
     $(function() {
-        createMap();
+        map = createMap();
+
+        $("#select-region").click(function(e){
+            enableRegionSelection();
+        });
+
+        $("#cancel-region").click(function(){
+            cancelRegionSelection();
+        });
+
+        $("#search-form").submit(function(e){
+            e.preventDefault();
+
+            $.post("/api/search_datasets", $(this).serialize(), function(data){
+                $("#dataset-list").empty();
+                for (var i = 0; i < data.datasets.length; i++) {
+                    var dataset = data.datasets[i];
+                    var li = $("<li class='list-group-item' />");
+                    var link = $("<a href='{% url 'timeline_page' %}?dataset=" + dataset["name"] + "'>" + dataset["title"] + "</a>");
+
+                    li.append(link);
+                    $("#dataset-list").append(li);
+                }
+            });
+        });
     });
 </script>
 {% endblock %}

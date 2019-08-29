@@ -100,4 +100,5 @@ urlpatterns = [
     path('api/metadata/<slug:bin_id>', views.bin_metadata, name='bin_metadata'),
     path('api/bin_exists', views.bin_exists, name='bin_exists'),
     path('api/filter_options', views.filter_options, name='filter_options'),
+    path('api/search_datasets', views.search_datasets, name='search_datasets'),
  ]
