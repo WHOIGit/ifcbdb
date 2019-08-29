@@ -151,6 +151,8 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
 def legacy_dataset_page(request, dataset_name, bin_id):
     return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name )
 
+def legacy_dataset_redirect(request, dataset_name):
+    return HttpResponseRedirect(reverse("timeline_page") + "?dataset=" + dataset_name)
 
 def legacy_bin_page(request, dataset_name, bin_id):
     return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)

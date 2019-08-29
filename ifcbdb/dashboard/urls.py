@@ -79,6 +79,9 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_png_legacy, name='image_png_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_jpg_legacy, name='image_jpg_legacy'),
 
+    # legacy dataset timeline endpoint
+    path('<slug:dataset_name>', views.legacy_dataset_redirect, name='dataset_legacy'),
+
     ##################################
     # Paths used for API/Ajax requests
     ##################################
