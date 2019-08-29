@@ -167,8 +167,10 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
     else:
         dataset = None
 
-    # TODO: Add validation checks/error handling
-    image = bin.image(image_number)
+    try:
+        image = bin.image(image_number)
+    except KeyError:
+        raise Http404("image data not found")
     image_width = image.shape[1];
 
     metadata = json.loads(json.dumps(bin.target_metadata(image_number), default=dict_to_json))
@@ -308,7 +310,10 @@ def mosaic_page_encoded_image(request, bin_id):
 
 def _image_data(bin_id, target, mimetype):
     b = get_object_or_404(Bin, pid=bin_id)
-    arr = b.image(target)
+    try:
+        arr = b.image(target)
+    except KeyError:
+        raise Http404("image data not found")
     image_data = format_image(arr, mimetype)
     return HttpResponse(image_data, content_type=mimetype)
 
@@ -331,7 +336,10 @@ def image_jpg_legacy(request, bin_id, target, dataset_name):
 
 def adc_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
-    adc_path = b.adc_path()
+    try:
+        adc_path = b.adc_path()
+    except KeyError:
+        raise Http404("raw data not found")
     filename = '{}.adc'.format(bin_id)
     fin = open(adc_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
@@ -339,7 +347,10 @@ def adc_data(request, bin_id):
 
 def hdr_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
-    hdr_path = b.hdr_path()
+    try:
+        hdr_path = b.hdr_path()
+    except KeyError:
+        raise Http404("raw data not found")
     filename = '{}.hdr'.format(bin_id)
     fin = open(hdr_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/plain')
@@ -347,7 +358,10 @@ def hdr_data(request, bin_id):
 
 def roi_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
-    roi_path = b.roi_path()
+    try:
+        roi_path = b.roi_path()
+    except KeyError:
+        raise Http404("raw data not found")
     filename = '{}.roi'.format(bin_id)
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
@@ -398,7 +412,10 @@ def class_scores_mat(request, bin_id):
 
 def zip(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
-    zip_buf = b.zip()
+    try:
+        zip_buf = b.zip()
+    except KeyError:
+        raise Http404("raw data not found")
     filename = '{}.zip'.format(bin_id)
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 

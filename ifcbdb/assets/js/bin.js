@@ -574,7 +574,6 @@ function loadMosaic(pageNumber) {
         _isMosaicLoading = false;
     });
 
-    // TODO: Needs error handling if mosaic cannot be generated
     var mosaicUrl = "/api/mosaic/encoded_image/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor +
@@ -584,6 +583,10 @@ function loadMosaic(pageNumber) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
+    }).fail(function(data) {
+        $("#mosaic-failed").show();
+        $("#mosaic-loading").hide();
+        _isMosaicLoading = false;
     });
 }
 

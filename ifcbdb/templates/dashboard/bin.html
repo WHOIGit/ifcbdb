@@ -165,6 +165,10 @@
                             <span class="sr-only">Loading...</span>
                           </div>
                         </div>
+                        <div id="mosaic-failed" class="grey lighten-4" style="height:{{ mosaic_default_height }}px; width:{{mosaic_default_width }}px; display:none">
+                          <div>
+                            Image data not found
+                          </div>
                       </div>
                       <div class="card-footer text-center py-0">
                         <div class="d-flex flex-row align-items-top justify-content-between pt-1" id="mosaic-footer">
@@ -694,6 +698,7 @@ function changeBin(binId, updateHistory) {
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
+    $("#mosaic-failed").hide();
     $("#mosaic").hide().attr("src","");
 
     // Hide any selected images
