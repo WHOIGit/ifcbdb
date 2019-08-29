@@ -343,6 +343,19 @@ def features_csv(request, bin_id):
     fin = open(features_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
+def class_scores_mat(request, bin_id):
+    b = get_object_or_404(Bin, pid=bin_id)
+    try:
+        version = int(request.GET.get('v',1))
+    except ValueError:
+        raise Http404
+    try:
+        class_scores_path = b.class_scores_path(version=version)
+    except KeyError:
+        raise Http404
+    filename = '{}_class_v{}.mat'.format(bin_id, version)
+    fin = open(class_scores_path)
+    return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')    
 
 def zip(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
@@ -410,8 +423,12 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "num_pages": int(pages),
         "tags": bin.tag_names,
         "coordinates": coordinates_json,
-        "has_blobs": bin.has_blobs(),
-        "has_features": bin.has_features(),
+        #"has_blobs": bin.has_blobs(),
+        #"has_features": bin.has_features(),
+        #"has_class_scores": bin.has_class_scores(), # FIXME slow
+        "has_blobs": False,
+        "has_features": False,
+        "has_class_scores": False,
         "timestamp_iso": bin.sample_time.isoformat(),
         "instrument": "IFCB" + str(bin.instrument.number),
         "num_triggers": bin.n_triggers,
@@ -424,7 +441,6 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "concentration": round(bin.concentration, 3),
         "skip": bin.skip,
     }
-
 
 def _mosaic_page_image(request, bin_id):
     view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
@@ -635,3 +651,12 @@ def filter_options(request):
         "dataset_options": datasets_options,
         "tag_options": tag_options,
         })
+
+def has_products(request, bin_id):
+    b = get_object_or_404(Bin, pid=bin_id)
+
+    return JsonResponse({
+        "has_blobs": b.has_blobs(),
+        "has_features": b.has_features(),
+        "has_class_scores": b.has_class_scores(),
+    })

@@ -55,7 +55,8 @@ class DirectoryForm(forms.ModelForm):
                 choices=[
                     (DataDirectory.RAW, DataDirectory.RAW),
                     (DataDirectory.BLOBS, DataDirectory.BLOBS),
-                    (DataDirectory.FEATURES, DataDirectory.FEATURES)
+                    (DataDirectory.FEATURES, DataDirectory.FEATURES),
+                    (DataDirectory.CLASS_SCORES, DataDirectory.CLASS_SCORES),
                 ],
                 attrs={"class": "form-control form-control-sm", "placeholder": "Kind"}),
             "whitelist": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Whitelist"}),

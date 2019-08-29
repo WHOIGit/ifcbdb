@@ -47,6 +47,7 @@ urlpatterns = [
     path('data/<slug:bin_id>.roi', views.roi_data, name='roi_binary'),
     path('data/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip'),
     path('data/<slug:bin_id>_features.csv', views.features_csv, name='features_csv'),
+    path('data/<slug:bin_id>_class_scores.mat', views.class_scores_mat, name='class_scores_mat'),
     path('data/<slug:bin_id>.zip', views.zip, name='zip'),
 
     # image access
@@ -100,4 +101,5 @@ urlpatterns = [
     path('api/metadata/<slug:bin_id>', views.bin_metadata, name='bin_metadata'),
     path('api/bin_exists', views.bin_exists, name='bin_exists'),
     path('api/filter_options', views.filter_options, name='filter_options'),
+    path('api/has_products/<slug:bin_id>', views.has_products, name='has_products'),
  ]

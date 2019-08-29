@@ -222,12 +222,18 @@ function updateBinDownloadLinks(data) {
     $("#download-zip").attr("href", "/data/" + _bin + ".zip");
     $("#download-blobs").attr("href", "/data/" + _bin + "_blob.zip");
     $("#download-features").attr("href", "/data/" + _bin + "_features.csv");
+    $("#download-class-scores").attr("href", "/data/" + _bin + "_class_scores.mat");
 
-    $("#download-blobs").toggle(data["has_blobs"]);
-    $("#download-blobs-disabled").toggle(!data["has_blobs"]);
+    $.get('/api/has_products/' + _bin, function(r) {
+        $("#download-blobs").toggle(r["has_blobs"]);
+        $("#download-blobs-disabled").toggle(!r["has_blobs"]);
 
-    $("#download-features").toggle(data["has_features"]);
-    $("#download-features-disabled").toggle(!data["has_features"]);
+        $("#download-features").toggle(r["has_features"]);
+        $("#download-features-disabled").toggle(!r["has_features"]);
+
+        $("#download-class-scores").toggle(r["has_class_scores"]);
+        $("#download-class-scores-disabled").toggle(!r["has_class_scores"]);
+    });
 
     // TODO: Need to hook up link for "autoclass"
 }

@@ -31,6 +31,7 @@ from ifcb.viz.blobs import blob_outline
 from ifcb.data.adc import schema_names
 from ifcb.data.products.blobs import BlobDirectory
 from ifcb.data.products.features import FeaturesDirectory
+from ifcb.data.products.class_scores import ClassScoresDirectory
 from ifcb.data.zip import bin2zip_stream
 from ifcb.data.transfer import RemoteIfcb
 
@@ -248,6 +249,7 @@ class DataDirectory(models.Model):
     RAW = 'raw'
     BLOBS = 'blobs'
     FEATURES = 'features'
+    CLASS_SCORES = 'class_scores'
 
     DEFAULT_VERSION = 2
 
@@ -283,6 +285,11 @@ class DataDirectory(models.Model):
         if self.kind != self.FEATURES:
             raise ValueError('not a features directory')
         return FeaturesDirectory(self.path, self.version)
+
+    def get_class_scores_directory(self):
+        if self.kind != self.CLASS_SCORES:
+            raise ValueError('not a class scores directory')
+        return ClassScoresDirectory(self.path, self.version)
 
     def __str__(self):
         return '{} ({})'.format(self.path, self.kind)
@@ -473,6 +480,30 @@ class Bin(models.Model):
 
     def features(self, version=2):
         return self.features_file(version=version).features(prune=True)
+
+    # class scores
+
+    def class_scores_file(self, version=1):
+        for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version):
+            csd = directory.get_class_scores_directory()
+            try:
+                return csd[self.pid]
+            except KeyError:
+                pass
+        raise KeyError('no class scores found for {}'.format(self.pid))
+
+    def has_class_scores(self, version=1):
+        try:
+            self.class_scores_file(version=version)
+            return True
+        except KeyError:
+            return False
+
+    def class_scores_path(self, version=1):
+        return self.class_scores_file(version=version).path
+
+    def class_scores(self, version=1):
+        return self.class_scores_file(version=version).class_scores()
 
     # mosaics
 
