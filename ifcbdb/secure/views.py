@@ -1,12 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django import forms
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse, Http404
+from django.views.decorators.http import require_POST, require_GET
+from django.http import JsonResponse, Http404, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 
 import pandas as pd
 
-from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin
+from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm
 
 from django.core.cache import cache
@@ -223,15 +223,53 @@ def add_comment(request, bin_id):
         "comments": bin.comment_list,
     })
 
+@require_GET
+@login_required
+def edit_comment(request, bin_id):
+    comment_id = request.GET.get("id")
+    comment = get_object_or_404(Comment, pk=comment_id)
+    if comment.user != request.user:
+        return HttpResponseForbidden()
+
+    return JsonResponse({
+        "id": comment.id,
+        "content": comment.content
+    })
+
+
+@require_POST
+@login_required
+def update_comment(request, bin_id):
+    bin = get_object_or_404(Bin, pid=bin_id)
+
+    comment_id = request.POST.get("id")
+    content = request.POST.get("content")
+    comment = get_object_or_404(Comment, pk=comment_id)
+
+    if comment.user != request.user:
+        return HttpResponseForbidden()
+
+    comment.content = content
+    comment.save()
+
+    return JsonResponse({
+        "id": comment.id,
+        "comments": bin.comment_list,
+    })
+
 
 @require_POST
 @login_required
 def delete_comment(request, bin_id):
-    id = request.POST.get("id")
-    bin = get_object_or_404(Bin, pid=bin_id)
-    bin.delete_comment(id, request.user)
+    comment_id = request.POST.get("id")
+    comment = get_object_or_404(Comment, pk=comment_id)
 
-    # TODO: Implement
+    if comment.user != request.user:
+        return HttpResponseForbidden()
+
+    bin = get_object_or_404(Bin, pid=bin_id)
+    bin.delete_comment(comment_id, request.user)
+
     return JsonResponse({
         "comments": bin.comment_list,
     })

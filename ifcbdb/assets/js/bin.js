@@ -359,6 +359,46 @@ function addComment() {
     });
 }
 
+function editComment(id) {
+    $.get("/secure/api/edit-comment/" + _bin + "?id=" + id, function(data){
+        if (data.id && data.id > 0) {
+            $("#comment-id").val(data.id);
+            $("#comment-input").val(data.content);
+            $("#cancel-comment").toggleClass("d-none", false);
+            $("#update-comment").toggleClass("d-none", false);
+            $("#confirm-comment").toggleClass("d-none", true);
+        }
+    })
+}
+
+function cancelComment() {
+    $("#comment-id").val("");
+    $("#comment-input").val("");
+    $("#cancel-comment").toggleClass("d-none", true);
+    $("#update-comment").toggleClass("d-none", true);
+    $("#confirm-comment").toggleClass("d-none", false);
+}
+
+function updateComment() {
+    var content = $("#comment-input").val().trim();
+    var id = $("#comment-id").val();
+    if (content === "" || id === "") {
+        return;
+    }
+
+    var payload = {
+        "csrfmiddlewaretoken": _csrf,
+        "id": id,
+        "content": content
+    };
+
+    $.post("/secure/api/update-comment/" + _bin, payload, function(data){
+        $("#comment-input").val("");
+        cancelComment();
+        displayComments(data.comments);
+    });
+}
+
 function deleteComment(id) {
     if (id == null || id == "")
         return;
@@ -404,8 +444,7 @@ function displayComments(comments) {
                     // Only show edit/delete if the comment was posted by the user viewing them
                     if (row[4] == _userId) {
                         html +=
-                            // TODO: Implement
-                            //"<button class='btn btn-sm py-1 px-2 edit-comment' data-id='" + data + "'><i class='fas fa-edit'></i></button>" +
+                            "<button class='btn btn-sm py-1 px-2 edit-comment' data-id='" + data + "'><i class='fas fa-edit'></i></button>" +
                             "<button class='btn btn-sm py-1 px-2 delete-comment' data-id='" + data + "'><i class='fas fa-minus-circle'></i></button>";
                     }
 
@@ -728,6 +767,16 @@ function initEvents() {
         $("#comments-header").toggleClass("d-none", false);
         $("#metadata-panel").toggleClass("d-none", true);
         $("#comments-panel").toggleClass("d-none", false);
+
+        $("#binCommentsTable_wrapper").css("width","100%")
+    });
+
+    $("#cancel-comment").click(function(e){
+        cancelComment();
+    });
+
+    $("#update-comment").click(function(e){
+        updateComment();
     });
 
     $("#confirm-comment").click(function(e){
@@ -736,6 +785,10 @@ function initEvents() {
 
     $("#binCommentsTable").on("click", ".delete-comment", function(e){
         deleteComment($(this).data("id"));
+    });
+
+    $("#binCommentsTable").on("click", ".edit-comment", function(e){
+        editComment($(this).data("id"));
     });
 
     $("#stat-skip").click(function(e){
