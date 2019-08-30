@@ -170,7 +170,7 @@
                             Image data not found
                           </div>
                         </div>
-                      </div>
+                      </div>                      
                       <div class="card-footer text-center py-0">
                         <div class="d-flex flex-row align-items-top justify-content-between pt-1" id="mosaic-footer">
                           <nav aria-label="Bin Paging" class="w-50">
@@ -431,14 +431,14 @@
                 <!-- End Bin Basic Info -->
                 <!-- Metadata -->
                 <div class="flex-md-column col-md-9 mt-2 mt-lg-0">
-                  <div class="card vh-50 h-100">
+                  <div class="card h-100">
                     <div class="card-header py-1 mdb-color lighten-5">
                         <span id="metadata-header" class="h5-responsive">Metadata | <a href="javascript:;" class="show-comments">Comments (<span class="comment-total">0</span>)</a></span>
                         <span id="comments-header" class="h5-responsive d-none"><a href="javascript:;" class="show-metadata">Metadata</a> | Comments (<span class="comment-total">0</span>)</span>
 
                     </div>
-                      <div class="card-body h-75 d-none" id="comments-panel">
-                      <div class="row col-sm-12 h-75 mb-3 border-bottom overflow-auto"  style="width:100%">
+                      <div class="card-body h-100 d-none" id="comments-panel">
+                      <div class="row col-sm-12 vh-25 mb-3 border-bottom overflow-auto"  style="width:100%">
                          <table class="table table-striped table-sm table-hover" id="binCommentsTable" style="width:100%">
                             <thead>
                                 <tr>
@@ -452,10 +452,11 @@
                             <tbody></tbody>
                           </table>
                           </div>
+                          <div class="min-vh-25">
                           <div class="row">
                           <div class="form-group col-12">
                               <input type="hidden" id="comment-id" />
-                          <textarea class="form-control w100" id="comment-input" rows="1"></textarea>
+                          <textarea class="form-control w100" id="comment-input" rows="4"></textarea>
                           </div>
                           </div>
                           <div class="row text-right">
@@ -465,9 +466,10 @@
                           <button class="btn btn-sm btn-mdb-color d-none" id="update-comment">Update</button>
                           </div>
                           </div>
+                        </div>
                       </div>
-                    <div class="card-body h-75" id="metadata-panel">
-                      <div class="table-responsive text-nowrap h-100 overflow-auto">
+                    <div class="card-body h-100" id="metadata-panel">
+                      <div class="table-responsive text-nowrap vh-50 overflow-auto">
                         <table class="table table-striped table-sm table-hover" id="bin-metadata">
                           <thead>
                             <tr>
@@ -699,7 +701,6 @@ function changeBin(binId, updateHistory) {
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
-    $("#mosaic-failed").hide();
     $("#mosaic").hide().attr("src","");
 
     // Hide any selected images
