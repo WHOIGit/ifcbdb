@@ -283,9 +283,11 @@ function updateBinDownloadLinks(data) {
 
         $("#download-class-scores").toggle(r["has_class_scores"]);
         $("#download-class-scores-disabled").toggle(!r["has_class_scores"]);
-    });
 
-    // TODO: Need to hook up link for "autoclass"
+        // Update outline/blob links
+        $("#detailed-image-blob-link").toggleClass("disabled", !r["has_blobs"]);
+        $("#detailed-image-outline-link").toggleClass("disabled", !r["has_blobs"]);
+    });
 }
 
 function changeToClosestBin(targetDate) {

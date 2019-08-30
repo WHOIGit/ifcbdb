@@ -330,5 +330,10 @@
 
     handleScaleBar();
 
+    $.get('/api/has_products/' + "{{ bin.pid }}", function(r) {
+        // Update outline/blob links
+        $("#blob-tab-label").toggleClass("disabled", !r["has_blobs"]);
+        $("#outline-tab-label").toggleClass("disabled", !r["has_blobs"]);
+    });
 </script>
 {% endblock %}
