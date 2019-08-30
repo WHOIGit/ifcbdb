@@ -316,6 +316,8 @@
         document.execCommand("Copy");
     });
 
+    // uncomment below if images are to be scaled instead of having scroll bars
+    /*
     function handleScaleBar() {
         var currentImageWidth = $("#image").width();
         if(currentImageWidth != {{ image_width }}) {
@@ -329,6 +331,9 @@
     });
 
     handleScaleBar();
+    */
+
+    $("#scale-bar").show();
 
     $.get('/api/has_products/' + "{{ bin.pid }}", function(r) {
         // Update outline/blob links
