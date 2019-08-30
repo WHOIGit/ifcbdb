@@ -17,7 +17,7 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment
 from .forms import DatasetSearchForm
 from common.utilities import *
 
@@ -157,6 +157,28 @@ def image_page(request):
         instrument_number,
         tags
     )
+
+
+def comments_page(request):
+    return render(request, "dashboard/comments.html", {
+
+    })
+
+
+@require_POST
+def search_comments(request):
+    query = request.POST.get("query")
+
+    comments = Comment.objects.all()\
+        .filter(content__icontains=query)\
+        .select_related('user')\
+        .select_related('bin')\
+        .values_list("timestamp", "content", "user__username", "bin__pid")\
+        .order_by("-timestamp")
+
+    return JsonResponse({
+        "data": list(comments)
+    })
 
 
 def _image_details(request, image_id, bin_id, dataset_name=None, instrument_number=None, tags=None):
