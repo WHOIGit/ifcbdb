@@ -376,7 +376,14 @@ function displayTags(tags) {
     for (var i = 0; i < tags.length; i++) {
         var tag = tags[i];
         var li = $("<span class='badge badge-pill badge-light mx-1'>");
-        var span = li.text(tag);
+        var link = "timeline?tags="+tag;
+        if (_dataset != "") {
+            link += "&dataset="+_dataset;
+        }
+        if (_instrument != "") {
+            link += "&instrument="+_instrument;
+        }
+        var span = li.html("<a href='"+link+"'>"+tag+"</a>");
         var icon = $("<i class='fas fa-times pl-1'></i>");
         var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "' />");
 
