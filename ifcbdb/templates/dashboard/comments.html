@@ -9,7 +9,17 @@
 <hr class="my-2">
 <div class="row py-2 px-3">
 <div class="border w-100 px-2 py-1">
+    {% if filters %}
+    <div class="alert alert-info" id="filter-message">
+        <strong>Current Filters:</strong>
+        {{ filters }}
+        <a id="clear-filters" href="#" class="btn btn-sm btn-mdb-color">Clear Filters</a>
+    </div>
+    {% endif %}
     <form class="form-inline">
+        <input type="hidden" id="dataset-filter" value="{{ dataset|default_if_none:'' }}" />
+        <input type="hidden" id="instrument-filter" value="{{ instrument|default_if_none:'' }}" />
+        <input type="hidden" id="tag-filter" value="{{ tags|default_if_none:'' }}" />
         Search for comments containing:
         <input type="text" class="form-control ml-2" id="query" />
         <button type="button" class="btn btn-mdb-color" id="search">Search</button>
@@ -52,7 +62,10 @@
                 data: function(){
                     return {
                         "csrfmiddlewaretoken": "{{ csrf_token }}",
-                        "query": $("#query").val()
+                        "query": $("#query").val(),
+                        "dataset": $("#dataset-filter").val(),
+                        "instrument": $("#instrument-filter").val(),
+                        "tags": $("#tag-filter").val()
                     }
                 }
             },
@@ -79,6 +92,16 @@
     });
 
     $(function() {
+        $("#clear-filters").click(function(e){
+            e.preventDefault();
+            $("#filter-message").hide();
+            $("#dataset-filter").val("");
+            $("#instrument-filter").val("");
+            $("#tag-filter").val("");
+
+            if (commentsTable)
+                commentsTable.ajax.reload();
+        });
 
     });
 </script>
