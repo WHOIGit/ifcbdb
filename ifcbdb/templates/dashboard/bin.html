@@ -297,6 +297,22 @@
                           <label>Y Offset</label>
                           <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
                         </div>
+                        <div class="form-group mr-2">
+                          <label>X Min</label>
+                          <input type="text" id="plot-x-min" class="form-control" style="width:100px" />
+                        </div>
+                        <div class="form-group">
+                          <label>Y Min</label>
+                          <input type="text" id="plot-y-min" class="form-control" style="width:100px" />
+                        </div>
+                        <div class="form-group mr-2">
+                          <label>X Max</label>
+                          <input type="text" id="plot-x-max" class="form-control" style="width:100px" />
+                        </div>
+                        <div class="form-group">
+                          <label>Y Max</label>
+                          <input type="text" id="plot-y-max" class="form-control" style="width:100px" />
+                        </div>
                       </form>
 
                       <div id="plot" class="bin-plot" style="height:450px"></div>
@@ -920,7 +936,29 @@ $(function() {
             yaxis: { type: yType, autorange: true, }
         };
 
+        // Special handling of the x axis on ROI x/y plots
+        if (xAxis === "roi_x" || xAxis == "roi_y") {
+            var xMax = (xAxis == "roi_x" ? 1400 : 1050);
+            layout.xaxis.autorange = false;
+            layout.xaxis.fixedrange = true;
+            layout.xaxis.range = [0, xMax];
+        }
+
+        // Special handling of the y axis on ROI x/y plots
+        if (yAxis === "roi_x" || yAxis == "roi_y") {
+            var yMax = (yAxis == "roi_x" ? 1400 : 1050);
+            layout.yaxis.autorange = false;
+            layout.yaxis.fixedrange = true;
+            layout.yaxis.range = [0, yMax];
+        }
+
         Plotly.react('plot', trace, layout, config);
+
+        var layout = ($("#plot")[0]).layout;
+        $("#plot-x-min").val(layout.xaxis.range[0])
+        $("#plot-y-min").val(layout.yaxis.range[0])
+        $("#plot-x-max").val(layout.xaxis.range[1])
+        $("#plot-y-max").val(layout.yaxis.range[1])
 
         $("#plot")[0].on('plotly_click', function(data){
             var pts = '';
@@ -982,6 +1020,30 @@ $(function() {
 
     $("#plot-x-axis, #plot-y-axis, #plot-x-offset, #plot-y-offset").change(function(e){
         updatePlot();
+    });
+
+    $("#plot-x-min, #plot-y-min, #plot-x-max, #plot-y-max").focus(function(e){
+        $(this).select();
+    });
+
+    $("#plot-x-min, #plot-y-min, #plot-x-max, #plot-y-max").change(function(e){
+        var plot = $("#plot")[0];
+        var layout = plot.layout;
+
+        layout.xaxis.autorange = false;
+        layout.xaxis.fixedrange = true;
+        layout.yaxis.autorange = false;
+        layout.yaxis.fixedrange = true;
+
+        layout.xaxis.range = [$("#plot-x-min").val(), $("#plot-x-max").val()];
+        layout.yaxis.range = [$("#plot-y-min").val(), $("#plot-y-max").val()];
+
+        try {
+            Plotly.relayout(plot, layout);
+        } catch(error) {
+            // Do nothing; user should be aware there was a data issue when the plot doesn't update
+        }
+
     });
 
     $("#plot-x-type").change(function(e){
