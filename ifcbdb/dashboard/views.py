@@ -183,9 +183,9 @@ def comments_page(request):
 def search_comments(request):
     query = request.POST.get("query")
 
-    dataset_name = request.GET.get("dataset")
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    tags = request_get_tags(request.GET.get("tags"))
+    dataset_name = request.POST.get("dataset")
+    instrument_number = request_get_instrument(request.POST.get("instrument"))
+    tags = request_get_tags(request.POST.get("tags"))
 
     bq = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
     bq = bq.filter(comments__content__icontains=query).values('pid')
