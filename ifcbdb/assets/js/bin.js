@@ -129,6 +129,51 @@ function initTimelineFilter() {
         $(".popover .tag-filter").chosen({
             placeholder_text_multiple: "Select Tags..."
         });
+
+        $(".popover .dataset-filter, .popover .instrument-filter, .popover .tag-filter").change(function(){
+            var wrapper = $(this).closest(".filter-options");
+            var datasetFilter = wrapper.find(".dataset-filter");
+            var dataset = datasetFilter.val();
+            var instrumentFilter = wrapper.find(".instrument-filter");
+            var instrument = instrumentFilter.val();
+            var tagFilter = wrapper.find(".tag-filter");
+            var tags = tagFilter.val().join();
+            var url = "/api/filter_options" +
+                "?dataset=" + (dataset ? dataset : "") +
+                "&instrument=" + (instrument ? instrument : "") +
+                "&tags=" + (tags ? tags : "");
+
+            $.get(url, function(data){
+                datasetFilter.empty();
+                datasetFilter.append($("<option value='' />"));
+                for (var i = 0; i < data.dataset_options.length; i++) {
+                    var option = data.dataset_options[i];
+                    datasetFilter.append($("<option value='" + option + "'>" + option + "</option>"));
+                }
+                datasetFilter.val(dataset);
+
+                instrumentFilter.empty();
+                instrumentFilter.append($("<option value='' />"));
+                for (var i = 0; i < data.instrument_options.length; i++) {
+                    var option = data.instrument_options[i];
+                    instrumentFilter.append($("<option value='" + option + "'>" + option + "</option>"));
+                }
+                instrumentFilter.val(instrument);
+
+                tagFilter.empty();
+                for (var i = 0; i < data.tag_options.length; i++) {
+                    var option = data.tag_options[i];
+
+                    var element = $("<option value='" + option + "'>" + option + "</option>");
+                    if (tags.includes(option))
+                        element.attr("selected", "selected");
+
+                    tagFilter.append(element);
+                }
+
+                tagFilter.trigger('chosen:updated');
+            });
+        });
     });
 }
 
