@@ -43,7 +43,6 @@
                 <!-- Left -->
             <ul class="navbar-nav mr-auto white-text">
                 {% dataset_nav %}
-                {% comments_nav %}
               {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link waves-effect" href="/secure/">Settings</a>
@@ -59,14 +58,16 @@
               </ul>
 
                 <!-- Right -->
+                {% comments_nav %}
                 {% if can_filter_page %}
-                <a data-toggle="popover" title="Update Filters" class="pl-2"><span class="h5-responsive fa fa-filter"></span>&nbsp;Filters</a>
+                <span class="d-inline-block ml-2">|</span>
+                <a data-toggle="popover" title="Update Filters" class="pl-2"><span class="h5-responsive fa fa-filter"></span>Filter</a>
                 {% endif %}
                 {% if can_filter_page and can_share_page %}
                 <span class="d-inline-block ml-2">|</span>
                 {% endif %}
                 {% if can_share_page %}
-                <a id="share-button" title="Share This Page" class="pl-2"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share This Page</a>
+                <a id="share-button" title="Share" class="pl-2"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share</a>
                 {% endif %}
 
             </div>
