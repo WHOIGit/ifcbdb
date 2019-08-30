@@ -163,11 +163,19 @@ def comments_page(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    filters = []
+    if dataset_name:
+        filters.append("Dataset: " + dataset_name)
+    if instrument_number:
+        filters.append("Instrument: IFCB" + str(instrument_number))
+    if tags:
+        filters.append("Tags: " + ', '.join(tags))
 
     return render(request, "dashboard/comments.html", {
         'dataset': '' if dataset_name is None else dataset_name,
         'instrument': '' if instrument_number is None else instrument_number,
-        'tags': '' if not tags else tags,
+        'tags': '' if not tags else ','.join(tags),
+        'filters': '' if not filters else ', '.join(filters),
     })
 
 
