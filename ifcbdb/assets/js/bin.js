@@ -156,7 +156,7 @@ function initTimelineFilter() {
                 instrumentFilter.append($("<option value='' />"));
                 for (var i = 0; i < data.instrument_options.length; i++) {
                     var option = data.instrument_options[i];
-                    instrumentFilter.append($("<option value='" + option + "'>" + option + "</option>"));
+                    instrumentFilter.append($("<option value='" + option + "'>IFCB" + option + "</option>"));
                 }
                 instrumentFilter.val(instrument);
 
