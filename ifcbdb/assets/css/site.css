@@ -166,7 +166,9 @@ table.table-sm th {
     height: 3rem;
 }
 
-#image-tab {
+#image-tab,
+#blob-tab,
+#outline-tab {
     overflow-x: auto
 }
 
