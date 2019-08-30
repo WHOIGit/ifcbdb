@@ -160,8 +160,14 @@ def image_page(request):
 
 
 def comments_page(request):
-    return render(request, "dashboard/comments.html", {
+    dataset_name = request.GET.get("dataset")
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    tags = request_get_tags(request.GET.get("tags"))
 
+    return render(request, "dashboard/comments.html", {
+        'dataset': '' if dataset_name is None else dataset_name,
+        'instrument': '' if instrument_number is None else instrument_number,
+        'tags': '' if not tags else tags,
     })
 
 
@@ -169,15 +175,28 @@ def comments_page(request):
 def search_comments(request):
     query = request.POST.get("query")
 
-    comments = Comment.objects.all()\
-        .filter(content__icontains=query)\
-        .select_related('user')\
-        .select_related('bin')\
-        .values_list("timestamp", "content", "user__username", "bin__pid")\
+    dataset_name = request.GET.get("dataset")
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    tags = request_get_tags(request.GET.get("tags"))
+
+    bq = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
+    bq = bq.filter(comments__content__icontains=query).values('pid')
+    b_pids = [t['pid'] for t in bq]
+
+    comments = list(Comment.objects.filter(content__icontains=query)
+        .select_related('user')
+        .select_related('bin')
         .order_by("-timestamp")
+        .values_list("timestamp", "content", "user__username", "bin__pid"))
+
+    rows = []
+    for c in comments:
+        ts, cont, user, pid = c
+        if pid in b_pids:
+            rows.append(c)
 
     return JsonResponse({
-        "data": list(comments)
+        "data": rows,
     })
 
 

@@ -36,12 +36,17 @@
             return;
         }
 
+        queryString = "?" +
+            "dataset={{ dataset }}" +
+            "&instrument={{ instrument }}" +
+            "&tags={{ tags }}";
+
         commentsTable = $("#comments").DataTable({
             searching: false,
             lengthChange: false,
             ajax: {
                 method: "POST",
-                url: "/api/search_comments",
+                url: "/api/search_comments" + queryString,
                 data: function(){
                     return {
                         "csrfmiddlewaretoken": "{{ csrf_token }}",
