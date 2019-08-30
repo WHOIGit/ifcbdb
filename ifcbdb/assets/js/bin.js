@@ -26,10 +26,15 @@ var _filterPopover; // Tracks the container created by the popover library for a
 // Generates a relative link to the current bin/dataset
 // TODO: Verify these URLs match the current Django routes
 function createLink() {
-    if (_dataset != "")
-        return "/" + _dataset + "/" + _bin + ".html";
+    if (_dataset != "" || _instrument != "" || _tags != "") {
+        var link = "/timeline?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags;
+        if (_bin != "") {
+            link += "&bin=" + _bin;
+        }
+        return link;
+    }
 
-    return "/bin?id=" + _bin;
+    return createBinModeLink();
 }
 
 function createBinModeLink() {
