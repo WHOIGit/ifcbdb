@@ -45,7 +45,7 @@
                 {% dataset_nav %}
               {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link waves-effect" href="/secure/">Settings</a>
+                    <a class="nav-link waves-effect" href="/secure/"><i class="fa fa-cog"></i> Settings</a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'secure:logout' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log Out</a>
