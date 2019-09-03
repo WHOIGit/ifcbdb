@@ -429,7 +429,7 @@ class Bin(models.Model):
 
     # access to blobs
 
-    def blob_file(self, version=2):
+    def blob_file(self, version=None):
         for directory in self._directories(kind=DataDirectory.BLOBS, version=version):
             bd = directory.get_blob_directory()
             try:
@@ -438,24 +438,24 @@ class Bin(models.Model):
                 pass
         raise KeyError('no blobs found for {}'.format(self.pid))
 
-    def has_blobs(self, version=2):
+    def has_blobs(self, version=None):
         try:
             self.blob_file(version=version)
             return True
         except KeyError:
             return False
 
-    def blob_path(self, version=2):
+    def blob_path(self, version=None):
         return self.blob_file(version=version).path
 
-    def blob(self, target_number, version=2):
+    def blob(self, target_number, version=None):
         try:
             bf = self.blob_file(version=version)
             return bf[target_number]
         except KeyError as e:
             raise KeyError('no such blob {} {}'.format(self.pid, target_number)) from e
 
-    def outline(self, target_number, blob_version=2, outline_color=[255, 0, 0]):
+    def outline(self, target_number, blob_version=None, outline_color=[255, 0, 0]):
         image = self.image(target_number)
         blob = self.blob(target_number, version=blob_version)
         out = blob_outline(image, blob, outline_color=outline_color)
@@ -463,7 +463,7 @@ class Bin(models.Model):
 
     # features
 
-    def features_file(self, version=2):
+    def features_file(self, version=None):
         for directory in self._directories(kind=DataDirectory.FEATURES, version=version):
             fd = directory.get_features_directory()
             try:
@@ -472,22 +472,22 @@ class Bin(models.Model):
                 pass
         raise KeyError('no features found for {}'.format(self.pid))
 
-    def has_features(self, version=2):
+    def has_features(self, version=None):
         try:
             self.features_file(version=version)
             return True
         except KeyError:
             return False
 
-    def features_path(self, version=2):
+    def features_path(self, version=None):
         return self.features_file(version=version).path
 
-    def features(self, version=2):
+    def features(self, version=None):
         return self.features_file(version=version).features(prune=True)
 
     # class scores
 
-    def class_scores_file(self, version=1):
+    def class_scores_file(self, version=None):
         for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version):
             csd = directory.get_class_scores_directory()
             try:
@@ -496,14 +496,14 @@ class Bin(models.Model):
                 pass
         raise KeyError('no class scores found for {}'.format(self.pid))
 
-    def has_class_scores(self, version=1):
+    def has_class_scores(self, version=None):
         try:
             self.class_scores_file(version=version)
             return True
         except KeyError:
             return False
 
-    def class_scores_path(self, version=1):
+    def class_scores_path(self, version=None):
         return self.class_scores_file(version=version).path
 
     def class_scores(self, version=1):
