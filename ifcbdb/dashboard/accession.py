@@ -16,12 +16,13 @@ import ifcb
 from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 
-def progress(bin_id, added, total):
+def progress(bin_id, added, total, bad):
     return {
         'bin_id': bin_id,
         'added': added,
         'total': total,
-        'existing': total - added,
+        'bad': bad,
+        'existing': total - added - bad,
     }
 
 def do_nothing(*args, **kwargs):
@@ -43,9 +44,10 @@ class Accession(object):
             for b in directory:
                 yield b
     def sync(self, progress_callback=do_nothing, log_callback=do_nothing):
-        progress_callback(progress('',0,0))
+        progress_callback(progress('',0,0,0))
         bins_added = 0
         total_bins = 0
+        bad_bins = 0
         most_recent_bin_id = ''
         scanner = self.scan()
         while True:
@@ -87,6 +89,7 @@ class Accession(object):
                 elif created: # created, but bad! delete
                     log_callback('{} deleting bad bin'.format(b.pid))
                     b.delete()
+                    bad_bins += 1
                 else:
                     log_callback('{} not adding bin'.format(b.pid))
             with transaction.atomic():
@@ -101,9 +104,9 @@ class Accession(object):
                     self.dataset.bins.add(b)
                     bins_added += 1
                     most_recent_bin_id = b.pid
-            progress_callback(progress(most_recent_bin_id, bins_added, total_bins))
+            progress_callback(progress(most_recent_bin_id, bins_added, total_bins, bad_bins))
         # done.
-        prog = progress(most_recent_bin_id, bins_added, total_bins)
+        prog = progress(most_recent_bin_id, bins_added, total_bins, bad_bins)
         progress_callback(prog)
         return prog
     def add_bin(self, bin, b): # IFCB bin, Bin instance
