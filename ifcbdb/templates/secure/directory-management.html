@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {% block content %}
 <div class="flex-row d-flex justify-content-between">
     <div class="flex-column">
-        <span class="h3-responsive">Data Directory Management for <strong>{{ dataset.name }}</strong></span>
+        <span class="h3-responsive">Data Directory Management for {{ dataset.name }}</span>
     </div>
     <div class="flex-column">
         <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:edit-directory' dataset.id 0 %}"><i class="fas fa-plus magic mr-1"></i> Add New Data Directory</a>
