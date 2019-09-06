@@ -1,4 +1,6 @@
 import json
+import re
+
 import numpy as np
 import pandas as pd
 from datetime import timedelta
@@ -772,3 +774,29 @@ def has_products(request, bin_id):
         "has_features": b.has_features(),
         "has_class_scores": b.has_class_scores(),
     })
+
+# legacy feed view
+def feed_legacy(request, ds_plus_tags, metric, start, end):
+    if metric not in ['temperature','humidity']: # does not support "trigger_rate"
+        raise Http404('unsupported metric "{}"'.format(metric))
+
+    # the dataset notation is dataset followed by colon-separated tags
+    # so /mvco/api/feed ... is for the "mvco" dataset, and
+    # /mvco:foo:bar/api/feed is for mvco bins tagged "foo" and "bar"
+    dpt = re.split(':', ds_plus_tags)
+    ds, tags = dpt[0], dpt[1:]
+    
+    ts_url = request.build_absolute_uri('/') + ds + '/'
+
+    bq = bin_query(dataset_name=ds, tags=tags, start=start, end=end)
+
+    records = []
+    for pid, date, metric_value in bq.values_list('pid','sample_time',metric):
+        records.append({
+            'pid': ts_url + pid,
+            'date': date,
+            metric: metric_value
+            })
+
+    # set "safe" to False because we're returning a list, not a dict
+    return JsonResponse(records, safe=False)
