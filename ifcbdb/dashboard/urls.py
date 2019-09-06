@@ -81,6 +81,9 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_png_legacy, name='image_png_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_jpg_legacy, name='image_jpg_legacy'),
 
+    # legacy feed API
+    path('<ds_plus_tags>/api/feed/<slug:metric>/start/<start>/end/<end>', views.feed_legacy, name='feed_legacy'),
+
     # legacy dataset timeline endpoint
     path('<slug:dataset_name>', views.legacy_dataset_redirect, name='dataset_legacy'),
 

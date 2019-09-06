@@ -302,9 +302,9 @@ class Bin(models.Model):
     # bin's permanent identifier (e.g., D20190102T1234_IFCB927)
     pid = models.CharField(max_length=64, unique=True)
     # the parsed bin timestamp
-    timestamp = models.DateTimeField('bin timestamp')
+    timestamp = models.DateTimeField('bin timestamp', db_index=True)
     # spatiotemporal information
-    sample_time = models.DateTimeField('sample time')
+    sample_time = models.DateTimeField('sample time', db_index=True)
     location = PointField(null=True)
     depth = models.FloatField(default=0)
     # instrument
