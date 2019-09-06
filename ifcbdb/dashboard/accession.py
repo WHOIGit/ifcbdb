@@ -127,8 +127,14 @@ class Accession(object):
         # metadata
         b.metadata_json = json.dumps(bin.hdr_attributes)
         # metrics
-        b.temperature = bin.temperature
-        b.humidity = bin.humidity
+        try:
+            b.temperature = bin.temperature
+        except KeyError: # older data
+            b.temperature = 0
+        try:
+            b.humidity = bin.humidity
+        except KeyError: # older data
+            b.humidity = 0
         b.size = bin.fileset.getsize() # assumes FilesetBin
         b.ml_analyzed = ml_analyzed
         b.look_time = bin.look_time

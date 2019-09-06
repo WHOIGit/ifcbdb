@@ -596,7 +596,14 @@ def generate_time_series(request, metric,):
         time_series, resolution = Timeline(bin_qs).metrics(metric, start, end, resolution=resolution)
 
         time_data = [item["dt"] for item in time_series]
-        metric_data = [item["metric"] for item in time_series]
+        metric_data = []
+        for item in time_series:
+            value = item['metric']
+            try:
+                if value >= 0:
+                    metric_data.append(value)
+            except TypeError:
+                metric_data.append(0)
 
         return time_series, resolution, time_data, metric_data
 
@@ -800,3 +807,4 @@ def feed_legacy(request, ds_plus_tags, metric, start, end):
 
     # set "safe" to False because we're returning a list, not a dict
     return JsonResponse(records, safe=False)
+
