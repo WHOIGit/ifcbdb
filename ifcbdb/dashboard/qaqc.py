@@ -8,8 +8,15 @@ def check_bad(bin):
     return False
 
 def check_no_rois(bin):
-    """returns True is there are no rois"""
-    roi_size = bin.fileset.getsizes()['roi']
+    """returns True if any file is zero length, etc"""
+    sizes = bin.fileset.getsizes()
+    roi_size = sizes['roi']
     if roi_size <= 1: # old style empty ROI files are 1 byte long
+        return True
+    hdr_size = sizes['hdr']
+    if hdr_size == 0:
+        return True
+    adc_size = sizes['adc']
+    if adc_size == 0:
         return True
     return False
