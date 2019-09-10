@@ -138,20 +138,24 @@ class Timeline(object):
                 resolution = 'bin'
             elif time_range < pd.Timedelta('60d'):
                 resolution = 'hour'
-                offset = pd.Timedelta('30m')
             elif time_range < pd.Timedelta('3y'):
                 resolution = 'day'
-                offset = pd.Timedelta('12h')
             else:
                 resolution = 'week'
-                offset = pd.Timedelta('3.5d')
 
+        if apply_offset:
+            if resolution == 'bin':
+                offset = pd.Timedelta('0s')
+            elif resolution == 'hour':
+                offset = pd.Timedelta('30m')
+            elif resolution == 'day':
+                offset = pd.Timedelta('12h')
+            elif resolution == 'week':
+                offset = pd.Timedelta('3.5d')
+                
         qs = self.time_range(start_time, end_time)
 
-        if metric == 'size':
-            aggregate_fn = Sum
-        else:
-            aggregate_fn = Avg
+        aggregate_fn = Avg
 
         if resolution == 'bin':
             result = qs.annotate(dt=F('sample_time'),metric=F(metric)).values('dt','metric').order_by('dt')
