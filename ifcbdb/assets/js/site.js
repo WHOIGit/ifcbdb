@@ -244,6 +244,8 @@ function setYAxisRangeForMetric(layout, metric) {
         layout.yaxis.range = [0, 55];
     } else if (metric == "humidity") {
         layout.yaxis.range = [0, 120];
+    } else if (metric == "size") {
+	layout.yaxis.range = [0, 1024*1024*40]; // 40MB
     }
 }
 
