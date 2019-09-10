@@ -4,7 +4,14 @@ def check_bad(bin):
     """returns True if bin is malformed and impossible to use"""
     if bin.fileset.getsize() < MIN_SIZE:
         return True
-    # FIXME add more checks
+    try:
+        len(bin)
+    except: # bad ADC data
+        return True
+    try:
+        len(bin.images)
+    except:
+        return True
     return False
 
 def check_no_rois(bin):
