@@ -597,11 +597,14 @@ def generate_time_series(request, metric,):
 
         time_data = [item["dt"] for item in time_series]
         metric_data = []
+        
         for item in time_series:
             value = item['metric']
             try:
                 if value >= 0:
                     metric_data.append(value)
+                else:
+                    metric_data.append(0)
             except TypeError:
                 metric_data.append(0)
 
