@@ -123,8 +123,9 @@ class Timeline(object):
             raise ValueError('unsupported metric {}'.format(metric))
 
         if resolution == 'auto':
-            mm = self.bins.aggregate(min=Min('sample_time'),max=Max('sample_time'))
-            min_sample_time, max_sample_time = mm['min'], mm['max']
+            if start_time is None or end_time is None:
+                mm = self.bins.aggregate(min=Min('sample_time'),max=Max('sample_time'))
+                min_sample_time, max_sample_time = mm['min'], mm['max']
             if start_time is None:
                 start_time = min_sample_time
             else:
