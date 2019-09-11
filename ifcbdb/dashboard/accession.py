@@ -112,9 +112,19 @@ class Accession(object):
     def add_bin(self, bin, b): # IFCB bin, Bin instance
         # qaqc checks
         qc_bad = check_bad(bin)
-        ml_analyzed = bin.ml_analyzed
+        # more error checking for setting attributes
+        try:
+            ml_analyzed = bin.ml_analyzed
+        except:
+            qc_bad = True
         if ml_analyzed <= 0:
             qc_bad = True
+        # metadata
+        try:
+            b.metadata_json = json.dumps(bin.hdr_attributes)
+        except:
+            qc_bad = True
+        #
         if qc_bad:
             b.qc_bad = True
             return
@@ -124,8 +134,6 @@ class Accession(object):
         if self.depth is not None:
             b.depth = self.depth
         b.qc_no_rois = check_no_rois(bin)
-        # metadata
-        b.metadata_json = json.dumps(bin.hdr_attributes)
         # metrics
         try:
             b.temperature = bin.temperature
