@@ -30,9 +30,9 @@ def do_nothing(*args, **kwargs):
 
 class Accession(object):
     # wraps a dataset object to provide accession
-    def __init__(self, dataset, lat=None, lon=None, depth=None):
+    def __init__(self, dataset, batch_size=100, lat=None, lon=None, depth=None):
         self.dataset = dataset
-        self.batch_size = 100
+        self.batch_size = batch_size
         self.lat = lat
         self.lon = lon
         self.depth = depth
@@ -112,12 +112,15 @@ class Accession(object):
     def add_bin(self, bin, b): # IFCB bin, Bin instance
         # qaqc checks
         qc_bad = check_bad(bin)
+        if qc_bad:
+            b.qc_bad = True
+            return
         # more error checking for setting attributes
         try:
             ml_analyzed = bin.ml_analyzed
+            if ml_analyzed <= 0:
+                qc_bad = True
         except:
-            qc_bad = True
-        if ml_analyzed <= 0:
             qc_bad = True
         # metadata
         try:
