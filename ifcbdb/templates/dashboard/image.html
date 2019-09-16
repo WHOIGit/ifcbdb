@@ -4,7 +4,13 @@
 
 <div class="row d-flex justify-content-between">
     <div class="col">
-        <span class="h3-responsive">{{ bin.pid }}_{{ image_id|stringformat:"05d" }}</span>
+        <span class="h3-responsive">
+            {% if dataset %}
+                <a href="/timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
+                {{ dataset.title }}</a> »
+            {% endif %}
+            <a id="bin-link" href="/bin?bin={{ bin.pid }}{% if dataset %}&dataset={{ dataset.name }}{% endif %}">{{ bin.pid }}</a> » {{ image_id }}
+        </span>
     </div>
     <div class="col">
         <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
