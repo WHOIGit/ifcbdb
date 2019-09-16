@@ -223,7 +223,14 @@
                     <div class="card d-flex mh-100">
                     <div class="card-header white text-center">
                         <div class="overflow-auto" id="images">
-                          <a id="detailed-image-link" href="#">
+                          <div id="detailed-image-id">
+                            <div>
+                              <a class="detailed-image-link" style="outline:0" href="#">
+                                <div id="detailed-image-pid"></div>
+                              </a>
+                            </div>
+                          </div>
+                          <a class="detailed-image-link" href="#">
                             <img class="fluid mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
                             <img class="fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
                             <img class="fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
@@ -233,6 +240,7 @@
                             <div class="scale-bar mx-auto mt-2"></div>
                             <div>10μm</div>
                           </div>
+
                         </div>
                     </div>
                       <div class="card-body flex-row overflow-auto d-none">
@@ -816,7 +824,8 @@ $("#mosaic").click(function(e){
                 $("#detailed-image-outline")
             );
             $("#detailed-image").data("image-id", img.pid);
-            $("#detailed-image-link").attr("href", imageUrl);
+            $(".detailed-image-link").attr("href", imageUrl);
+            $("#detailed-image-pid").html(_bin + "_" + padDigits(img.pid, 5));
             $("#detailed-image-button").attr("href", imageUrl);
             $("#image-modal").modal();
 
