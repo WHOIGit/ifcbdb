@@ -48,7 +48,7 @@
             </div>
             <div class="form-row">
                 <div class="form-group col">
-                    <label for="id_title">Description</label>
+                    <label for="id_title">Title</label>
                     {{ form.title }}
                     {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
                 </div>
@@ -85,7 +85,13 @@
     <div class="col-md-6">
         {% if dataset.id > 0 %}
         <div class="card card-body ">
-            <button id="sync-button" class="btn btn-sm btn-mdb-color col-sm-2 disabled">Sync</button>
+            <span>
+                <button id="sync-button" class="btn btn-sm btn-mdb-color col-sm-2 disabled">Sync</button>
+                <span class="custom-control custom-switch">
+                    <input type="checkbox" id="newest-only" class="custom-control-input">
+                    <label class="custom-control-label" for="newest-only">newest data only</label>
+                </span>
+            </span>
             <div id="sync-status" class="d-none">
                 <div>
                     <span id="sync-spinner" class="d-none">
@@ -146,7 +152,8 @@
 
     $('#sync-button').click(function() {
         var payload = {
-            "csrfmiddlewaretoken": _csrf
+            "csrfmiddlewaretoken": _csrf,
+            "newest_only": $("#newest-only").is(":checked")
         };
         $.post("{% url 'secure:sync_dataset' dataset.id %}", payload, function(data) {
             // ignore data

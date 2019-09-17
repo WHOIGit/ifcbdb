@@ -289,6 +289,8 @@ def get_dataset_sync_task_id(dataset_id):
 @login_required
 def sync_dataset(request, dataset_id):
     from dashboard.tasks import sync_dataset
+    # params
+    newest_only = request.POST.get('newest_only') == 'true'
     # ensure that the dataset exists
     ds = get_object_or_404(Dataset, id=dataset_id)
     # attempt to lock the dataset
@@ -297,7 +299,7 @@ def sync_dataset(request, dataset_id):
     if not added: # dataset is locked for syncing
         return JsonResponse({ 'state': 'LOCKED' })
     # start the task asynchronously
-    r = sync_dataset.delay(dataset_id, lock_key)
+    r = sync_dataset.delay(dataset_id, lock_key, newest_only=newest_only)
     # cache the task id so we can look it up by dataset id
     cache.set(dataset_sync_task_id_key(dataset_id), r.task_id, timeout=None)
     result = AsyncResult(r.task_id)

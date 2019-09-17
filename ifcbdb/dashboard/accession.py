@@ -30,12 +30,13 @@ def do_nothing(*args, **kwargs):
 
 class Accession(object):
     # wraps a dataset object to provide accession
-    def __init__(self, dataset, batch_size=100, lat=None, lon=None, depth=None):
+    def __init__(self, dataset, batch_size=100, lat=None, lon=None, depth=None, newest_only=False):
         self.dataset = dataset
         self.batch_size = batch_size
         self.lat = lat
         self.lon = lon
         self.depth = depth
+        self.newest_only = newest_only
     def scan(self):
         for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             if not os.path.exists(dd.path):
@@ -49,6 +50,7 @@ class Accession(object):
         total_bins = 0
         bad_bins = 0
         most_recent_bin_id = ''
+        newest_done = False
         scanner = self.scan()
         while True:
             bins = list(islice(scanner, self.batch_size))
@@ -80,6 +82,8 @@ class Accession(object):
                     'instrument': instrument,
                     'skip': True, # in case accession is interrupted
                 })
+                if self.newest_only and not created:
+                    newest_done = True
                 if not created:
                     self.dataset.bins.add(b)
                     continue
@@ -104,6 +108,9 @@ class Accession(object):
                     self.dataset.bins.add(b)
                     bins_added += 1
                     most_recent_bin_id = b.pid
+            # done with the batch
+            if newest_done:
+                break
             progress_callback(progress(most_recent_bin_id, bins_added, total_bins, bad_bins))
         # done.
         prog = progress(most_recent_bin_id, bins_added, total_bins, bad_bins)

@@ -19,12 +19,12 @@ def mosaic_coordinates_task(bin_id, shape=(600,800), scale=0.33, cache_key=None)
     return result
 
 @shared_task(bind=True)
-def sync_dataset(self, dataset_id, lock_key):
+def sync_dataset(self, dataset_id, lock_key, newest_only=True):
     from dashboard.models import Dataset
     from dashboard.accession import Accession
     ds = Dataset.objects.get(id=dataset_id)
     print('syncing dataset {}'.format(ds.name))
-    acc = Accession(ds)
+    acc = Accession(ds, newest_only=newest_only)
     def progress_callback(p):
         self.update_state(state='PROGRESS', meta=p)
     try:
