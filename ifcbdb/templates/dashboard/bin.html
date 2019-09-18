@@ -98,7 +98,7 @@
 {% endif %}
 
 {% if bin_reset %}
-<div class="alert alert-info alert-dismissible">
+<div class="alert alert-info alert-dismissible" id="bin-not-found">
     The selected bin was not found in the list of bins matching the currently applied filters. The latest bin within that list has been selected instead
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
         <span aria-hidden="true">&times;</span>
@@ -748,6 +748,12 @@ function changeBin(binId, updateHistory) {
     // disable next/previous buttons
     $("#previous-bin").addClass("disabled");
     $("#next-bin").addClass("disabled");
+
+    // Some other UI clean up once the bin changes
+    if (updateHistory) {
+        $("#bin-not-found").hide();
+    }
+
 
     _mosaicPage = 0;
     delayedMosaic(0);
