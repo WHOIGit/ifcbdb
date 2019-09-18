@@ -280,7 +280,7 @@
                 <div class="card-body py-1">
                   <div class="row py-2 px-3">
                     <div class="col-md-7 text-center">
-                        <div id="plot" class="bin-plot" style="height:450px"></div>
+                        <div id="plot" class="bin-plot mb-4" style="height:450px"></div>
                       <form class="form form-row">
 
                         <div class="form-group mr-2">
@@ -952,9 +952,27 @@ $(function() {
         }];
 
         var layout = {
-            margin: { l: 50, r: 50, b: 50, t: 00, pad: 2 },
-            xaxis: { type: xType, autorange: true },
-            yaxis: { type: yType, autorange: true, }
+            margin: { l: 50, r: 50, b: 40, t: 00, pad: 2 },
+            xaxis: {
+                type: xType,
+                 autorange: true,
+                 title: {
+                    text: xAxis
+                 },
+                titlefont: {
+                  size: 18,
+                }
+            },
+            yaxis: {
+                type: yType,
+                autorange: true,
+                title: {
+                    text: yAxis
+                },
+                titlefont: {
+                  size: 18,
+                }
+            }
         };
 
         // Special handling of the x axis on ROI x/y plots
