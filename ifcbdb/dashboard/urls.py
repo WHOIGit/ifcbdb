@@ -108,4 +108,5 @@ urlpatterns = [
     path('api/has_products/<slug:bin_id>', views.has_products, name='has_products'),
     path('api/search_datasets', views.search_datasets, name='search_datasets'),
     path('api/search_comments', views.search_comments, name='search_comments'),
+    path('api/tags', views.tags, name='tags'),
  ]

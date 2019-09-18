@@ -811,3 +811,16 @@ def feed_legacy(request, ds_plus_tags, metric, start, end):
     # set "safe" to False because we're returning a list, not a dict
     return JsonResponse(records, safe=False)
 
+def tags(request):
+    dataset_name = request.GET.get('dataset')
+    instrument_number = request.GET.get('instrument')
+    if dataset_name is not None:
+        dataset = get_object_or_404(Dataset, name=dataset_name)
+    else:
+        dataset = None
+    if instrument_number is not None:
+        instrument = get_object_or_404(Instrument, number=instrument_number)
+    else:
+        instrument = None
+    cloud = Tag.cloud(dataset=dataset, instrument=instrument)
+    return JsonResponse({'cloud': list(cloud)})
