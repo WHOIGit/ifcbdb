@@ -109,4 +109,5 @@ urlpatterns = [
     path('api/search_datasets', views.search_datasets, name='search_datasets'),
     path('api/search_comments', views.search_comments, name='search_comments'),
     path('api/tags', views.tags, name='tags'),
+    path('api/timeline_info', views.timeline_info, name='timeline_info'),
  ]

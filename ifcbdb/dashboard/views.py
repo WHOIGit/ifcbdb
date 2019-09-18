@@ -263,13 +263,16 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         # TODO: 404 error; don't have enough info to proceed
         pass
 
+
+    bin_qs = bin_query(dataset_name=dataset_name,
+        tags=tags,
+        instrument_number=instrument_number)
+    timeline = Timeline(bin_qs)
+
     if bin_id:
         bin = get_object_or_404(Bin, pid=bin_id)
     else:
-        bin_qs = bin_query(dataset_name=dataset_name,
-            tags=tags,
-            instrument_number=instrument_number)
-        bin = Timeline(bin_qs).most_recent_bin()
+        bin = timeline.most_recent_bin()
 
     dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
     instrument = get_object_or_404(Instrument, number=instrument_number) if instrument_number else None
@@ -812,8 +815,8 @@ def feed_legacy(request, ds_plus_tags, metric, start, end):
     return JsonResponse(records, safe=False)
 
 def tags(request):
-    dataset_name = request.GET.get('dataset')
-    instrument_number = request.GET.get('instrument')
+    dataset_name = request.GET.get("dataset")
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
     if dataset_name is not None:
         dataset = get_object_or_404(Dataset, name=dataset_name)
     else:
@@ -824,3 +827,16 @@ def tags(request):
         instrument = None
     cloud = Tag.cloud(dataset=dataset, instrument=instrument)
     return JsonResponse({'cloud': list(cloud)})
+
+def timeline_info(request):
+    dataset_name = request.GET.get("dataset")
+    tags = request_get_tags(request.GET.get("tags"))
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    bin_qs = bin_query(dataset_name=dataset_name,
+        tags=tags,
+        instrument_number=instrument_number)
+    timeline = Timeline(bin_qs)
+    return JsonResponse({
+        'n_bins': len(timeline),
+        'total_data_volume': timeline.total_data_volume(),
+        })

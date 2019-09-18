@@ -73,6 +73,11 @@
         </ul>
     </div>
     </div>
+    <div class="row d-flex text-center">
+      <div class="col-sm-12">
+          <span id="n_bins"><i class="fa fa-spinner fa-spin"></i></span> <span id="total-data-volume"></span>
+      </div>
+    </div>
     <hr class="my-2">
 
     <!-- Timeline control -->
@@ -91,6 +96,7 @@
         </div>
     </div>
 {% endif %}
+
 {% if bin_reset %}
 <div class="alert alert-info alert-dismissible">
     The selected bin was not found in the list of bins matching the currently applied filters. The latest bin within that list has been selected instead
@@ -1095,6 +1101,16 @@ $(function() {
     _csrf = "{{ csrf_token }}";
     {% if user.is_authenticated %}
     _userId = {{ user.id }};
+    {% endif %}
+
+    // show timeline info
+    {% if route == 'timeline' %}
+    var timeline_info_url = 'api/timeline_info?dataset='+_dataset+
+      '&instrument='+_instrument+'&tags='+_tags;
+    $.get(timeline_info_url, function(data) {
+      $("#n_bins").html("Showing "+data.n_bins+" bins");
+      $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
+    })
     {% endif %}
 
     {% if bin_reset and route == "timeline" %}
