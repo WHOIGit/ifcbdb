@@ -23,19 +23,27 @@
                         </div>
                     {% endif %}
                     {% if confirm %}
-                    <div class="alert alert-success">File imported successfully</div>
+                    <div class="alert alert-success">File uploaded successfully</div>
                     {% endif %}
+                    <div id="too-large-alert" class="alert alert-danger d-none">
+                        File is too large (size limit 2MB)
+                    </div>
+                    <div id="wrong-type-alert" class="alert alert-danger d-none">
+                        Wrong file type. Please upload a CSV file.
+                    </div>
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="form-group">
                             <label>Metadata File (*.csv)</label>
                             <div class="custom-file">
                                 {{ form.file }}
-                                <label class="custom-file-label" for="id_file">Choose file</label>
+                                <label class="custom-file-label" for="id_file">
+                                    <span id="filename">Choose file</span>
+                                </label>
                             </div>
                         </div>
                         <div class="form-group">
-                            <input type="submit" value="Submit" class="btn btn-sm btn-mdb-color" />
+                            <input type="submit" value="Upload" class="btn btn-sm btn-mdb-color" />
                         </div>
                     </form>
                 </div>
@@ -52,4 +60,28 @@
     </a>
 </div>
 
+{% endblock %}
+{% block scripts %}
+<script>
+    function reset_filename() {
+        $("#id_file").replaceWith($("#id_file").val('').clone(true));
+        $("#filename").html("Choose file");
+    }
+
+    $("#id_file").change(function() {
+        var file = $(this)[0].files[0];
+        $("#filename").html(file.name);
+        if (!file.name.endsWith('.csv')) {
+            $("#wrong-type-alert").removeClass("d-none");
+            reset_filename();
+        } else if (file.size > (1024 * 1024 * 2)) { // 2MB
+            $("#too-large-alert").removeClass('d-none');
+            reset_filename();
+        } else {
+            $("#too-large-alert").addClass("d-none");
+            $("#wrong-type-alert").addClass("d-none");
+        }
+        console.log($(this));
+    });
+</script>
 {% endblock %}

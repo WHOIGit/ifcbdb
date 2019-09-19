@@ -1,3 +1,5 @@
+client_max_body_size 2M;
+
 upstream ifcbdb_server {
   server ifcbdb:8000;
 }
