@@ -206,6 +206,10 @@ class Dataset(models.Model):
     title = models.CharField(max_length=256)
     is_active = models.BooleanField(blank=False, null=False, default=True)
 
+    # for fixed deployment
+    location = PointField(null=True)
+    depth = models.FloatField(default=0)
+
     def __len__(self):
         # number of bins
         return self.bins.count()
@@ -251,6 +255,24 @@ class Dataset(models.Model):
             datasets = datasets.filter(bins__location__contained=bbox)
 
         return datasets.order_by("title").distinct("title")
+
+    def set_location(self, longitude, latitude, depth=None):
+        # convenience function for setting location w/o having to construct Point object
+        self.location = Point(longitude, latitude, srid=SRID)
+        if depth is not None:
+            self.depth = depth
+
+    @property
+    def latitude(self):
+        if self.location is None:
+            return FILL_VALUE
+        return self.location.y
+
+    @property
+    def longitude(self):
+        if self.location is None:
+            return FILL_VALUE
+        return self.location.x
 
     def __str__(self):
         return self.name
@@ -345,9 +367,11 @@ class Bin(models.Model):
     MOSAIC_DEFAULT_SCALE_FACTOR = 33
     MOSAIC_DEFAULT_VIEW_SIZE = "800x600"
 
-    def set_location(self, longitude, latitude):
+    def set_location(self, longitude, latitude, depth=None):
         # convenience function for setting location w/o having to construct Point object
         self.location = Point(longitude, latitude, srid=SRID)
+        if depth is not None:
+            self.depth = depth
 
     @property
     def latitude(self):
