@@ -389,7 +389,7 @@ class Bin(models.Model):
     def _get_bin(self):
         cache_key = '{}_path'.format(self.pid)
         cached_path = cache.get(cache_key)
-        if cached_path is not None:
+        if cached_path is not None and os.path.exists(cached_path):
             return FilesetBin(Fileset(cached_path))
         # return the underlying ifcb.Bin object backed by the raw filesets
         for directory in self._directories(kind=DataDirectory.RAW):
