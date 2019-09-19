@@ -840,3 +840,9 @@ def timeline_info(request):
         'n_bins': len(timeline),
         'total_data_volume': timeline.total_data_volume(),
         })
+
+def list_images(request, pid):
+    b = get_object_or_404(Bin, pid=pid)
+    return JsonResponse({
+        'images': b.list_images()
+        })

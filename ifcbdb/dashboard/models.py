@@ -438,7 +438,7 @@ class Bin(models.Model):
                 raise KeyError('no such image {} {}'.format(self.pid, target_number)) from e
 
     def list_images(self):
-        return list(self.images.keys())
+        return list(self.images().keys())
 
     # access to blobs
 
