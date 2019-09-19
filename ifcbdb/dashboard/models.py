@@ -1,6 +1,7 @@
 import re
 import json
 import logging
+import os
 
 from functools import lru_cache
 
@@ -34,6 +35,7 @@ from ifcb.data.products.features import FeaturesDirectory
 from ifcb.data.products.class_scores import ClassScoresDirectory
 from ifcb.data.zip import bin2zip_stream
 from ifcb.data.transfer import RemoteIfcb
+from ifcb.data.files import Fileset, FilesetBin
 
 from .crypto import AESCipher
 from .tasks import mosaic_coordinates_task
@@ -384,13 +386,19 @@ class Bin(models.Model):
             for directory in qs.order_by('priority'):
                 yield directory
 
-    @lru_cache()
     def _get_bin(self):
+        cache_key = '{}_path'.format(self.pid)
+        cached_path = cache.get(cache_key)
+        if cached_path is not None:
+            return FilesetBin(Fileset(cached_path))
         # return the underlying ifcb.Bin object backed by the raw filesets
         for directory in self._directories(kind=DataDirectory.RAW):
             dd = directory.get_raw_directory()
             try:
-                return dd[self.pid]
+                b = dd[self.pid]
+                basepath, _  = os.path.splitext(b.fileset.adc_path)
+                cache.set(cache_key, basepath)
+                return b
             except KeyError:
                 pass # keep searching
         raise KeyError('cannot find fileset for {}'.format(self))
