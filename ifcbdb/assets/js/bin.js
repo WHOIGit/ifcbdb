@@ -717,11 +717,6 @@ function initEvents() {
         document.execCommand("Copy");
     });
 
-    // Prevent users from clicking while the bin page is loading
-    $("#bin-header").click(function() {
-        $("#bin-header").css("pointer-events", "none");
-    });
-
     // Changing the view size of the mosaic
     $("#view-size").change(function() {
         var viewSize = $("#view-size").val();

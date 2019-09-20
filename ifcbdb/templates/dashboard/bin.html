@@ -92,6 +92,12 @@
     <!-- Bin only header -->
     <div class="row d-flex justify-content-between">
         <div class="pl-3">
+            <span class="h3-responsive" id="bin-dataset-label">
+              <a id="bin-dataset-link"
+                href="/timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
+                {{ bin.primary_dataset.title }}
+              </a>»
+            </span>
             <span class="h3-responsive">{{ bin.pid }}</span>
         </div>
     </div>
@@ -173,7 +179,7 @@
                         </div>
                         <div id="mosaic-failed" class="grey lighten-4" style="height:{{ mosaic_default_height }}px; width:{{mosaic_default_width }}px; display:none">
                           <div>
-                            Image data not found
+                            Image data not accessible
                           </div>
                         </div>
                       </div>                      
