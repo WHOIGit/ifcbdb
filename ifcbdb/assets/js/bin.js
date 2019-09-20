@@ -579,7 +579,7 @@ function loadMosaic(pageNumber) {
             $("#previous-bin").data("bin", data.previous_bin_id);
         if (data.next_bin_id)
             $("#next-bin").data("bin", data.next_bin_id);
-
+	
         enableNextPreviousBinButtons();
 
         // Update the paging
