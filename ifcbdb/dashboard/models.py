@@ -368,7 +368,9 @@ class Bin(models.Model):
     MOSAIC_DEFAULT_VIEW_SIZE = "800x600"
 
     def primary_dataset(self):
-        return self.datasets.first()
+        if self.datasets.count() > 0:
+            return self.datasets.first()
+        return None
 
     def set_location(self, longitude, latitude, depth=None):
         # convenience function for setting location w/o having to construct Point object
