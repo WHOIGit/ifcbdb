@@ -111,7 +111,9 @@ class Accession(object):
             # done with the batch
             if newest_done:
                 break
-            progress_callback(progress(most_recent_bin_id, bins_added, total_bins, bad_bins))
+            status = progress_callback(progress(most_recent_bin_id, bins_added, total_bins, bad_bins))
+            if not status: # cancel
+                break
         # done.
         prog = progress(most_recent_bin_id, bins_added, total_bins, bad_bins)
         progress_callback(prog)

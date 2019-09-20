@@ -19,7 +19,7 @@ def mosaic_coordinates_task(bin_id, shape=(600,800), scale=0.33, cache_key=None)
     return result
 
 @shared_task(bind=True)
-def sync_dataset(self, dataset_id, lock_key, newest_only=True):
+def sync_dataset(self, dataset_id, lock_key, cancel_key, newest_only=True):
     from dashboard.models import Dataset
     from dashboard.accession import Accession
     ds = Dataset.objects.get(id=dataset_id)
@@ -27,8 +27,14 @@ def sync_dataset(self, dataset_id, lock_key, newest_only=True):
     acc = Accession(ds, newest_only=newest_only)
     def progress_callback(p):
         self.update_state(state='PROGRESS', meta=p)
+        cancel = cache.get(cancel_key)
+        if cancel is not None:
+            return False
+        return True
+    result = None
     try:
         result = acc.sync(progress_callback=progress_callback)
     finally:
+        cache.delete(cancel_key) # warning: slow
         cache.delete(lock_key) # warning: slow
     return result

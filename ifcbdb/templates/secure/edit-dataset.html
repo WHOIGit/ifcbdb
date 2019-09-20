@@ -87,6 +87,7 @@
         <div class="card card-body ">
             <span>
                 <button id="sync-button" class="btn btn-sm btn-mdb-color col-sm-2 disabled">Sync</button>
+                <button id="cancel-button" class="btn btn-sm btn-mdb-color col-sm-2 disabled">Cancel</button>
                 <span class="custom-control custom-switch">
                     <input type="checkbox" id="newest-only" class="custom-control-input">
                     <label class="custom-control-label" for="newest-only">newest data only</label>
@@ -123,6 +124,7 @@
                 setTimeout(dataset_sync_status, 1000); // wait for it to start
             } else if(data.state == 'PROGRESS') {
                 $("#sync-button").addClass("disabled");
+                $("#cancel-button").removeClass("disabled");
                 $('#sync-spinner').removeClass('d-none');
                 $('#sync-status').removeClass('d-none');
                 $('#sync-state').html('Syncing ...');
@@ -134,6 +136,7 @@
                 setTimeout(dataset_sync_status, 1000);
             } else {
                 $("#sync-button").removeClass("disabled");
+                $("#cancel-button").addClass("disabled");
                 // job has either succeeded or failed
                 if(data.state == 'SUCCESS') {
                     $('#sync-spinner').addClass('d-none');
@@ -143,6 +146,7 @@
                     $('#sync-existing').html(data.info.existing);
                     $('#sync-bad').html(data.info.bad);
                     $('#sync-bin-id').empty();
+                    $('#cancel-button').addClass("disabled");
                 } else if(data.state == 'FAILURE') {
                     $('#sync-state').html('Sync failed.');
                 }
@@ -161,11 +165,20 @@
         });
     })
 
+    $('#cancel-button').click(function() {
+        var payload = {
+            "csrfmiddlewaretoken": _csrf,
+        };
+        $("#cancel-button").addClass("disabled");
+        $.post("{% url 'secure:sync_cancel' dataset.id %}", payload);
+    });
+
     setTimeout(function() {
         // check dataset syncing status initially or when user reloads the page
         $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'PROGRESS') {
                 $("#sync-button").addClass("disabled");
+                $("#cancel-button").removeClass("disabled");
                 dataset_sync_status();
             } else {
                 $("#sync-button").removeClass("disabled");

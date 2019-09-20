@@ -29,5 +29,6 @@ urlpatterns = [
     path('api/update-comment/<slug:bin_id>', views.update_comment, name='update_comment'),
     path('api/sync/<int:dataset_id>', views.sync_dataset, name='sync_dataset'),
     path('api/sync/status/<int:dataset_id>', views.sync_dataset_status, name='sync_dataset_status'),
+    path('api/sync/cancel/<int:dataset_id>', views.sync_cancel, name='sync_cancel'),
     path('api/toggle-skip', views.toggle_skip, name='toggle_skip'),
 ]

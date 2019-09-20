@@ -278,6 +278,9 @@ def delete_comment(request, bin_id):
 def dataset_sync_lock_key(dataset_id):
     return 'dataset_sync_{}'.format(dataset_id)
 
+def dataset_sync_cancel_key(dataset_id):
+    return 'dataset_sync_cancel_{}'.format(dataset_id)
+
 def dataset_sync_task_id_key(dataset_id):
     return 'dataset_sync_task_{}'.format(dataset_id)
 
@@ -299,7 +302,8 @@ def sync_dataset(request, dataset_id):
     if not added: # dataset is locked for syncing
         return JsonResponse({ 'state': 'LOCKED' })
     # start the task asynchronously
-    r = sync_dataset.delay(dataset_id, lock_key, newest_only=newest_only)
+    cancel_key = dataset_sync_cancel_key(dataset_id)
+    r = sync_dataset.delay(dataset_id, lock_key, cancel_key, newest_only=newest_only)
     # cache the task id so we can look it up by dataset id
     cache.set(dataset_sync_task_id_key(dataset_id), r.task_id, timeout=None)
     result = AsyncResult(r.task_id)
@@ -320,6 +324,15 @@ def sync_dataset_status(request, dataset_id):
         'info': result.info,
         })
 
+@require_POST
+@login_required
+def sync_cancel(request, dataset_id):
+    cancel_key = dataset_sync_cancel_key(dataset_id)
+    added = cache.add(cancel_key,"cancel");
+    if not added:
+        return JsonResponse({ 'status': 'already_canceled'})
+    else:
+        return JsonResponse({ 'status': 'cancelling' })
 
 @require_POST
 @login_required
