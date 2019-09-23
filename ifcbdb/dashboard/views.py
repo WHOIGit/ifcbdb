@@ -501,7 +501,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
     previous_bin = None
     next_bin = None
 
-    if (dataset or instrument_number or tags) and preload_adjacent_bins:
+    if (dataset or instrument_number or tags):
         if dataset is not None:
             dataset_name = dataset.name
         else:
@@ -511,6 +511,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         previous_bin = Timeline(bin_qs).previous_bin(bin)
         next_bin = Timeline(bin_qs).next_bin(bin)
 
+    if preload_adjacent_bins:
         if previous_bin is not None:
             previous_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
         if next_bin is not None:
