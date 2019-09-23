@@ -742,8 +742,9 @@ function changeBin(binId, updateHistory) {
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
     $("#mosaic").hide().attr("src","");
+    $("#mosaic-failed").hide();
 
-    // Hide any selected images
+    // Hide any selected images and messages
     $("#mosaic-details").toggleClass("d-none", true);
     $("#plot-images").empty();
     $("#too-many-images").toggle(false);
