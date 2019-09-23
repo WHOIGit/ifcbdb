@@ -208,7 +208,7 @@ class Dataset(models.Model):
 
     # for fixed deployment
     location = PointField(null=True)
-    depth = models.FloatField(default=0)
+    depth = models.FloatField(null=True)
 
     def __len__(self):
         # number of bins
@@ -335,7 +335,7 @@ class Bin(models.Model):
     # spatiotemporal information
     sample_time = models.DateTimeField('sample time', db_index=True)
     location = PointField(null=True)
-    depth = models.FloatField(default=0)
+    depth = models.FloatField(null=True)
     # instrument
     instrument = models.ForeignKey('Instrument', related_name='bins', null=True, on_delete=models.SET_NULL)
     # many-to-many relationship with datasets
@@ -378,17 +378,38 @@ class Bin(models.Model):
         if depth is not None:
             self.depth = depth
 
+    def get_location(self):
+        if self.location is not None:
+            return self.location
+        dataset = self.primary_dataset()
+        if dataset is None:
+            return None
+        if dataset.location is not None:
+            return dataset.location
+
     @property
     def latitude(self):
-        if self.location is None:
+        location = self.get_location()
+        if location is None:
             return FILL_VALUE
-        return self.location.y
+        return location.y
 
     @property
     def longitude(self):
-        if self.location is None:
+        location = self.get_location()
+        if location is None:
             return FILL_VALUE
-        return self.location.x
+        return location.x
+
+    def get_depth(self, default=0):
+        if self.depth is not None:
+            return self.depth
+        dataset = self.primary_dataset()
+        if dataset is None:
+            return None
+        if dataset.depth is not None:
+            return dataset.depth
+        return default
 
     @property
     def trigger_frequency(self):

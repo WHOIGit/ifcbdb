@@ -529,7 +529,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "next_bin_id": next_bin.pid if next_bin is not None else "",
         "lat": bin.latitude,
         "lng": bin.longitude,
-        "depth": bin.depth,
+        "depth": bin.get_depth(),
         "pages": list(range(pages + 1)),
         "num_pages": int(pages),
         "tags": bin.tag_names,
