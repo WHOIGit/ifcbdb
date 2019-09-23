@@ -118,7 +118,62 @@ function showWorkspace(workspace) {
     }
 }
 
+function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, initialValues) {
+
+    var dataset = initialValues ? initialValues["dataset"] : datasetFilter.val();
+    var instrument = initialValues ? initialValues["instrument"] : instrumentFilter.val();
+    var tags = initialValues ? initialValues["tags"] : tagFilter.val().join();
+    var selected_tags = tags == null ? [] : tags.split(",");
+
+    var url = "/api/filter_options" +
+        "?dataset=" + (dataset ? dataset : "") +
+        "&instrument=" + (instrument ? instrument : "") +
+        "&tags=" + (tags ? tags : "");
+
+    $.get(url, function(data){
+        datasetFilter.empty();
+        datasetFilter.append($("<option value='' />"));
+        for (var i = 0; i < data.dataset_options.length; i++) {
+            var option = data.dataset_options[i];
+            datasetFilter.append($("<option value='" + option + "'" + (option == dataset ? "selected" : "") + ">" + option + "</option>"));
+        }
+        datasetFilter.val(dataset);
+
+        instrumentFilter.empty();
+        instrumentFilter.append($("<option value='' />"));
+        for (var i = 0; i < data.instrument_options.length; i++) {
+            var option = data.instrument_options[i];
+            instrumentFilter.append($("<option value='" + option + "' " + (option == instrument ? "selected" : "") + ">IFCB" + option + "</option>"));
+        }
+        instrumentFilter.val(instrument);
+
+        tagFilter.empty();
+        for (var i = 0; i < data.tag_options.length; i++) {
+            var option = data.tag_options[i];
+
+            var element = $("<option value='" + option + "'>" + option + "</option>");
+            if (selected_tags.includes(option)) {
+                element.attr("selected", "selected");
+            }
+
+            tagFilter.append(element);
+        }
+
+        tagFilter.trigger('chosen:updated');
+    });
+}
+
 function initTimelineFilter() {
+    var datasetFilter = $("#SearchPopoverContent .dataset-filter");
+    var instrumentFilter = $("#SearchPopoverContent .instrument-filter");
+    var tagFilter = $("#SearchPopoverContent .tag-filter");
+
+    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, {
+        "dataset": _dataset,
+        "instrument": _instrument,
+        "tags": _tags
+    });
+
     _filterPopover = $('[data-toggle="popover"]').popover({
       container: 'body',
       title: 'Update Filters',
@@ -138,46 +193,10 @@ function initTimelineFilter() {
         $(".popover .dataset-filter, .popover .instrument-filter, .popover .tag-filter").change(function(){
             var wrapper = $(this).closest(".filter-options");
             var datasetFilter = wrapper.find(".dataset-filter");
-            var dataset = datasetFilter.val();
             var instrumentFilter = wrapper.find(".instrument-filter");
-            var instrument = instrumentFilter.val();
             var tagFilter = wrapper.find(".tag-filter");
-            var tags = tagFilter.val().join();
-            var url = "/api/filter_options" +
-                "?dataset=" + (dataset ? dataset : "") +
-                "&instrument=" + (instrument ? instrument : "") +
-                "&tags=" + (tags ? tags : "");
 
-            $.get(url, function(data){
-                datasetFilter.empty();
-                datasetFilter.append($("<option value='' />"));
-                for (var i = 0; i < data.dataset_options.length; i++) {
-                    var option = data.dataset_options[i];
-                    datasetFilter.append($("<option value='" + option + "'>" + option + "</option>"));
-                }
-                datasetFilter.val(dataset);
-
-                instrumentFilter.empty();
-                instrumentFilter.append($("<option value='' />"));
-                for (var i = 0; i < data.instrument_options.length; i++) {
-                    var option = data.instrument_options[i];
-                    instrumentFilter.append($("<option value='" + option + "'>IFCB" + option + "</option>"));
-                }
-                instrumentFilter.val(instrument);
-
-                tagFilter.empty();
-                for (var i = 0; i < data.tag_options.length; i++) {
-                    var option = data.tag_options[i];
-
-                    var element = $("<option value='" + option + "'>" + option + "</option>");
-                    if (tags.includes(option))
-                        element.attr("selected", "selected");
-
-                    tagFilter.append(element);
-                }
-
-                tagFilter.trigger('chosen:updated');
-            });
+            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, null);
         });
     });
 }

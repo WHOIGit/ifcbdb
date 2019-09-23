@@ -4,10 +4,7 @@
                 <div class="col-md-4">Dataset</div>
                 <div class="col-md-8">
                     <select class="form-control form-control-sm dataset-filter">
-                        <option value=""></option>
-                        {% for option in datasets_options %}
-                            <option value="{{ option.name }}" {% if option.name == dataset %}selected{% endif %}>{{ option.name }}</option>
-                        {% endfor %}
+                        <option value="">Loading...</option>
                     </select>
                 </div>
             </div>
@@ -15,10 +12,7 @@
                 <div class="col-md-4">Instrument</div>
                 <div class="col-md-8">
                     <select class="form-control form-control-sm instrument-filter">
-                        <option value=""></option>
-                        {% for option in instruments_options %}
-                            <option value="{{ option }}" {% if option == instrument %}selected{% endif %}>IFCB{{ option }}</option>
-                        {% endfor %}
+                        <option value="">Loading...</option>
                     </select>
                 </div>
             </div>
@@ -26,9 +20,6 @@
                 <div class="col-md-4">Tags</div>
                 <div class="col-md-8">
                     <select class="form-control form-control-sm tag-filter" multiple>
-                        {% for option in tag_options %}
-                            <option value="{{ option }}" {% if option|lower in tags %}selected{% endif %}>{{ option }}</option>
-                        {% endfor %}
                     </select>
                 </div>
             </div>
