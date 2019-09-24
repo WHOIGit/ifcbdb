@@ -851,7 +851,7 @@ $("#mosaic").click(function(e){
             $("#detailed-image").data("image-id", img.pid);
             $(".detailed-image-link").attr("href", imageUrl);
             $("#detailed-image-pid").html(_bin + "_" + padDigits(img.pid, 5));
-            $("#detailed-image-link").data("baseurl", imageUrl);
+            $(".detailed-image-link").data("baseurl", imageUrl);
 
             $("#detailed-image-metadata tbody").empty();
             $.get(metaUrl, function(data){
@@ -903,13 +903,13 @@ $(".change-image").click(function(e){
         });
     }
 
-    var baseUrl = $("#detailed-image-link").data("baseurl");
+    var baseUrl = $(".detailed-image-link").data("baseurl");
     if (target == "detailed-image-blob") {
-        $("#detailed-image-link").attr("href", baseUrl + "?mode=blob");
+        $(".detailed-image-link").attr("href", baseUrl + "&mode=blob");
     } else if (target == "detailed-image-outline") {
-        $("#detailed-image-link").attr("href", baseUrl + "?mode=outline");
+        $(".detailed-image-link").attr("href", baseUrl + "&mode=outline");
     } else {
-        $("#detailed-image-link").attr("href", baseUrl);
+        $(".detailed-image-link").attr("href", baseUrl);
     }
 });
 

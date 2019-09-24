@@ -288,14 +288,15 @@
 
     $("#blob-tab-label").click(function(e){
         e.preventDefault();
-
+        console.log("ASD");
         if ($('#image-blob').attr("src") == undefined) {
             $.get("{% url 'image_blob' bin.pid image_id %}", function(data){
                 if (data["blob"] != "")
                     $("#image-blob").attr("src", "data:image/png;base64," + data["blob"]);
-                    _mode = "blob";
             });
         }
+
+        _mode = "blob";
     });
 
     $("#outline-tab-label").click(function(e){
@@ -305,9 +306,10 @@
             $.get("{% url 'image_outline' bin.pid image_id %}", function(data){
                 if (data["outline"] != "")
                     $("#image-outline").attr("src", "data:image/png;base64," + data["outline"]);
-                    _mode = "outline";
             });
         }
+
+        _mode = "outline";
     });
 
     $(function(){
@@ -320,17 +322,19 @@
         $("#image-outline").width($("#image").width());
         $("#image-outline").height($("#image").height());
 
-        if ("{{ mode }}" == "blob") {
-            $("#blob-tab-label").click();
-        } else if ("{{ mode }}" == "outline") {
-            $("#outline-tab-label").click();
-        }
+        setTimeout(function(){
+            if ("{{ mode }}" == "blob") {
+                $("#blob-tab-label").click();
+            } else if ("{{ mode }}" == "outline") {
+                $("#outline-tab-label").click();
+            }
+        }, 10);
     });
 
     $("#share-button").click(function (e) {
         e.preventDefault();
 
-        var url = $("#share-link-value").val() + (_mode != "" ? "?mode=" + _mode : "");
+        var url = $("#share-link-value").val() + (_mode != "" ? "&mode=" + _mode : "");
 
         $("#share-link").val(url);
         $("#share-modal").modal();
