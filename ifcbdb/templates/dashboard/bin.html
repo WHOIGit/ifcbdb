@@ -288,6 +288,7 @@
                 <div class="card-body py-1">
                   <div class="row py-2 px-3">
                     <div class="col-md-7 text-center">
+                      <div id="plot-loading" class="d-none"><i class="fa fa-spinner fa-spin"></i> Loading plot data ...</div>
                         <div id="plot" class="bin-plot mb-4" style="height:450px"></div>
                       <form class="form form-row">
 
@@ -743,6 +744,8 @@ function changeBin(binId, updateHistory) {
     $("#mosaic-loading").show();
     $("#mosaic").hide().attr("src","");
     $("#mosaic-failed").hide();
+    // plot is loading
+    $("#plot-loading").toggleClass("d-none", false);
 
     // Hide any selected images and messages
     $("#mosaic-details").toggleClass("d-none", true);
@@ -930,6 +933,8 @@ $(function() {
         var yOffset = $("#plot-y-offset").val();
         var xData = _plotData[xAxis];
         var yData = _plotData[yAxis];
+
+        $("#plot-loading").toggleClass("d-none",true);
 
         if ($.isNumeric(xOffset) && xOffset != 0) {
             xData = $.map(xData, function(value) { return value + parseFloat(xOffset); });
