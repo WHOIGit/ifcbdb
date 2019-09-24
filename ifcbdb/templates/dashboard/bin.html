@@ -184,7 +184,7 @@
                             Image data not accessible
                           </div>
                         </div>
-                      </div>                      
+                      </div>
                       <div class="card-footer text-center py-0">
                         <div class="d-flex flex-row align-items-top justify-content-between pt-1" id="mosaic-footer">
                           <nav aria-label="Bin Paging" class="w-50">
@@ -197,7 +197,7 @@
                                 <a class="page-link">Next</a>
                               </li>
                             </ul>
-                          </nav>                     
+                          </nav>
                           <div class="dropdown text-right">
                             <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -273,6 +273,7 @@
                         <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
                           data-target="detailed-image-outline" href="javascript:void(0)"
                           id="detailed-image-outline-link">Outline</a>
+
                         <a id="close-image" class="float-right btn btn-light text-dark btn-sm">X</a>
                       </div>
                     </div>
@@ -476,7 +477,7 @@
 
                     </div>
                       <div class="card-body h-100 d-none" id="comments-panel">
-                      <div class={% if user.is_authenticated %}"row col-sm-12 vh-25 mb-3 border-bottom overflow-auto"{% else %}"row col-sm-12 vh-50 mb-3 border-bottom overflow-auto"{% endif %}  style="width:100%">                      
+                      <div class={% if user.is_authenticated %}"row col-sm-12 vh-25 mb-3 border-bottom overflow-auto"{% else %}"row col-sm-12 vh-50 mb-3 border-bottom overflow-auto"{% endif %}  style="width:100%">
                          <table class="table table-striped table-sm table-hover" id="binCommentsTable" style="width:100%">
                             <thead>
                                 <tr>
@@ -847,8 +848,7 @@ $("#mosaic").click(function(e){
             $("#detailed-image").data("image-id", img.pid);
             $(".detailed-image-link").attr("href", imageUrl);
             $("#detailed-image-pid").html(_bin + "_" + padDigits(img.pid, 5));
-            $("#detailed-image-button").attr("href", imageUrl);
-            $("#image-modal").modal();
+            $("#detailed-image-link").data("baseurl", imageUrl);
 
             $("#detailed-image-metadata tbody").empty();
             $.get(metaUrl, function(data){
@@ -864,12 +864,6 @@ $("#mosaic").click(function(e){
             return false;
         }
     });
-});
-
-$("#image-modal").on("hidden.bs.modal", function() {
-    $("#detailed-image").attr("src","");
-    $("#detailed-image-blob").attr("src","");
-    $("#detailed-image-outline").attr("src","");
 });
 
 $(".change-image").click(function(e){
@@ -888,8 +882,9 @@ $(".change-image").click(function(e){
         $("#detailed-image-blob").attr("src", pixel);
 
         $.get(blobUrl, function(data){
-            if (data["blob"] != "")
+            if (data["blob"] != "") {
                 $("#detailed-image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+            }
         });
     }
 
@@ -899,9 +894,19 @@ $(".change-image").click(function(e){
         $("#detailed-image-outline").attr("src", pixel);
 
         $.get(outlineUrl, function(data){
-            if (data["outline"] != "")
+            if (data["outline"] != "") {
                 $("#detailed-image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+            }
         });
+    }
+
+    var baseUrl = $("#detailed-image-link").data("baseurl");
+    if (target == "detailed-image-blob") {
+        $("#detailed-image-link").attr("href", baseUrl + "?mode=blob");
+    } else if (target == "detailed-image-outline") {
+        $("#detailed-image-link").attr("href", baseUrl + "?mode=outline");
+    } else {
+        $("#detailed-image-link").attr("href", baseUrl);
     }
 });
 

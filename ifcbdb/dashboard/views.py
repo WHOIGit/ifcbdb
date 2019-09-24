@@ -237,6 +237,7 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
         "image_id": image_number,
         "metadata": metadata,
         "details": _bin_details(bin, dataset, include_coordinates=False, instrument_number=instrument_number, tags=tags),
+        "mode": request.GET.get("mode", ""),
     })
 
 

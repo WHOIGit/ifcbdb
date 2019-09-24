@@ -253,15 +253,18 @@
             {% if route == "timeline" %}
                 {% if group_type == "dataset" %}
                     <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}&dataset={{ dataset.name }}">
+                    <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}&dataset={{ dataset.name }}">
                 {% elif group_type == "instrument" %}
                     <!-- TODO: Implement -->
                 {% elif group_type == "tags" %}
                     <!-- TODO: Implement -->
                 {% else %}
                     <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
+                    <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
                 {% endif %}
             {% else %}
                 <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
+                <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
             {% endif %}
 
             </div>
@@ -277,6 +280,12 @@
 
 {% block scripts %}
 <script>
+    var _mode = "{{ mode }}";
+
+    $("#image-tab-label").click(function(e){
+        _mode = "";
+    });
+
     $("#blob-tab-label").click(function(e){
         e.preventDefault();
 
@@ -284,6 +293,7 @@
             $.get("{% url 'image_blob' bin.pid image_id %}", function(data){
                 if (data["blob"] != "")
                     $("#image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+                    _mode = "blob";
             });
         }
     });
@@ -295,6 +305,7 @@
             $.get("{% url 'image_outline' bin.pid image_id %}", function(data){
                 if (data["outline"] != "")
                     $("#image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+                    _mode = "outline";
             });
         }
     });
@@ -308,11 +319,20 @@
         $("#image-blob").height($("#image").height());
         $("#image-outline").width($("#image").width());
         $("#image-outline").height($("#image").height());
+
+        if ("{{ mode }}" == "blob") {
+            $("#blob-tab-label").click();
+        } else if ("{{ mode }}" == "outline") {
+            $("#outline-tab-label").click();
+        }
     });
 
     $("#share-button").click(function (e) {
         e.preventDefault();
 
+        var url = $("#share-link-value").val() + (_mode != "" ? "?mode=" + _mode : "");
+
+        $("#share-link").val(url);
         $("#share-modal").modal();
         $("#share-link").select();
     });
