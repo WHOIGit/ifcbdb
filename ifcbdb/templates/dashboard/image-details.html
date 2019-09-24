@@ -17,17 +17,17 @@
         <span class="h3-responsive">{{ bin.pid }}_{{ image_id|stringformat:"05d" }}</span>
     </div>
     <div class="col">
-                    <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-mdb-color" id="image-tab-label" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="blob-tab-label" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
-                        </li>
-                    </ul>    
+        <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
+            <li class="nav-item">
+                <a class="btn btn-sm btn-mdb-color" id="image-tab-label" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="blob-tab-label" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
+            </li>
+        </ul>
     </div>
 </div>
 <hr class="my-2">
@@ -255,8 +255,10 @@
             <div class="modal-body">
                 {% if dataset %}
                 <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}{% url 'image_legacy' dataset.name bin.pid image_id %}">
+                <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}{% url 'image_legacy' dataset.name bin.pid image_id %}">
                 {% else %}
                 <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}{% url 'image_legacy_alt' bin.pid image_id %}">
+                <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}{% url 'image_legacy_alt' bin.pid image_id %}">
                 {% endif %}
             </div>
             <div class="modal-footer">
@@ -271,6 +273,12 @@
 
 {% block scripts %}
 <script>
+    var _mode = "{{ mode }}";
+
+    $("#image-tab-label").click(function(e){
+        _mode = "";
+    });
+
     $("#blob-tab-label").click(function(e){
         e.preventDefault();
 
@@ -278,6 +286,7 @@
             $.get("{% url 'image_blob' bin.pid image_id %}", function(data){
                 if (data["blob"] != "")
                     $("#image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+                    _mode = "blob";
             });
         }
     });
@@ -289,6 +298,7 @@
             $.get("{% url 'image_outline' bin.pid image_id %}", function(data){
                 if (data["outline"] != "")
                     $("#image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+                    _mode = "outline";
             });
         }
     });
@@ -302,11 +312,20 @@
         $("#image-blob").height($("#image").height());
         $("#image-outline").width($("#image").width());
         $("#image-outline").height($("#image").height());
+
+        if ("{{ mode }}" == "blob") {
+            $("#blob-tab-label").click();
+        } else if ("{{ mode }}" == "outline") {
+            $("#outline-tab-label").click();
+        }
     });
 
     $("#share-button").click(function (e) {
         e.preventDefault();
 
+        var url = $("#share-link-value").val() + (_mode != "" ? "?mode=" + _mode : "");
+
+        $("#share-link").val(url);
         $("#share-modal").modal();
         $("#share-link").select();
     });

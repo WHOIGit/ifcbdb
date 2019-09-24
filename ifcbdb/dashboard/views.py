@@ -171,6 +171,7 @@ def image_details(request, bin_id, image_id,  dataset_name=None):
         "image_id": image_number,
         "metadata": metadata,
         "details": _bin_details(bin, dataset, include_coordinates=False),
+        "mode": request.GET.get("mode", ""),
     })
 
 

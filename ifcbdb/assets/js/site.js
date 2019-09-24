@@ -236,10 +236,12 @@ function calcResolution(start, end) {
 //   update the default width/height of the outline and blob images
 // See: https://stackoverflow.com/questions/19122625/how-i-can-get-image-width-after-set-src-attribute-without-reload-page
 function changeImage(img, src, blobImg, outlineImg){
-    blobImg.hide();
-    outlineImg.hide();
+    var blobShown = !blobImg.is(":hidden");
+    var outlineShown = !outlineImg.is(":hidden");
 
-    img.on('load', function() {
+    img.unbind("load").on('load', function() {
+        $(this).show();
+
         blobImg.attr("src", "");
         blobImg.width(this.width);
         blobImg.height(this.height);
@@ -247,12 +249,23 @@ function changeImage(img, src, blobImg, outlineImg){
         outlineImg.attr("src", "");
         outlineImg.width(this.width);
         outlineImg.height(this.height);
+
+        if (blobShown) {
+            $("#detailed-image-blob-link").click();
+        } else {
+            blobImg.hide();
+        }
+        if (outlineShown) {
+            $("#detailed-image-outline-link").click();
+        } else {
+            outlineImg.hide();
+        }
     })
     .attr("src", src)
-    .show()
     .each(function() {
-        if (this.complete)
+        if (this.complete) {
             $(this).trigger('load');
+        }
     });
 }
 

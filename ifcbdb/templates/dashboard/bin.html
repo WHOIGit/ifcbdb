@@ -232,6 +232,7 @@
                         <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
                           data-target="detailed-image-outline" href="javascript:void(0)"
                           id="detailed-image-outline-link">Outline</a>
+
                         <a id="close-image" class="float-right btn btn-light text-dark btn-sm">X</a>
                       </div>
                     </div>
@@ -699,8 +700,7 @@ $("#mosaic").click(function(e){
             changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
             $("#detailed-image").data("image-id", img.pid);
             $("#detailed-image-link").attr("href", baseUrl + ".html");
-            $("#detailed-image-button").attr("href", baseUrl + ".html");
-            $("#image-modal").modal();
+            $("#detailed-image-link").data("baseurl", baseUrl + ".html");
 
             $("#detailed-image-metadata tbody").empty();
             $.get(metaUrl, function(data){
@@ -716,12 +716,6 @@ $("#mosaic").click(function(e){
             return false;
         }
     });
-});
-
-$("#image-modal").on("hidden.bs.modal", function() {
-    $("#detailed-image").attr("src","");
-    $("#detailed-image-blob").attr("src","");
-    $("#detailed-image-outline").attr("src","");
 });
 
 $(".change-image").click(function(e){
@@ -740,8 +734,9 @@ $(".change-image").click(function(e){
         $("#detailed-image-blob").attr("src", pixel);
 
         $.get(blobUrl, function(data){
-            if (data["blob"] != "")
+            if (data["blob"] != "") {
                 $("#detailed-image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+            }
         });
     }
 
@@ -751,9 +746,19 @@ $(".change-image").click(function(e){
         $("#detailed-image-outline").attr("src", pixel);
 
         $.get(outlineUrl, function(data){
-            if (data["outline"] != "")
+            if (data["outline"] != "") {
                 $("#detailed-image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+            }
         });
+    }
+
+    var baseUrl = $("#detailed-image-link").data("baseurl");
+    if (target == "detailed-image-blob") {
+        $("#detailed-image-link").attr("href", baseUrl + "?mode=blob");
+    } else if (target == "detailed-image-outline") {
+        $("#detailed-image-link").attr("href", baseUrl + "?mode=outline");
+    } else {
+        $("#detailed-image-link").attr("href", baseUrl);
     }
 });
 
