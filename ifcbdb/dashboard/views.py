@@ -840,6 +840,7 @@ def timeline_info(request):
     return JsonResponse({
         'n_bins': len(timeline),
         'total_data_volume': timeline.total_data_volume(),
+        'n_images': timeline.n_images(),
         })
 
 def list_images(request, pid):
