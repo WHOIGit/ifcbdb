@@ -730,7 +730,6 @@ def plot_data(request, bin_id):
         ia.drop(to_drop, inplace=True)
         for fc in features.columns:
             ia[fc] = features[fc].values
-    ia = ia.drop_duplicates(subset=['roi_x','roi_y']) # reduce redundant data
     return JsonResponse(ia.to_dict('list'))
 
 
