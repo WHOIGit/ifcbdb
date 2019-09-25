@@ -659,7 +659,35 @@ class Bin(models.Model):
                 .values_list("timestamp", "content", "user__username", "id", "user_id")
                 .order_by("-timestamp")
         )
-        
+
+    # searching
+    @staticmethod
+    def search(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None):
+        bins = Bin.objects.all()
+
+        # Handle start/end dates
+        if start_date and end_date:
+            bins = bins.filter(timestamp__range=[start_date, end_date])
+        elif start_date:
+            bins = bins.filter(timestamp__gte=start_date)
+        elif end_date:
+            bins = bins.filter(timestamp__lt=end_date)
+
+        # Handle min/max depth
+        if min_depth and max_depth:
+            bins = bins.filter(depth__range=[min_depth, max_depth])
+        elif min_depth:
+            bins = bins.filter(depth__gte=min_depth)
+        elif max_depth:
+            bins = bins.filter(depth__lte=max_depth)
+
+        # Handle region; requires an array of sw_lon, sw_lat, ne_lon, ne_lat
+        if region:
+            bbox = Polygon.from_bbox(region)
+            bins = bins.filter(location__contained=bbox)
+
+        return bins
+
     def __str__(self):
         return self.pid
 

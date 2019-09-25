@@ -77,6 +77,7 @@ def search_datasets(request):
     region_sw_lon = request.POST.get("region_sw_lon")
     region_ne_lat = request.POST.get("region_ne_lat")
     region_ne_lon = request.POST.get("region_ne_lon")
+    include_locations = request.POST.get("include_locations", "false") == "true"
 
     if region_sw_lat and region_sw_lon and region_ne_lat and region_ne_lon:
         region = (region_sw_lon, region_sw_lat, region_ne_lon, region_ne_lat)
@@ -89,8 +90,14 @@ def search_datasets(request):
     datasets = Dataset.search(start_date, end_date, min_depth, max_depth, region=region)
     datasets = list(datasets.values("name", "title"))
 
+    locations = []
+    if include_locations:
+        bins = Bin.search(start_date, end_date, min_depth, max_depth, region=region)
+        locations = [[b.pid, b.latitude, b.longitude] for b in bins]
+
     return JsonResponse({
-        "datasets": datasets
+        "datasets": datasets,
+        "locations": locations,
     })
 
 
