@@ -236,3 +236,7 @@ table .btn-mdb-color {
 #filter-content {
     min-width: 250px;
 }
+
+.border-mdb-color{
+    border-color: #59698d !important;
+}
