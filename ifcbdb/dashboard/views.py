@@ -92,8 +92,17 @@ def search_datasets(request):
 
     locations = []
     if include_locations:
+        # Note that the indicator for bin vs dataset is intentionally kept to one character to limit overhead
         bins = Bin.search(start_date, end_date, min_depth, max_depth, region=region)
-        locations = [[b.pid, b.latitude, b.longitude] for b in bins]
+        bin_locations = [[b.pid, b.latitude, b.longitude, "b"] for b in bins]
+
+        # First parameter is specifically both title and name for datasets because bins do not have two separate name.
+        #   This allows the map to link using the name but dispaly the title, while not adding a lot of duplicate data
+        #   to the array on bins where name and title are essentially the same (both are pid)
+        fixed_location_datasets = Dataset.search_fixed_locations(start_date, end_date, min_depth, max_depth, region=region)
+        dataset_locations = [[d.name + "|" + d.title, d.latitude, d.longitude, "d"] for d in fixed_location_datasets]
+
+        locations = bin_locations + dataset_locations
 
     return JsonResponse({
         "datasets": datasets,

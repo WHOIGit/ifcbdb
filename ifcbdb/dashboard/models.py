@@ -9,7 +9,7 @@ from django.db import models
 
 from django.conf import settings
 
-from django.db.models import F, Count, Sum, Avg, Min, Max
+from django.db.models import F, Count, Sum, Avg, Min, Max, Q
 from django.db.models.functions import Trunc
 from django.contrib.auth.models import User
 from django.contrib.gis.db.models import PointField
@@ -207,8 +207,8 @@ class Dataset(models.Model):
     is_active = models.BooleanField(blank=False, null=False, default=True)
 
     # for fixed deployment
-    location = PointField(null=True)
-    depth = models.FloatField(null=True)
+    location = PointField(null=True, blank=True)
+    depth = models.FloatField(null=True, blank=True)
 
     def __len__(self):
         # number of bins
@@ -243,16 +243,44 @@ class Dataset(models.Model):
 
         # Handle min/max depth
         if min_depth and max_depth:
-            datasets = datasets.filter(bins__depth__range=[min_depth, max_depth])
+            datasets = datasets.filter(Q(bins__depth__range=[min_depth, max_depth]) | Q(depth__range=[min_depth, max_depth]))
         elif min_depth:
-            datasets = datasets.filter(bins__depth__gte=min_depth)
+            datasets = datasets.filter(Q(bins__depth__gte=min_depth) | Q(depth__gte=min_depth))
         elif max_depth:
-            datasets = datasets.filter(bins__depth__lte=max_depth)
+            datasets = datasets.filter(Q(bins__depth__lte=max_depth) | Q(depth__lte=max_depth))
 
         # Handle region; requires an array of sw_lon, sw_lat, ne_lon, ne_lat
         if region:
             bbox = Polygon.from_bbox(region)
-            datasets = datasets.filter(bins__location__contained=bbox)
+            datasets = datasets.filter(Q(bins__location__contained=bbox) | Q(location__contained=bbox))
+
+        return datasets.order_by("title").distinct("title")
+
+    @staticmethod
+    def search_fixed_locations(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None):
+        # TODO: Check into optimizing query
+        datasets = Dataset.objects.exclude(location__isnull=True).filter(is_active=True).prefetch_related("bins")
+
+        # Handle start/end dates
+        if start_date and end_date:
+            datasets = datasets.filter(bins__timestamp__range=[start_date, end_date])
+        elif start_date:
+            datasets = datasets.filter(bins__timestamp__gte=start_date)
+        elif end_date:
+            datasets = datasets.filter(bins__timestamp__lt=end_date)
+
+        # Handle min/max depth
+        if min_depth and max_depth:
+            datasets = datasets.filter(Q(depth__range=[min_depth, max_depth]))
+        elif min_depth:
+            datasets = datasets.filter(Q(depth__gte=min_depth))
+        elif max_depth:
+            datasets = datasets.filter(Q(depth__lte=max_depth))
+
+        # Handle region; requires an array of sw_lon, sw_lat, ne_lon, ne_lat
+        if region:
+            bbox = Polygon.from_bbox(region)
+            datasets = datasets.filter(Q(location__contained=bbox))
 
         return datasets.order_by("title").distinct("title")
 
