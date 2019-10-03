@@ -73,13 +73,11 @@
         </ul>
     </div>
     </div>
-    <div class="row d-flex text-center">
-      <div class="col-sm-12">
-          <span id="n_bins"><i class="fa fa-spinner fa-spin"></i></span> <span id="total-data-volume"></span>
+    <div class="row d-flex text-center justify-content-center py-2">
+      <div class="flex-col">
+        <span id="n_bins"><i class="fa fa-spinner fa-spin"></i></span> <span id="total-data-volume"></span>
       </div>
     </div>
-    <hr class="my-2">
-
     <!-- Timeline control -->
     <div class="row px-1">
         <div class="col-sm-12">
@@ -967,13 +965,18 @@ $(function() {
             x: xData,
             y: yData,
             mode: 'markers',
-            type: 'scatter'
+            type: 'scattergl'
         }];
 
         var layout = {
-            margin: { l: 50, r: 50, b: 40, t: 00, pad: 2 },
+            margin: { l: 50, r: 50, b: 40, t: 10, pad: 2 },
             xaxis: {
                 type: xType,
+                showline: true,
+                zeroline:false,
+                mirror: 'ticks',
+                linewidth: 1,
+                linecolor: '#dee2e6',
                  autorange: true,
                  title: {
                     text: xAxis
@@ -984,6 +987,12 @@ $(function() {
             },
             yaxis: {
                 type: yType,
+                showgrid: true,
+                zeroline:false,
+                showline: true,
+                mirror: 'ticks',
+                linewidth: 1,
+                linecolor: '#dee2e6',
                 autorange: true,
                 title: {
                     text: yAxis
