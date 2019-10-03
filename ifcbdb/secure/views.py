@@ -47,6 +47,8 @@ def instrument_management(request):
 
 
 def upload_metadata(request):
+    from dashboard.tasks import import_metadata
+
     if request.method == "POST":
         confirm = ""
         form = MetadataUploadForm(request.POST, request.FILES)
@@ -55,6 +57,8 @@ def upload_metadata(request):
 
             # TODO: Do something with the data
             df = pd.read_csv(file)
+            json_df = df.to_json()
+            import_metadata.delay(json_df)
 
             # Redirect if successful
             # TODO: update condition

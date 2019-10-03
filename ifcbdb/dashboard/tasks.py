@@ -1,4 +1,5 @@
 from celery import shared_task
+import pandas as pd
 
 from django.core.cache import cache
 
@@ -37,4 +38,18 @@ def sync_dataset(self, dataset_id, lock_key, cancel_key, newest_only=True):
     finally:
         cache.delete(cancel_key) # warning: slow
         cache.delete(lock_key) # warning: slow
+    return result
+
+@shared_task(bind=True)
+def import_metadata(self, json_dataframe):
+    from dashboard.accession import import_metadata
+    df = pd.read_json(json_dataframe)
+    def progress_callback(p):
+        print(p) # FIXME debug
+        self.update_state(state='PROGRESS', meta=p)
+        return True
+    try:
+        result = import_metadata(df, progress_callback=progress_callback)
+    finally:
+        pass # clean up locks
     return result
