@@ -11,7 +11,7 @@
         <ul class="list-group">
             <li class="list-group-item"><a href="{% url 'secure:dataset-management' %}">Dataset Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
-            <li class="list-group-item"><a href="{% url 'secure:upload-metadata' %}">Upload Metadata (currently unimplemented)</a></li>
+            <li class="list-group-item"><a href="{% url 'secure:upload-metadata' %}">Upload Metadata</a></li>
             {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'admin:index' %}">Administrative Settings</a></li>
             {% endif %}
