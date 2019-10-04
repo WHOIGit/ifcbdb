@@ -186,14 +186,13 @@
                       <div class="card-footer text-center py-0">
                         <div class="d-flex flex-row align-items-top justify-content-between pt-1" id="mosaic-footer">
                           <nav aria-label="Bin Paging" class="w-50">
-                            <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-left"
-                              style="display:none">
-                              <li class="page-item page-previous disabled">
-                                <a class="page-link" tabindex="-1">Previous</a>
-                              </li>
-                              <li class="page-item page-next">
-                                <a class="page-link">Next</a>
-                              </li>
+                            <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-left" style="display:none">
+                                <li class="page-item page-previous disabled">
+                                    <a class="page-link" tabindex="-1">Previous</a>
+                                </li>
+                                <li class="page-item page-next">
+                                    <a class="page-link">Next</a>
+                                </li>
                             </ul>
                           </nav>
                           <div class="dropdown text-right">
@@ -230,10 +229,27 @@
                   </div>
                   <!--End Mosaic Column-->
                   <!--Mosaic Details Column-->
+                    <div class="flex-column flex-grow-1 order-2 py-2 px-1 justify-content-center " >
+                        <div class="card d-flex w-100 py-1 px-3">
+                            <div class="alert alert-danger d-none" id="image-not-found">
+                                Image not found
+                            </div>
+                            <form class="form-inline">
+                                <label>View Image</label>
+                                <input type="text" class="form-control form-control-sm ml-1 w-25" placeholder="ROI #" id="roi-number" />
+                                <button type="button" class="btn btn-sm btn-mdb-color" id="preview-image">Preview</button>
+                                <button type="button" class="btn btn-sm btn-mdb-color" id="goto-image">Details</button>
+                            </form>
+                        </div>
+                    </div>
+
                   <div class="flex-column flex-grow-1 order-2 py-2 px-1 justify-content-center overflow-auto d-none" id="mosaic-details">
+
                     <!--Mosaic Details Card-->
                     <div class="card d-flex mh-100">
+
                     <div class="card-header white text-center">
+
                         <div class="overflow-auto" id="images">
                           <div id="detailed-image-id">
                             <div>
@@ -824,6 +840,37 @@ function changeBin(binId, updateHistory) {
     });
 }
 
+function previewImage(img) {
+    $("#mosaic-details").toggleClass("d-none", false);
+
+    // TODO: Needs loading indicator
+    var sourceUrl = "/data/" + _bin + "_" + padDigits(img.pid, 5) + ".png";
+    var metaUrl = "/api/image/" + _bin + "/" + img.pid;
+    var imageUrl = createImageLink(padDigits(img.pid, 5));
+
+    changeImage(
+        $("#detailed-image"),
+        sourceUrl,
+        $("#detailed-image-blob"),
+        $("#detailed-image-outline")
+    );
+    $("#detailed-image").data("image-id", img.pid);
+    $(".detailed-image-link").attr("href", imageUrl);
+    $("#detailed-image-pid").html(_bin + "_" + padDigits(img.pid, 5));
+    $(".detailed-image-link").data("baseurl", imageUrl);
+
+    $("#detailed-image-metadata tbody").empty();
+    $.get(metaUrl, function(data){
+        $.each(data, function(key, val) {
+            var tr = $("<tr />");
+            tr.append($("<th>").html(key));
+            tr.append($("<td>").attr("scope", "row").html(val));
+            $("#detailed-image-metadata tbody").append(tr);
+        });
+
+    });
+}
+
 $("#mosaic").click(function(e){
     var x = e.pageX - $(this).offset().left;
     var y = e.pageY - $(this).offset().top;
@@ -833,34 +880,7 @@ $("#mosaic").click(function(e){
             x >= img.x && x <= img.x + img.width &&
             y >= img.y && y <= img.y + img.height) {
 
-            $("#mosaic-details").toggleClass("d-none", false);
-
-            // TODO: Needs loading indicator
-            var sourceUrl = "/data/" + _bin + "_" + padDigits(img.pid, 5) + ".png";
-            var metaUrl = "/api/image/" + _bin + "/" + img.pid;
-            var imageUrl = createImageLink(padDigits(img.pid, 5));
-
-            changeImage(
-                $("#detailed-image"),
-                sourceUrl,
-                $("#detailed-image-blob"),
-                $("#detailed-image-outline")
-            );
-            $("#detailed-image").data("image-id", img.pid);
-            $(".detailed-image-link").attr("href", imageUrl);
-            $("#detailed-image-pid").html(_bin + "_" + padDigits(img.pid, 5));
-            $(".detailed-image-link").data("baseurl", imageUrl);
-
-            $("#detailed-image-metadata tbody").empty();
-            $.get(metaUrl, function(data){
-                $.each(data, function(key, val) {
-                    var tr = $("<tr />");
-                    tr.append($("<th>").html(key));
-                    tr.append($("<td>").attr("scope", "row").html(val));
-                    $("#detailed-image-metadata tbody").append(tr);
-                });
-
-            });
+            previewImage(img);
 
             return false;
         }

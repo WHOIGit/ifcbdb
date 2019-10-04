@@ -649,6 +649,16 @@ function updateMosaicPaging() {
     $("#bin-paging").show();
 }
 
+function findImageByPID(pid) {
+    for (var i = 0; i < _coordinates.length; i++) {
+        if (_coordinates[i].pid.toString() == pid) {
+            return _coordinates[i];
+        }
+    }
+
+    return null;
+}
+
 //************* Map Methods ***********************/
 function updateMapLocation(data) {
     if (!_map) {
@@ -786,6 +796,33 @@ function initEvents() {
 
             changeMosaicPage(pageNumber);
         });
+
+    // Direct preview of an image by pid
+    $("#preview-image").click(function(){
+        $("#image-not-found").toggleClass("d-none", true);
+
+        var img = findImageByPID($("#roi-number").val());
+        if (img) {
+            previewImage(img);
+            return;
+        }
+
+        $("#image-not-found").toggleClass("d-none", false);
+    });
+
+    // Direct link of an image by pid
+    $("#goto-image").click(function(){
+        $("#image-not-found").toggleClass("d-none", true);
+
+        var img = findImageByPID($("#roi-number").val());
+        if (img) {
+            var url = createImageLink(padDigits(img.pid, 5));
+            location.href = url;
+            return;
+        }
+
+        $("#image-not-found").toggleClass("d-none", false);
+    });
 
     // Changing the metric shown on the timeline
     $("#ts-tabs .nav-link").click(function() {
