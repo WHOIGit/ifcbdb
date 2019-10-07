@@ -53,29 +53,27 @@
                     {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
                 </div>
             </div>
+            <a class="btn btn-sm btn-mdb-color" data-toggle="collapse" href="#setFixedLocationInputs" role="button" aria-expanded="false" aria-controls="setFixedLocationInputs">Set Fixed Location</a>
+                  <div class="collapse" id="setFixedLocationInputs">
             <div class="form-row">
                 <div class="form-group col">
                     <label for="id_depth">Depth</label>
                     {{ form.depth }}
                     {% if form.depth.errors %}<span class="text-danger">{{ form.depth.errors.as_text }}</span>{% endif %}
                 </div>
-            </div>
-            <div class="form-row">
                 <div class="form-group col">
-                    <label for="id_latitude">Latitude</label>
-                    {{ form.latitude }}
-                    {% if form.latitude.errors %}<span class="text-danger">{{ form.latitude.errors.as_text }}</span>{% endif %}
-                </div>
+                        <label for="id_latitude">Latitude</label>
+                        {{ form.latitude }}
+                        {% if form.latitude.errors %}<span class="text-danger">{{ form.latitude.errors.as_text }}</span>{% endif %}
+                    </div>
+                    <div class="form-group col">
+                            <label for="id_longitude">Longitude</label>
+                            {{ form.longitude }}
+                            {% if form.longitude.errors %}<span class="text-danger">{{ form.depth.longitude.as_text }}</span>{% endif %}
+                        </div>                
             </div>
-            <div class="form-row">
-                <div class="form-group col">
-                    <label for="id_longitude">Longitude</label>
-                    {{ form.longitude }}
-                    {% if form.longitude.errors %}<span class="text-danger">{{ form.depth.longitude.as_text }}</span>{% endif %}
-                </div>
-            </div>
-
-           <div class="form-row">
+        </div>
+           <div class="form-row justify-content-end border-top mt-1 pt-1">
                 <a href="{% url 'secure:dataset-management' %}" class="btn btn-sm">Cancel</a>
                 <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
             </div>
