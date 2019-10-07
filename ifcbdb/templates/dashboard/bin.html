@@ -184,8 +184,8 @@
                         </div>
                       </div>
                       <div class="card-footer text-center py-0">
-                        <div class="d-flex flex-row align-items-top justify-content-between pt-1" id="mosaic-footer">
-                          <nav aria-label="Bin Paging" class="w-50">
+                        <div class="d-flex flex-row align-middle align-items-center justify-content-between pt-1" id="mosaic-footer">
+                          <nav aria-label="Bin Paging">
                             <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-left" style="display:none">
                                 <li class="page-item page-previous disabled">
                                     <a class="page-link" tabindex="-1">Previous</a>
@@ -195,6 +195,11 @@
                                 </li>
                             </ul>
                           </nav>
+                          <form class="form-inline border mb-1">
+                            <input type="text" class="form-control form-control-sm ml-1 mw-25" placeholder="Jump to ROI #" id="roi-number" />
+                            <button type="button" class="btn btn-sm btn-mdb-color" id="preview-image">Preview</button>
+                            <button type="button" class="btn btn-sm btn-mdb-color" id="goto-image">Details</button>
+                        </form>                          
                           <div class="dropdown text-right">
                             <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -229,20 +234,6 @@
                   </div>
                   <!--End Mosaic Column-->
                   <!--Mosaic Details Column-->
-                    <div class="flex-column flex-grow-1 order-2 py-2 px-1 justify-content-center " >
-                        <div class="card d-flex w-100 py-1 px-3">
-                            <div class="alert alert-danger d-none" id="image-not-found">
-                                Image not found
-                            </div>
-                            <form class="form-inline">
-                                <label>View Image</label>
-                                <input type="text" class="form-control form-control-sm ml-1 w-25" placeholder="ROI #" id="roi-number" />
-                                <button type="button" class="btn btn-sm btn-mdb-color" id="preview-image">Preview</button>
-                                <button type="button" class="btn btn-sm btn-mdb-color" id="goto-image">Details</button>
-                            </form>
-                        </div>
-                    </div>
-
                   <div class="flex-column flex-grow-1 order-2 py-2 px-1 justify-content-center overflow-auto d-none" id="mosaic-details">
 
                     <!--Mosaic Details Card-->
@@ -253,17 +244,20 @@
                         <div class="overflow-auto" id="images">
                           <div id="detailed-image-id">
                             <div>
+                                <div class="alert alert-danger d-none" id="image-not-found" role="alert">
+                                    Image not found
+                                </div>
                               <a class="detailed-image-link" style="outline:0" href="#">
                                 <div id="detailed-image-pid"></div>
                               </a>
                             </div>
                           </div>
-                          <a class="detailed-image-link" href="#">
+                          <a class="detailed-image-link" href="#" class="">
                             <img class="fluid mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
                             <img class="fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
                             <img class="fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
                           </a>
-                          <div id="scale-bar">
+                          <div id="scale-bar" class="">
                             <!-- FIXME hide if image scales -->
                             <div class="scale-bar mx-auto mt-2"></div>
                             <div>10μm</div>
@@ -842,7 +836,9 @@ function changeBin(binId, updateHistory) {
 
 function previewImage(img) {
     $("#mosaic-details").toggleClass("d-none", false);
-
+    $("#scale-bar").toggleClass("d-none", false);
+    $(".detailed-image-link").toggleClass("d-none", false);
+    $("#image-not-found").toggleClass("d-none", true);
     // TODO: Needs loading indicator
     var sourceUrl = "/data/" + _bin + "_" + padDigits(img.pid, 5) + ".png";
     var metaUrl = "/api/image/" + _bin + "/" + img.pid;

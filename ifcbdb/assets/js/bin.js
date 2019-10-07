@@ -800,28 +800,32 @@ function initEvents() {
     // Direct preview of an image by pid
     $("#preview-image").click(function(){
         $("#image-not-found").toggleClass("d-none", true);
-
+        $("#mosaic-details").toggleClass("d-none", true);
         var img = findImageByPID($("#roi-number").val());
         if (img) {
             previewImage(img);
             return;
         }
-
+        $("#mosaic-details").toggleClass("d-none", false);
         $("#image-not-found").toggleClass("d-none", false);
+        $("#scale-bar").toggleClass("d-none", true);
+        $(".detailed-image-link").toggleClass("d-none", true);
     });
 
     // Direct link of an image by pid
     $("#goto-image").click(function(){
         $("#image-not-found").toggleClass("d-none", true);
-
+        $("#mosaic-details").toggleClass("d-none", true);
         var img = findImageByPID($("#roi-number").val());
         if (img) {
             var url = createImageLink(padDigits(img.pid, 5));
             location.href = url;
             return;
         }
-
+        $("#mosaic-details").toggleClass("d-none", false);
         $("#image-not-found").toggleClass("d-none", false);
+        $("#scale-bar").toggleClass("d-none", true);
+        $(".detailed-image-link").toggleClass("d-none", true);
     });
 
     // Changing the metric shown on the timeline
