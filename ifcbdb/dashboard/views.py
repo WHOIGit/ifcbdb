@@ -85,10 +85,10 @@ def search_datasets(request):
         region = None
 
     if end_date:
-        end_date = pd.to_datetime(end_date) + pd.Timedelta('1d')
+        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
 
     if start_date:
-        start_date = pd.to_datetime(start_date)
+        start_date = pd.to_datetime(start_date, utc=True)
 
     datasets = Dataset.search(start_date, end_date, min_depth, max_depth, region=region)
     datasets = list(datasets.values("name", "title"))
