@@ -77,6 +77,7 @@ def search_datasets(request):
     region_sw_lon = request.POST.get("region_sw_lon")
     region_ne_lat = request.POST.get("region_ne_lat")
     region_ne_lon = request.POST.get("region_ne_lon")
+    include_locations = request.POST.get("include_locations", "false") == "true"
 
     if region_sw_lat and region_sw_lon and region_ne_lat and region_ne_lon:
         region = (region_sw_lon, region_sw_lat, region_ne_lon, region_ne_lat)
@@ -84,13 +85,31 @@ def search_datasets(request):
         region = None
 
     if end_date:
-        end_date = end_date + timedelta(days=1)
+        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+
+    if start_date:
+        start_date = pd.to_datetime(start_date, utc=True)
 
     datasets = Dataset.search(start_date, end_date, min_depth, max_depth, region=region)
     datasets = list(datasets.values("name", "title"))
 
+    locations = []
+    if include_locations:
+        # Note that the indicator for bin vs dataset is intentionally kept to one character to limit overhead
+        bins = Bin.search(start_date, end_date, min_depth, max_depth, region=region)
+        bin_locations = [[b.pid, b.latitude, b.longitude, "b"] for b in bins]
+
+        # First parameter is specifically both title and name for datasets because bins do not have two separate name.
+        #   This allows the map to link using the name but dispaly the title, while not adding a lot of duplicate data
+        #   to the array on bins where name and title are essentially the same (both are pid)
+        fixed_location_datasets = Dataset.search_fixed_locations(start_date, end_date, min_depth, max_depth, region=region)
+        dataset_locations = [[d.name + "|" + d.title, d.latitude, d.longitude, "d"] for d in fixed_location_datasets]
+
+        locations = bin_locations + dataset_locations
+
     return JsonResponse({
-        "datasets": datasets
+        "datasets": datasets,
+        "locations": locations,
     })
 
 

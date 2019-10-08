@@ -2,11 +2,15 @@
 {% load static %}
 {% block extra_head %}
 <link href="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.Default.css' %}" rel="stylesheet" />
 {% endblock %}
 {% block content %}
+
 <div class="row">
     <div class="col">
         <span class="h3-responsive">Locate a Dataset</span>
+        <div id="progress"><div id="progress-bar"></div></div>
     </div>
 </div>
 <hr class="my-2">
@@ -84,8 +88,11 @@
 </div>
 {% endblock %} {% block scripts %}
 <script type="text/javascript" src="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.js' %}"></script>
+<script type="text/javascript" src="{% static 'vendor/leaflet-markercluster/leaflet.markercluster.js' %}"></script>
 <script>
     var map;
+    var markers = null;
+    var markerList = [];
     var areaSelect;
 
     function enableRegionSelection() {
@@ -113,8 +120,51 @@
         $("#region").toggleClass("d-none", true);
     }
 
+    function updateMapStatus(processed, total, elapsed, layersArray) {
+
+    }
+
+    function searchLocations() {
+        var formData = $("#search-form").serialize();
+        formData += "&include_locations=true";
+
+        $.post("/api/search_datasets", formData, function(locationData){
+            markers.clearLayers();
+
+            for (var i = 0; i < locationData.locations.length; i++) {
+                var location = locationData.locations[i];
+                var title = location[0];
+                var marker = L.marker(
+                    L.latLng(location[1], location[2]),
+                    { title: title }
+                );
+
+                if (location[3] == "b") {
+                    marker.bindPopup("Bin: <a href='/bin?bin=" + title + "'>" + title + "</a>");
+                } else {
+                    var values = title.split("|");
+                    marker.bindPopup("Dataset: <a href='/timeline?dataset=" + values[0] + "'>" + values[1] + "</a>");
+                }
+
+                markerList.push(marker);
+            }
+
+            markers.addLayers(markerList);
+            map.addLayer(markers);
+
+            markerList = [];
+        });
+    }
+
     $(function() {
         map = createMap();
+        markers = L.markerClusterGroup({
+            chunkedLoading: true,
+            chunkProgress: updateMapStatus,
+            maxClusterRadius: 15,
+        });
+
+		searchLocations();
 
         $("#select-region").click(function(e){
             enableRegionSelection();
@@ -137,6 +187,8 @@
                     li.append(link);
                     $("#dataset-list").append(li);
                 }
+
+                searchLocations();
             });
         });
     });

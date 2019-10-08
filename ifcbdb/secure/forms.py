@@ -5,15 +5,48 @@ from dashboard.models import Dataset, Instrument, DataDirectory
 
 
 class DatasetForm(forms.ModelForm):
+    latitude = forms.FloatField(required=False, widget=forms.TextInput(
+        attrs={"class": "form-control form-control-sm", "placeholder": "Latitude"}
+    ))
+    longitude = forms.FloatField(required=False, widget=forms.TextInput(
+        attrs={"class": "form-control form-control-sm", "placeholder": "Longitude"}
+    ))
+
     class Meta:
         model = Dataset
-        fields = ["id", "name", "title", "is_active", ]
+        fields = ["id", "name", "title", "is_active", "depth", ]
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "title": forms.Textarea(attrs={"class": "form-control form-control-sm", "placeholder": "Description", "rows": 3}),
+            "depth": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Depth"}),
             "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
         }
+
+    def __init__(self, *args, **kwargs):
+        super(DatasetForm, self).__init__(*args, **kwargs)
+
+        if "instance" in kwargs:
+            instance = kwargs["instance"]
+            if instance.location:
+                self.fields["latitude"].initial = instance.location.y
+                self.fields["longitude"].initial = instance.location.x
+
+    def save(self, commit=True):
+        instance = super(DatasetForm, self).save(commit=False)
+
+        latitude = self.cleaned_data["latitude"]
+        longitude = self.cleaned_data["longitude"]
+
+        if latitude and longitude:
+            instance.set_location(longitude, latitude)
+        else:
+            instance.location = None
+
+
+        if commit:
+            instance.save()
+        return instance
 
 
 class DirectoryForm(forms.ModelForm):
