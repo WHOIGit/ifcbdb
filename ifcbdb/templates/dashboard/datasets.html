@@ -160,7 +160,8 @@
         map = createMap();
         markers = L.markerClusterGroup({
             chunkedLoading: true,
-            chunkProgress: updateMapStatus
+            chunkProgress: updateMapStatus,
+            maxClusterRadius: 15,
         });
 
 		searchLocations();
