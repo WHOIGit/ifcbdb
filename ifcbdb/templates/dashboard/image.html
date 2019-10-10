@@ -173,6 +173,7 @@
                 break;
             }
         }
+        console.log(_image_index);
     }
 
     function getGroupingParameters(bin) {
@@ -344,7 +345,7 @@
 
     $(function(){
         var map = createMap({{ details.lat }}, {{ details.lng }});
-        addMapMarker(map, {{ details.lat }}, {{ details.lng }}, {{ bin.depth }});
+        addMapMarker(map, {{ details.lat }}, {{ details.lng }}, {{ details.depth }});
 
         // Default the width/height of the blob/outline images to prevent flicker when resizing
         $("#image-blob").width($("#image").width());
