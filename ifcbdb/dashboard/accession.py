@@ -9,10 +9,11 @@ from django.db import IntegrityError, transaction
 import pandas as pd
 import numpy as np
 
-from .models import Bin, DataDirectory, Instrument
+from .models import Bin, DataDirectory, Instrument, Timeline
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
+from ifcb.data.files import time_filter
 from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 
@@ -37,6 +38,13 @@ class Accession(object):
         self.lon = lon
         self.depth = depth
         self.newest_only = newest_only
+    def start_time(self):
+        if not self.newest_only or not self.dataset.bins:
+            return None
+        b = Timeline(self.dataset.bins).most_recent_bin()
+        if b:
+            return b.sample_time
+        return None
     def scan(self):
         for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             if not os.path.exists(dd.path):
@@ -52,6 +60,7 @@ class Accession(object):
         most_recent_bin_id = ''
         newest_done = False
         scanner = self.scan()
+        start_time = self.start_time()
         while True:
             bins = list(islice(scanner, self.batch_size))
             if not bins:
@@ -72,18 +81,18 @@ class Accession(object):
             bins2save = []
             for bin in bins:
                 pid = bin.lid
-                log_callback('{} found'.format(pid))
                 most_recent_bin_id = pid
+                log_callback('{} found'.format(pid))
                 instrument = instruments[bin.pid.instrument]
                 timestamp = bin.timestamp
+                if start_time is not None and bin.timestamp <= start_time:
+                    continue
                 b, created = Bin.objects.get_or_create(pid=pid, defaults={
                     'timestamp': timestamp,
                     'sample_time': timestamp,
                     'instrument': instrument,
                     'skip': True, # in case accession is interrupted
                 })
-                if self.newest_only and not created:
-                    newest_done = True
                 if not created:
                     self.dataset.bins.add(b)
                     continue
@@ -107,10 +116,7 @@ class Accession(object):
                         continue
                     self.dataset.bins.add(b)
                     bins_added += 1
-                    most_recent_bin_id = b.pid
             # done with the batch
-            if newest_done:
-                break
             status = progress_callback(progress(most_recent_bin_id, bins_added, total_bins, bad_bins))
             if not status: # cancel
                 break
