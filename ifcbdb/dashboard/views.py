@@ -243,7 +243,7 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
         raise Http404("image data not found")
     image_width = image.shape[1];
 
-    metadata = json.loads(json.dumps(bin.target_metadata(image_number), default=dict_to_json))
+    metadata = _image_metadata(bin.pid, image_number)
 
     # TODO: Only timeline route is working so far
     return render(request, 'dashboard/image.html', {
@@ -257,6 +257,11 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
         "metadata": metadata,
         "details": _bin_details(bin, dataset, include_coordinates=False, instrument_number=instrument_number, tags=tags),
         "mode": request.GET.get("mode", ""),
+        "image_list": bin.list_images(),
+        "dataset_name": dataset_name,
+        "instrument_number": instrument_number,
+        "tags": tags,
+
     })
 
 
@@ -321,19 +326,19 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
 
 
 def image_metadata(request, bin_id, target):
-    bin = get_object_or_404(Bin, pid=bin_id)
-    metadata = bin.target_metadata(target)
-
-    def fmt(k,v):
-        if k == 'start_byte':
-            return str(v)
-        else:
-            return '{:.5g}'.format(v)
-
-    for k in metadata:
-        metadata[k] = fmt(k, metadata[k])
+    metadata = _image_metadata(bin_id, target)
 
     return JsonResponse(metadata)
+
+
+def image_data(request, bin_id, target):
+    bin = get_object_or_404(Bin, pid=bin_id)
+    image = bin.image(target)
+    data = embed_image(image)
+
+    return JsonResponse({
+        "data": data
+    })
 
 
 def image_blob(request, bin_id, target):
@@ -390,6 +395,24 @@ def _image_data(bin_id, target, mimetype):
         raise Http404("image data not found")
     image_data = format_image(arr, mimetype)
     return HttpResponse(image_data, content_type=mimetype)
+
+
+def _image_metadata(bin_id, target):
+    bin = get_object_or_404(Bin, pid=bin_id)
+    metadata = bin.target_metadata(target)
+
+    def fmt(k,v):
+        if k == 'start_byte':
+            return str(v)
+        elif isinstance(v, float):
+            return "{:.4f}".format(v)
+        else:
+            return '{:.5g}'.format(v)
+
+    for k in metadata:
+        metadata[k] = fmt(k, metadata[k])
+
+    return metadata
 
 
 def image_png(request, bin_id, target):
