@@ -205,6 +205,12 @@
         $(selector).attr("src", "data:image/png;base64," + data);
     }
 
+    function getCurrentUrl() {
+        var parameters = getGroupingParameters(_bin);
+
+        return "?image=" +  padDigits(_image_id, 5) + "&" + parameters;
+    }
+
     function getImageInfo(mode) {
         switch (mode) {
             case "blob":
@@ -267,7 +273,6 @@
                 });
             });
 
-            var parameters = getGroupingParameters(_bin);
             var state = {
                 "image": _image_id,
                 "bin": _bin,
@@ -276,7 +281,11 @@
                 "tags": _tags
             };
 
-            history.pushState(state, null, "?image=" +  padDigits(_image_id, 5) + "&" + parameters);
+            var rootUrl = "{{ request.scheme }}://{{ request.get_host }}/image";
+            var currentUrl = getCurrentUrl();
+
+            history.pushState(state, null, currentUrl);
+            $("#share-link-value").val(rootUrl + currentUrl);
         }
     }
 
