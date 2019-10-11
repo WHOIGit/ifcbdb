@@ -97,7 +97,8 @@ def search_datasets(request):
     if include_locations:
         # Note that the indicator for bin vs dataset is intentionally kept to one character to limit overhead
         bins = Bin.search(start_date, end_date, min_depth, max_depth, region=region)
-        bin_locations = [[b.pid, b.latitude, b.longitude, "b"] for b in bins]
+        bins_data = bins.filter(location__isnull=False).values('pid','location')
+        bin_locations = [[b['pid'], b['location'].y, b['location'].x, "b"] for b in bins_data]
 
         # First parameter is specifically both title and name for datasets because bins do not have two separate name.
         #   This allows the map to link using the name but dispaly the title, while not adding a lot of duplicate data
