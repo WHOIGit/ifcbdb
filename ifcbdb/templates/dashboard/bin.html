@@ -601,6 +601,10 @@ function createTimeSeries(metric) {
             "xaxis.range[0]": container[0].layout.xaxis.range[0],
             "xaxis.range[1]": container[0].layout.xaxis.range[1]
         }
+
+        dataUrl +=
+            "&start=" + container[0].layout.xaxis.range[0] +
+            "&end=" + container[0].layout.xaxis.range[1];
     }
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
