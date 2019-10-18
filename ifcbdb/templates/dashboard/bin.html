@@ -76,7 +76,7 @@
     <div class="row d-flex text-center justify-content-center py-2">
       <div class="flex-col">
         <span id="n_bins"><i class="fa fa-spinner fa-spin"></i></span> <span id="total-data-volume"></span>
-          <a id="view-list" href="#">View as List</a>
+          {% if user.is_authenticated %}<a id="view-list" href="#">View as List</a>{% endif %}
       </div>
     </div>
     <!-- Timeline control -->

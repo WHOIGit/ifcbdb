@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
@@ -151,6 +152,7 @@ def timeline_page(request):
                     dataset_name=dataset_name, tags=tags, instrument_number=instrument_number)
 
 
+@login_required
 def list_page(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
@@ -911,6 +913,7 @@ def timeline_info(request):
         })
 
 
+@login_required
 def list_bins(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
@@ -943,6 +946,7 @@ def list_images(request, pid):
         })
 
 
+@login_required
 def update_skip(request):
     skip = request.POST.get("skip") == "true"
     bin_ids = request.POST.getlist("bins[]")
