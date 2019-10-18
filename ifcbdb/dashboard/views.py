@@ -151,6 +151,30 @@ def timeline_page(request):
                     dataset_name=dataset_name, tags=tags, instrument_number=instrument_number)
 
 
+def list_page(request):
+    dataset_name = request.GET.get("dataset")
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    tags = request_get_tags(request.GET.get("tags"))
+
+    bin_qs = bin_query(
+        dataset_name=dataset_name,
+        tags=tags,
+        instrument_number=instrument_number)
+
+    dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
+
+    # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
+    # if not dataset_name and not tags and instrument_number is None:
+    #     return bin_page(request)
+
+    return render(request, "dashboard/list.html", {
+        "dataset": dataset,
+        "dataset_name": dataset_name,
+        "instrument_number": instrument_number,
+        "tags": ','.join(tags) if tags else '',
+    })
+
+
 def bin_page(request):
     dataset_name = request.GET.get("dataset",None)
     bin_id = request.GET.get("bin",None)
@@ -886,8 +910,49 @@ def timeline_info(request):
         'n_images': timeline.n_images(),
         })
 
+
+def list_bins(request):
+    dataset_name = request.GET.get("dataset")
+    tags = request_get_tags(request.GET.get("tags"))
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    skip_filter = request.GET.get("skip_filter")
+
+    # Initial query for pulling bins. Note that skipped bins are included so it can be filtered based
+    #   on the querystring options
+    bin_qs = bin_query(dataset_name=dataset_name,
+                       tags=tags,
+                       instrument_number=instrument_number,
+                       filter_skip=False)
+
+    if skip_filter == "exclude":
+        bin_qs = bin_qs.exclude(skip=True)
+    elif skip_filter == "only":
+        bin_qs = bin_qs.filter(skip=True)
+
+    bins = list(bin_qs.values("pid", "timestamp", "skip"))
+
+    return JsonResponse({
+        "data": bins
+    })
+
+
 def list_images(request, pid):
     b = get_object_or_404(Bin, pid=pid)
     return JsonResponse({
         'images': b.list_images()
         })
+
+
+def update_skip(request):
+    skip = request.POST.get("skip") == "true"
+    bin_ids = request.POST.getlist("bins[]")
+
+    for bin in Bin.objects.filter(pid__in=bin_ids):
+        bin.skip = skip
+        bin.save()
+
+    return JsonResponse({
+        "hellow": "world",
+        "skip": skip,
+        "bins": bin_ids
+    })

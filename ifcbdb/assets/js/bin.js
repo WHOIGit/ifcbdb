@@ -24,7 +24,6 @@ var _filterPopover; // Tracks the container created by the popover library for a
 //************* Common Methods ***********************/
 
 // Generates a relative link to the current bin/dataset
-// TODO: Verify these URLs match the current Django routes
 function createLink() {
     if (_dataset != "" || _instrument != "" || _tags != "") {
         var link = "/timeline?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags;
@@ -35,6 +34,18 @@ function createLink() {
     }
 
     return createBinModeLink();
+}
+
+function createListLink() {
+    if (_dataset != "" || _instrument != "" || _tags != "") {
+        var link = "/list?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags;
+        if (_bin != "") {
+            link += "&bin=" + _bin;
+        }
+        return link;
+    }
+
+    return "javascript:;";
 }
 
 function createBinModeLink() {

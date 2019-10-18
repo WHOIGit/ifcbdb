@@ -76,6 +76,7 @@
     <div class="row d-flex text-center justify-content-center py-2">
       <div class="flex-col">
         <span id="n_bins"><i class="fa fa-spinner fa-spin"></i></span> <span id="total-data-volume"></span>
+          <a id="view-list" href="#">View as List</a>
       </div>
     </div>
     <!-- Timeline control -->
@@ -765,7 +766,8 @@ function changeBin(binId, updateHistory) {
     $("#plot-images").empty();
     $("#too-many-images").toggle(false);
 
-    // Update bin name/link
+    // Update bin name/links
+    $("#view-list").attr("href", createListLink());
     $("#bin-header")
         .attr("href", createBinModeLink())
         .html(binId);

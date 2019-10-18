@@ -41,6 +41,7 @@ urlpatterns = [
     path('bin', views.bin_page, name='bin_page'),
     path('image', views.image_page, name='image_page'),
     path('comments', views.comments_page, name='comment_page'),
+    path('list', views.list_page, name='list_page'),
 
     # raw data access
     path('data/<slug:bin_id>.adc', views.adc_data, name='adc_csv'),
@@ -111,5 +112,7 @@ urlpatterns = [
     path('api/search_comments', views.search_comments, name='search_comments'),
     path('api/tags', views.tags, name='tags'),
     path('api/timeline_info', views.timeline_info, name='timeline_info'),
+    path('api/list_bins', views.list_bins, name='list_bins'),
     path('api/list_images/<slug:pid>', views.list_images, name='list_images'),
+    path('api/update_skip', views.update_skip, name='update_skip'),
  ]

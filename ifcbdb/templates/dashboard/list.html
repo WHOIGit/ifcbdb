@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="pl-3">
+    <span class="h3-responsive">
+      <a href="/dashboard">Home</a>
+      {% if dataset %}»
+        <a href="/timeline?dataset={{ dataset.name }}">
+          {{ dataset.title }}
+        </a>
+      {% endif %}
+      {% if instrument %}»
+        <a href="/timeline?instrument={{ instrument.number }}">
+          IFCB{{ instrument.number }}
+        </a>
+      {% endif %}
+      {% if tags %}»
+        <a href="/timeline?tags={{ tags }}">
+          {{ tags }}
+        </a>
+      {% endif %}
+    </span>
+    <span class="d-none">
+        <button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data">
+            <i class="fa" aria-hidden="true"></i>
+        </button>
+    </span>
+</div>
+
+<div class="row">
+    <div id="bins-container" class="col-md-8">
+        <table id="bins" class="table table-sm table-striped table-bordered w-100">
+            <thead>
+                <td></td>
+                <td>Timestamp</td>
+                <td>PID</td>
+                <td>Skipped?</td>
+                <td></td>
+            </thead>
+        </table>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Filters</div>
+            <div id="skip-filters" class="card-body">
+                <label><input type="radio" name="skip-filter" data-option="exclude" checked /> Exclude Skipped</label><br />
+                <label><input type="radio" name="skip-filter" data-option="include" /> Include Skipped</label><br />
+                <label><input type="radio" name="skip-filter" data-option="only" /> Only Skipped</label>
+            </div>
+            <div class="card-header">Actions</div>
+            <div class="card-body">
+                <div id="action-message" class="alert d-none"></div>
+                <button id="skip-selected" type="button" class="btn btn-sm btn-mdb-color">Skip Selected Bins</button><br />
+                <button id="unskip-selected" type="button" class="btn btn-sm btn-mdb-color">Unskip Selected Bins</button><br />
+                <br />
+                <button id="view-timeline" type="button" class="btn btn-sm btn-mdb-color">View Timeline</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var _dataset = "{{ dataset_name|default_if_none:'' }}";
+    var _instrument = "{{ instrument_number|default_if_none:'' }}";
+    var _tags = "{{ tags|default_if_none:'' }}";
+    var binsTable;
+    var selectedBins = [];
+
+    function getGroupingParameters() {
+        var parameters = []
+
+        if (_dataset != "")
+            parameters.push("dataset=" + _dataset);
+        if (_instrument != "")
+            parameters.push("instrument=" + _instrument);
+        if (_tags != "" && _tags.length > 0) {
+            parameters.push("tags=" + _tags);
+        }
+
+        if (parameters.length == 0)
+            return "";
+
+        return parameters.join("&");
+    }
+
+    function updateSkip(skip) {
+        if (selectedBins.length == 0) {
+            $("#action-message")
+                .html("Please select at least one bin")
+                .toggleClass("d-none", false)
+                .toggleClass("alert-danger", true)
+                .toggleClass("alert-success", false);
+
+            return ;
+        }
+        $("#action-message").toggleClass("d-none", true);
+
+        if (skip && !confirm("Are you sure you want to skip the selected bins?"))
+            return;
+
+        var payload = {
+            csrfmiddlewaretoken: "{{ csrf_token }}",
+            skip: skip,
+            bins: selectedBins
+        };
+
+        $.ajax({
+            dataType: "json",
+            type: "POST",
+            url: "/api/update_skip",
+            data: payload,
+            success: function(data) {
+            selectedBins = [];
+                binsTable.ajax.reload();
+
+                $("#action-message")
+                    .html("Update successful")
+                    .toggleClass("d-none", false)
+                    .toggleClass("alert-danger", false)
+                    .toggleClass("alert-success", true);
+            }
+        });
+    }
+
+    $(function(){
+        $("#bins-container")
+            .on("click", ".view-bin", function(e){
+                e.preventDefault();
+
+                var pid = $(this).data("pid");
+                location.href = "/bin?bin=" + pid;
+            })
+            .on("click", ".select-bin", function(e){
+                var pid = $(this).data("pid");
+                var checked = $(this).is(":checked");
+
+                if (checked) {
+                    if (!selectedBins.includes(pid)) {
+                        selectedBins.push(pid);
+                    }
+                } else {
+                    selectedBins = selectedBins.filter(function(b) {return b != pid });
+                }
+            });
+
+        $("#skip-filters").on("change", "input[type=radio]", function(){
+            binsTable.ajax.reload();
+        });
+
+        $("#skip-selected").click(function(){
+            updateSkip(true);
+        });
+
+        $("#unskip-selected").click(function(){
+            updateSkip(false);
+        });
+
+        $("#view-timeline").click(function(){
+            location.href = "/timeline?" + getGroupingParameters();
+        });
+
+        binsTable = $('#bins').DataTable({
+            searching: false,
+            lengthChange: false,
+            order: [[1, "asc"]],
+            ajax: function (data, callback, settings) {
+                var opt = $("#skip-filters input[type=radio]:checked").data("option");
+
+                $.get("/api/list_bins?skip_filter=" + opt + "&" + getGroupingParameters(), function(data){
+                    callback(data);
+                });
+            },
+            columns: [
+                {
+                    orderable: false,
+                    className: "text-center",
+                    data: "pid",
+                    render: function(data) {
+                        var checked = selectedBins.includes(data) ? "checked" : "";
+                        return "<input type='checkbox' class='select-bin' data-pid='" + data + "' " + checked + " />";
+                    }
+                },
+                {
+                    data: "timestamp"
+                },
+                {
+                    data: "pid"
+                },
+                {
+                    className: "text-center",
+                    data: "skip",
+                    render: function(data) {
+                        return data == true ? "Yes" : "No";
+                    }
+                },
+                {
+                    orderable: false,
+                    data: "pid",
+                    render: function(data) {
+                        return "<a href='#' class='btn btn-sm btn-mdb-color view-bin' data-pid='" + data + "'>View</a>";
+                    }
+                }
+            ]
+        });
+    });
+</script>
+{% endblock %}
