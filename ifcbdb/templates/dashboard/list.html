@@ -22,6 +22,7 @@
         </a>
       {% endif %}
     </span>
+    <a id="view-timeline" class="pl-3" href="#"title="View Timeline" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="fas h3-responsive fa-chart-line"></i></a>
     <span class="d-none">
         <button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data">
             <i class="fa" aria-hidden="true"></i>
@@ -52,10 +53,9 @@
             <div class="card-header">Actions</div>
             <div class="card-body">
                 <div id="action-message" class="alert d-none"></div>
-                <button id="skip-selected" type="button" class="btn btn-sm btn-mdb-color">Skip Selected Bins</button><br />
-                <button id="unskip-selected" type="button" class="btn btn-sm btn-mdb-color">Unskip Selected Bins</button><br />
-                <br />
-                <button id="view-timeline" type="button" class="btn btn-sm btn-mdb-color">View Timeline</button>
+                <button id="skip-selected" type="button" class="btn btn-sm btn-block btn-mdb-color">Skip Selected Bins</button><br />
+                <button id="unskip-selected" type="button" class="btn btn-sm btn-block btn-mdb-color">Unskip Selected Bins</button><br />
+                
             </div>
         </div>
     </div>
@@ -167,6 +167,7 @@
         binsTable = $('#bins').DataTable({
             searching: false,
             lengthChange: false,
+            "scrollX": true,
             order: [[1, "asc"]],
             ajax: function (data, callback, settings) {
                 var opt = $("#skip-filters input[type=radio]:checked").data("option");
@@ -209,4 +210,9 @@
         });
     });
 </script>
+<script>
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip()
+        })
+        </script>
 {% endblock %}

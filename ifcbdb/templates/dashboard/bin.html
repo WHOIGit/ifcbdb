@@ -26,6 +26,7 @@
                 </a>
               {% endif %}
             </span>
+            {% if user.is_authenticated %}<a id="view-list" class="pl-3" href="#"title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
             <span class="d-none">
                 <button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data">
                     <i class="fa" aria-hidden="true"></i>
@@ -76,7 +77,7 @@
     <div class="row d-flex text-center justify-content-center py-2">
       <div class="flex-col">
         <span id="n_bins"><i class="fa fa-spinner fa-spin"></i></span> <span id="total-data-volume"></span>
-          {% if user.is_authenticated %}<a id="view-list" href="#">View as List</a>{% endif %}
+          
       </div>
     </div>
     <!-- Timeline control -->
@@ -1199,5 +1200,10 @@ $(function() {
         history.pushState(state, null, "?" + parameters);
     {% endif %}
 
+</script>
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
 </script>
 {% endblock %}
