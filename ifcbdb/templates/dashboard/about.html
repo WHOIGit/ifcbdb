@@ -2,5 +2,50 @@
 {% load static %}
 
 {% block content %}
-Blah blah blah
+
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h2-responsive">About IFCB dashboard</span>
+    </div>
+</div>
+<hr class="my-2">
+
+<div class="row py-2 px-3">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header py-1 mdb-color lighten-5">Credits</div>
+            <div class="card-body overflow-auto">
+                <div class="h4-responsive">Programming</div>
+                Joe Futrelle<br>
+                Mike Chagnon<br>
+                Matt Charron<br>
+                <br>
+                <div class="h4-responsive">Design / testing</div>
+                Joe Futrelle<br>
+                Heidi Sosik<br>
+                Taylor Crockford<br>
+                Emily Peacock<br>
+                <br>
+                <div class="h4-responsive">Management</div>
+                Heidi Sosik<br>
+                Nick Symmonds<br>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header py-1 mdb-color lighten-5">About IFCB</div>
+            <div class="card-body overflow-auto">
+                <p>
+                <a href="https://www2.whoi.edu/staff/hsosik/ifcb/">Imaging FlowCytobot (IFCB)</a>
+                is a submersible flow cytometer that takes images of phytoplankton.
+                It is designed for continuous in situ operation and can be deployed for months at a time.
+                It uses a combination of video and flow cytometric technology to both capture images of organisms for identification and measure chlorophyll fluorescence and light scattering associated with each image. The measurements of chlorophyll fluorescence enable users to more efficiently analyze phytoplankton cells by triggering on chlorophyll-containing particles.
+            </p>
+                IFCB is commercially available from <a href="https://mclanelabs.com/imaging-flowcytobot/">McLane research laboratories</a>.
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
