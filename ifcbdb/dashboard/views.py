@@ -932,7 +932,7 @@ def list_bins(request):
     elif skip_filter == "only":
         bin_qs = bin_qs.filter(skip=True)
 
-    bins = list(bin_qs.values("pid", "timestamp", "skip"))
+    bins = list(bin_qs.values("pid", "sample_time", "skip"))
 
     return JsonResponse({
         "data": bins
