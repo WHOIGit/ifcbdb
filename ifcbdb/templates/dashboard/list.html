@@ -11,9 +11,9 @@
           {{ dataset.title }}
         </a>
       {% endif %}
-      {% if instrument %}»
-        <a href="/timeline?instrument={{ instrument.number }}">
-          IFCB{{ instrument.number }}
+      {% if instrument_number %}»
+        <a href="/timeline?instrument={{ instrument_number }}">
+          IFCB{{ instrument_number }}
         </a>
       {% endif %}
       {% if tags %}»
