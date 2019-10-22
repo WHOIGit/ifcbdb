@@ -956,7 +956,9 @@ def update_skip(request):
         bin.save()
 
     return JsonResponse({
-        "hellow": "world",
         "skip": skip,
         "bins": bin_ids
     })
+
+def about_page(request):
+    return render(request, 'dashboard/about.html')

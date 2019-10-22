@@ -42,6 +42,7 @@ urlpatterns = [
     path('image', views.image_page, name='image_page'),
     path('comments', views.comments_page, name='comment_page'),
     path('list', views.list_page, name='list_page'),
+    path('about', views.about_page, name='about_page'),
 
     # raw data access
     path('data/<slug:bin_id>.adc', views.adc_data, name='adc_csv'),

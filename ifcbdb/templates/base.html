@@ -83,38 +83,12 @@
     <!--Main layout-->
     <footer class="page-footer font-small stylish-color pt-2 mt-4">
         <div class="container-fluid text-center my-2">
-            <div class="row justify-content-center">
-                <div class="col-xs-1">
-                    <a href="http://www.nsf.gov/" target="_blank">
-                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/nsf.png' %}">
-                    </a>
-                </div>
-                <div class="col-xs-1">
-                    <a href="http://www.nasa.gov/" target="_blank">
-                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/nasa.png' %}">
-                    </a>
-                </div>
-                <div class="col-xs-1">
-                    <a href="http://www.onr.navy.mil/" target="_blank">
-                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/onr.png' %}">
-                    </a>
-                </div>
-                <div class="col-xs-1">
-                    <a href="http://www.moore.org/" target="_blank">
-                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/gbmf.png' %}">
-                    </a>
-                </div>
-                <div class="col-xs-1">
-                    <a href="http://www.nopp.org/" target="_blank">
-                        <img class="img-fluid footer-thumb img-thumbnail" src="{% static 'img/nopp.png' %}">
-                    </a>
-                </div>
+            <div class="row justify-content-center d-none">
             </div>
             <div class="row mt-2 text-center">
                 <div class="col">
-                    <a href="mailto:hsosik@whoi.edu">Heidi Sosik</a>,
-                    <a href="mailto:rolson@whoi.edu">Robert Olson</a>,
-                    <a href="mailto:jfutrelle@whoi.edu">Joe Futrelle</a> @
+                    Developed by the
+                    <a href="https://www2.whoi.edu/staff/hsosik/" target="_blank">Sosik lab at
                     <a href="http://www.whoi.edu/" target="_blank">Woods Hole Oceanographic Institution</a>
                 </div>
             </div>
@@ -122,7 +96,8 @@
         </div>
         <div class="footer-copyright text-center py-3 stylish-color-dark">
             <div>
-                Version 0.3-beta - 31 August 2019 -
+                Version 1.0-alpha - October 2019 -
+                <a href="{% url 'about_page' %}">About</a> -
                 <a href="{% url 'secure:login' %}">Log in</a>
             </div>
         </div>
