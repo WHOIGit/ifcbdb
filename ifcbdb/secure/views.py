@@ -46,36 +46,6 @@ def instrument_management(request):
     })
 
 
-def upload_metadata(request):
-    from dashboard.tasks import import_metadata
-
-    if request.method == "POST":
-        confirm = ""
-        form = MetadataUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            file = request.FILES['file']
-
-            # TODO: Do something with the data
-            df = pd.read_csv(file)
-            json_df = df.to_json()
-            import_metadata.delay(json_df)
-
-            # Redirect if successful
-            # TODO: update condition
-            if 1 == 1:
-                return redirect(reverse("secure:upload-metadata") + "?confirm=true")
-
-            form.add_error(None, "Error goes here")
-    else:
-        confirm = request.GET.get("confirm")
-        form = MetadataUploadForm()
-
-    return render(request, 'secure/upload-metadata.html', {
-        "form": form,
-        "confirm": confirm,
-    })
-
-
 def dt_datasets(request):
     datasets = list(Dataset.objects.all().values_list("name", "title", "is_active", "id"))
 
@@ -333,6 +303,75 @@ def sync_dataset_status(request, dataset_id):
 def sync_cancel(request, dataset_id):
     cancel_key = dataset_sync_cancel_key(dataset_id)
     added = cache.add(cancel_key,"cancel");
+    if not added:
+        return JsonResponse({ 'status': 'already_canceled'})
+    else:
+        return JsonResponse({ 'status': 'cancelling' })
+
+METADATA_UPLOAD_LOCK_KEY = 'metadata_upload_lock'
+METADATA_UPLOAD_CANCEL_KEY = 'metadata_upload_cancel'
+METADATA_UPLOAD_TASKID_KEY = 'metadata_upload_task_id'
+
+@login_required
+def upload_metadata(request):
+    from dashboard.tasks import import_metadata
+
+    in_progress = ''
+
+    if request.method == "POST":
+        confirm = ""
+        form = MetadataUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+
+            try:
+                df = pd.read_csv(file)
+                json_df = df.to_json()
+            except:
+                form.add_error(None, "CSV syntax error")
+                return render(request, 'secure/upload-metadata.html', {
+                    'form': form,
+                    'confirm': '',
+                    'in_progress': '',
+                    })
+
+            added = cache.add(METADATA_UPLOAD_LOCK_KEY, True, timeout=None) # this is atomic
+            if added:
+                r = import_metadata.delay(json_df, METADATA_UPLOAD_LOCK_KEY, METADATA_UPLOAD_CANCEL_KEY)
+                cache.set(METADATA_UPLOAD_TASKID_KEY, r.task_id, timeout=None)
+                return redirect(reverse("secure:upload-metadata") + "?confirm=true")
+            else:
+                form.add_error(None, "Upload already in progress, please wait")
+                in_progress = 'true'
+
+    else:
+        if cache.get(METADATA_UPLOAD_LOCK_KEY) is not None:
+            in_progress = 'true'
+        confirm = request.GET.get("confirm")
+        form = MetadataUploadForm()
+
+    return render(request, 'secure/upload-metadata.html', {
+        "form": form,
+        "confirm": confirm,
+        'in_progress': in_progress,
+    })
+
+@login_required
+def metadata_upload_status(request):
+    task_id = cache.get(METADATA_UPLOAD_TASKID_KEY)
+    if task_id is None:
+        return JsonResponse({ 'state': 'PENDING' })
+    result = AsyncResult(task_id)
+    info = getattr(result, 'info', '');
+    return JsonResponse({
+        'state': result.state,
+        'info': info,
+        })
+
+@require_POST
+@login_required
+def metadata_upload_cancel(request):
+    added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel");
     if not added:
         return JsonResponse({ 'status': 'already_canceled'})
     else:
