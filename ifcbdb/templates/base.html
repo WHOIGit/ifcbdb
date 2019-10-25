@@ -44,7 +44,7 @@
                 <nav class="nav flex-column flex-lg-row">
                 {% dataset_nav %}
               {% if user.is_authenticated %}
-                    <a class="white-text nav-link" href="/secure/" title="Settings" data-toggle="tooltip" data-placement="bottom"><span class="h5-responsive fa fa-cog"></span>Settings</a>
+                    <a class="white-text nav-link" href="/secure/" title="Settings" data-toggle="tooltip" data-placement="bottom"><span class="h5-responsive fa fa-cog"></span> Settings</a>
                 {% else %}
                 {% endif %}
                 </nav>
@@ -53,15 +53,15 @@
                 <nav class="nav flex-column flex-lg-row">
                 {% comments_nav %}
                 {% if can_filter_page %}
-                <a data-toggle="popover" title="Update Filters" class="flex-md-fill text-md-center nav-link"><span class="h5-responsive fa fa-filter"></span>Filter</a>
+                <a data-toggle="popover" title="Update Filters" class="flex-md-fill text-md-center nav-link"><span class="h5-responsive fa fa-filter"></span> Filter</a>
                 {% endif %}
                 {% if can_filter_page and can_share_page %}
                 {% endif %}
                 {% if can_share_page %}
-                <a id="share-button" title="Share" class="flex-md-fill text-md-center nav-link"><span class="h5-responsive fa fa-share-square"></span>Share</a>
+                <a id="share-button" title="Share" class="flex-md-fill text-md-center nav-link"><span class="h5-responsive fa fa-share-square"></span> Share</a>
                 {% endif %}
                 {% if user.is_authenticated %}
-                        <a href="{% url 'secure:logout' %}" class="white-text nav-link flex-md-fill text-md-center" title="Log Out" data-toggle="tooltip" data-placement="bottom"><span class="h5-resonsive fas fa-sign-out-alt"></span>Log Out</a>
+                        <a href="{% url 'secure:logout' %}" class="white-text nav-link flex-md-fill text-md-center" title="Log Out" data-toggle="tooltip" data-placement="bottom"><span class="h5-resonsive fas fa-sign-out-alt"></span> Log Out</a>
                 {% endif %}
                     </nav>
             </div>
