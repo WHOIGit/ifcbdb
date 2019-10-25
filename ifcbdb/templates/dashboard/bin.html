@@ -4,10 +4,10 @@
 {% block content %}
 
 {% if route == 'timeline' %}
-<div class="d-flex flex-row flex-wrap flex-md-nowrap justify-content-between align-items-center">
+<div class="row justify-content-between">
         <!-- Dataset header row -->
-        <div class="flex-column flex-grow-1 flex-md-grow-0 flex-wrap flex-md-nowrap">
-        <div class="pl-3">
+        <div class="col-sm-auto">
+        <div class="pl-3 d-flex flex-row flex-sm-col">
             <span class="h3-responsive">
               <a href="/dashboard">Home</a>
               {% if dataset %}»
@@ -26,7 +26,8 @@
                 </a>
               {% endif %}
             </span>
-            {% if user.is_authenticated %}<a id="view-list" class="pl-3" href="#"title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
+            {% if user.is_authenticated %}<a id="view-list" class="pl-3 my-auto" href="#"title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
+            <a class="d-sm-none d-inline tstabcollapser ml-auto" data-toggle="collapse" data-target="#ts-tabs" aria-expanded="false"></a>
             <span class="d-none">
                 <button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data">
                     <i class="fa" aria-hidden="true"></i>
@@ -40,39 +41,25 @@
         </div>
         {% endif %}
       </div>
-      <div class="flex-column flex-grow-1 flex-md-grow-0 flex-wrap flex-md-nowrap">
+      <div class="col-sm-auto">
         <!-- Nav options for the timeline control -->
-        <ul class="d-flex flex-shrink-0 nav collapse show ts-collapse" id="ts-tabs" role="tablist">
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
+        <nav class="nav nav-pills flex-column flex-sm-row collapse show" id="ts-tabs" role="tablist">
+                <a class="nav-link flex-fill flex-grow-0 text-sm-center btn btn-sm btn-mdb-color px-2 py-2" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
                    role="tab" data-target="ts-size" aria-selected="false">Data Size</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
                    role="tab" data-target="ts-temperature" aria-selected="false">Temperature</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
                    role="tab" data-target="ts-humidity" aria-selected="false">Humidity</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
                    role="tab" data-target="ts-ml-analyzed" aria-selected="false">Volume Analyzed</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm active btn-block" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
                    role="tab" data-target="ts-concentration" aria-selected="true">ROIs / ml</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
                    role="tab" data-target="ts-triggers" aria-selected="false">Trigger Count</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
                    role="tab" data-target="ts-images" aria-selected="false">Image Count</a>
-            </li>
-        </ul>
-    </div>
+          </nav>
+        </div>
     </div>
     <div class="row d-flex text-center justify-content-center py-2">
       <div class="flex-col">
@@ -1200,10 +1187,5 @@ $(function() {
         history.pushState(state, null, "?" + parameters);
     {% endif %}
 
-</script>
-<script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-})
 </script>
 {% endblock %}

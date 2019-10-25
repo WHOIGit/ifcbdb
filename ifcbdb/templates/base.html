@@ -35,47 +35,41 @@
 
             <!-- Collapse -->
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+                    <div class="animated-burger"><span></span><span></span><span></span><span></span></div>
             </button>
 
             <!-- Links -->
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <div class="collapse navbar-collapse justify-content-between" id="navbarSupportedContent">
                 <!-- Left -->
-            <ul class="navbar-nav mr-auto white-text">
+                <nav class="nav flex-column flex-lg-row">
                 {% dataset_nav %}
               {% if user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link waves-effect" href="/secure/"><i class="fa fa-cog"></i> Settings</a>
-                </li>
-                <li class="nav-item">
-                    <a href="{% url 'secure:logout' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log Out</a>
-                </li>
+                    <a class="white-text nav-link" href="/secure/" title="Settings" data-toggle="tooltip" data-placement="bottom"><span class="h5-responsive fa fa-cog"></span>Settings</a>
                 {% else %}
-                <li class="nav-item">
-                    <a href="{% url 'secure:login' %}" class="btn btn-outline-white btn-sm"><i class="fas fa-user mr-2" aria-hidden="true"></i>Log In</a>
-                </li>
                 {% endif %}
-              </ul>
+                </nav>
 
                 <!-- Right -->
+                <nav class="nav flex-column flex-lg-row">
                 {% comments_nav %}
                 {% if can_filter_page %}
-                <span class="d-inline-block ml-2">|</span>
-                <a data-toggle="popover" title="Update Filters" class="pl-2"><span class="h5-responsive fa fa-filter"></span>Filter</a>
+                <a data-toggle="popover" title="Update Filters" class="flex-md-fill text-md-center nav-link"><span class="h5-responsive fa fa-filter"></span>Filter</a>
                 {% endif %}
                 {% if can_filter_page and can_share_page %}
-                <span class="d-inline-block ml-2">|</span>
                 {% endif %}
                 {% if can_share_page %}
-                <a id="share-button" title="Share" class="pl-2"><span class="h5-responsive fa fa-share-square"></span>&nbsp;Share</a>
+                <a id="share-button" title="Share" class="flex-md-fill text-md-center nav-link"><span class="h5-responsive fa fa-share-square"></span>Share</a>
                 {% endif %}
-
+                {% if user.is_authenticated %}
+                        <a href="{% url 'secure:logout' %}" class="white-text nav-link flex-md-fill text-md-center" title="Log Out" data-toggle="tooltip" data-placement="bottom"><span class="h5-resonsive fas fa-sign-out-alt"></span>Log Out</a>
+                {% endif %}
+                    </nav>
             </div>
 
         </div>
     </nav>
     <!--Main layout-->
-    <main class="mx-lg-3">
+    <main class="mx-lg-3 min-vh-80">
         <div class="container-fluid mt-1">
             {% block content %}{% endblock %}
         </div>
@@ -95,10 +89,26 @@
         </div>
         </div>
         <div class="footer-copyright text-center py-3 stylish-color-dark">
-            <div>
-                Version 1.0-alpha - October 2019 -
-                <a href="{% url 'about_page' %}">About</a> -
-                <a href="{% url 'secure:login' %}">Log in</a>
+            <div class="row">
+                <div class="col-sm-12">
+                <ul class="nav justify-content-center">
+                    <li class="nav-item">
+                <span class="px-2">Version 1.0-alpha - October 2019</span>
+            </li>
+            <li class="nav-item">
+                <a class="px-2" href="{% url 'about_page' %}">About</a>
+            </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="px-2" href="{% url 'secure:logout' %}">Log Out</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                <a class="px-2" href="{% url 'secure:login' %}">Log in</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
             </div>
         </div>
     </footer>
@@ -130,6 +140,18 @@
 
         });
     </script>
+    <script>
+            $(function () {
+              $('[data-toggle="tooltip"]').tooltip()
+            })
+            </script>
+<script>
+$(document).ready(function () {
+    $('.navbar-toggler').on('click', function () {
+      $('.animated-burger').toggleClass('open');
+    });
+  });
+</script>            
     {% block scripts %}{% endblock %}
 </body>
 
