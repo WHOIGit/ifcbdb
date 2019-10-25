@@ -41,15 +41,21 @@ def sync_dataset(self, dataset_id, lock_key, cancel_key, newest_only=True):
     return result
 
 @shared_task(bind=True)
-def import_metadata(self, json_dataframe):
+def import_metadata(self, json_dataframe, lock_key, cancel_key):
     from dashboard.accession import import_metadata
     df = pd.read_json(json_dataframe)
     def progress_callback(p):
-        print(p) # FIXME debug
         self.update_state(state='PROGRESS', meta=p)
+        cancel = cache.get(cancel_key)
+        if cancel is not None:
+            return False
         return True
+    result = None
     try:
         result = import_metadata(df, progress_callback=progress_callback)
+    except:
+        self.update_state(state='ERROR', meta={})
     finally:
-        pass # clean up locks
+        cache.delete(cancel_key)
+        cache.delete(lock_key)
     return result

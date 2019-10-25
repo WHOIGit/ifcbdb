@@ -30,5 +30,7 @@ urlpatterns = [
     path('api/sync/<int:dataset_id>', views.sync_dataset, name='sync_dataset'),
     path('api/sync/status/<int:dataset_id>', views.sync_dataset_status, name='sync_dataset_status'),
     path('api/sync/cancel/<int:dataset_id>', views.sync_cancel, name='sync_cancel'),
+    path('api/metadata-upload/status', views.metadata_upload_status, name='metadata_upload_status'),
+    path('api/metadata-upload/cancel', views.metadata_upload_cancel, name="metadata_upload_cancel"),
     path('api/toggle-skip', views.toggle_skip, name='toggle_skip'),
 ]

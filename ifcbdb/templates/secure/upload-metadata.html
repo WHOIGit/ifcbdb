@@ -14,15 +14,15 @@
                         <div class="alert alert-danger">
                         {% for field in form %}
                             {% for error in field.errors %}
-                                <strong>{{ field.label_tag }} {{ error|escape }}</strong><br />
+                                {{ field.label_tag }} {{ error|escape }}<br />
                             {% endfor %}
                         {% endfor %}
                         {% for error in form.non_field_errors %}
-                            <strong>{{ error|escape }}</strong><br />
+                            {{ error|escape }}<br />
                         {% endfor %}
                         </div>
                     {% endif %}
-                    {% if confirm %}
+                    {% if confirm and not in_progress %}
                     <div class="alert alert-success">File uploaded successfully</div>
                     {% endif %}
                     <div id="too-large-alert" class="alert alert-danger d-none">
@@ -43,13 +43,18 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <input type="submit" value="Upload" class="btn btn-sm btn-mdb-color" />
+                            <input id="submit" type="submit" value="Upload" class="btn btn-sm btn-mdb-color" />
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<div id="upload-status-cancel" class="text-center d-none">
+    <span id="upload-status"></span>
+    <span id="cancel-button" class="btn btn-sm btn-mdb-color d-none">Cancel</span>
 </div>
 
 <div>
@@ -83,5 +88,47 @@
         }
         console.log($(this));
     });
+
+    function update_status() {
+        $.getJSON("{% url 'secure:metadata_upload_status' %}", function(r) {
+            $("#upload-status-cancel").removeClass('d-none');
+            if(r.state == 'SUCCESS') {
+                modded = r.info.n_modded;
+                errors = r.info.errors;
+                $("#upload-status").html('Complete. '+modded+' bins modified, '+errors+' error(s)');
+                $("#cancel-button").addClass('d-none');
+                $("#submit").removeAttr('disabled');
+                return;
+            } else if(r.state == 'PROGRESS') {
+                modded = r.info.n_modded;
+                errors = r.info.errors;
+                $("#upload-status").html('Processing ... '+modded+' bins modified, '+errors+' error(s)');
+                $("#cancel-button").removeClass("d-none");
+                $("#submit").attr('disabled',true);
+            } else if(r.state == 'PENDING') {
+                $("#upload-status").html('Starting ...');
+            }
+            setTimeout(update_status, 1000);
+        });
+    }
+
+    {% if in_progress %}
+    $("#upload-status-cancel").removeClass('d-none');
+    $("#upload-status").html("Previous upload still processing");
+    $("submit").attr('disabled',true);
+    {% endif %}
+
+    {% if confirm or in_progress %}
+    setTimeout(update_status, 10);
+    {% endif %}
+
+    $('#cancel-button').click(function() {
+        $('#upload_status').html('Cancelling ...');
+        var payload = {
+            "csrfmiddlewaretoken": "{{ csrf_token }}",
+        };
+        $.post("{% url 'secure:metadata_upload_cancel' %}", payload);
+    });
+
 </script>
 {% endblock %}

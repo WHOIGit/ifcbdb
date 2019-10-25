@@ -176,10 +176,14 @@ class Accession(object):
             return
         return b # defer save
 
-def import_progress(bin_id, n_modded):
+def import_progress(bin_id, n_modded, errors, error_message, done=False):
+    #print(bin_id, n_modded, errors, error_message, done) # FIXME debug
     return {
         'bin': bin_id,
         'n_modded': n_modded,
+        'errors': errors,
+        'error_message': error_message,
+        'done': done,
     }
 
 def import_metadata(metadata_dataframe, progress_callback=do_nothing):
@@ -243,14 +247,23 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
             tag_cols.append(c)
 
     n_modded = 0
-    progress_batch_size = 100
+    progress_batch_size = 50
+
+    b = None
+    error_message = None
+    errors = 0
+
+    should_continue = True
 
     for row in df.itertuples():
-        pid = get_cell(row, pid_col)
-        if pid is None:
-            raise ValueError('bin id must be specified')
+        if not should_continue:
+            break
 
         try:
+            pid = get_cell(row, pid_col)
+            if pid is None:
+                raise ValueError('bin id must be specified')
+
             b = Bin.objects.get(pid=pid)
 
             if b is None:
@@ -310,15 +323,25 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
             b.save()
             
             if n_modded % progress_batch_size == 0:
-                progress_callback(import_progress(b.pid, n_modded))
+                should_continue = progress_callback(import_progress(b.pid, n_modded, errors, error_message))
 
         except ValueError:
-            pass
+            error_message = 'ValueError processing metadata' # FIXME more descriptive
+            errors += 1
 
         except KeyError:
-            pass
+            error_message = 'KeyError processing metadata' # FIXME more descriptive
+            errors += 1
 
         except Bin.DoesNotExist:
-            pass
+            error_message = 'No such bin'
+            errors += 1
 
-    progress_callback(import_progress(b.pid, n_modded))
+    if b is not None:
+        progress = import_progress(b.pid, n_modded, errors, error_message, True)
+    else:
+        progress = import_progress('', n_modded, errors, error_message, True)
+
+    progress_callback(progress)
+
+    return progress
