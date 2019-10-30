@@ -296,13 +296,19 @@ function updateBinComments(data) {
 }
 
 function updateBinDownloadLinks(data) {
-    $("#download-adc").attr("href", "/data/" + _bin + ".adc");
-    $("#download-hdr").attr("href", "/data/" + _bin + ".hdr");
-    $("#download-roi").attr("href", "/data/" + _bin + ".roi");
-    $("#download-zip").attr("href", "/data/" + _bin + ".zip");
-    $("#download-blobs").attr("href", "/data/" + _bin + "_blob.zip");
-    $("#download-features").attr("href", "/data/" + _bin + "_features.csv");
-    $("#download-class-scores").attr("href", "/data/" + _bin + "_class_scores.mat");
+    var infix = '/data/';
+    if(_dataset) {
+        infix = '/' + _dataset + '/';
+    } else if (data.primary_dataset) {
+        infix = '/' + data.primary_dataset + '/';
+    }
+    $("#download-adc").attr("href", infix + _bin + ".adc");
+    $("#download-hdr").attr("href", infix + _bin + ".hdr");
+    $("#download-roi").attr("href", infix + _bin + ".roi");
+    $("#download-zip").attr("href", infix + _bin + ".zip");
+    $("#download-blobs").attr("href", infix + _bin + "_blob.zip");
+    $("#download-features").attr("href", infix + _bin + "_features.csv");
+    $("#download-class-scores").attr("href", infix + _bin + "_class_scores.mat");
 
     $.get('/api/has_products/' + _bin, function(r) {
         $("#download-blobs").toggle(r["has_blobs"]);

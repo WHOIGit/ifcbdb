@@ -458,7 +458,7 @@ def image_jpg_legacy(request, bin_id, target, dataset_name):
     return _image_data(bin_id, target, 'image/jpeg')
 
 
-def adc_data(request, bin_id):
+def adc_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         adc_path = b.adc_path()
@@ -469,7 +469,7 @@ def adc_data(request, bin_id):
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
 
-def hdr_data(request, bin_id):
+def hdr_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         hdr_path = b.hdr_path()
@@ -480,7 +480,7 @@ def hdr_data(request, bin_id):
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/plain')
 
 
-def roi_data(request, bin_id):
+def roi_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         roi_path = b.roi_path()
@@ -490,51 +490,54 @@ def roi_data(request, bin_id):
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
 
+def get_product_version_parameter(request):
+    version_string = request.GET.get('v',None)
+    if version_string is not None:
+        try:
+            return int(version_string)
+        except ValueError:
+            raise Http404
 
-def blob_zip(request, bin_id):
+def blob_zip(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    version = get_product_version_parameter(request)
     try:
-        version = int(request.GET.get('v',2))
-    except ValueError:
-        raise Http404
-    try:
-        blob_path = b.blob_path(version=version)
+        blob_file = b.blob_file(version=version)
+        version = blob_file.version
+        blob_path = blob_file.path
     except KeyError:
         raise Http404
     filename = '{}_blobs_v{}.zip'.format(bin_id, version)
     fin = open(blob_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/zip')
 
-
-def features_csv(request, bin_id):
+def features_csv(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    version = get_product_version_parameter(request)
     try:
-        version = int(request.GET.get('v',2))
-    except ValueError:
-        raise Http404
-    try:
-        features_path = b.features_path(version=version)
+        features_file = b.features_file(version=version)
+        version = features_file.version
+        features_path = features_file.path
     except KeyError:
         raise Http404
     filename = '{}_features_v{}.csv'.format(bin_id, version)
     fin = open(features_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
-def class_scores_mat(request, bin_id):
+def class_scores_mat(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    version = get_product_version_parameter(request)
     try:
-        version = int(request.GET.get('v',1))
-    except ValueError:
-        raise Http404
-    try:
-        class_scores_path = b.class_scores_path(version=version)
+        class_scores_file = b.class_scores_file(version=version)
+        version = class_scores_file.version
+        class_scores_path = class_scores_file.path
     except KeyError:
         raise Http404
     filename = '{}_class_v{}.mat'.format(bin_id, version)
     fin = open(class_scores_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')    
 
-def zip(request, bin_id):
+def zip(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
         zip_buf = b.zip()
@@ -592,6 +595,11 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
     except:
         datasets = []
 
+    if len(datasets) > 0:
+        primary_dataset = datasets[0]
+    else:
+        primary_dataset = None
+
     return {
         "scale": mosaic_scale,
         "shape": mosaic_shape,
@@ -618,6 +626,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "ml_analyzed": str(round(bin.ml_analyzed, 3)) + " ml",
         "size": bin.size,
         "datasets": datasets,
+        "primary_dataset": primary_dataset,
         "comments": bin.comment_list,
         "concentration": round(bin.concentration, 3),
         "skip": bin.skip,
