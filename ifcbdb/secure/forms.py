@@ -24,6 +24,16 @@ class DatasetForm(forms.ModelForm):
             "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
         }
 
+    def clean_doi(self):
+        doi = self.cleaned_data['doi']
+
+        doi_regex = r'10\.[^ /]+/[^ ]+'
+
+        if not re.match(doi_regex, doi):
+            raise forms.ValidationError('invalid DOI format')
+
+        return doi
+
     def __init__(self, *args, **kwargs):
         super(DatasetForm, self).__init__(*args, **kwargs)
 
