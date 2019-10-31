@@ -210,6 +210,9 @@ class Dataset(models.Model):
     location = PointField(null=True, blank=True)
     depth = models.FloatField(null=True, blank=True)
 
+    # doi
+    doi = models.CharField(max_length=256, blank=True)
+
     def __len__(self):
         # number of bins
         return self.bins.count()
