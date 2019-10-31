@@ -35,11 +35,6 @@
             </span>
         </div>
 
-        {% if user.is_authenticated %}
-        <div class="d-none"><!-- until implemented, don't display -->
-            <a href="#" class="btn btn-sm btn-primary ml-3">Configure</a>
-        </div>
-        {% endif %}
       </div>
       <div class="col-sm-auto">
         <!-- Nav options for the timeline control -->
@@ -61,6 +56,7 @@
           </nav>
         </div>
     </div>
+
     <div class="row d-flex text-center justify-content-center py-2">
       <div class="flex-col">
         <span id="n_bins"><i class="fa fa-spinner fa-spin"></i></span> <span id="total-data-volume"></span>
@@ -75,6 +71,13 @@
             </div>
         </div>
     </div>
+
+        {% if dataset.doi %}
+        <div class="pl-3">
+          <small>Dataset DOI: <a href="https://doi.org/{{ dataset.doi }}">{{ dataset.doi }}</a></small>
+        </div>
+        {% endif %}
+
 {% else %}
     <!-- Bin only header -->
     <div class="row d-flex justify-content-between">
@@ -89,8 +92,17 @@
             {% endif %}
             <span class="h3-responsive">{{ bin.pid }}</span>
         </div>
+
     </div>
+            {% if bin.primary_dataset %}
+          {% if bin.primary_dataset.doi %}
+          <div>
+            <small>Dataset DOI: <a href="https://doi.org/{{ bin.primary_dataset.doi }}">{{ bin.primary_dataset.doi }}</a></small>
+          </div>
+          {% endif %}
+        {% endif %}
 {% endif %}
+
 
 {% if bin_reset %}
 <div class="alert alert-info alert-dismissible" id="bin-not-found">
