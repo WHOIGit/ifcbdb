@@ -339,3 +339,14 @@ function highlightSelectedBinByDate() {
         ]
     });
 }
+
+function buildLeafletIcon(color) {
+    return new L.Icon({
+        iconUrl: "/static/vendor/leaflet-color-markers/img/marker-icon-" + color + ".png",
+        shadowUrl: "/static/vendor/leaflet-color-markers/img/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+}

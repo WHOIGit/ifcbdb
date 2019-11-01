@@ -129,18 +129,26 @@
         var formData = $("#search-form").serialize();
         formData += "&include_locations=true";
 
+        var binIcon = buildLeafletIcon("red");
+        var datasetIcon = buildLeafletIcon("yellow");
+
         $.post("/api/search_datasets", formData, function(locationData){
             markers.clearLayers();
 
             for (var i = 0; i < locationData.locations.length; i++) {
+
                 var location = locationData.locations[i];
+                var isBin = location[3] == "b";
                 var title = location[0];
                 var marker = L.marker(
                     L.latLng(location[1], location[2]),
-                    { title: title }
+                    {
+                        title: title,
+                        icon: isBin ? binIcon : datasetIcon
+                    }
                 );
 
-                if (location[3] == "b") {
+                if (isBin) {
                     marker.bindPopup("Bin: <a href='/bin?bin=" + title + "'>" + title + "</a>");
                 } else {
                     var values = title.split("|");
