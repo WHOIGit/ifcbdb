@@ -812,11 +812,47 @@ def plot_data(request, bin_id):
     return JsonResponse(ia.to_dict('list'))
 
 
+BIN_METADATA_ORDER = [
+    'FileComment',
+    'runType',
+    'SyringeNumber',
+    'SyringeSampleVolume',
+    'sampleVolume2skip',
+    'runTime',
+    'inhibitTime',
+    'temperature',
+    'humidity',
+
+    'PMTAhighVoltage',
+    'PMTBhighVoltage',
+    'PMTAtriggerThreshold_DAQ_MCConly',
+    'PMTBtriggerThreshold_DAQ_MCConly',
+
+    'blobXgrowAmount',
+    'blobYgrowAmount',
+    'binarizeThreshold',
+    'minimumBlobArea',
+    'PumpStates',
+    'runSampleFast',
+]
+
 def bin_metadata(request, bin_id):
     bin = get_object_or_404(Bin, pid=bin_id)
 
+    bin_metadata = bin.metadata
+    reordered_metadata = {}
+    keys = list(bin_metadata.keys())
+
+    for k in BIN_METADATA_ORDER:
+        if k in bin_metadata:
+            keys.remove(k)
+            reordered_metadata[k] = bin_metadata[k]
+
+    for k in keys:
+        reordered_metadata[k] = bin_metadata[k]
+
     return JsonResponse({
-        "metadata": bin.metadata
+        "metadata": reordered_metadata
     })
 
 
