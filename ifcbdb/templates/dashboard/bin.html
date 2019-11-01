@@ -781,6 +781,9 @@ function changeBin(binId, updateHistory) {
         $("#bin-not-found").hide();
     }
 
+    // reset sticky blob / outline
+    $("#detailed-image-blob").hide()
+    $("#detailed-image-outline").hide()
 
     _mosaicPage = 0;
     delayedMosaic(0);
