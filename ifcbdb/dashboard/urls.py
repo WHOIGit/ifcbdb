@@ -77,6 +77,7 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>.roi', views.roi_data, name='roi_binary_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv_legacy'),
+    path('<slug:dataset_name>/<slug:bin_id>_class_scores.mat', views.class_scores_mat, name='class_scores_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip_legacy'),
 
     # legacy image access
