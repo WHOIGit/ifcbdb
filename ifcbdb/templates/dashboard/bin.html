@@ -1188,6 +1188,15 @@ $(function() {
       $("#n_bins").html(data.n_bins+" bins, "+data.n_images+" images");
       $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
     })
+
+    var title = "";
+    {% if dataset %}title += " » {{ dataset.title }}";{% endif %}
+    {% if instrument %}title += " » IFCB{{ instrument.number }}";{% endif %}
+    {% if tags %}title += " » {{ tags }}"{% endif %}
+    document.title = title.substring(3);
+
+    {% else %}
+    document.title = _bin;
     {% endif %}
 
     {% if bin_reset and route == "timeline" %}

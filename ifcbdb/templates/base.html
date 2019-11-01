@@ -8,8 +8,6 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
 
     <meta name="pinterest" content="nopin">
-    
-    <title>IFCB</title>
 
     <link href="{% static 'vendor/fontawesome/css/all.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/mdbootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -19,6 +17,7 @@
     <link href="{% static 'vendor/leaflet/leaflet.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/chosen/chosen.min.css' %}" rel="stylesheet" />
     {% block extra_head %}{% endblock %}
+    <title>IFCB dashboard</title><!-- overridden in extra_head block -->
 
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}"> 
 </head>

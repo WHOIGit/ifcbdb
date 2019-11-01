@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% block extra_head %}
+<title>{{ dataset.title }} » Manage</title>
+{% endblock %}
+
 {% block content %}
 
 {% if status %}
