@@ -27,6 +27,9 @@ class DatasetForm(forms.ModelForm):
     def clean_doi(self):
         doi = self.cleaned_data['doi']
 
+        if not doi or doi == "":
+            return doi
+
         doi_regex = r'10\.[^ /]+/[^ ]+'
 
         if not re.match(doi_regex, doi):
