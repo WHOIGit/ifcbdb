@@ -18,7 +18,7 @@ def dataset_switcher():
 
 @register.inclusion_tag("dashboard/_dataset-nav.html")
 def dataset_nav():
-    datasets = Dataset.objects.all()
+    datasets = Dataset.objects.filter(is_active=True)
 
     return {
         "datasets": datasets,

@@ -886,7 +886,7 @@ def filter_options(request):
     qs = bq.values('instrument__number').order_by('instrument__number').distinct()
 
     instruments_options = [i['instrument__number'] for i in qs]
-    datasets_options = [ds.name for ds in Dataset.objects.order_by('name').all()]
+    datasets_options = [ds.name for ds in Dataset.objects.filter(is_active=True).order_by('name')]
 
     return JsonResponse({
         "instrument_options": instruments_options,
