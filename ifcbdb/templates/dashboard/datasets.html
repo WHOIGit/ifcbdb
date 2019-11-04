@@ -94,6 +94,7 @@
     var map;
     var markers = null;
     var markerList = [];
+    var fixedMarkers = null;
     var areaSelect;
 
     function enableRegionSelection() {
@@ -134,9 +135,9 @@
 
         $.post("/api/search_datasets", formData, function(locationData){
             markers.clearLayers();
+            fixedMarkers.clearLayers();
 
             for (var i = 0; i < locationData.locations.length; i++) {
-
                 var location = locationData.locations[i];
                 var isBin = location[3] == "b";
                 var title = location[0];
@@ -150,16 +151,17 @@
 
                 if (isBin) {
                     marker.bindPopup("Bin: <a href='/bin?bin=" + title + "'>" + title + "</a>");
+                    markerList.push(marker);
                 } else {
                     var values = title.split("|");
                     marker.bindPopup("Dataset: <a href='/timeline?dataset=" + values[0] + "'>" + values[1] + "</a>");
+                    fixedMarkers.addLayer(marker);
                 }
-
-                markerList.push(marker);
             }
 
             markers.addLayers(markerList);
             map.addLayer(markers);
+            map.addLayer(fixedMarkers);
 
             markerList = [];
         });
@@ -172,6 +174,7 @@
             chunkProgress: updateMapStatus,
             maxClusterRadius: 15,
         });
+        fixedMarkers = L.layerGroup();
 
 		searchLocations();
 
