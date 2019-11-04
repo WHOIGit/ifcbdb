@@ -162,7 +162,10 @@
         });
 
         $("#view-timeline").click(function(){
-            location.href = "/timeline?" + getGroupingParameters();
+            location.href = "/timeline" +
+            "?start_date={{ start_date }}" +
+            "&end_date={{ end_date }}" +
+            "&" + getGroupingParameters();
         });
 
         binsTable = $('#bins').DataTable({
@@ -173,7 +176,12 @@
             ajax: function (data, callback, settings) {
                 var opt = $("#skip-filters input[type=radio]:checked").data("option");
 
-                $.get("/api/list_bins?skip_filter=" + opt + "&" + getGroupingParameters(), function(data){
+                var url = "/api/list_bins" +
+                    "?skip_filter=" + opt +
+                    "&start_date={{ start_date }}" +
+                    "&end_date={{ end_date }}" +
+                    "&" + getGroupingParameters()
+                $.get(url, function(data){
                     callback(data);
                 });
             },

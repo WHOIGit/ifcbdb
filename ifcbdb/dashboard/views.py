@@ -135,6 +135,8 @@ def timeline_page(request):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     bin_reset = False
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
     if not dataset_name and not tags and instrument_number is None:
@@ -149,7 +151,8 @@ def timeline_page(request):
 
     return _details(request,
                     bin_id=bin_id, route="timeline", bin_reset=bin_reset,
-                    dataset_name=dataset_name, tags=tags, instrument_number=instrument_number)
+                    dataset_name=dataset_name, tags=tags, instrument_number=instrument_number,
+                    default_start_date=start_date, default_end_date=end_date)
 
 
 @login_required
@@ -157,11 +160,8 @@ def list_page(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
-
-    bin_qs = bin_query(
-        dataset_name=dataset_name,
-        tags=tags,
-        instrument_number=instrument_number)
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
 
     dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
 
@@ -174,6 +174,8 @@ def list_page(request):
         "dataset_name": dataset_name,
         "instrument_number": instrument_number,
         "tags": ','.join(tags) if tags else '',
+        "start_date": start_date,
+        "end_date": end_date
     })
 
 
@@ -310,7 +312,8 @@ def legacy_image_page_alt(request, bin_id, image_id):
     return _image_details(request, image_id, bin_id)
 
 
-def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, bin_reset=False):
+def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, bin_reset=False,
+             default_start_date=None, default_end_date=None):
     if not bin_id and not dataset_name and not tags and not instrument_number:
         # TODO: 404 error; don't have enough info to proceed
         pass
@@ -347,6 +350,8 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         "mosaic_default_width": Bin.MOSAIC_DEFAULT_VIEW_SIZE.split("x")[0],
         "bin": bin,
         "bin_reset": bin_reset,
+        "default_start_date": default_start_date,
+        "default_end_date": default_end_date,
         "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False,
                                 instrument_number=instrument_number, tags=tags),
     })
@@ -964,6 +969,8 @@ def list_bins(request):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     skip_filter = request.GET.get("skip_filter")
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
 
     # Initial query for pulling bins. Note that skipped bins are included so it can be filtered based
     #   on the querystring options
@@ -971,6 +978,14 @@ def list_bins(request):
                        tags=tags,
                        instrument_number=instrument_number,
                        filter_skip=False)
+
+    if start_date:
+        start_date = pd.to_datetime(start_date, utc=True)
+        bin_qs = bin_qs.filter(timestamp__gte=start_date)
+
+    if end_date:
+        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+        bin_qs = bin_qs.filter(timestamp__lte=end_date)
 
     if skip_filter == "exclude":
         bin_qs = bin_qs.exclude(skip=True)

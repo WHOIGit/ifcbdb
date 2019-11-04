@@ -49,12 +49,16 @@ function createLink() {
     return createBinModeLink();
 }
 
-function createListLink() {
+function createListLink(start, end) {
     if (_dataset != "" || _instrument != "" || _tags != "") {
         var link = "/list?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags;
         if (_bin != "") {
             link += "&bin=" + _bin;
         }
+
+        link += "&start_date=" + start;
+        link += "&end_date=" + end;
+
         return link;
     }
 
@@ -865,7 +869,7 @@ function initEvents() {
         timelineValid = false;
         timelineWaiting = false;
         _preventTimelineRelayout = true;
-        createTimeSeries(metric);
+        createTimeSeries(metric, null, null);
     });
 
     // Showing the plot workspace

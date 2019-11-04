@@ -585,8 +585,14 @@ var timelineWaitingSince = new Date();
 
 var _attempts = 0;
 var _requests = 0;
+var defaultStartDate = null;
+var defaultEndDate = null;
+{% if default_start_date and default_end_date %}
+    defaultStartDate = "{{ default_start_date }}";
+    defaultEndDate = "{{ default_end_date }}";
+{% endif %}
 
-function createTimeSeries(metric) {
+function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
     container = $("#primary-plot-container");
 
     currentMetric = metric;
@@ -606,6 +612,17 @@ function createTimeSeries(metric) {
         dataUrl +=
             "&start=" + container[0].layout.xaxis.range[0] +
             "&end=" + container[0].layout.xaxis.range[1];
+    }
+
+    if (defaultStartDate != null && defaultEndDate != null) {
+        currentRange = {
+            "xaxis.range[0]": defaultStartDate,
+            "xaxis.range[1]": defaultEndDate
+        }
+
+        dataUrl +=
+            "&start=" + defaultStartDate +
+            "&end=" + defaultEndDate;
     }
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
@@ -767,7 +784,18 @@ function changeBin(binId, updateHistory) {
     $("#too-many-images").toggle(false);
 
     // Update bin name/links
-    $("#view-list").attr("href", createListLink());
+    $("#view-list").click(function(e){
+        e.preventDefault();
+
+        var timeline_container = $("#primary-plot-container");
+        location.href = createListLink(
+            container[0].layout.xaxis.range[0],
+            container[0].layout.xaxis.range[1]
+        );
+
+        return false;
+    });
+
     $("#bin-header")
         .attr("href", createBinModeLink())
         .html(binId);
@@ -945,7 +973,7 @@ $(function() {
     _binTimestamp = moment("{{ details.timestamp_iso }}");
 
     if ("{{ route }}" == "timeline") {
-        createTimeSeries("concentration");
+        createTimeSeries("concentration", defaultStartDate, defaultEndDate);
     }
 
     changeBin("{{ bin.pid }}", false);
