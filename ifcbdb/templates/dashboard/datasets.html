@@ -173,6 +173,17 @@
             chunkedLoading: true,
             chunkProgress: updateMapStatus,
             maxClusterRadius: 15,
+            iconCreateFunction: function(cluster) {
+                var children = cluster.getChildCount();
+                var sizeClass = children >= 100 ? "large" : (children >= 10 ? "medium" : "small");
+
+                return new L.DivIcon({
+                    html: '<div style="width:20px;height:20px;margin-left:0px; margin-top:0px"><span style="font-size:10px;line-height:22px">' + cluster.getChildCount() + '</span></div>',
+                    className: 'text-center marker-cluster marker-cluster-' + sizeClass,
+                    iconSize: new L.Point(20, 20)
+                });
+            }
+
         });
         fixedMarkers = L.layerGroup();
 
