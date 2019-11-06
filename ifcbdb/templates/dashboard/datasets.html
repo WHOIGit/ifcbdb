@@ -130,8 +130,8 @@
         var formData = $("#search-form").serialize();
         formData += "&include_locations=true";
 
-        var binIcon = buildLeafletIcon("red");
-        var datasetIcon = buildLeafletIcon("yellow");
+        var binIcon = buildLeafletIcon("orange");
+        var datasetIcon = buildLeafletIcon("red");
 
         $.post("/api/search_datasets", formData, function(locationData){
             markers.clearLayers();
@@ -175,11 +175,10 @@
             maxClusterRadius: 15,
             iconCreateFunction: function(cluster) {
                 var children = cluster.getChildCount();
-                var sizeClass = children >= 100 ? "large" : (children >= 10 ? "medium" : "small");
 
                 return new L.DivIcon({
-                    html: '<div style="width:20px;height:20px;margin-left:0px; margin-top:0px"><span style="font-size:10px;line-height:22px">' + cluster.getChildCount() + '</span></div>',
-                    className: 'text-center marker-cluster marker-cluster-' + sizeClass,
+                    html: '<div style="width:20px;height:20px;margin-left:0px; margin-top:0px"><span style="font-size:10px;line-height:22px"></span></div>',
+                    className: 'text-center marker-cluster marker-cluster-custom',
                     iconSize: new L.Point(20, 20)
                 });
             }

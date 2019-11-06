@@ -362,3 +362,9 @@ a.tstabcollapser:after
     width: 0%;
     left: 50%;
     }
+
+/*  */
+
+.marker-cluster-custom {
+    background-color: rgb(204, 137, 0);
+}

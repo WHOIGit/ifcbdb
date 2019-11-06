@@ -344,9 +344,9 @@ function buildLeafletIcon(color) {
     return new L.Icon({
         iconUrl: "/static/vendor/leaflet-color-markers/img/marker-icon-" + color + ".png",
         shadowUrl: "/static/vendor/leaflet-color-markers/img/marker-shadow.png",
-        iconSize: [20, 31],
-        iconAnchor: [12, 31],
-        popupAnchor: [1, -34],
-        shadowSize: [31, 31]
+        iconSize: [15, 21],
+        iconAnchor: [15, 21],
+        popupAnchor: [-7, -21],
+        shadowSize: [15, 21]
     });
 }
