@@ -189,7 +189,7 @@ def import_progress(bin_id, n_modded, errors, error_message, done=False):
 def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     df = metadata_dataframe.copy()
 
-    BIN_ID_COLUMNS = ['id','pid','lid','bin','bin_id','sample','sample_id']
+    BIN_ID_COLUMNS = ['id','pid','lid','bin','bin_id','sample','sample_id','filename']
     LAT_COLUMNS = ['latitude','lat','y']
     LON_COLUMNS = ['longitude','lon','lng','lg','x']
     DEPTH_COLUMNS = ['depth','dep','z']
