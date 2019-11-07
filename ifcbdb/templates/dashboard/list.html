@@ -35,7 +35,7 @@
     <div id="bins-container" class="col-md-8">
         <table id="bins" class="table table-sm table-striped table-bordered w-100">
             <thead>
-                <td></td>
+                <td><input type="checkbox" id="select-all" /></td>
                 <td>Timestamp</td>
                 <td>PID</td>
                 <td>Skipped?</td>
@@ -45,18 +45,33 @@
     </div>
     <div class="col-md-4">
         <div class="card">
+            {% if start_date and end_date %}
+            <div class="card-header">Time Range</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-right">Start Date:</div>
+                    <div class="col-md-8"><strong><span id="start-date"></span></strong></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 text-right">End Date:</div>
+                    <div class="col-md-8"><strong><span id="end-date"></span></strong></div>
+                </div>
+            </div>
+            {% endif %}
             <div class="card-header">Filters</div>
             <div id="skip-filters" class="card-body">
-                <label><input type="radio" name="skip-filter" data-option="exclude" checked /> Exclude Skipped</label><br />
-                <label><input type="radio" name="skip-filter" data-option="include" /> Include Skipped</label><br />
+                <label><input type="radio" name="skip-filter" data-option="exclude" /> Exclude Skipped</label><br />
+                <label><input type="radio" name="skip-filter" data-option="include" checked /> Include Skipped</label><br />
                 <label><input type="radio" name="skip-filter" data-option="only" /> Only Skipped</label>
             </div>
             <div class="card-header">Actions</div>
             <div class="card-body">
+                <div id="selected-bin-message" class="alert alert-info d-none">
+                    Selected Bins: <strong><span id="selected-bins"></span></strong>
+                </div>
                 <div id="action-message" class="alert d-none"></div>
                 <button id="skip-selected" type="button" class="btn btn-sm btn-block btn-mdb-color">Skip Selected Bins</button><br />
                 <button id="unskip-selected" type="button" class="btn btn-sm btn-block btn-mdb-color">Unskip Selected Bins</button><br />
-                
             </div>
         </div>
     </div>
@@ -111,7 +126,7 @@
         }
         $("#action-message").toggleClass("d-none", true);
 
-        if (skip && !confirm("Are you sure you want to skip the selected bins?"))
+        if (skip && !confirm("Are you sure you want to skip the " + selectedBins.length + " selected bin(s)?"))
             return;
 
         var payload = {
@@ -158,6 +173,9 @@
                 } else {
                     selectedBins = selectedBins.filter(function(b) {return b != pid });
                 }
+                $("#selected-bins").html(selectedBins.length);
+                $("#selected-bin-message").toggleClass("d-none", selectedBins.length == 0);
+                $("#select-all").prop("checked", selectedBins.length == binsTable.rows()[0].length ? "checked" : "");
             });
 
         $("#skip-filters").on("change", "input[type=radio]", function(){
@@ -177,6 +195,24 @@
             "?start_date=" + _startDate +
             "&end_date=" + _endDate +
             "&" + getGroupingParameters();
+        });
+
+        $("#select-all").click(function(){
+            var checked = $(this).is(":checked");
+
+            binsTable.rows().every(function() {
+                $(this.node()).find("input[type=checkbox]").prop("checked", checked ? "checked" : "")
+            });
+
+            selectedBins = [];
+            if (checked) {
+                binsTable.rows().every(function(){
+                    selectedBins.push(this.data().pid);
+                });
+            }
+
+            $("#selected-bins").html(selectedBins.length);
+            $("#selected-bin-message").toggleClass("d-none", selectedBins.length == 0);
         });
 
         // Set default skip filter based on querystring
@@ -238,6 +274,10 @@
 <script>
     $(function () {
       $('[data-toggle="tooltip"]').tooltip()
+      {% if start_date and end_date %}
+      $("#start-date").html(moment("{{ start_date }}").toISOString());
+      $("#end-date").html(moment("{{ end_date }}").toISOString());
+      {% endif %}
     })
 </script>
 {% endblock %}
