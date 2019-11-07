@@ -9,6 +9,7 @@ var DEPTH_PRECISION = 1;
 var PLOT_X_DEFAULT = "roi_x";
 var PLOT_Y_DEFAULT = "roi_y";
 var MAX_SELECTABLE_IMAGES = 25;
+var _binFilterMode = "timeline";
 
 $(function(){
     $("#dataset-switcher").change(function(){
@@ -349,4 +350,134 @@ function buildLeafletIcon(color) {
         popupAnchor: [-7, -21],
         shadowSize: [15, 21]
     });
+}
+
+//************* Timeline/List Filtering Methods ***********************/
+function getQuerystringFromParameters(dataset, instrument, tags) {
+    var parameters = []
+    if (dataset != "")
+        parameters.push("dataset=" + dataset);
+    if (instrument != "")
+        parameters.push("instrument=" + instrument);
+    if (tags != "") {
+        parameters.push("tags=" + tags);
+    }
+
+    if (parameters.length == 0)
+        return "";
+
+    return parameters.join("&");
+}
+
+function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, initialValues) {
+
+    var dataset = initialValues ? initialValues["dataset"] : datasetFilter.val();
+    var instrument = initialValues ? initialValues["instrument"] : instrumentFilter.val();
+    var tags = initialValues ? initialValues["tags"] : tagFilter.val().join();
+    var selected_tags = tags == null ? [] : tags.split(",");
+
+    var url = "/api/filter_options" +
+        "?dataset=" + (dataset ? dataset : "") +
+        "&instrument=" + (instrument ? instrument : "") +
+        "&tags=" + (tags ? tags : "");
+
+    $.get(url, function(data){
+        datasetFilter.empty();
+        datasetFilter.append($("<option value='' />"));
+        for (var i = 0; i < data.dataset_options.length; i++) {
+            var option = data.dataset_options[i];
+            datasetFilter.append($("<option value='" + option + "'" + (option == dataset ? "selected" : "") + ">" + option + "</option>"));
+        }
+        datasetFilter.val(dataset);
+
+        instrumentFilter.empty();
+        instrumentFilter.append($("<option value='' />"));
+        for (var i = 0; i < data.instrument_options.length; i++) {
+            var option = data.instrument_options[i];
+            instrumentFilter.append($("<option value='" + option + "' " + (option == instrument ? "selected" : "") + ">IFCB" + option + "</option>"));
+        }
+        instrumentFilter.val(instrument);
+
+        tagFilter.empty();
+        for (var i = 0; i < data.tag_options.length; i++) {
+            var option = data.tag_options[i];
+
+            var element = $("<option value='" + option + "'>" + option + "</option>");
+            if (selected_tags.includes(option)) {
+                element.attr("selected", "selected");
+            }
+
+            tagFilter.append(element);
+        }
+
+        tagFilter.trigger('chosen:updated');
+    });
+}
+
+function initBinFilter(binFilterMode) {
+    _binFilterMode = binFilterMode;
+    var datasetFilter = $("#SearchPopoverContent .dataset-filter");
+    var instrumentFilter = $("#SearchPopoverContent .instrument-filter");
+    var tagFilter = $("#SearchPopoverContent .tag-filter");
+
+    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, {
+        "dataset": _dataset,
+        "instrument": _instrument,
+        "tags": _tags
+    });
+
+    _filterPopover = $('[data-toggle="popover"]').popover({
+      container: 'body',
+      title: 'Update Filters',
+      html: true,
+      placement: 'bottom',
+      sanitize: false,
+      content: function () {
+          return $("#SearchPopoverContent").html();
+      }
+    });
+
+    _filterPopover.on('shown.bs.popover', function () {
+        $(".popover .tag-filter").chosen({
+            placeholder_text_multiple: "Select Tags..."
+        });
+
+        $(".popover .dataset-filter, .popover .instrument-filter, .popover .tag-filter").change(function(){
+            var wrapper = $(this).closest(".filter-options");
+            var datasetFilter = wrapper.find(".dataset-filter");
+            var instrumentFilter = wrapper.find(".instrument-filter");
+            var tagFilter = wrapper.find(".tag-filter");
+
+            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, null);
+        });
+    });
+}
+
+function applyFilters() {
+    var dataset = $(".popover .dataset-filter").val();
+    var instrument = $(".popover .instrument-filter").val();
+    var tags = $(".popover .tag-filter option:selected")
+        .map(function() {return $(this).val()}).get()
+        .join();
+
+    var qs = getQuerystringFromParameters(dataset, instrument, tags);
+
+    $.get("/api/bin_exists?" + qs, function(data){
+        if (!data.exists) {
+            alert("No bins were found matching the specified filters. Please update the filters and try again")
+            return;
+        }
+
+        _dataset = dataset;
+        _instrument = instrument;
+        _tags = tags;
+
+        if (_binFilterMode == "list") {
+            location.href = createListLink();
+        } else {
+            location.href = createBinLink(_bin);
+        }
+    });
+
+    return false;
 }

@@ -69,6 +69,8 @@
     var _dataset = "{{ dataset_name|default_if_none:'' }}";
     var _instrument = "{{ instrument_number|default_if_none:'' }}";
     var _tags = "{{ tags|default_if_none:'' }}";
+    var _startDate = "{{ start_date|default_if_none:'' }}";
+    var _endDate = "{{ end_date|default_if_none:'' }}";
     var binsTable;
     var selectedBins = [];
 
@@ -87,6 +89,14 @@
             return "";
 
         return parameters.join("&");
+    }
+
+    function createListLink(bin) {
+        return "/list?" +
+            getGroupingParameters(bin) +
+            "&start_date=" + _startDate +
+            "&end_date=" + _endDate +
+            "&skip_filters=" + $("#skip-filters input[type=radio]:checked").data("option");
     }
 
     function updateSkip(skip) {
@@ -129,6 +139,7 @@
     }
 
     $(function(){
+        initBinFilter("list");
         $("#bins-container")
             .on("click", ".view-bin", function(e){
                 e.preventDefault();
@@ -163,10 +174,15 @@
 
         $("#view-timeline").click(function(){
             location.href = "/timeline" +
-            "?start_date={{ start_date }}" +
-            "&end_date={{ end_date }}" +
+            "?start_date=" + _startDate +
+            "&end_date=" + _endDate +
             "&" + getGroupingParameters();
         });
+
+        // Set default skip filter based on querystring
+        {% if skip_filters %}
+        $("#skip-filters input[type=radio][data-option={{ skip_filters|default_if_none:'' }}").prop("checked", "checked")
+        {% endif %}
 
         binsTable = $('#bins').DataTable({
             searching: false,
@@ -178,8 +194,8 @@
 
                 var url = "/api/list_bins" +
                     "?skip_filter=" + opt +
-                    "&start_date={{ start_date }}" +
-                    "&end_date={{ end_date }}" +
+                    "&start_date=" + _startDate +
+                    "&end_date=" + _endDate +
                     "&" + getGroupingParameters()
                 $.get(url, function(data){
                     callback(data);
@@ -220,8 +236,8 @@
     });
 </script>
 <script>
-        $(function () {
-          $('[data-toggle="tooltip"]').tooltip()
-        })
-        </script>
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+</script>
 {% endblock %}

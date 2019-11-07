@@ -162,6 +162,7 @@ def list_page(request):
     tags = request_get_tags(request.GET.get("tags"))
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
+    skip_filters = request.GET.get("skip_filters")
 
     dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
 
@@ -175,7 +176,9 @@ def list_page(request):
         "instrument_number": instrument_number,
         "tags": ','.join(tags) if tags else '',
         "start_date": start_date,
-        "end_date": end_date
+        "end_date": end_date,
+        "can_filter_page": True,
+        "skip_filters": skip_filters,
     })
 
 
