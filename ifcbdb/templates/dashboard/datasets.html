@@ -57,6 +57,10 @@
                                     <a href="javascript:;" id="cancel-region" class="btn btn-sm btn-mdb-color">Cancel</a>
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label>Dataset:</label>
+                                {{ form.dataset }}
+                            </div>
                             <button type="submit" class="btn btn-mdb-color btn-block">Search</button>
                         </form>
                     </div>
@@ -159,8 +163,11 @@
                 }
             }
 
-            markers.addLayers(markerList);
-            map.addLayer(markers);
+            if (markerList.length > 0) {
+                markers.addLayers(markerList);
+                map.addLayer(markers);
+            }
+
             map.addLayer(fixedMarkers);
 
             markerList = [];
