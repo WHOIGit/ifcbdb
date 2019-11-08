@@ -151,6 +151,24 @@ function updateBinStats(data) {
     $("#stat-skip")
         .text(data["skip"] ? "Yes" : "No")
         .data("skipped", data["skip"]);
+    if(data["lat"] > -9999 && data["lng"] > -9999) {
+        $("#show-lat").removeClass("d-none").addClass("d-flex");
+        $("#show-lon").removeClass("d-none").addClass("d-flex");
+        $("#stat-lat").html(data["lat_rounded"]);
+        $("#stat-lon").html(data["lng_rounded"]);
+    } else {
+        $("#show-lat").addClass("d-none").removeClass("d-flex");
+        $("#show-lon").addClass("d-none").removeClass("d-flex");
+        $("#stat-lat").html("");
+        $("#stat-lon").html("");
+    }
+    if(data["depth"] > 0) {
+        $("#show-depth").removeClass("d-none").addClass("d-flex");
+        $("#stat-depth").html(data["depth"]);
+    } else {
+        $("#show-depth").addClass("d-none").removeClass("d-flex");
+        $("#stat-depth").html("");
+    }
 }
 
 function updateBinMetadata() {
