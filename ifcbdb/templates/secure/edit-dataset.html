@@ -64,6 +64,20 @@
                     {% if form.doi.errors %}<span class="text-danger">{{ form.doi.errors.as_text}}</span>{% endif %}
                 </div>
             </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_attribution">Attribution (optional)</label>
+                    {{ form.attribution }}
+                    {% if form.attribution.errors %}<span class="text-danger">{{ form.attribution.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_funding">Funding (optional)</label>
+                    {{ form.funding }}
+                    {% if form.funding.errors %}<span class="text-danger">{{ form.funding.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
             <a class="btn btn-sm btn-mdb-color" data-toggle="collapse" href="#setFixedLocationInputs" role="button" aria-expanded="false" aria-controls="setFixedLocationInputs">Set Fixed Location</a>
                   <div class="{% if not dataset.location and not dataset.depth %}collapse{% endif %}" id="setFixedLocationInputs">
             <div class="form-row">

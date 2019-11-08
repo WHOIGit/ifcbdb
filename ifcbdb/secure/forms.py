@@ -14,12 +14,14 @@ class DatasetForm(forms.ModelForm):
 
     class Meta:
         model = Dataset
-        fields = ["id", "name", "title", "doi", "is_active", "depth", ]
+        fields = ["id", "name", "title", "doi", "attribution", "funding", "is_active", "depth", ]
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
-            "title": forms.Textarea(attrs={"class": "form-control form-control-sm", "placeholder": "Description", "rows": 3}),
+            "title": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Title"}),
             "doi": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
+            "attribution": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
+            "funding": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
             "depth": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Depth"}),
             "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
         }

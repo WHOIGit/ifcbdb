@@ -212,6 +212,9 @@ class Dataset(models.Model):
 
     # doi
     doi = models.CharField(max_length=256, blank=True)
+    # attribution and funding
+    attribution = models.CharField(max_length=512, blank=True)
+    funding = models.CharField(max_length=512, blank=True)
 
     def __len__(self):
         # number of bins

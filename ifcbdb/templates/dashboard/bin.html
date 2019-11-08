@@ -72,9 +72,19 @@
         </div>
     </div>
 
-        {% if dataset.doi %}
+        {% if dataset.doi or dataset.attribution or dataset.funding %}
         <div class="pl-3">
-          <small>Dataset DOI: <a href="https://doi.org/{{ dataset.doi }}">{{ dataset.doi }}</a></small>
+          <small>
+          {% if dataset.doi %}
+          <span class="pr-3">DOI: <a href="https://doi.org/{{ dataset.doi }}">{{ dataset.doi }}</a></span>
+          {% endif %}
+          {% if dataset.attribution %}
+          <span class="pr-3">Investigators: {{ dataset.attribution }}</span>
+          {% endif %}
+          {% if dataset.funding %}
+          <span class="pr-3">Funding: {{ dataset.funding }}</span>
+          {% endif %}
+          </small>
         </div>
         {% endif %}
 
