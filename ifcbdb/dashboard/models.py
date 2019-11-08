@@ -232,7 +232,7 @@ class Dataset(models.Model):
         return ds
 
     @staticmethod
-    def search(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None):
+    def search(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None, dataset_id=None):
         # TODO: Check into optimizing query
         datasets = Dataset.objects.filter(is_active=True).prefetch_related("bins")
 
@@ -257,10 +257,13 @@ class Dataset(models.Model):
             bbox = Polygon.from_bbox(region)
             datasets = datasets.filter(Q(bins__location__contained=bbox) | Q(location__contained=bbox))
 
+        if dataset_id:
+            datasets = datasets.filter(pk=dataset_id)
+
         return datasets.order_by("title").distinct("title")
 
     @staticmethod
-    def search_fixed_locations(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None):
+    def search_fixed_locations(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None, dataset_id=None):
         # TODO: Check into optimizing query
         datasets = Dataset.objects.exclude(location__isnull=True).filter(is_active=True).prefetch_related("bins")
 
@@ -284,6 +287,9 @@ class Dataset(models.Model):
         if region:
             bbox = Polygon.from_bbox(region)
             datasets = datasets.filter(Q(location__contained=bbox))
+
+        if dataset_id:
+            datasets = datasets.filter(pk=dataset_id)
 
         return datasets.order_by("title").distinct("title")
 
@@ -693,7 +699,7 @@ class Bin(models.Model):
 
     # searching
     @staticmethod
-    def search(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None):
+    def search(start_date=None, end_date=None, min_depth=None, max_depth=None, region=None, dataset_id=None):
         bins = Bin.objects.all()
 
         # Handle start/end dates
@@ -716,6 +722,9 @@ class Bin(models.Model):
         if region:
             bbox = Polygon.from_bbox(region)
             bins = bins.filter(location__contained=bbox)
+
+        if dataset_id:
+            bins = bins.filter(datasets__id=dataset_id)
 
         return bins
 
