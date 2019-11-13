@@ -10,13 +10,13 @@
 
 <div class="row">
     <div class="col">
-        <span class="h3-responsive">Locate a Dataset</span>
+        <span class="h3-responsive">Locate a Bin</span>
         <div id="progress"><div id="progress-bar"></div></div>
     </div>
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-    <div class="col-xs-12 col-lg-8">
+    <div class="col-xs-12 col-lg-12">
         <div class="card h-100">
             <div class="card-body text-primary">
                 <div class="row">
@@ -65,31 +65,12 @@
                         </form>
                     </div>
                     <div class="col-xs-12 col-md-8 col-lg-6 col-xl-8 order-1 order-md-2">
-                        <div id="map-container" style="height:500px;"></div>
+                        <div id="map-container" style="height:600px;"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xs-12 col-lg-4 pt-3 pt-lg-0">
-        <div class="card h600 h-100">
-            <div class="card-header mdb-color lighten-5">
-                <span class="h5-responsive">Datasets:</span>
-            </div>
-            <div class="card-body overflow-auto">
-                <div>
-                    <ul class="list-group list-group-flush" id="dataset-list">
-                        {% for dataset in datasets %}
-                        <li class="list-group-item">
-                            <a href="{% url 'timeline_page' %}?dataset={{ dataset.name }}">{{ dataset.title }}</a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="debug"></div>
 </div>
 {% endblock %} {% block scripts %}
 <script type="text/javascript" src="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.js' %}"></script>
@@ -99,7 +80,7 @@
     var markers = null;
     var markerList = [];
     var fixedMarkers = null;
-    var areaSelect;
+    var areaSelect = null;
 
     function enableRegionSelection() {
         areaSelect = L.areaSelect({width:200, height:250});
@@ -117,13 +98,23 @@
     }
 
     function cancelRegionSelection() {
-        areaSelect.remove();
+        if (areaSelect)
+            areaSelect.remove();
+
         $("#id_region_sw_lat").val("");
         $("#id_region_sw_lon").val("");
         $("#id_region_ne_lat").val("");
         $("#id_region_ne_lon").val("");
         $("#select-region").toggleClass("d-none", false);
         $("#region").toggleClass("d-none", true);
+        areaSelect = null;
+    }
+
+    function hideRegionSelection() {
+        if (areaSelect)
+            areaSelect.remove();
+
+        areaSelect = null;
     }
 
     function updateMapStatus(processed, total, elapsed, layersArray) {
@@ -132,12 +123,10 @@
 
     function searchLocations() {
         var formData = $("#search-form").serialize();
-        formData += "&include_locations=true";
-
         var binIcon = buildLeafletIcon("orange");
         var datasetIcon = buildLeafletIcon("red");
 
-        $.post("/api/search_datasets", formData, function(locationData){
+        $.post("/api/search_bin_locations", formData, function(locationData){
             markers.clearLayers();
             fixedMarkers.clearLayers();
 
@@ -171,6 +160,7 @@
             map.addLayer(fixedMarkers);
 
             markerList = [];
+            hideRegionSelection();
         });
     }
 
@@ -206,19 +196,7 @@
         $("#search-form").submit(function(e){
             e.preventDefault();
 
-            $.post("/api/search_datasets", $(this).serialize(), function(data){
-                $("#dataset-list").empty();
-                for (var i = 0; i < data.datasets.length; i++) {
-                    var dataset = data.datasets[i];
-                    var li = $("<li class='list-group-item' />");
-                    var link = $("<a href='{% url 'timeline_page' %}?dataset=" + dataset["name"] + "'>" + dataset["title"] + "</a>");
-
-                    li.append(link);
-                    $("#dataset-list").append(li);
-                }
-
-                searchLocations();
-            });
+            searchLocations();
         });
     });
 </script>

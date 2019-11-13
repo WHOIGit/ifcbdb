@@ -272,11 +272,11 @@ class Dataset(models.Model):
 
         # Handle start/end dates
         if start_date and end_date:
-            datasets = datasets.filter(bins__timestamp__range=[start_date, end_date])
+            datasets = datasets.filter(bins__sample_time__range=[start_date, end_date])
         elif start_date:
-            datasets = datasets.filter(bins__timestamp__gte=start_date)
+            datasets = datasets.filter(bins__sample_time__gte=start_date)
         elif end_date:
-            datasets = datasets.filter(bins__timestamp__lt=end_date)
+            datasets = datasets.filter(bins__sample_time__lt=end_date)
 
         # Handle min/max depth
         if min_depth and max_depth:
@@ -707,11 +707,11 @@ class Bin(models.Model):
 
         # Handle start/end dates
         if start_date and end_date:
-            bins = bins.filter(timestamp__range=[start_date, end_date])
+            bins = bins.filter(sample_time__range=[start_date, end_date])
         elif start_date:
-            bins = bins.filter(timestamp__gte=start_date)
+            bins = bins.filter(sample_time__gte=start_date)
         elif end_date:
-            bins = bins.filter(timestamp__lt=end_date)
+            bins = bins.filter(sample_time__lt=end_date)
 
         # Handle min/max depth
         if min_depth and max_depth:
