@@ -398,6 +398,15 @@ class Bin(models.Model):
     look_time = models.FloatField(default=FILL_VALUE)
     ml_analyzed = models.FloatField(default=FILL_VALUE)
     concentration = models.FloatField(default=FILL_VALUE)
+    # metadata about sampling
+    sample_type = models.CharField(max_length=128, blank=True)
+    # for at-sea samples we need a code identifying the cruise
+    cruise = models.CharField(max_length=128, blank=True)
+    # for casts we need cast and niskin number
+    # casts sometimes have numbers like "2a"
+    cast = models.CharField(max_length=64, blank=True)
+    # niskin numbers should always be integers
+    niskin = models.IntegerField(null=True)
 
     # tags
     tags = models.ManyToManyField('Tag', through='TagEvent')
