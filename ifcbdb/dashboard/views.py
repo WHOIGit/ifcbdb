@@ -608,6 +608,10 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "comments": bin.comment_list,
         "concentration": round(bin.concentration, 3),
         "skip": bin.skip,
+        "sample_type": bin.sample_type,
+        "cruise": bin.cruise,
+        "cast": bin.cast,
+        "niskin": bin.niskin,
     }
 
 def _mosaic_page_image(request, bin_id):

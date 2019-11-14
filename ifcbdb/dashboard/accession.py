@@ -300,18 +300,29 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
 
             if sample_type_col is not None:
                 sample_type = get_cell(row, sample_type_col)
-                b.sample_type = sample_type
+                if sample_type is not None:
+                    b.sample_type = sample_type
 
             # cruise / cast / niskin
 
             if cruise_col is not None:
-                b.cruise = str(get_cell(row, cruise_col))
+                cruise = get_cell(row, cruise_col)
+                if cruise is not None:
+                    b.cruise = str(cruise)
 
             if cast_col is not None:
-                b.cast = str(get_cell(row, cast_col))
+                cast = get_cell(row, cast_col)
+                if cast is not None:
+                    try:
+                        cast_number = int(cast)
+                        b.cast = str(cast_number)
+                    except ValueError:
+                        b.cast = str(cast)
 
             if niskin_col is not None:
-                b.niskin = int(get_cell(row, niskin_col))
+                niskin = get_cell(row, niskin_col)
+                if niskin is not None:
+                    b.niskin = int(niskin)
 
             # ml_analyzed
 
