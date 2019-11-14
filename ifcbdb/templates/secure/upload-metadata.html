@@ -61,6 +61,11 @@
     <span id="cancel-button" class="btn btn-sm btn-mdb-color d-none">Cancel</span>
 </div>
 
+<div id="errors">
+    <ul id="errors-list">
+    </ul>
+</div>
+
 <div>
     <hr />
     <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
@@ -93,22 +98,38 @@
         console.log($(this));
     });
 
+    function showErrors(errors) {
+        var html = '';
+        var error_count = 0;
+        for (err of errors) {
+            error_count += 1;
+            if (error_count > 200) {
+                html += '<br>... more than 200 errors';
+                break
+            }
+            html += '<li> Row '+err.row+': '+err.message+'</li>';
+        }
+        $('#errors-list').html(html);
+    }
+
     function update_status() {
         $.getJSON("{% url 'secure:metadata_upload_status' %}", function(r) {
             $("#upload-status-cancel").removeClass('d-none');
             if(r.state == 'SUCCESS') {
                 modded = r.info.n_modded;
                 errors = r.info.errors;
-                $("#upload-status").html('Complete. '+modded+' bins modified, '+errors+' error(s)');
+                $("#upload-status").html('Complete. '+modded+' bins modified, '+errors.length+' error(s)');
                 $("#cancel-button").addClass('d-none');
                 $("#submit").removeAttr('disabled');
+                showErrors(errors);
                 return;
             } else if(r.state == 'PROGRESS') {
                 modded = r.info.n_modded;
                 errors = r.info.errors;
-                $("#upload-status").html('Processing ... '+modded+' bins modified, '+errors+' error(s)');
+                $("#upload-status").html('Processing ... '+modded+' bins modified, '+errors.length+' error(s)');
                 $("#cancel-button").removeClass("d-none");
                 $("#submit").attr('disabled',true);
+                showErrors(errors);
             } else if(r.state == 'PENDING') {
                 $("#upload-status").html('Starting ...');
             }

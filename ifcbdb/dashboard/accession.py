@@ -176,13 +176,12 @@ class Accession(object):
             return
         return b # defer save
 
-def import_progress(bin_id, n_modded, errors, error_message, done=False):
+def import_progress(bin_id, n_modded, errors, done=False):
     #print(bin_id, n_modded, errors, error_message, done) # FIXME debug
     return {
         'bin': bin_id,
         'n_modded': n_modded,
         'errors': errors,
-        'error_message': error_message,
         'done': done,
     }
 
@@ -250,8 +249,7 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     progress_batch_size = 50
 
     b = None
-    error_message = None
-    errors = 0
+    errors = []
 
     should_continue = True
 
@@ -323,24 +321,18 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
             b.save()
             
             if n_modded % progress_batch_size == 0:
-                should_continue = progress_callback(import_progress(b.pid, n_modded, errors, error_message))
+                should_continue = progress_callback(import_progress(b.pid, n_modded, errors))
 
-        except ValueError:
-            error_message = 'ValueError processing metadata' # FIXME more descriptive
-            errors += 1
-
-        except KeyError:
-            error_message = 'KeyError processing metadata' # FIXME more descriptive
-            errors += 1
-
-        except Bin.DoesNotExist:
-            error_message = 'No such bin'
-            errors += 1
+        except (ValueError, KeyError, Bin.DoesNotExist) as e:
+            errors.append({
+                'row': row.Index + 2, # why 2 and not 1?
+                'message': str(e),
+                })
 
     if b is not None:
-        progress = import_progress(b.pid, n_modded, errors, error_message, True)
+        progress = import_progress(b.pid, n_modded, errors, True)
     else:
-        progress = import_progress('', n_modded, errors, error_message, True)
+        progress = import_progress('', n_modded, errors, True)
 
     progress_callback(progress)
 
