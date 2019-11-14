@@ -197,6 +197,10 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     COMMENTS_COLUMNS = ['comment','comments','note','notes']
     TAG_COLUMN_PREFIX = 'tag'
     SKIP_COLUMNS = ['skip','bad']
+    CRUISE_COLUMNS = ['cruise']
+    CAST_COLUMNS = ['cast']
+    NISKIN_COLUMNS = ['niskin','bottle']
+    SAMPLE_TYPE_COLUMNS = ['sampletype','sample_type']
 
     SKIP_POSITIVE_VALUES = ['skip','yes','y','true','t']
     SKIP_NEGATIVE_VALUES = ['noskip','no','n','false','f']
@@ -239,6 +243,12 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     comments_col = get_column(df, COMMENTS_COLUMNS)
 
     ma_col = get_column(df, MA_COLUMNS)
+
+    cruise_col = get_column(df, CRUISE_COLUMNS)
+    cast_col = get_column(df, CAST_COLUMNS)
+    niskin_col = get_column(df, NISKIN_COLUMNS)
+
+    sample_type_col = get_column(df, SAMPLE_TYPE_COLUMNS)
 
     tag_cols = []
     for c in df.columns:
@@ -285,6 +295,23 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
                 depth = get_cell(row, depth_col)
                 if depth is not None:
                     b.depth = depth
+
+            # sample type
+
+            if sample_type_col is not None:
+                sample_type = get_cell(row, sample_type_col)
+                b.sample_type = sample_type
+
+            # cruise / cast / niskin
+
+            if cruise_col is not None:
+                b.cruise = str(get_cell(row, cruise_col))
+
+            if cast_col is not None:
+                b.cast = str(get_cell(row, cast_col))
+
+            if niskin_col is not None:
+                b.niskin = int(get_cell(row, niskin_col))
 
             # ml_analyzed
 
