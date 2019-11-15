@@ -272,10 +272,10 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
             if pid is None:
                 raise ValueError('bin id must be specified')
 
-            b = Bin.objects.get(pid=pid)
-
-            if b is None:
-                raise KeyError('no such bin {}'.format(pid))
+            try:
+                b = Bin.objects.get(pid=pid)
+            except Bin.DoesNotExist:
+                raise KeyError('Bin {} not found'.format(pid))
 
             # spatiotemporal metadata
 
@@ -362,7 +362,7 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
             if n_modded % progress_batch_size == 0:
                 should_continue = progress_callback(import_progress(b.pid, n_modded, errors))
 
-        except (ValueError, KeyError, Bin.DoesNotExist) as e:
+        except Exception as e:
             errors.append({
                 'row': row.Index + 2, # why 2 and not 1?
                 'message': str(e),
