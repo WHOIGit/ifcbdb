@@ -214,7 +214,7 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     def get_cell(named_tup, key):
         val = getattr(named_tup, key)
         try:
-            if np.isnan(val):
+            if pd.isnull(val):
                 return None
             else:
                 return val
@@ -281,9 +281,10 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
 
             if ts_col is not None:
                 ts_str = get_cell(row, ts_col)
-                ts = pd.to_datetime(ts_str, utc=True)
-                if ts is not None:
-                    b.sample_time = ts
+                if ts_str is not None:
+                    ts = pd.to_datetime(ts_str, utc=True)
+                    if not pd.isnull(ts):
+                        b.sample_time = ts
            
             if lat_col is not None and lon_col is not None:
                 lat = get_cell(row, lat_col)
