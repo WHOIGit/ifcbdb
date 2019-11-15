@@ -680,7 +680,7 @@ class Bin(models.Model):
         # don't add this tag if was already added
         event, created = TagEvent.objects.get_or_create(bin=self, tag=tag)
         if created and user is not None:
-            tag.user = user
+            event.user = user
         return event
 
     def delete_tag(self, tag_name):
