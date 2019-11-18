@@ -998,6 +998,12 @@ $(function() {
     changeBin("{{ bin.pid }}", false);
 });
 
+    function canUseFixedAspectRatio(parameter) {
+        return (
+            parameter === "roi_x" || parameter === "roi_y" ||
+            parameter === "roi_width" || parameter === "roi_height"
+        );
+    }
 
     function updatePlot() {
         var xAxis = $("#plot-x-axis").val();
@@ -1055,7 +1061,9 @@ $(function() {
                  },
                 titlefont: {
                   size: 18,
-                }
+                },
+                constrain: "domain",
+                constraintoward: "left"
             },
             yaxis: {
                 type: yType,
@@ -1071,7 +1079,9 @@ $(function() {
                 },
                 titlefont: {
                   size: 18,
-                }
+                },
+                constrain: "domain",
+                constraintoward: "bottom"
             }
         };
 
@@ -1089,6 +1099,12 @@ $(function() {
             layout.yaxis.autorange = false;
             layout.yaxis.fixedrange = true;
             layout.yaxis.range = [0, yMax];
+        }
+
+        // Special handling of some pairs of x/y axis to force an aspect ratio
+        if (canUseFixedAspectRatio(xAxis) && canUseFixedAspectRatio(yAxis)) {
+            layout.yaxis.scaleanchor = "x";
+            layout.yaxis.scaleratio = 1;
         }
 
         Plotly.react('plot', trace, layout, config);
