@@ -61,7 +61,7 @@
                                 <label>Dataset:</label>
                                 {{ form.dataset }}
                             </div>
-                            <button type="submit" class="btn btn-mdb-color btn-block">Search</button>
+                            <button id="search" type="submit" class="btn btn-mdb-color btn-block">Search</button>
                         </form>
                     </div>
                     <div class="col-xs-12 col-md-8 col-lg-6 col-xl-8 order-1 order-md-2">
@@ -81,6 +81,15 @@
     var markerList = [];
     var fixedMarkers = null;
     var areaSelect = null;
+
+    function updateSearchButton(enabled) {
+        $("#search")
+            .prop("disabled", enabled ? "" : "disabled")
+            .html(enabled ?
+                "Search":
+                "<i class='fas fa-circle-notch fa-spin'></i> Search"
+            );
+    }
 
     function enableRegionSelection() {
         areaSelect = L.areaSelect({width:200, height:250});
@@ -126,6 +135,7 @@
         var binIcon = buildLeafletIcon("orange");
         var datasetIcon = buildLeafletIcon("red");
 
+        updateSearchButton(false);
         $.post("/api/search_bin_locations", formData, function(locationData){
             markers.clearLayers();
             fixedMarkers.clearLayers();
@@ -161,6 +171,10 @@
 
             markerList = [];
             hideRegionSelection();
+
+            // The small timeout is intentionally to prevent flickering of the button UI as well as add a
+            //   small delay between runs of the search
+            setTimeout(function(){ updateSearchButton(true); }, 500);
         });
     }
 
