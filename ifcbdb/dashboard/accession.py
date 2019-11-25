@@ -17,13 +17,14 @@ from ifcb.data.files import time_filter
 from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 
-def progress(bin_id, added, total, bad):
+def progress(bin_id, added, total, bad, errors={}):
     return {
         'bin_id': bin_id,
         'added': added,
         'total': total,
         'bad': bad,
         'existing': total - added - bad,
+        'errors': errors,
     }
 
 def do_nothing(*args, **kwargs):
@@ -53,7 +54,7 @@ class Accession(object):
             for b in directory:
                 yield b
     def sync(self, progress_callback=do_nothing, log_callback=do_nothing):
-        progress_callback(progress('',0,0,0))
+        progress_callback(progress('',0,0,0,{}))
         bins_added = 0
         total_bins = 0
         bad_bins = 0
@@ -61,6 +62,7 @@ class Accession(object):
         newest_done = False
         scanner = self.scan()
         start_time = self.start_time()
+        errors = {}
         while True:
             bins = list(islice(scanner, self.batch_size))
             if not bins:
@@ -96,7 +98,10 @@ class Accession(object):
                 if not created:
                     self.dataset.bins.add(b)
                     continue
-                b2s = self.add_bin(bin, b)
+                b2s, error = self.add_bin(bin, b)
+                if error is not None:
+                    b2s = None
+                    errors[b.pid] = error
                 if b2s is not None:
                     bins2save.append(b2s)
                 elif created: # created, but bad! delete
@@ -117,11 +122,11 @@ class Accession(object):
                     self.dataset.bins.add(b)
                     bins_added += 1
             # done with the batch
-            status = progress_callback(progress(most_recent_bin_id, bins_added, total_bins, bad_bins))
+            status = progress_callback(progress(most_recent_bin_id, bins_added, total_bins, bad_bins, errors))
             if not status: # cancel
                 break
         # done.
-        prog = progress(most_recent_bin_id, bins_added, total_bins, bad_bins)
+        prog = progress(most_recent_bin_id, bins_added, total_bins, bad_bins, errors)
         progress_callback(prog)
         return prog
     def add_bin(self, bin, b): # IFCB bin, Bin instance
@@ -129,28 +134,23 @@ class Accession(object):
         qc_bad = check_bad(bin)
         if qc_bad:
             b.qc_bad = True
-            return
+            return b, 'malformed raw data'
         # more error checking for setting attributes
         try:
             ml_analyzed = bin.ml_analyzed
             if ml_analyzed <= 0:
-                qc_bad = True
-        except:
-            qc_bad = True
+                b.qc_bad = True
+                return b, 'ml_analyzed < 0'
+        except Exception as e:
+            b.qc_bad = True
+            return b, 'ml_analyzed: {}'.format(str(e))
         # metadata
         try:
             b.metadata_json = json.dumps(bin.hdr_attributes)
-        except:
-            qc_bad = True
-        #
-        if qc_bad:
+        except Exception as e:
             b.qc_bad = True
-            return
-        # spatial information
-        if self.lat is not None and self.lon is not None:
-            b.set_location(self.lon, self.lat)
-        if self.depth is not None:
-            b.depth = self.depth
+            return b, 'header: {}'.format(str(e))
+        #
         b.qc_no_rois = check_no_rois(bin)
         # metrics
         try:
@@ -173,8 +173,8 @@ class Accession(object):
             b.n_images = len(bin.images)
         b.concentration = b.n_images / ml_analyzed
         if b.concentration < 0: # metadata is bogus!
-            return
-        return b # defer save
+            return b, 'rois/ml is < 0'
+        return b, None # defer save
 
 def import_progress(bin_id, n_modded, errors, done=False):
     #print(bin_id, n_modded, errors, error_message, done) # FIXME debug
