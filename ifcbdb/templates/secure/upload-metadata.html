@@ -62,7 +62,7 @@
 </div>
 
 <div id="errors">
-    <ul id="errors-list">
+    <ul id="errors-list" class="fa-ul">
     </ul>
 </div>
 
@@ -107,7 +107,8 @@
                 html += '<br>... more than 200 errors';
                 break
             }
-            html += '<li> Row '+err.row+': '+err.message+'</li>';
+            html += '<li><span class="fa-li"><i class="fas fa-exclamation-triangle"></i></span>';
+            html += ' Row '+err.row+': '+err.message+'</li>';
         }
         $('#errors-list').html(html);
     }
