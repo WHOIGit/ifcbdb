@@ -348,7 +348,7 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
             if comments_col is not None:
                 body = get_cell(row, comments_col)
                 if body is not None:
-                    b.add_comment(body)
+                    b.add_comment(body, skip_duplicates=True)
 
             # skip flag
 

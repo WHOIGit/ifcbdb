@@ -690,7 +690,11 @@ class Bin(models.Model):
 
     # comments
 
-    def add_comment(self, content, user=None):
+    def add_comment(self, content, user=None, skip_duplicates=False):
+        if skip_duplicates:
+            dupes = Comment.objects.filter(bin=self, content=content, user=user).count()
+            if dupes > 0:
+                return
         comment = Comment(bin=self, content=content, user=user)
         comment.save()
 
