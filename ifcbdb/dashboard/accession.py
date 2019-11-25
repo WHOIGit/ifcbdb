@@ -18,13 +18,14 @@ from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 
 def progress(bin_id, added, total, bad, errors={}):
+    error_list = [{ 'bin': k, 'message': v} for k,v in errors.items()]
     return {
         'bin_id': bin_id,
         'added': added,
         'total': total,
         'bad': bad,
         'existing': total - added - bad,
-        'errors': errors,
+        'errors': error_list,
     }
 
 def do_nothing(*args, **kwargs):

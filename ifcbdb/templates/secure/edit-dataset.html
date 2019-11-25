@@ -130,6 +130,9 @@
                 </div>
                 <div id="sync-bin-id"></div>
             </div>
+            <div>
+                <ul id="sync-errors" class="fa-ul"></ul>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -174,6 +177,14 @@
                 } else if(data.state == 'FAILURE') {
                     $('#sync-state').html('Sync failed.');
                 }
+            }
+            if(data.info.errors.length > 0) {
+                var errors_html = "";
+                for(error of data.info.errors) {
+                    errors_html += '<li><span class="fa-li"><i class="fas fa-exclamation-triangle"></i></span>';
+                    errors_html += error.bin+": "+error.message+"</li>";
+                }
+                $("#sync-errors").html(errors_html);
             }
         });
     }
