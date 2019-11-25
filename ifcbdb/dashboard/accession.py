@@ -135,12 +135,16 @@ class Accession(object):
         if qc_bad:
             b.qc_bad = True
             return b, 'malformed raw data'
+        no_rois = check_no_rois(bin)
+        if no_rois:
+            b.qc_bad = True
+            return b, 'zero ROIs'
         # more error checking for setting attributes
         try:
             ml_analyzed = bin.ml_analyzed
             if ml_analyzed <= 0:
                 b.qc_bad = True
-                return b, 'ml_analyzed < 0'
+                return b, 'ml_analyzed <= 0'
         except Exception as e:
             b.qc_bad = True
             return b, 'ml_analyzed: {}'.format(str(e))
