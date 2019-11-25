@@ -66,7 +66,7 @@ function createListLink(start, end) {
 }
 
 function createBinModeLink() {
-    return "/bin?bin=" + _bin;
+    return "/bin?" + getGroupingParameters(_bin);
 }
 
 function getGroupingParameters(bin) {
@@ -89,7 +89,7 @@ function getGroupingParameters(bin) {
 
 function createBinLink(bin) {
     if (_route == "bin") {
-        return "/bin?bin=" + bin;
+        return createBinModeLink(bin);
     }
 
     return "/timeline?" + getGroupingParameters(bin);

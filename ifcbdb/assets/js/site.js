@@ -502,6 +502,6 @@ function goToBin(pid) {
             return;
         }
 
-        location.href = "/bin?bin=" + pid;
+        location.href = '/bin?bin=' + pid;
     });
 }

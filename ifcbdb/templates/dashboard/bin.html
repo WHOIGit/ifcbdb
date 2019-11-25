@@ -91,18 +91,30 @@
 {% else %}
     <!-- Bin only header -->
     <div class="row d-flex justify-content-between">
-        <div class="pl-3">
-            {% if bin.primary_dataset %}
-            <span class="h3-responsive" id="bin-dataset-label">
-              <a id="bin-dataset-link"
-                href="/timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
+      <div class="pl-3">
+        <span class="h3-responsive">
+            {% if dataset %}
+              <a href="/timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
+                {{ dataset.title }}
+              </a>
+            {% elif bin.primary_dataset %}
+              <a href="/timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
                 {{ bin.primary_dataset.title }}
-              </a>»
-            </span>
+              </a>
             {% endif %}
-            <span class="h3-responsive">{{ bin.pid }}</span>
-        </div>
-
+            {% if instrument %}»
+              <a href="/timeline?instrument={{ instrument.number }}&bin={{ bin.pid }}">
+                IFCB{{ instrument.number }}
+              </a>
+            {% endif %}
+            {% if tags %}»
+              <a href="/timeline?tags={{ tags }}&bin={{ bin.pid }}">
+                {{ tags }}
+              </a>
+            {% endif %}
+        </span>
+        <span class="h3-responsive">» {{ bin.pid }}</span>
+      </div>
     </div>
 
     {% if bin.primary_dataset %}
