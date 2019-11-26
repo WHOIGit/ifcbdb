@@ -65,8 +65,11 @@ function createListLink(start, end) {
     return "javascript:;";
 }
 
-function createBinModeLink() {
-    return "/bin?" + getGroupingParameters(_bin);
+function createBinModeLink(bin) {
+    if (bin == "" || typeof bin == "undefined") {
+        bin = _bin;
+    }
+    return "/bin?" + getGroupingParameters(bin);
 }
 
 function getGroupingParameters(bin) {
@@ -710,7 +713,13 @@ function initEvents() {
     $("#previous-bin, #next-bin").click(function(e) {
         e.preventDefault();
 
-        changeBin($(this).data("bin"), true);
+        var np = $(this).data("bin");
+
+        if (_route == "bin") {
+            window.location.href = createBinModeLink(np);
+        } else {
+            changeBin(np, true);
+        }
     });
 
     // Mosaic paging

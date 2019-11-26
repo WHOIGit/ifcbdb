@@ -168,6 +168,9 @@
                             <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-next">Next Bin</a>
                             </div>
                         </div>
+                        {% else %}
+                        <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-previous">Previous bin</a>
+                        <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-next">Next bin</a>
                         {% endif %}
                     </div>
 
@@ -1292,6 +1295,7 @@ $(function() {
 
     {% else %}
     document.title = _bin;
+    _route = 'bin';
     {% endif %}
 
     {% if bin_reset and route == "timeline" %}
