@@ -104,13 +104,24 @@
         </div>
 
     </div>
-            {% if bin.primary_dataset %}
+
+    {% if bin.primary_dataset %}
+    <div class="pl-3">
+        <small>
           {% if bin.primary_dataset.doi %}
-          <div>
-            <small>Dataset DOI: <a href="https://doi.org/{{ bin.primary_dataset.doi }}">{{ bin.primary_dataset.doi }}</a></small>
-          </div>
+            <span class="pr-3">DOI: <a href="https://doi.org/{{ bin.primary_dataset.doi }}">{{ bin.primary_dataset.doi }}</a></span>
           {% endif %}
+
+        {% if bin.primary_dataset.attribution %}
+            <span class="pr-3">Investigators: {{ bin.primary_dataset.attribution }}</span>
         {% endif %}
+
+        {% if bin.primary_dataset.funding %}
+            <span class="pr-3">Funding: {{ bin.primary_dataset.funding }}</span>
+        {% endif %}
+        </small>
+    </div>
+    {% endif %}
 {% endif %}
 
 
