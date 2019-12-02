@@ -189,6 +189,8 @@ def list_page(request):
 
 def bin_page(request):
     dataset_name = request.GET.get("dataset",None)
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    tags = request_get_tags(request.GET.get("tags"))
     bin_id = request.GET.get("bin",None)
 
     return _details(
@@ -196,6 +198,8 @@ def bin_page(request):
         route="dataset" if dataset_name is not None else "bin",
         bin_id=bin_id,
         dataset_name=dataset_name,
+        instrument_number=instrument_number,
+        tags=tags
     )
 
 
@@ -204,8 +208,8 @@ def image_page(request):
     image_id = request.GET.get("image")
 
     dataset_name = request.GET.get("dataset")
-    instrument_number = request.GET.get("instrument")
-    tags = request.GET.get("tags")
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    tags = request_get_tags(request.GET.get("tags"))
 
     return _image_details(
         request,
@@ -608,7 +612,9 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
     except:
         datasets = []
 
-    if len(datasets) > 0:
+    if dataset is not None:
+        primary_dataset = dataset.name
+    elif len(datasets) > 0:
         primary_dataset = datasets[0]
     else:
         primary_dataset = None
