@@ -620,10 +620,31 @@ function findImageByPID(pid) {
 }
 
 //************* Map Methods ***********************/
+function changeBinFromMap(pid) {
+    changeBin(pid, false);
+    showWorkspace("mosaic");
+    $(".nav-link").toggleClass("active", false);
+    $("#show-map").toggleClass("active", true);
+}
+
 function updateMapLocations(data) {
     if (!_map) {
-        // TODO: Should we be picking the first location for the "center"? Is there a better way?
-        _map = createMap(data.locations[0][1], data.locations[0][2]);
+
+        var lat = defaultLat;
+        var lng = defaultLng;
+        var bins = $.grep(data.locations, function(val) {
+            return val[0] == _bin
+        });
+
+        if (bins.length > 0) {
+            lat = bins[0][1];
+            lng = bins[0][2];
+        } else if (data.locations.length > 0) {
+            lat = data.locations[0][1];
+            lng = data.locations[0][2];
+        }
+
+        _map = createMap(lat, lng);
 
         // TODO: Re-enable clicking functionality, or is that not need since users click on hte map should change to that bin?
         // TODO:   ^ if so, what happens when clicking on a dataset?
@@ -667,13 +688,12 @@ function updateMapLocations(data) {
             }
         );
 
-        // TODO: The links are not doing what they are supposed to
         if (isBin) {
-            marker.bindPopup("Bin: <a href='javascript:changeBin(\"" + title + "\")'>" + title + "</a>");
+            marker.bindPopup("Bin: <a href='javascript:changeBinFromMap(\"" + title + "\")'>" + title + "</a>");
             _markerList.push(marker);
         } else {
             var values = title.split("|");
-            marker.bindPopup("Dataset: <a href='/timeline?dataset=" + values[0] + "'>" + values[1] + "</a>");
+            marker.bindPopup("Dataset: " + values[1]);
             _fixedMarkers.addLayer(marker);
         }
     }
