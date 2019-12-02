@@ -15,6 +15,16 @@ $(function(){
     $("#dataset-switcher").change(function(){
         location.href = "/timeline?dataset=" + $(this).val();
     });
+
+    $("#go-to-bin").click(function(){
+        goToBin($("#go-to-bid-pid").val());
+    });
+
+    $("#go-to-bid-pid").keypress(function(e){
+        if (e.which == 13 /* Enter */) {
+            goToBin($(this).val());
+        }
+    });
 })
 
 function isKnownLocation(lat, lng) {
@@ -480,4 +490,18 @@ function applyFilters() {
     });
 
     return false;
+}
+
+function goToBin(pid) {
+    if (!pid || pid.trim() == "")
+        return;
+
+    $.get("/api/single_bin_exists?pid=" + pid, function(data){
+        if (!data.exists) {
+            alert("No matching bin was found. Please check the PID and try again");
+            return;
+        }
+
+        location.href = "/bin?bin=" + pid;
+    });
 }

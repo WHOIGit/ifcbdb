@@ -848,6 +848,16 @@ def bin_exists(request):
         "exists": exists
     })
 
+
+def single_bin_exists(request):
+    try:
+        bin = Bin.objects.get(pid=request.GET.get("pid"))
+
+        return JsonResponse({"exists": True})
+    except:
+        return JsonResponse({"exists" : False})
+
+
 def filter_options(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
