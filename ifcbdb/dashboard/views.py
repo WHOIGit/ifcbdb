@@ -44,6 +44,43 @@ def datasets(request):
 
 
 @require_POST
+def search_timeline_locations(request):
+    bin_id = request.POST.get("bin")
+    dataset_name = request.POST.get("dataset")
+    tags = request_get_tags(request.POST.get("tags"))
+    instrument_number = request_get_instrument(request.POST.get("instrument"))
+    start_date = request.POST.get("start_date")
+    end_date = request.POST.get("end_date")
+
+    if not dataset_name and not tags and instrument_number is None:
+        qs = Bin.objects.filter(pid=bin_id)
+    else:
+        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
+
+    # TODO: Handle start/end date
+    if end_date:
+        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+
+    if start_date:
+        start_date = pd.to_datetime(start_date, utc=True)
+
+    bins_data = qs.filter(location__isnull=False).values('pid','location')
+    bin_locations = [[b['pid'], b['location'].y, b['location'].x, "b"] for b in bins_data]
+
+    # First parameter is specifically both title and name for datasets because bins do not have two separate name.
+    #   This allows the map to link using the name but dispaly the title, while not adding a lot of duplicate data
+    #   to the array on bins where name and title are essentially the same (both are pid)
+    # TODO: I'm sure this isn't accurate
+    fixed_location_datasets = Dataset.search_fixed_locations(start_date, end_date, None, None,
+                                                             region=None, dataset_id=None)
+    dataset_locations = [[d.name + "|" + d.title, d.latitude, d.longitude, "d"] for d in fixed_location_datasets]
+
+    return JsonResponse({
+        "locations": bin_locations + dataset_locations,
+    })
+
+
+@require_POST
 def search_bin_locations(request):
     min_depth = request.POST.get("min_depth")
     max_depth = request.POST.get("max_depth")

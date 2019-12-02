@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_head %}
+<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.Default.css' %}" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
 
 {% if route == 'timeline' %}
@@ -606,6 +611,7 @@
 
 {% endblock %}
 {% block scripts %}
+<script type="text/javascript" src="{% static 'vendor/leaflet-markercluster/leaflet.markercluster.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/bin.js' %}"></script>
 <script>
 
@@ -874,19 +880,6 @@ function changeBin(binId, updateHistory) {
         $("#detailed-image-blob-link").toggleClass("disabled", !data["has_blobs"]);
         $("#detailed-image-outline-link").toggleClass("disabled", !data["has_blobs"]);
 
-        // Update map location(s). If the map is not currently the visible workspace, we delay changing the map. If not
-        //   there are issues with Leaflet throwing errors because of how the dimensions of the container are
-        //   calculated. If the container has never been visible, Leaflet cannot get the dimensions and will fail
-        if (_workspace == "map") {
-            updateMapLocation(data);
-        } else {
-            _pendingMapLocation = {
-                "lat": data.lat,
-                "lng": data.lng,
-                "depth": data.depth
-            }
-        }
-
         if (updateHistory) {
             {% if route == "timeline" %}
                 var parameters = getGroupingParameters(_bin);
@@ -907,6 +900,22 @@ function changeBin(binId, updateHistory) {
         }
 
         _isBinLoading = false;
+    });
+}
+
+// Update map location(s). If the map is not currently the visible workspace, we delay changing the map. If not
+//   there are issues with Leaflet throwing errors because of how the dimensions of the container are
+//   calculated. If the container has never been visible, Leaflet cannot get the dimensions and will fail
+function updateLocations() {
+    var payload = getGroupingPayload(_bin);
+    payload["csrfmiddlewaretoken"] = _csrf;
+
+    $.post("/api/search_timeline_locations", payload, function(locationData){
+        if (_workspace == "map") {
+            updateMapLocations(locationData);
+        } else {
+            _pendingMapLocations = locationData;
+        }
     });
 }
 
@@ -1016,6 +1025,8 @@ $(function() {
     }
 
     changeBin("{{ bin.pid }}", false);
+
+    updateLocations();
 });
 
     function canUseFixedAspectRatio(parameter) {
