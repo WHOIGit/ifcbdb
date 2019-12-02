@@ -496,12 +496,12 @@ function goToBin(pid) {
     if (!pid || pid.trim() == "")
         return;
 
-    $.get("/api/single_bin_exists?pid=" + pid, function(data){
+    $.get("/api/single_bin_exists?pid=" + pid.trim(), function(data){
         if (!data.exists) {
             alert("No matching bin was found. Please check the PID and try again");
             return;
         }
 
-        location.href = "/bin?bin=" + pid;
+        location.href = "/bin?bin=" + pid.trim();
     });
 }
