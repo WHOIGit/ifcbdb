@@ -135,12 +135,17 @@ function showWorkspace(workspace) {
 
 //************* Bin Methods ***********************/
 function updateBinStats(data) {
-    var timestamp = moment.utc(data["timestamp_iso"]);
+    var timestamp_iso = data["timestamp_iso"];
+    var timestamp = moment.utc(timestamp_iso);
+
+    var date_string = timestamp.format("YYYY-MM-DD");
+    var time_string = timestamp.format("HH:mm:ss z");
+    var initial_relative_time = timestamp.fromNow();
 
     $("#stat-date-time").html(
-        timestamp.format("YYYY-MM-DD") + "<br />" +
-        timestamp.format("HH:mm:ss z") +
-        "<br /> (" + timestamp.fromNow() + ")"
+        date_string + "<br/>" +
+        time_string + "<br/>" +
+        "(<span data-livestamp='"+timestamp_iso+"'>"+initial_relative_time+"</span>)"
     );
 
     function showField(id, text) {
