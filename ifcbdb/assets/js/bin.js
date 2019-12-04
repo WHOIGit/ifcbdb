@@ -25,7 +25,7 @@ var _filterPopover; // Tracks the container created by the popover library for a
 
 // Generates a relative link to the current bin/dataset
 function createLink() {
-    if (_dataset != "" || _instrument != "" || _tags != "") {
+    if (_route == "timeline") {
         var args = "";
         if (_dataset != "") {
             args += "&dataset="+_dataset;
@@ -44,9 +44,9 @@ function createLink() {
             link += "&bin=" + _bin;
         }
         return link;
+    } else { // bin mode
+        return createBinModeLink();
     }
-
-    return createBinModeLink();
 }
 
 function createListLink(start, end) {
