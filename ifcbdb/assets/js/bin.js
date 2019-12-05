@@ -632,8 +632,9 @@ function findImageByPID(pid) {
 function changeBinFromMap(pid) {
     changeBin(pid, false);
     showWorkspace("mosaic");
+
     $(".nav-link").toggleClass("active", false);
-    $("#show-map").toggleClass("active", true);
+    $("#show-mosaic").toggleClass("active", true);
 }
 
 function updateMapLocations(data) {
@@ -697,8 +698,15 @@ function updateMapLocations(data) {
             }
         );
 
+console.log(_route)
         if (isBin) {
-            marker.bindPopup("Bin: <a href='javascript:changeBinFromMap(\"" + title + "\")'>" + title + "</a>");
+            if (_route == "timeline") {
+                marker.bindPopup("Bin: <a href='javascript:changeBinFromMap(\"" + title + "\")'>" + title + "</a>");
+            } else {
+                var url = createBinModeLink(title);
+                marker.bindPopup("Bin: <a href='" + url + "'>" + title + "</a>");
+            }
+
             _markerList.push(marker);
         } else {
             var values = title.split("|");
