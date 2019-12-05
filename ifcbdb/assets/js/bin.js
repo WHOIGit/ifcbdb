@@ -1,6 +1,7 @@
 //************* Local Variables ***********************/
 var _bin = ""; // Bin Id
 var _dataset = ""; // Dataset Name (for grouping)
+var _locations_dataset = ""; // Dataset name use for grouping w/o it being set to the primary dataset in bin mode
 var _tags = ""; // Tags, comma separated (for grouping)
 var _instrument = ""; // Instrument name (for grouping)
 var _mosaicPage = 0; // Current page being displayed in the mosaic
@@ -11,8 +12,14 @@ var _isBinLoading = false; // Whether the bin is in the process of loading
 var _plotData = null; // Local storage of the current bin's plot data
 var _map = null; // Current Leaflet map
 var _marker = null; // Current marker shown on the map
+var _binIcon = null; // Icon used for marking bins on the map
+var _datasetIcon = null; // Icon used for marking datasets on the map
+var _markers = null; // Used for marker clustering on the map
+var _markerList = []; // Used for marker clustering on the map
+var _fixedMarkers = null; // Used for marker clustering on the map
+
 var _workspace = "mosaic"; // The current workspace a user is seeing
-var _pendingMapLocation = null; // The next map position to render (see notes in updateMapLocation)
+var _pendingMapLocations = null; // The next map positions to render (see notes in updateMapLocations)
 var _csrf = null; // CSRF token from Django for post requests
 var _userId = null; // Id of the currently logged in user
 var _commentTable = null; // Variable to keep track of the DataTables object once created
@@ -90,6 +97,22 @@ function getGroupingParameters(bin) {
     return parameters.join("&");
 }
 
+function getGroupingPayload(bin) {
+    var payload = {};
+
+    if (bin != "")
+        payload["bin"] = bin;
+    if (_locations_dataset != "")
+        payload["dataset"] = _locations_dataset;
+    if (_instrument != "")
+        payload["instrument"] = _instrument;
+    if (_tags != "") {
+        payload["tags"] = _tags;
+    }
+
+    return payload;
+}
+
 function createBinLink(bin) {
     if (_route == "bin") {
         return createBinModeLink(bin);
@@ -127,8 +150,8 @@ function showWorkspace(workspace) {
             setTimeout(function() { _map.invalidateSize() }, 100);
         }
 
-        if (_pendingMapLocation != null) {
-            updateMapLocation(_pendingMapLocation);
+        if (_pendingMapLocations != null) {
+            updateMapLocations(_pendingMapLocations);
         }
     }
 }
@@ -606,16 +629,91 @@ function findImageByPID(pid) {
 }
 
 //************* Map Methods ***********************/
-function updateMapLocation(data) {
+function changeBinFromMap(pid) {
+    changeBin(pid, false);
+    showWorkspace("mosaic");
+    $(".nav-link").toggleClass("active", false);
+    $("#show-map").toggleClass("active", true);
+}
+
+function updateMapLocations(data) {
     if (!_map) {
-        _map = createMap(data.lat, data.lng);
-        _map.on("click", function(e) {
-            changeToNearestBin(e.latlng.lat, e.latlng.lng);
+
+        var lat = defaultLat;
+        var lng = defaultLng;
+        var bins = $.grep(data.locations, function(val) {
+            return val[0] == _bin
         });
+
+        if (bins.length > 0) {
+            lat = bins[0][1];
+            lng = bins[0][2];
+        } else if (data.locations.length > 0) {
+            lat = data.locations[0][1];
+            lng = data.locations[0][2];
+        }
+
+        _map = createMap(lat, lng);
+
+        // TODO: Re-enable clicking functionality, or is that not need since users click on hte map should change to that bin?
+        // TODO:   ^ if so, what happens when clicking on a dataset?
+        //_map.on("click", function(e) {
+        //    changeToNearestBin(e.latlng.lat, e.latlng.lng);
+        //});
+
+        _binIcon = buildLeafletIcon("orange");
+        _datasetIcon = buildLeafletIcon("red");
+        _markers = L.markerClusterGroup({
+            chunkedLoading: true,
+            chunkProgress: function updateMapStatus(processed, total, elapsed, layersArray) {},
+            maxClusterRadius: 15,
+            iconCreateFunction: function(cluster) {
+                var children = cluster.getChildCount();
+
+                return new L.DivIcon({
+                    html: '<div style="width:20px;height:20px;margin-left:0px; margin-top:0px"><span style="font-size:10px;line-height:22px"></span></div>',
+                    className: 'text-center marker-cluster marker-cluster-custom',
+                    iconSize: new L.Point(20, 20)
+                });
+            }
+
+        });
+        _fixedMarkers = L.layerGroup();
     }
 
-    _marker = changeMapLocation(_map, data.lat, data.lng, data.depth, _marker);
-    _pendingMapLocation = null;
+    var locationData = data;
+    _markers.clearLayers();
+    _fixedMarkers.clearLayers();
+
+    for (var i = 0; i < locationData.locations.length; i++) {
+        var location = locationData.locations[i];
+        var isBin = location[3] == "b";
+        var title = location[0];
+        var marker = L.marker(
+            L.latLng(location[1], location[2]),
+            {
+                title: title,
+                icon: isBin ? _binIcon : _datasetIcon
+            }
+        );
+
+        if (isBin) {
+            marker.bindPopup("Bin: <a href='javascript:changeBinFromMap(\"" + title + "\")'>" + title + "</a>");
+            _markerList.push(marker);
+        } else {
+            var values = title.split("|");
+            marker.bindPopup("Dataset: " + values[1]);
+            _fixedMarkers.addLayer(marker);
+        }
+    }
+
+    if (_markerList.length > 0) {
+        _markers.addLayers(_markerList);
+        _map.addLayer(_markers);
+    }
+
+    _map.addLayer(_fixedMarkers);
+    _markerList = [];
 }
 
 //************* Plotting Methods  ***********************/
