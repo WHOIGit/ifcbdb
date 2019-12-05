@@ -355,10 +355,10 @@ function buildLeafletIcon(color) {
     return new L.Icon({
         iconUrl: "/static/vendor/leaflet-color-markers/img/marker-icon-" + color + ".png",
         shadowUrl: "/static/vendor/leaflet-color-markers/img/marker-shadow.png",
-        iconSize: [15, 21],
-        iconAnchor: [15, 21],
-        popupAnchor: [-7, -21],
-        shadowSize: [15, 21]
+        iconSize: [8, 12],
+        iconAnchor: [8, 12],
+        popupAnchor: [-8, -12],
+        shadowSize: [8, 12]
     });
 }
 

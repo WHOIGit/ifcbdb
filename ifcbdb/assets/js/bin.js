@@ -667,14 +667,14 @@ function updateMapLocations(data) {
         _markers = L.markerClusterGroup({
             chunkedLoading: true,
             chunkProgress: function updateMapStatus(processed, total, elapsed, layersArray) {},
-            maxClusterRadius: 15,
+            maxClusterRadius: 8,
             iconCreateFunction: function(cluster) {
                 var children = cluster.getChildCount();
 
                 return new L.DivIcon({
                     html: '<div style="width:20px;height:20px;margin-left:0px; margin-top:0px"><span style="font-size:10px;line-height:22px"></span></div>',
                     className: 'text-center marker-cluster marker-cluster-custom',
-                    iconSize: new L.Point(20, 20)
+                    iconSize: new L.Point(8, 8)
                 });
             }
 
