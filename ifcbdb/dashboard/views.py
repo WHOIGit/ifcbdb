@@ -57,26 +57,26 @@ def search_timeline_locations(request):
     else:
         qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
 
-    # TODO: Handle start/end date
-    if end_date:
-        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+    # TODO: Eventually, this should handle start/end date
+    # if end_date:
+    #     end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+    #
+    # if start_date:
+    #     start_date = pd.to_datetime(start_date, utc=True)
 
-    if start_date:
-        start_date = pd.to_datetime(start_date, utc=True)
-
-    bins_data = qs.filter(location__isnull=False).values('pid','location')
+    bins_data = qs.filter(location__isnull=False).values('pid', 'location')
     bin_locations = [[b['pid'], b['location'].y, b['location'].x, "b"] for b in bins_data]
 
-    # First parameter is specifically both title and name for datasets because bins do not have two separate name.
-    #   This allows the map to link using the name but dispaly the title, while not adding a lot of duplicate data
-    #   to the array on bins where name and title are essentially the same (both are pid)
-    # TODO: I'm sure this isn't accurate
-    fixed_location_datasets = Dataset.search_fixed_locations(start_date, end_date, None, None,
-                                                             region=None, dataset_id=None)
-    dataset_locations = [[d.name + "|" + d.title, d.latitude, d.longitude, "d"] for d in fixed_location_datasets]
+    if dataset_name:
+        datasets = Dataset.objects.filter(name=dataset_name).exclude(location__isnull=True)
+    else:
+        dataset_ids = qs.filter(location__isnull=True).values('datasets').distinct()
+        datasets = Dataset.objects.filter(id__in=dataset_ids).exclude(location__isnull=True).filter(is_active=True)
+
+    dataset_locations = [[d.name + "|" + d.title, d.latitude, d.longitude, "d"] for d in datasets]
 
     return JsonResponse({
-        "locations": bin_locations + dataset_locations,
+        "locations": bin_locations + dataset_locations
     })
 
 

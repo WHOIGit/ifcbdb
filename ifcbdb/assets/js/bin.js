@@ -1,6 +1,7 @@
 //************* Local Variables ***********************/
 var _bin = ""; // Bin Id
 var _dataset = ""; // Dataset Name (for grouping)
+var _locations_dataset = ""; // Dataset name use for grouping w/o it being set to the primary dataset in bin mode
 var _tags = ""; // Tags, comma separated (for grouping)
 var _instrument = ""; // Instrument name (for grouping)
 var _mosaicPage = 0; // Current page being displayed in the mosaic
@@ -101,8 +102,8 @@ function getGroupingPayload(bin) {
 
     if (bin != "")
         payload["bin"] = bin;
-    if (_dataset != "")
-        payload["dataset"] = _dataset;
+    if (_locations_dataset != "")
+        payload["dataset"] = _locations_dataset;
     if (_instrument != "")
         payload["instrument"] = _instrument;
     if (_tags != "") {
