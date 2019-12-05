@@ -917,6 +917,10 @@ function changeBin(binId, updateHistory) {
 
         _isBinLoading = false;
     });
+
+    if (_workspace == "map") {
+        recenterMap();
+    }
 }
 
 // Update map location(s). If the map is not currently the visible workspace, we delay changing the map. If not

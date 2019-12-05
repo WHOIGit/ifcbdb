@@ -152,6 +152,7 @@ function showWorkspace(workspace) {
 
         if (_pendingMapLocations != null) {
             updateMapLocations(_pendingMapLocations);
+            setTimeout(function(){ recenterMap(); }, 500);
         }
     }
 }
@@ -630,11 +631,27 @@ function findImageByPID(pid) {
 
 //************* Map Methods ***********************/
 function changeBinFromMap(pid) {
-    changeBin(pid, false);
+    changeBin(pid, true);
     showWorkspace("mosaic");
 
     $(".nav-link").toggleClass("active", false);
     $("#show-mosaic").toggleClass("active", true);
+}
+
+function recenterMap() {
+    for (var i = 0; i < _markerList.length; i++) {
+        if (_markerList[i].options.title == _bin) {
+            var marker = _markerList[i];
+
+            _markers.zoomToShowLayer(marker, function(){
+                marker.openPopup();
+            });
+
+            var zoom = _map.getZoom();
+            _map.setView(marker.getLatLng(), zoom)
+            return;
+        }
+    }
 }
 
 function updateMapLocations(data) {
@@ -685,7 +702,9 @@ function updateMapLocations(data) {
     var locationData = data;
     _markers.clearLayers();
     _fixedMarkers.clearLayers();
+    _markerList = [];
 
+    var selectedMarker = null;
     for (var i = 0; i < locationData.locations.length; i++) {
         var location = locationData.locations[i];
         var isBin = location[3] == "b";
@@ -698,13 +717,18 @@ function updateMapLocations(data) {
             }
         );
 
-console.log(_route)
         if (isBin) {
             if (_route == "timeline") {
                 marker.bindPopup("Bin: <a href='javascript:changeBinFromMap(\"" + title + "\")'>" + title + "</a>");
             } else {
                 var url = createBinModeLink(title);
                 marker.bindPopup("Bin: <a href='" + url + "'>" + title + "</a>");
+            }
+
+            if (_bin == title) {
+                selectedMarker = marker;
+
+
             }
 
             _markerList.push(marker);
@@ -721,7 +745,12 @@ console.log(_route)
     }
 
     _map.addLayer(_fixedMarkers);
-    _markerList = [];
+
+    if (selectedMarker != null) {
+        _markers.zoomToShowLayer(selectedMarker, function(){
+            selectedMarker.openPopup();
+        });
+    }
 }
 
 //************* Plotting Methods  ***********************/
