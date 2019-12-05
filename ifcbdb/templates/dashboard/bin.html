@@ -14,18 +14,19 @@
         <div class="col-sm-auto">
         <div class="pl-3 d-flex flex-row flex-sm-col">
             <span class="h3-responsive">
-              <a href="/dashboard">Home</a>
-              {% if dataset %}»
+              {% if dataset %}
                 <a href="/timeline?dataset={{ dataset.name }}">
                   {{ dataset.title }}
                 </a>
+                {% if instrument or tags %}» {% endif %}
               {% endif %}
-              {% if instrument %}»
+              {% if instrument %}
                 <a href="/timeline?instrument={{ instrument.number }}">
                   IFCB{{ instrument.number }}
                 </a>
+                {% if tags %}» {% endif %}
               {% endif %}
-              {% if tags %}»
+              {% if tags %}
                 <a href="/timeline?tags={{ tags }}">
                   {{ tags }}
                 </a>
