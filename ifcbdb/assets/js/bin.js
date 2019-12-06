@@ -652,6 +652,10 @@ function recenterMap() {
             return;
         }
     }
+
+    // If this code is reached, it means that no location was found for the selected bin. Close all
+    //   open popups and show the user a warning message
+    _map.closePopup()
 }
 
 function updateMapLocations(data) {
