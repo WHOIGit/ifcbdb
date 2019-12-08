@@ -640,22 +640,25 @@ function changeBinFromMap(pid) {
 
 function resizeMap()
 {
-console.log("Resizing");
-
     if (_originalMapHeight == null) {
         _originalMapHeight = $("#map-container").height();
     }
 
-    var isMini = !$("#mosaic-details").hasClass("d-none");
+    var showingMosaicImage = !$("#mosaic-details").hasClass("d-none");
+    var showingPlotImage = !$("#plotImages").hasClass("d-none");
+
     var height = _originalMapHeight;
 
-    if (isMini) {
-    console.log("before: " + height)
-        height -= $("#mosaic-details").height();
-        console.log("after: " + height)
+    if (showingMosaicImage || showingPlotImage) {
+
+        if (showingMosaicImage)
+            height -= $("#mosaic-details").height();
+
+        if (showingPlotImage)
+            height -= $("#plotImages").height();
+
         if (height < _originalMapHeight / 2) {
             height = _originalMapHeight / 2
-            console.log("Min size");
         }
     }
 

@@ -282,7 +282,7 @@
                       <div id="plot-tab-content" class="tab-pane d-none" role="tabpanel">
                         <div class="card-body py-1">
                           <div class="row py-2 px-3">
-                            <div class="col-md-7 text-center">
+                            <div class="col-md-12 text-center">
                               <div id="plot-loading" class="d-none"><i class="fa fa-spinner fa-spin"></i> Loading plot data ...</div>
                                 <div id="plot" class="bin-plot mb-4" style="height:450px"></div>
                               <form class="form form-row">
@@ -335,26 +335,26 @@
                                 </div>
                               </form>
                             </div>
-                            <div class="col-md-5">
-                              <div class="card h-100 z-depth-0 border" id="plotImages">
-                                <div class="card-body text-center overflow-auto" id="plot-images-container">
-                                  <div>
-                                    <div class="alert" id="too-many-images" style="display:none">
-                                      Showing the first <span id="max-images"></span> images
-                                    </div>
-                                    <div id="plot-images"></div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         </div>
                       </div>
                       <!--End Plot Tab-->
                   </div>
                   <div class="col-md-5">
+                        <div class="card z-depth-0 border d-none" id="plotImages">
+                            <div class="card-body text-center overflow-auto" id="plot-images-container">
+                                <div>
+                                    <div class="alert" id="too-many-images" style="display:none">
+                                        Showing the first <span id="max-images"></span> images
+                                    </div>
+                                    <div id="plot-images"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!--Mosaic Details Column-->
                         <div class="flex-column flex-grow-1 order-2 py-2 px-1 mb-3 justify-content-center overflow-auto d-none" id="mosaic-details">
+
 
                         <!--Mosaic Details Card-->
                         <div class="card d-flex mh-100">
@@ -845,6 +845,7 @@ function changeBin(binId, updateHistory) {
     // Hide any selected images and messages
     $("#mosaic-details").toggleClass("d-none", true);
     $("#plot-images").empty();
+    $("#plotImages").toggleClass("d-none", true);
     $("#too-many-images").toggle(false);
 
     // Update bin name/links
@@ -1171,6 +1172,7 @@ $(function() {
         $("#plot-y-max").val(layout.yaxis.range[1])
 
         $("#plot")[0].on('plotly_click', function(data){
+            $("#plotImages").toggleClass("d-none", false);
             var pts = '';
             for(var i=0; i < data.points.length; i++){
                 var idx = data.points[i].pointIndex;
@@ -1186,14 +1188,18 @@ $(function() {
                         .css("cursor","pointer")
                 );
             }
+
+            resizeMap();
         });
 
         // When changing tools, clear any existing selection (and shown images)
         $("#plot")[0].addEventListener('click', function(event) {
             if ($(event.target).parents(".modebar").length > 0) {
+                $("#plotImages").toggleClass("d-none", true);
                 $("#too-many-images").toggle(false);
                 $("#plot-images").empty();
                 Plotly.restyle($("#plot")[0], {selectedpoints: [null]});
+                resizeMap();
             }
         });
 
@@ -1216,6 +1222,7 @@ $(function() {
                 });
             }
 
+            $("#plotImages").toggleClass("d-none", false);
             $("#plot-images").empty();
             $.each(urls, function(key, val){
                 $("#plot-images").append($("<img />")
@@ -1225,6 +1232,7 @@ $(function() {
                   );
             });
             $("#too-many-images").toggle(maxImages);
+            resizeMap();
         });
     }
 
