@@ -27,6 +27,7 @@ var _route = ""; // Tracks the route used to render this page (timeline or bin)
 var _binTimestamp = null; // Timestamp for the currently selected bin
 var _preventTimelineRelayout = false; // Used to prevent a relayout on the timeline when switching metrics
 var _filterPopover; // Tracks the container created by the popover library for applying filters
+var _originalMapHeight = null; // Initial size of the map on first render
 
 //************* Common Methods ***********************/
 
@@ -139,9 +140,7 @@ function showWorkspace(workspace) {
     _workspace = workspace;
 
     $("#image-tab-content").toggleClass("d-none", !(workspace == "mosaic"));
-    //$("#mosaic-footer").toggleClass("d-none", !(workspace == "mosaic"));
     $("#plot-tab-content").toggleClass("d-none", !(workspace == "plot"));
-    $("#map-tab-content").toggleClass("d-none", !(workspace == "map"));
 
     // After showing the map, Leaflet needs to have invalidateSize called to recalculate the
     //   dimensions of the map container (it cannot determine it when the container is hidden
@@ -638,7 +637,38 @@ function changeBinFromMap(pid) {
     $("#show-mosaic").toggleClass("active", true);
 }
 
+
+function resizeMap()
+{
+console.log("Resizing");
+
+    if (_originalMapHeight == null) {
+        _originalMapHeight = $("#map-container").height();
+    }
+
+    var isMini = !$("#mosaic-details").hasClass("d-none");
+    var height = _originalMapHeight;
+
+    if (isMini) {
+    console.log("before: " + height)
+        height -= $("#mosaic-details").height();
+        console.log("after: " + height)
+        if (height < _originalMapHeight / 2) {
+            height = _originalMapHeight / 2
+            console.log("Min size");
+        }
+    }
+
+    $("#map-container").height(height);
+    if (_map != null) {
+        _map.invalidateSize();
+    }
+}
+
 function recenterMap() {
+    if (_map == null)
+        return;
+
     for (var i = 0; i < _markerList.length; i++) {
         if (_markerList[i].options.title == _bin) {
             var marker = _markerList[i];
@@ -649,6 +679,7 @@ function recenterMap() {
 
             var zoom = _map.getZoom();
             _map.setView(marker.getLatLng(), zoom)
+            $("#no-bin-location").toggleClass("d-none", true);
             return;
         }
     }
@@ -656,6 +687,7 @@ function recenterMap() {
     // If this code is reached, it means that no location was found for the selected bin. Close all
     //   open popups and show the user a warning message
     _map.closePopup()
+    $("#no-bin-location").toggleClass("d-none", false);
 }
 
 function updateMapLocations(data) {
@@ -901,6 +933,7 @@ function initEvents() {
         $("#image-not-found").toggleClass("d-none", false);
         $("#scale-bar").toggleClass("d-none", true);
         $(".detailed-image-link").toggleClass("d-none", true);
+        resizeMap();
     });
 
     // Direct link of an image by pid
@@ -917,6 +950,7 @@ function initEvents() {
         $("#image-not-found").toggleClass("d-none", false);
         $("#scale-bar").toggleClass("d-none", true);
         $(".detailed-image-link").toggleClass("d-none", true);
+        resizeMap();
     });
 
     // Changing the metric shown on the timeline
