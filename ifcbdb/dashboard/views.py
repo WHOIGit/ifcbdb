@@ -474,15 +474,38 @@ def image_png_legacy(request, bin_id, target, dataset_name):
 def image_jpg_legacy(request, bin_id, target, dataset_name):
     return _image_data(bin_id, target, 'image/jpeg')
 
+def fully_qualified_timeseries_url(request, dataset_name):
+    scheme = request.scheme
+    host_port = request.META['HTTP_HOST']
+    return '{}://{}/{}'.format(scheme, host_port, dataset_name)
+
 def legacy_short_json(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     metadata = b.metadata
     metadata['date'] = b.timestamp
-    scheme = request.scheme
-    host_port = request.META['HTTP_HOST']
-    fq_pid = '{}://{}/{}/{}'.format(scheme, host_port, dataset_name, bin_id)
+    fq_ts_url = fully_qualified_timeseries_url(request, dataset_name)
+    fq_pid = '{}/{}'.format(fq_ts_url, bin_id)
     metadata['pid'] = fq_pid
     return JsonResponse(metadata)
+
+def legacy_roisizes(request, dataset_name, bin_id):
+    b = get_object_or_404(Bin, pid=bin_id)
+    fq_ts_url = fully_qualified_timeseries_url(request, dataset_name)
+    ii = b.images(infilled=True)
+    tns, pids, widths, heights = [], [], [], []
+    for target_number in ii:
+        tns.append(target_number)
+        fq_pid = '{}/{}_{:05d}'.format(fq_ts_url, bin_id, target_number)
+        width, height = ii.shape(target_number)
+        pids.append(fq_pid)
+        widths.append(int(width))
+        heights.append(int(height))
+    return JsonResponse({
+        'targetNumber': tns,
+        'width': widths,
+        'height': heights,
+        'pid': pids
+        })
 
 def adc_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)

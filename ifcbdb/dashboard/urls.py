@@ -82,6 +82,7 @@ urlpatterns = [
 
     # legacy metadata access
     path('<slug:dataset_name>/<slug:bin_id>_short.json', views.legacy_short_json, name='short_json'),
+    path('<slug:dataset_name>/<slug:bin_id>_roisizes', views.legacy_roisizes, name='roisizes'),
 
     # legacy image access
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_png_legacy, name='image_png_legacy'),

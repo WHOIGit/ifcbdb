@@ -515,12 +515,12 @@ class Bin(models.Model):
 
     # access to images
 
-    def images(self, bin=None):
+    def images(self, bin=None, infilled=False):
         if bin is None:
             b = self._get_bin()
         else:
             b = bin
-        if b.schema == SCHEMA_VERSION_1:
+        if infilled or b.schema == SCHEMA_VERSION_1:
             return InfilledImages(b)
         else:
             return b.images
