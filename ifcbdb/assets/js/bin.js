@@ -260,7 +260,7 @@ function updateBinDownloadLinks(data) {
     $("#download-zip").attr("href", infix + _bin + ".zip");
     $("#download-blobs").attr("href", infix + _bin + "_blob.zip");
     $("#download-features").attr("href", infix + _bin + "_features.csv");
-    $("#download-class-scores").attr("href", infix + _bin + "_class_scores.mat");
+    $("#download-class-scores").attr("href", infix + _bin + "_class_scores.csv");
 
     $.get('/api/has_products/' + _bin, function(r) {
         $("#download-blobs").toggle(r["has_blobs"]);
