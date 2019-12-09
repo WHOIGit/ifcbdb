@@ -36,6 +36,7 @@ urlpatterns = [
     # TODO: Handle trailing slashes
     # TODO: The slugs for the images need to be left padded with zeros
     path('', views.index),
+    path('index.html', views.index),    
     path('dashboard', views.datasets, name='datasets'),
     path('timeline', views.timeline_page, name='timeline_page'),
     path('bin', views.bin_page, name='bin_page'),
@@ -94,6 +95,7 @@ urlpatterns = [
 
     # legacy dataset timeline endpoint
     path('<slug:dataset_name>', views.legacy_dataset_redirect, name='dataset_legacy'),
+    path('<slug:dataset_name>/', views.legacy_dataset_redirect, name='dataset_legacy'),    
 
     ##################################
     # Paths used for API/Ajax requests
