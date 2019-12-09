@@ -1,5 +1,6 @@
 import json
 import re
+from io import StringIO
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
-    HttpResponseRedirect, HttpResponseNotFound
+    HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
 
@@ -539,8 +540,8 @@ def roi_data(request, bin_id, **kw):
     fin = open(roi_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
 
-def get_product_version_parameter(request):
-    version_string = request.GET.get('v',None)
+def get_product_version_parameter(request, default=None):
+    version_string = request.GET.get('v',default)
     if version_string is not None:
         try:
             return int(version_string)
@@ -585,6 +586,23 @@ def class_scores_mat(request, bin_id, **kw):
     filename = '{}_class_v{}.mat'.format(bin_id, version)
     fin = open(class_scores_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')    
+
+def class_scores_csv(request, dataset_name, bin_id):
+    b = get_object_or_404(Bin, pid=bin_id)
+    version = get_product_version_parameter(request, 1)
+    try:
+        class_scores = b.class_scores(version=None)
+    except KeyError:
+        raise Http404
+    class_scores.index = ['{}_{:05d}'.format(bin_id, tn) for tn in class_scores.index]
+    class_scores.index.name = 'pid'
+    csv_buf = StringIO()
+    class_scores.to_csv(csv_buf)
+    csv_buf.seek(0)
+    filename = '{}_class_v{}.csv'.format(bin_id, version)
+    resp = StreamingHttpResponse(csv_buf, content_type='text/csv')
+    resp['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+    return resp
 
 def zip(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
