@@ -198,7 +198,8 @@
 
             <!-- Card body -->
             <div class="card-body">
-                <div class="card z-depth-0 border d-none" id="plotImages">
+                <div class="card z-depth-0 border d-none text-right" id="plotImages">
+                        <a id="close-plot-images" href="#" class="btn btn-light text-dark btn-sm" style="width:75px">X</a>
                     <div class="card-body text-center overflow-auto" id="plot-images-container">
                         <div>
                             <div class="alert" id="too-many-images" style="display:none">
@@ -1295,6 +1296,12 @@ $(function() {
         var target = $(this).data("target");
 
         location.href = createImageLink(padDigits(target, 5));
+    });
+
+    $("#close-plot-images").click(function(e){
+        e.preventDefault();
+
+        $("#plotImages").toggleClass("d-none", true);
     });
 
     {% if dataset %}
