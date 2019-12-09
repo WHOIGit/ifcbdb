@@ -198,6 +198,16 @@
 
             <!-- Card body -->
             <div class="card-body">
+                <div class="card z-depth-0 border d-none" id="plotImages">
+                    <div class="card-body text-center overflow-auto" id="plot-images-container">
+                        <div>
+                            <div class="alert" id="too-many-images" style="display:none">
+                                Showing the first <span id="max-images"></span> images
+                            </div>
+                            <div id="plot-images"></div>
+                        </div>
+                    </div>
+                </div>
                 <div id="mosaic-top" class="row"></div>
 
               <!-- Top half -->
@@ -343,16 +353,7 @@
                       <!--End Plot Tab-->
                   </div>
                   <div class="col">
-                        <div class="card z-depth-0 border d-none" id="plotImages">
-                            <div class="card-body text-center overflow-auto" id="plot-images-container">
-                                <div>
-                                    <div class="alert" id="too-many-images" style="display:none">
-                                        Showing the first <span id="max-images"></span> images
-                                    </div>
-                                    <div id="plot-images"></div>
-                                </div>
-                            </div>
-                        </div>
+
 
                                               <div id="mosaic-side">
 

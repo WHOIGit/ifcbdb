@@ -983,11 +983,13 @@ function initEvents() {
 
     // Showing the plot workspace
     $("#show-plot").click(function(e) {
+        $("#mosaic-details").toggleClass("d-none", true);
         showWorkspace("plot");
     });
 
     // Showing the mosaic workspace
     $("#show-mosaic").click(function(e) {
+        $("#plotImages").toggleClass("d-none", true);
         showWorkspace("mosaic");
     });
 
