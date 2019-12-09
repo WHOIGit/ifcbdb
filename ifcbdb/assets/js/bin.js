@@ -689,16 +689,18 @@ function recenterMap() {
 
     for (var i = 0; i < _markerList.length; i++) {
         if (_markerList[i].options.title == _bin) {
-            var marker = _markerList[i];
-
-            _markers.zoomToShowLayer(marker, function(){
-                marker.openPopup();
-            });
-
-            var zoom = _map.getZoom();
-            _map.setView(marker.getLatLng(), zoom)
-            $("#no-bin-location").toggleClass("d-none", true);
+            selectMapMarker(_markerList[i]);
             return;
+        }
+    }
+
+    // TODO: This can be optimized to not look through the marker list twice
+    if (_dataset) {
+        for (var i = 0; i < _markerList.length; i++) {
+            if (_markerList[i].options.title.includes(_dataset)) {
+                selectMapMarker(_markerList[i]);
+                return;
+            }
         }
     }
 
@@ -706,6 +708,16 @@ function recenterMap() {
     //   open popups and show the user a warning message
     _map.closePopup()
     $("#no-bin-location").toggleClass("d-none", false);
+}
+
+function selectMapMarker(marker) {
+    _markers.zoomToShowLayer(marker, function(){
+        marker.openPopup();
+    });
+
+    var zoom = _map.getZoom();
+    _map.setView(marker.getLatLng(), zoom)
+    $("#no-bin-location").toggleClass("d-none", true);
 }
 
 function updateMapLocations(data) {
@@ -781,8 +793,6 @@ function updateMapLocations(data) {
 
             if (_bin == title) {
                 selectedMarker = marker;
-
-
             }
 
             _markerList.push(marker);
@@ -790,6 +800,8 @@ function updateMapLocations(data) {
             var values = title.split("|");
             marker.bindPopup("Dataset: " + values[1]);
             _fixedMarkers.addLayer(marker);
+
+            _markerList.push(marker);
         }
     }
 
@@ -800,11 +812,7 @@ function updateMapLocations(data) {
 
     _map.addLayer(_fixedMarkers);
 
-    if (selectedMarker != null) {
-        _markers.zoomToShowLayer(selectedMarker, function(){
-            selectedMarker.openPopup();
-        });
-    }
+    recenterMap();
 }
 
 //************* Plotting Methods  ***********************/
