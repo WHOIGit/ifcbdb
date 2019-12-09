@@ -644,6 +644,21 @@ function resizeMap()
         _originalMapHeight = $("#map-container").height();
     }
 
+    var mosaicSize = $("#mosaic-column-container").width();
+    var containerSize = $("#mosaicPlotMapTabContent").width();
+    var spaceLeft = containerSize - mosaicSize;
+
+    // Account for some additional padding on the image
+    var imageSize = $("#detailed-image").width() * 1.25;
+
+    if (spaceLeft < imageSize) {
+        $("#mosaic-top").prepend($("#mosaic-details"));
+        $("#mosaic-details").toggleClass("order-2", false).toggleClass("order-1", true);
+    } else {
+        $("#mosaic-side").prepend($("#mosaic-details"));
+        $("#mosaic-details").toggleClass("order-2", true).toggleClass("order-1", false);
+    }
+
     var showingMosaicImage = !$("#mosaic-details").hasClass("d-none");
     var showingPlotImage = !$("#plotImages").hasClass("d-none");
 
