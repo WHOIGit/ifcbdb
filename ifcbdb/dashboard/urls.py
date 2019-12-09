@@ -80,6 +80,9 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>_class_scores.mat', views.class_scores_mat, name='class_scores_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip_legacy'),
 
+    # legacy metadata access
+    path('<slug:dataset_name>/<slug:bin_id>_short.json', views.legacy_short_json, name='short_json'),
+
     # legacy image access
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_png_legacy, name='image_png_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_jpg_legacy, name='image_jpg_legacy'),
