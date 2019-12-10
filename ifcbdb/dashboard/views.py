@@ -53,6 +53,11 @@ def search_timeline_locations(request):
     start_date = request.POST.get("start_date")
     end_date = request.POST.get("end_date")
 
+    cache_key = 'tloc_b={};d={};t={};i={}'.format(bin_id, dataset_name, tags, instrument_number)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse(cached)
+
     if not dataset_name and not tags and instrument_number is None:
         qs = Bin.objects.filter(pid=bin_id)
     else:
@@ -76,9 +81,12 @@ def search_timeline_locations(request):
 
     dataset_locations = [[d.name + "|" + d.title, d.latitude, d.longitude, "d"] for d in datasets]
 
-    return JsonResponse({
+    result = {
         "locations": bin_locations + dataset_locations
-    })
+    }
+    cache.set(cache_key, result)
+
+    return JsonResponse(result)
 
 
 @require_POST
