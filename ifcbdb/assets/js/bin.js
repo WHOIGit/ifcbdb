@@ -27,6 +27,7 @@ var _route = ""; // Tracks the route used to render this page (timeline or bin)
 var _binTimestamp = null; // Timestamp for the currently selected bin
 var _preventTimelineRelayout = false; // Used to prevent a relayout on the timeline when switching metrics
 var _filterPopover; // Tracks the container created by the popover library for applying filters
+var _originalMapHeight = null; // Initial size of the map on first render
 
 //************* Common Methods ***********************/
 
@@ -139,9 +140,7 @@ function showWorkspace(workspace) {
     _workspace = workspace;
 
     $("#image-tab-content").toggleClass("d-none", !(workspace == "mosaic"));
-    //$("#mosaic-footer").toggleClass("d-none", !(workspace == "mosaic"));
     $("#plot-tab-content").toggleClass("d-none", !(workspace == "plot"));
-    $("#map-tab-content").toggleClass("d-none", !(workspace == "map"));
 
     // After showing the map, Leaflet needs to have invalidateSize called to recalculate the
     //   dimensions of the map container (it cannot determine it when the container is hidden
@@ -261,7 +260,7 @@ function updateBinDownloadLinks(data) {
     $("#download-zip").attr("href", infix + _bin + ".zip");
     $("#download-blobs").attr("href", infix + _bin + "_blob.zip");
     $("#download-features").attr("href", infix + _bin + "_features.csv");
-    $("#download-class-scores").attr("href", infix + _bin + "_class_scores.mat");
+    $("#download-class-scores").attr("href", infix + _bin + "_class_scores.csv");
 
     $.get('/api/has_products/' + _bin, function(r) {
         $("#download-blobs").toggle(r["has_blobs"]);
@@ -638,24 +637,87 @@ function changeBinFromMap(pid) {
     $("#show-mosaic").toggleClass("active", true);
 }
 
+
+function resizeMap()
+{
+    if (_originalMapHeight == null) {
+        _originalMapHeight = $("#map-container").height();
+    }
+
+    var mosaicSize = $("#mosaic-column-container").width();
+    var containerSize = $("#mosaicPlotMapTabContent").width();
+    var spaceLeft = containerSize - mosaicSize;
+
+    // Account for some additional padding on the image
+    var imageSize = $("#detailed-image").width() * 1.25;
+
+    if (spaceLeft < imageSize) {
+        $("#mosaic-top").prepend($("#mosaic-details"));
+        $("#mosaic-details").toggleClass("order-2", false).toggleClass("order-1", true);
+    } else {
+        $("#mosaic-side").prepend($("#mosaic-details"));
+        $("#mosaic-details").toggleClass("order-2", true).toggleClass("order-1", false);
+    }
+
+    var showingMosaicImage = !$("#mosaic-details").hasClass("d-none");
+    var showingPlotImage = !$("#plotImages").hasClass("d-none");
+
+    var height = _originalMapHeight;
+
+    if (showingMosaicImage || showingPlotImage) {
+
+        if (showingMosaicImage)
+            height -= $("#mosaic-details").height();
+
+        if (showingPlotImage)
+            height -= $("#plotImages").height();
+
+        if (height < _originalMapHeight / 2) {
+            height = _originalMapHeight / 2
+        }
+    }
+
+    $("#map-container").height(height);
+    if (_map != null) {
+        _map.invalidateSize();
+    }
+}
+
 function recenterMap() {
+    if (_map == null)
+        return;
+
     for (var i = 0; i < _markerList.length; i++) {
         if (_markerList[i].options.title == _bin) {
-            var marker = _markerList[i];
-
-            _markers.zoomToShowLayer(marker, function(){
-                marker.openPopup();
-            });
-
-            var zoom = _map.getZoom();
-            _map.setView(marker.getLatLng(), zoom)
+            selectMapMarker(_markerList[i]);
             return;
+        }
+    }
+
+    // TODO: This can be optimized to not look through the marker list twice
+    if (_dataset) {
+        for (var i = 0; i < _markerList.length; i++) {
+            if (_markerList[i].options.title.includes(_dataset)) {
+                selectMapMarker(_markerList[i]);
+                return;
+            }
         }
     }
 
     // If this code is reached, it means that no location was found for the selected bin. Close all
     //   open popups and show the user a warning message
     _map.closePopup()
+    $("#no-bin-location").toggleClass("d-none", false);
+}
+
+function selectMapMarker(marker) {
+    _markers.zoomToShowLayer(marker, function(){
+        marker.openPopup();
+    });
+
+    var zoom = _map.getZoom();
+    _map.setView(marker.getLatLng(), zoom)
+    $("#no-bin-location").toggleClass("d-none", true);
 }
 
 function updateMapLocations(data) {
@@ -731,8 +793,6 @@ function updateMapLocations(data) {
 
             if (_bin == title) {
                 selectedMarker = marker;
-
-
             }
 
             _markerList.push(marker);
@@ -740,6 +800,8 @@ function updateMapLocations(data) {
             var values = title.split("|");
             marker.bindPopup("Dataset: " + values[1]);
             _fixedMarkers.addLayer(marker);
+
+            _markerList.push(marker);
         }
     }
 
@@ -750,11 +812,7 @@ function updateMapLocations(data) {
 
     _map.addLayer(_fixedMarkers);
 
-    if (selectedMarker != null) {
-        _markers.zoomToShowLayer(selectedMarker, function(){
-            selectedMarker.openPopup();
-        });
-    }
+    recenterMap();
 }
 
 //************* Plotting Methods  ***********************/
@@ -901,6 +959,7 @@ function initEvents() {
         $("#image-not-found").toggleClass("d-none", false);
         $("#scale-bar").toggleClass("d-none", true);
         $(".detailed-image-link").toggleClass("d-none", true);
+        resizeMap();
     });
 
     // Direct link of an image by pid
@@ -917,6 +976,7 @@ function initEvents() {
         $("#image-not-found").toggleClass("d-none", false);
         $("#scale-bar").toggleClass("d-none", true);
         $(".detailed-image-link").toggleClass("d-none", true);
+        resizeMap();
     });
 
     // Changing the metric shown on the timeline
@@ -931,11 +991,13 @@ function initEvents() {
 
     // Showing the plot workspace
     $("#show-plot").click(function(e) {
+        $("#mosaic-details").toggleClass("d-none", true);
         showWorkspace("plot");
     });
 
     // Showing the mosaic workspace
     $("#show-mosaic").click(function(e) {
+        $("#plotImages").toggleClass("d-none", true);
         showWorkspace("mosaic");
     });
 

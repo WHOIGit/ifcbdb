@@ -36,6 +36,7 @@ urlpatterns = [
     # TODO: Handle trailing slashes
     # TODO: The slugs for the images need to be left padded with zeros
     path('', views.index),
+    path('index.html', views.index),    
     path('dashboard', views.datasets, name='datasets'),
     path('timeline', views.timeline_page, name='timeline_page'),
     path('bin', views.bin_page, name='bin_page'),
@@ -78,10 +79,12 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>_blob.zip', views.blob_zip, name='blob_zip_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>_features.csv', views.features_csv, name='features_csv_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>_class_scores.mat', views.class_scores_mat, name='class_scores_legacy'),
+    path('<slug:dataset_name>/<slug:bin_id>_class_scores.csv', views.class_scores_csv, name='class_scores_csv_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>.zip', views.zip, name='zip_legacy'),
 
     # legacy metadata access
     path('<slug:dataset_name>/<slug:bin_id>_short.json', views.legacy_short_json, name='short_json'),
+    path('<slug:dataset_name>/<slug:bin_id>_roisizes', views.legacy_roisizes, name='roisizes'),
 
     # legacy image access
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_png_legacy, name='image_png_legacy'),
@@ -92,6 +95,7 @@ urlpatterns = [
 
     # legacy dataset timeline endpoint
     path('<slug:dataset_name>', views.legacy_dataset_redirect, name='dataset_legacy'),
+    path('<slug:dataset_name>/', views.legacy_dataset_redirect, name='dataset_legacy'),    
 
     ##################################
     # Paths used for API/Ajax requests

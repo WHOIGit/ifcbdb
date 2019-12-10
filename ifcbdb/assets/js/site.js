@@ -320,6 +320,8 @@ function changeImage(img, src, blobImg, outlineImg){
         } else {
             outlineImg.hide();
         }
+
+        resizeMap();
     })
     .attr("src", src)
     .each(function() {

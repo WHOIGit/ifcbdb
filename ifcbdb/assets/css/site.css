@@ -110,7 +110,7 @@ body.modal-open {
 }
 
 .card#plotImages {
-    height: 550px;
+    min-height: 150px;
     max-height: 550px;
 }
 
