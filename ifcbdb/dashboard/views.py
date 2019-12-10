@@ -475,6 +475,16 @@ def image_png_legacy(request, bin_id, target, dataset_name):
 def image_jpg_legacy(request, bin_id, target, dataset_name):
     return _image_data(bin_id, target, 'image/jpeg')
 
+def legacy_short_json(request, dataset_name, bin_id):
+    b = get_object_or_404(Bin, pid=bin_id)
+    metadata = b.metadata
+    metadata['date'] = b.timestamp
+    scheme = request.scheme
+    host_port = request.META['HTTP_HOST']
+    fq_pid = '{}://{}/{}/{}'.format(scheme, host_port, dataset_name, bin_id)
+    metadata['pid'] = fq_pid
+    return JsonResponse(metadata)
+
 def fully_qualified_timeseries_url(request, dataset_name):
     scheme = request.scheme
     host_port = request.META['HTTP_HOST']
