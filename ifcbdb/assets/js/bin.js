@@ -1096,6 +1096,6 @@ $(function() {
     $("#max-images").text(MAX_SELECTABLE_IMAGES);
 
     initEvents();
-    initPlotData();
+    //initPlotData();
     initBinFilter("timeline");
 });
