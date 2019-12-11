@@ -4,13 +4,12 @@ channels:
 dependencies:
 - python=3.6
 - django=2.1.7
-- psycopg2=2.7.6.1
-- pycrypto=2.6.1
-- pip=19.0.3
-- kombu=4.1.0
-- celery=4.1.0
-- gdal=2.3.3
-- libiconv=1.15
+- psycopg2
+- pycrypto
+- pip
+- celery>4.1
+- gdal
+- libiconv
 - pip:
-  - python-memcached==1.59
-  - redis==2.10.6
+  - python-memcached
+  - redis

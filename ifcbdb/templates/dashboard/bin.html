@@ -1,24 +1,39 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block breadcrumbs %}
-    <!-- TODO: datasets is hard coded into the base file and should not be seen for a bin only view; also remove ** indicator -->
-    {% if dataset %}
-        <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}">{{ dataset.name }}</a></li>
-        <li class="breadcrumb-item"><a class="black-text" href="{% url 'dataset' dataset.name %}?bin_id={{ bin.pid }}" id="bin-crumb">{{ bin.pid }}</a></li>
-    {% else %}
-        <li class="breadcrumb-item"><a class="black-text" href="/bin?id={{ bin.pid }}">{{ bin.pid }}</a></li>
-    {% endif %}
+{% block extra_head %}
+<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.Default.css' %}" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
 
-{% if dataset %}
-<div class="d-flex flex-row flex-wrap flex-md-nowrap justify-content-between align-items-center">
+{% if route == 'timeline' %}
+<div class="row justify-content-between">
         <!-- Dataset header row -->
-        <div class="flex-column flex-grow-1 flex-md-grow-0 flex-wrap flex-md-nowrap">
-        <div class="pl-3">
-            <span class="h3-responsive">{{ dataset.title }}</span>
+        <div class="col-sm-auto">
+        <div class="pl-3 d-flex flex-row flex-sm-col">
+            <span class="h3-responsive">
+              {% if dataset %}
+                <a href="/timeline?dataset={{ dataset.name }}">
+                  {{ dataset.title }}
+                </a>
+                {% if instrument or tags %}» {% endif %}
+              {% endif %}
+              {% if instrument %}
+                <a href="/timeline?instrument={{ instrument.number }}">
+                  IFCB{{ instrument.number }}
+                </a>
+                {% if tags %}» {% endif %}
+              {% endif %}
+              {% if tags %}
+                <a href="/timeline?tags={{ tags }}">
+                  {{ tags }}
+                </a>
+              {% endif %}
+            </span>
+            {% if user.is_authenticated %}<a id="view-list" class="pl-3 my-auto" href="#"title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
+            <a class="d-sm-none d-inline tstabcollapser ml-auto" data-toggle="collapse" data-target="#ts-tabs" aria-expanded="false"></a>
             <span class="d-none">
                 <button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data">
                     <i class="fa" aria-hidden="true"></i>
@@ -26,48 +41,34 @@
             </span>
         </div>
 
-        {% if user.is_authenticated %}
-        <div class="d-none"><!-- until implemented, don't display -->
-            <a href="#" class="btn btn-sm btn-primary ml-3">Configure</a>
-        </div>
-        {% endif %}
       </div>
-      <div class="flex-column flex-grow-1 flex-md-grow-0 flex-wrap flex-md-nowrap">
+      <div class="col-sm-auto">
         <!-- Nav options for the timeline control -->
-        <ul class="d-flex flex-shrink-0 nav collapse show ts-collapse" id="ts-tabs" role="tablist">
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
+        <nav class="nav nav-pills flex-column flex-sm-row collapse show" id="ts-tabs" role="tablist">
+                <a class="nav-link flex-fill flex-grow-0 text-sm-center btn btn-sm btn-mdb-color px-2 py-2" id="ts-size-tab" data-toggle="tab" data-metric="size" href="#ts-size"
                    role="tab" data-target="ts-size" aria-selected="false">Data Size</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-temperature-tab" data-toggle="tab" data-metric="temperature" href="#ts-temperature"
                    role="tab" data-target="ts-temperature" aria-selected="false">Temperature</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-humidity-tab" data-toggle="tab" data-metric="humidity" href="#ts-humidity"
                    role="tab" data-target="ts-humidity" aria-selected="false">Humidity</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-ml-analyzed-tab" data-toggle="tab" data-metric="ml-analyzed" href="#ts-ml-analyzed"
                    role="tab" data-target="ts-ml-analyzed" aria-selected="false">Volume Analyzed</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm active btn-block" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-concentration-tab" data-toggle="tab" data-metric="concentration" href="#ts-concentration"
                    role="tab" data-target="ts-concentration" aria-selected="true">ROIs / ml</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-triggers-tab" data-toggle="tab" data-metric="n-triggers" href="#ts-triggers"
                    role="tab" data-target="ts-triggers" aria-selected="false">Trigger Count</a>
-            </li>
-            <li class="nav-item flex-shrink-1">
-                <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
+                <a class="flex-fill flex-grow-0 text-sm-center nav-link btn btn-sm btn-mdb-color px-2 py-2" id="ts-images-tab" data-toggle="tab" data-metric="n-images" href="#ts-images"
                    role="tab" data-target="ts-images" aria-selected="false">Image Count</a>
-            </li>
-        </ul>
+          </nav>
+        </div>
     </div>
-    </div>
-    <hr class="my-2">
 
+    <div class="row d-flex text-center justify-content-center py-2">
+      <div class="flex-col">
+        <span id="n_bins"><i class="fa fa-spinner fa-spin"></i></span> <span id="total-data-volume"></span>
+          
+      </div>
+    </div>
     <!-- Timeline control -->
     <div class="row px-1">
         <div class="col-sm-12">
@@ -76,15 +77,80 @@
             </div>
         </div>
     </div>
+
+        {% if dataset.doi or dataset.attribution or dataset.funding %}
+        <div class="pl-3">
+          <small>
+          {% if dataset.doi %}
+          <span class="pr-3">DOI: <a href="https://doi.org/{{ dataset.doi }}">{{ dataset.doi }}</a></span>
+          {% endif %}
+          {% if dataset.attribution %}
+          <span class="pr-3">Investigators: {{ dataset.attribution }}</span>
+          {% endif %}
+          {% if dataset.funding %}
+          <span class="pr-3">Funding: {{ dataset.funding }}</span>
+          {% endif %}
+          </small>
+        </div>
+        {% endif %}
+
 {% else %}
     <!-- Bin only header -->
     <div class="row d-flex justify-content-between">
-        <div class="pl-3">
-            <span class="h3-responsive">{{ bin.pid }}</span>
-        </div>
+      <div class="pl-3">
+        <span class="h3-responsive">
+            {% if dataset %}
+              <a href="/timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
+                {{ dataset.title }}
+              </a>
+            {% elif bin.primary_dataset %}
+              <a href="/timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
+                {{ bin.primary_dataset.title }}
+              </a>
+            {% endif %}
+            {% if instrument %}»
+              <a href="/timeline?instrument={{ instrument.number }}&bin={{ bin.pid }}">
+                IFCB{{ instrument.number }}
+              </a>
+            {% endif %}
+            {% if tags %}»
+              <a href="/timeline?tags={{ tags }}&bin={{ bin.pid }}">
+                {{ tags }}
+              </a>
+            {% endif %}
+        </span>
+        <span class="h3-responsive">» {{ bin.pid }}</span>
+      </div>
     </div>
+
+    {% if bin.primary_dataset %}
+    <div class="pl-3">
+        <small>
+          {% if bin.primary_dataset.doi %}
+            <span class="pr-3">DOI: <a href="https://doi.org/{{ bin.primary_dataset.doi }}">{{ bin.primary_dataset.doi }}</a></span>
+          {% endif %}
+
+        {% if bin.primary_dataset.attribution %}
+            <span class="pr-3">Investigators: {{ bin.primary_dataset.attribution }}</span>
+        {% endif %}
+
+        {% if bin.primary_dataset.funding %}
+            <span class="pr-3">Funding: {{ bin.primary_dataset.funding }}</span>
+        {% endif %}
+        </small>
+    </div>
+    {% endif %}
 {% endif %}
 
+
+{% if bin_reset %}
+<div class="alert alert-info alert-dismissible" id="bin-not-found">
+    The selected bin was not found in the list of bins matching the currently applied filters. The latest bin within that list has been selected instead
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}
 <div class="row py-2">
     <div class="col-sm-12">
         <div class="card">
@@ -93,7 +159,7 @@
                 <div class="d-flex flex-row flex-wrap flex-md-nowrap justify-content-between align-items-center">
                     <!-- Bin selection links/label -->
                     <div class="flex-column flex-grow-1 flex-md-grow-0">
-                        {% if dataset %}
+                        {% if route == 'timeline' %}
                         <div class="d-flex flex-row justify-content-between align-items-center">
                             <div class="flex-shrink-1 flex-md-shrink-0 flex-column">
                             <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-previous">Previous Bin</a>
@@ -108,6 +174,9 @@
                             <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-next">Next Bin</a>
                             </div>
                         </div>
+                        {% else %}
+                        <a href="#" id="previous-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-previous">Previous bin</a>
+                        <a href="#" id="next-bin" data-bin="" class="btn btn-mdb-color btn-sm btn-next">Next bin</a>
                         {% endif %}
                     </div>
 
@@ -122,10 +191,6 @@
                           <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="show-plot" data-toggle="tab"
                             href="#" role="tab">Plot</a>
                         </li>
-                        <li class="nav-item flex-fill">
-                          <a class="nav-link btn btn-mdb-color btn-sm btn-block" id="show-map" data-toggle="tab"
-                            href="#map-tab-content" role="tab" aria-controls="map-tab-content" aria-selected="false">Map</a>
-                        </li>
                       </ul>
                     </div>
                 </div>
@@ -133,181 +198,260 @@
 
             <!-- Card body -->
             <div class="card-body">
-              <!-- Top half -->
-              <div id="mosaicPlotMapTabContent">
-              <!--Mosaic Tab-->
-              <div id="image-tab-content" class="tab-pane" role="tabpanel">
-                <div class="d-flex flex-row flex-wrap-reverse justify-content-between">
-                  <!-- Left side of outer card area )plot/map/mosaic Mosaic Column -->
-                  <div class="flex-column order-1 py-2 px-1">
-                    <!-- Mosaic -->
-                    <div class="card h-100 min-vh-50">
-                      <div class="card-body text-center">
-                        <div class="overflow-auto">
-                          <img id="mosaic" src="" style="display:none" />
-                        </div>
-                        <div id="mosaic-loading" class="grey lighten-4" style="height:{{ mosaic_default_height }}px; width:{{ mosaic_default_width }}px;">
-                          <div class="spinner-border mt-10p" role="status">
-                            <span class="sr-only">Loading...</span>
-                          </div>
-                        </div>
+                <div class="card z-depth-0 border d-none text-right" id="plotImages">
+                  <div class="card-header py-0 white border-bottom-0">
+                        <a id="close-plot-images" href="#" class="btn btn-light text-dark btn-sm px-1 py-1"><i class="far fa-2x fa-times-circle px-1 py-1"></i></a>
                       </div>
-                      <div id="mosaic-footer" class="card-footer text-center py-0">
-                        <div class="row align-items-center">
-                          <nav aria-label="Bin Paging" class="w-50">
-                            <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-center"
-                              style="display:none">
-                              <li class="page-item page-previous disabled">
-                                <a class="page-link" tabindex="-1">Previous</a>
-                              </li>
-                              <li class="page-item page-next">
-                                <a class="page-link">Next</a>
-                              </li>
-                            </ul>
-                          </nav>
-                          <div class="dropdown w-50">
-                            <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
-                              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                              <i class="fas fa-cogs"></i>
-                            </a>
-                            <div class="dropdown-menu">
-                              <form class="px-4 py-3">
-                                <label class="my-1 mr-2" for="view-size">View Size:</label>
-                                <select id="view-size" class="custom-select custom-select-sm form-control"
-                                  name="view-size">
-                                  {% for size in mosaic_view_sizes %}
-                                  <option value="{{ size }}" autocomplete="off"
-                                    {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
-                                  {% endfor %}
-                                </select>
+                    <div class="card-body text-center overflow-auto" id="plot-images-container">
+                        <div>
+                            <div class="alert" id="too-many-images" style="display:none">
+                                Showing the first <span id="max-images"></span> images
+                            </div>
+                            <div id="plot-images"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="mosaic-top" class="row"></div>
 
-                                <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>
-                                <select id="scale-factor" class="custom-select custom-select-sm form-control"
-                                  name="scale-factor">
-                                  {% for factor in mosaic_scale_factors %}
-                                  <option value="{{ factor }}" autocomplete="off"
-                                    {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%
-                                  </option>
-                                  {% endfor %}
-                                </select>
+              <!-- Top half -->
+              <div id="mosaicPlotMapTabContent" class="row">
+                  <div class="col">
+                      <!--Mosaic Tab-->
+                      <div id="image-tab-content" class="tab-pane" role="tabpanel">
+                        <div class="d-lg-flex flex-row flex-wrap-reverse justify-content-between">
+                          <!-- Left side of outer card area )plot/map/mosaic Mosaic Column -->
+                          <div id="mosaic-column-container" class="col-xs-12 flex-lg-column order-1 py-2 px-1">
+                            <!-- Mosaic -->
+                            <div class="card h-100 min-vh-50">
+                              <div class="card-body mw-100 text-center">
+                                <div class="overflow-auto">
+                                  <img id="mosaic" src="" style="display:none" />
+                                </div>
+                                <div id="mosaic-loading" class="grey lighten-4" style="height:{{ mosaic_default_height }}px; width:{{ mosaic_default_width }}px;">
+                                  <div class="spinner-border mt-10p" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                  </div>
+                                </div>
+                                <div id="mosaic-failed" class="grey lighten-4" style="height:{{ mosaic_default_height }}px; width:{{mosaic_default_width }}px; display:none">
+                                  <div>
+                                    Image data not accessible
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="card-footer text-center py-0">
+                                <div class="d-flex flex-row align-middle align-items-center justify-content-between pt-1" id="mosaic-footer">
+                                  <nav aria-label="Bin Paging">
+                                    <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-left" style="display:none">
+                                        <li class="page-item page-previous disabled">
+                                            <a class="page-link" tabindex="-1">Previous</a>
+                                        </li>
+                                        <li class="page-item page-next">
+                                            <a class="page-link">Next</a>
+                                        </li>
+                                    </ul>
+                                  </nav>
+                                  <form class="form-inline border mb-1">
+                                    <input type="text" class="form-control form-control-sm ml-1 mw-25" placeholder="Jump to ROI #" id="roi-number" />
+                                    <button type="button" class="btn btn-sm btn-mdb-color" id="preview-image">Preview</button>
+                                    <button type="button" class="btn btn-sm btn-mdb-color" id="goto-image">Details</button>
+                                </form>
+                                  <div class="dropdown text-right">
+                                    <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
+                                      data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                      <i class="fas fa-cogs"></i>
+                                    </a>
+                                    <div class="dropdown-menu">
+                                      <form class="px-4 py-3">
+                                        <label class="my-1 mr-2" for="view-size">View Size:</label>
+                                        <select id="view-size" class="custom-select custom-select-sm form-control"
+                                          name="view-size">
+                                          {% for size in mosaic_view_sizes %}
+                                          <option value="{{ size }}" autocomplete="off"
+                                            {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
+                                          {% endfor %}
+                                        </select>
+
+                                        <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>
+                                        <select id="scale-factor" class="custom-select custom-select-sm form-control"
+                                          name="scale-factor">
+                                          {% for factor in mosaic_scale_factors %}
+                                          <option value="{{ factor }}" autocomplete="off"
+                                            {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%
+                                          </option>
+                                          {% endfor %}
+                                        </select>
+                                      </form>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <!--End Mosaic Column-->
+
+                        </div>
+                        <!--End of Mosaic Row-->
+                      </div>
+                      <!--End of Mosaic Tab-->
+                      <!-- Plot Tab -->
+                      <div id="plot-tab-content" class="tab-pane d-none" role="tabpanel">
+                        <div class="card-body py-1">
+                          <div class="row py-2 px-3">
+                            <div class="col-md-12 text-center">
+                              <div id="plot-loading" class="d-none"><i class="fa fa-spinner fa-spin"></i> Loading plot data ...</div>
+                                <div id="plot" class="bin-plot mb-4" style="height:450px"></div>
+                              <form class="form form-row">
+
+                                <div class="form-group mr-2">
+                                  <label>X Axis</label>
+                                  <select id="plot-x-axis" class="form-control" style="width:150px"></select>
+                                </div>
+                                <div class="form-group mr-2">
+                                  <label>Y Axis</label>
+                                  <select id="plot-y-axis" class="form-control" style="width:150px"></select>
+                                </div>
+                                <div class="form-group mr-2">
+                                  <label>X Type</label>
+                                  <select id="plot-x-type" class="form-control">
+                                    <option value="">Linear</option>
+                                    <option value="log">Log</option>
+                                  </select>
+                                </div>
+                                <div class="form-group mr-2">
+                                  <label>Y Type</label>
+                                  <select id="plot-y-type" class="form-control">
+                                    <option value="">Linear</option>
+                                    <option value="log">Log</option>
+                                  </select>
+                                </div>
+                                <div class="form-group mr-2">
+                                  <label>X Offset</label>
+                                  <input type="text" id="plot-x-offset" class="form-control" disabled style="width:100px" />
+                                </div>
+                                <div class="form-group">
+                                  <label>Y Offset</label>
+                                  <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
+                                </div>
+                                <div class="form-group mr-2">
+                                  <label>X Min</label>
+                                  <input type="text" id="plot-x-min" class="form-control" style="width:100px" />
+                                </div>
+                                <div class="form-group">
+                                  <label>Y Min</label>
+                                  <input type="text" id="plot-y-min" class="form-control" style="width:100px" />
+                                </div>
+                                <div class="form-group mr-2">
+                                  <label>X Max</label>
+                                  <input type="text" id="plot-x-max" class="form-control" style="width:100px" />
+                                </div>
+                                <div class="form-group">
+                                  <label>Y Max</label>
+                                  <input type="text" id="plot-y-max" class="form-control" style="width:100px" />
+                                </div>
                               </form>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                      <!--End Plot Tab-->
                   </div>
-                  <!--End Mosaic Column-->
-                  <!--Mosaic Details Column-->
-                  <div class="flex-column flex-grow-1 order-2 py-2 px-1 justify-content-center overflow-auto d-none" id="mosaic-details">
-                    <!--Mosaic Details Card-->
-                    <div class="card d-flex mh-100">
-                    <div class="card-header white text-center">
-                        <div class="overflow-auto" id="images">
-                          <a id="detailed-image-link" href="#">
-                            <img class="fluid mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
-                            <img class="fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
-                            <img class="fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
-                          </a>
-                          <div id="scale-bar">
-                            <!-- FIXME hide if image scales -->
-                            <div class="scale-bar mx-auto mt-2"></div>
-                            <div>10μm</div>
-                          </div>
-                        </div>
-                    </div>
-                      <div class="card-body flex-row overflow-auto d-none">
-                        <div class="table-responsive text-nowrap">
-                        <table class="table table-striped table-sm table-hover" id="detailed-image-metadata">
-                                <tbody></tbody>
-                              </table>
-                            </div>
-                      </div>
-                      <div class="card-footer flex-row py-1">
-                        <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image"
-                          href="javascript:void(0)">Image</a>
-                        <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
-                          data-target="detailed-image-blob" href="javascript:void(0)"
-                          id="detailed-image-blob-link">Blob</a>
-                        <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
-                          data-target="detailed-image-outline" href="javascript:void(0)"
-                          id="detailed-image-outline-link">Outline</a>
-                        <a id="close-image" class="float-right btn btn-light text-dark btn-sm">X</a>
-                      </div>
-                    </div>
-                    <!--End of Mosaic Details Card-->
-                  </div>
-                  <!--End of Mosaic Details Column-->
-                </div>
-                <!--End of Mosaic Row-->
-              </div>
-              <!--End of Mosaic Tab-->
-              <!-- Plot Tab -->
-              <div id="plot-tab-content" class="tab-pane d-none" role="tabpanel">
-                <div class="card-body py-1">
-                  <div class="row py-2 px-3">
-                    <div class="col-md-7 text-center">
-                      <form class="form form-row">
-                        <div class="form-group mr-2">
-                          <label>X Axis</label>
-                          <select id="plot-x-axis" class="form-control" style="width:150px"></select>
-                        </div>
-                        <div class="form-group mr-2">
-                          <label>Y Axis</label>
-                          <select id="plot-y-axis" class="form-control" style="width:150px"></select>
-                        </div>
-                        <div class="form-group mr-2">
-                          <label>X Type</label>
-                          <select id="plot-x-type" class="form-control">
-                            <option value="">Linear</option>
-                            <option value="log">Log</option>
-                          </select>
-                        </div>
-                        <div class="form-group mr-2">
-                          <label>Y Type</label>
-                          <select id="plot-y-type" class="form-control">
-                            <option value="">Linear</option>
-                            <option value="log">Log</option>
-                          </select>
-                        </div>
-                        <div class="form-group mr-2">
-                          <label>X Offset</label>
-                          <input type="text" id="plot-x-offset" class="form-control" disabled style="width:100px" />
-                        </div>
-                        <div class="form-group">
-                          <label>Y Offset</label>
-                          <input type="text" id="plot-y-offset" class="form-control" disabled style="width:100px" />
-                        </div>
-                      </form>
+                  <div class="col">
 
-                      <div id="plot" class="bin-plot" style="height:450px"></div>
-                    </div>
-                    <div class="col-md-5">
-                      <div class="card h-100 z-depth-0 border" id="plotImages">
-                        <div class="card-body text-center overflow-auto" id="plot-images-container">
-                          <div>
-                            <div class="alert" id="too-many-images" style="display:none">
-                              Showing the first <span id="max-images"></span> images
+
+                                              <div id="mosaic-side">
+
+
+                        <!--Mosaic Details Column-->
+                        <div class="flex-column flex-grow-1 order-2 py-2 px-1 mb-3 justify-content-center overflow-auto d-none" id="mosaic-details">
+
+
+                        <!--Mosaic Details Card-->
+                        <div class="card d-flex mh-100">
+
+                        <div class="card-header white text-center">
+
+                            <div class="overflow-auto" id="images">
+                              <div id="detailed-image-id">
+                                <div>
+                                    <div class="alert alert-danger d-none" id="image-not-found" role="alert">
+                                        Image not found
+                                    </div>
+                                  <a class="detailed-image-link" style="outline:0" href="#">
+                                    <div id="detailed-image-pid"></div>
+                                  </a>
+                                </div>
+                              </div>
+                              <a class="detailed-image-link" href="#" class="">
+                                <img class="fluid mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
+                                <img class="fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
+                                <img class="fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
+                              </a>
+                              <div id="scale-bar" class="">
+                                <!-- FIXME hide if image scales -->
+                                <div class="scale-bar mx-auto mt-2"></div>
+                                <div>10μm</div>
+                              </div>
+
                             </div>
-                            <div id="plot-images"></div>
+                        </div>
+                          <div class="card-body flex-row overflow-auto d-none">
+                            <div class="table-responsive text-nowrap">
+                            <table class="table table-striped table-sm table-hover" id="detailed-image-metadata">
+                                    <tbody></tbody>
+                                  </table>
+                                </div>
+                          </div>
+                          <div class="card-footer flex-row py-1">
+                            <a class="btn btn-mdb-color btn-sm change-image" data-target="detailed-image"
+                              href="javascript:void(0)">Image</a>
+                            <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
+                              data-target="detailed-image-blob" href="javascript:void(0)"
+                              id="detailed-image-blob-link">Blob</a>
+                            <a class="btn btn-mdb-color btn-sm change-image {% if not details.has_blobs %}disabled{% endif %}"
+                              data-target="detailed-image-outline" href="javascript:void(0)"
+                              id="detailed-image-outline-link">Outline</a>
+
+                            <a id="close-image" class="float-right btn btn-light text-dark btn-sm">X</a>
                           </div>
                         </div>
+                        <!--End of Mosaic Details Card-->
+                        </div>
+                        <!--End of Mosaic Details Column-->
+                          </div>
+
+                      <!-- Map Tap -->
+                      <div id="map-tab-content" class="tab-pane py-2" role="tabpanel">
+                        <div class="card">
+                        <div class="card-body py-1">
+                          <div id="map-container" style="height:600px" ></div>
+                            <div id="no-bin-location" class="alert alert-warning text-center d-none">The selected bin does not have a latitude/longitude set</div>
+                        </div>
                       </div>
-                    </div>
+                      </div>
+                      <!--End Map Tab-->
                   </div>
-                </div>
-              </div>
-              <!--End Plot Tab-->
-              <!-- Map Tap -->
-              <div id="map-tab-content" class="tab-pane d-none" role="tabpanel">
-                <div class="card-body py-1">
-                  <div id="map-container" style="height:600px" ></div>
-                </div>
-              </div>
-              <!--End Map Tab-->
             </div>
             <!--End Top Half-->
-
+            <!--Tags Row-->
+            <div class="d-md-flex flex-md-row row mt-3 border">
+              <div class="flex-column">
+                <div class="pl-2">
+                  <span>Tags:</span>
+                    <span id="tags" ></span>
+                  {% if user.is_authenticated %}
+                  <a class="btn btn-sm btn-mdb-color px-2 py-1" id="add-tag"><i class="fas fa-plus"></i></a>
+                  <input type="text" placeholder="tag name" id="tag-name" class="d-none" />
+                  <a class="btn btn-sm btn-mdb-color ml-0 d-none pt-1 pb-1 pl-2 pr-2" id="tag-confirm">
+                    <i class="fas fa-check"></i>
+                  </a>
+                  <a class="btn btn-sm btn-mdb-color ml-0 d-none pt-1 pb-1 pl-2 pr-2" id="tag-cancel">
+                    <i class="fas fa-times"></i>
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <!--End Tags Row-->
               <!-- Bottom half (metadata/tags) -->
               <div class="d-md-flex flex-md-row row mt-3">
                 <!-- Bin Basic Info -->
@@ -322,7 +466,11 @@
                         <div class="flex-column">Date/Time: <span id="stat-date-time"></span></div>
                       </div>
                       <div class="d-flex flex-row">
-                        <div class="flex-column">Instrument: <span id="stat-instrument"></span></div>
+                        <div class="flex-column">Instrument:
+                          <a id="stat-instrument-link" href="#">
+                            <span id="stat-instrument"></span>
+                          </a>
+                        </div>
                       </div>
                       <div class="d-flex flex-row">
                         <div class="flex-column">Triggers: <span id="stat-num-triggers"></span></div>
@@ -338,6 +486,37 @@
                         <div class="flex-column">Volume Analyzed: <span id="stat-ml-analyzed"></span>
                         </div>
                       </div>
+                      <div class="d-flex flex-row">
+                        <div class="flex-column">ROIs / ml: <span id="stat-concentration"></span>
+                        </div>
+                      </div>
+                      <div class="d-flex flex-row">
+                        <div class="flex-column">Size: <span id="stat-size"></span></div>
+                      </div>
+                      <div id="show-lat" class="flex-row d-none"><!-- d-flex is added when unhiding-->
+                        <div class="flex-column">Latitude: <span id="stat-lat"></span></div>
+                      </div>
+                      <div id="show-lon" class="flex-row d-none"><!-- d-flex is added when unhiding -->
+                        <div class="flex-column">Longitude: <span id="stat-lon"></span></div>
+                      </div>
+                      <div id="show-depth" class="flex-row"><!-- d-flex is added when unhiding -->
+                        <div class="flex-column">Depth: <span id="stat-depth"></span></div>
+                      </div>
+                      <div id="show-cruise" class="flex-row d-none">
+                        <div class="flex-column">Cruise: <span id="stat-cruise"></span></div>
+                      </div>
+                      <div id="show-cast" class="flex-row d-none">
+                        <div class="flex-column">Cast: <span id="stat-cast"></span></div>
+                      </div>
+                      <div id="show-niskin" class="flex-row d-none">
+                        <div class="flex-column">Niskin: <span id="stat-niskin"></span></div>
+                      </div>
+                        <div class="d-flex flex-row">
+                            <div class="flex-column">
+                                Skipped:
+                                <a {% if user.is_authenticated %}href="javascript:;"{% endif %} id="stat-skip"></a>
+                            </div>
+                        </div>
                       <!-- Download links -->
                       <p class="h5-responsive">Download:</p>
                       <div class="d-flex flex-row">
@@ -359,7 +538,10 @@
                               <a id="download-features" href="#" style="display:none">features</a>
                               <span id="download-features-disabled">features</span>
                             </li>
-                            <li>autoclass</li>
+                            <li>
+                              <a id="download-class-scores" href="#" style="display:none">autoclass</a>
+                              <span id="download-class-scores-disabled">autoclass</span>
+                            </li>
                           </ul>
                         </div>
                       </div>
@@ -372,13 +554,48 @@
                 </div>
                 <!-- End Bin Basic Info -->
                 <!-- Metadata -->
-                <div class="flex-md-column col-md-7 mt-2 mt-lg-0">
-                  <div class="card vh-50 h-100">
+                <div class="flex-md-column col-md-9 mt-2 mt-lg-0">
+                  <div class="card h-100">
                     <div class="card-header py-1 mdb-color lighten-5">
-                      <span class="h5-responsive">Metadata</span>
+                        <span id="metadata-header" class="h5-responsive">Metadata | <a href="javascript:;" class="show-comments">Comments (<span class="comment-total">0</span>)</a></span>
+                        <span id="comments-header" class="h5-responsive d-none"><a href="javascript:;" class="show-metadata">Metadata</a> | Comments (<span class="comment-total">0</span>)</span>
+
                     </div>
-                    <div class="card-body h-75">
-                      <div class="table-responsive text-nowrap h-100 overflow-auto">
+                      <div class="card-body h-100 d-none" id="comments-panel">
+                      <div class={% if user.is_authenticated %}"row col-sm-12 vh-25 mb-3 border-bottom overflow-auto"{% else %}"row col-sm-12 vh-50 mb-3 border-bottom overflow-auto"{% endif %}  style="width:100%">
+                         <table class="table table-striped table-sm table-hover" id="binCommentsTable" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Comment</th>
+                                    <th scope="col">Author</th>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                          </table>
+                          </div>
+                          {% if user.is_authenticated %}
+                          <div class="min-vh-25">
+                          <div class="row">
+                          <div class="form-group col-12">
+                              <input type="hidden" id="comment-id" />
+                          <textarea class="form-control w100" id="comment-input" rows="4"></textarea>
+                          </div>
+                          </div>
+                          <div class="row text-right">
+                          <div class="col-12">
+                          <button class="btn btn-sm btn-mdb-color" id="confirm-comment">Add</button>
+                          <button class="btn btn-sm btn-mdb-color d-none" id="cancel-comment">Cancel</button>
+                          <button class="btn btn-sm btn-mdb-color d-none" id="update-comment">Update</button>
+                          </div>
+                          </div>
+                        </div>
+                        {% endif %}
+                      </div>
+                    <div class="card-body h-100" id="metadata-panel">
+                      <div class="table-responsive text-nowrap vh-50 overflow-auto">
                         <table class="table table-striped table-sm table-hover" id="bin-metadata">
                           <thead>
                             <tr>
@@ -394,33 +611,6 @@
                   </div>
                 </div>
                 <!-- End Meta Data-->
-                <!-- Tags -->
-                <div class="flex-md-column col-md-2 mt-2 mt-lg-0">
-                  <div class="card h-100">
-                    <div class="card-header py-1 mdb-color lighten-5">
-                      <div class="row">
-                        <div class="col">
-                          <span class="h5-responsive">Tags</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="card-body overflow-auto">
-                      <ul>
-                        {% for tag in details.tags %}
-                        <li class="list-group-item">
-                          <a href="#" class="badge badge-pill badge-primary"><i class="fas fa-tag fa-2x mr-1"
-                              aria-hidden="true"></i>{{tag}}</a>
-                        </li>
-                        {% endfor %}
-                      </ul>
-                    </div>
-                    <div class="card-footer py-1 white">
-                      <a href="#" class="btn btn-mdb-color btn-block btn-sm"><i class="fas fa-plus-circle"
-                          aria-hidden="true"></i>Add</a>
-                    </div>
-                  </div>
-                </div>
-                <!-- End Tags -->
               </div>
               <!--End Second Row of Wrapper Card-->
             </div>
@@ -437,7 +627,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Share This Dataset</h5>
+                <h5 class="modal-title">Share This Page</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -452,6 +642,7 @@
 
 {% endblock %}
 {% block scripts %}
+<script type="text/javascript" src="{% static 'vendor/leaflet-markercluster/leaflet.markercluster.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/bin.js' %}"></script>
 <script>
 
@@ -459,7 +650,6 @@ var plot;
 
 var currentMetric = "";
 var currentResolution = "auto";
-var currentBinTimestamp = null;
 
 var timelineValid = true;
 var timelineRelayoutResponse;
@@ -471,25 +661,56 @@ var timelineWaitingSince = new Date();
 
 var _attempts = 0;
 var _requests = 0;
+var defaultStartDate = null;
+var defaultEndDate = null;
+{% if default_start_date and default_end_date %}
+    defaultStartDate = "{{ default_start_date }}";
+    defaultEndDate = "{{ default_end_date }}";
+{% endif %}
 
-function createTimeSeries(metric) {
+function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
     container = $("#primary-plot-container");
 
     currentMetric = metric;
-    var dataUrl = "/api/" + _dataset + "/time-series/" + metric + "?resolution=auto";
+    var dataUrl = "/api/time-series/" + metric +
+        "?resolution=auto" +
+        "&dataset=" + _dataset +
+        "&instrument=" + _instrument +
+        "&tags=" + _tags;
+
+    var currentRange = null;
+    if (plot) {
+        currentRange = {
+            "xaxis.range[0]": container[0].layout.xaxis.range[0],
+            "xaxis.range[1]": container[0].layout.xaxis.range[1]
+        }
+
+        dataUrl +=
+            "&start=" + container[0].layout.xaxis.range[0] +
+            "&end=" + container[0].layout.xaxis.range[1];
+    }
+
+    if (defaultStartDate != null && defaultEndDate != null) {
+        currentRange = {
+            "xaxis.range[0]": defaultStartDate,
+            "xaxis.range[1]": defaultEndDate
+        }
+
+        dataUrl +=
+            "&start=" + defaultStartDate +
+            "&end=" + defaultEndDate;
+    }
 
     plot = Plotly.d3.json(dataUrl, function(err, response) {
         currentResolution = response["resolution"];
 
         var initialConfig = getTimelineConfig();
-        var initialData = getTimelineData(response, currentBinTimestamp);
-        var initialLayout = getTimelineLayout(response);
+        var initialData = getTimelineData(response, _binTimestamp, currentResolution);
+        timelineRelayoutResponse = getTimelineLayout(response, currentRange, metric);
 
-        Plotly.newPlot(container[0], initialData, initialLayout, initialConfig);
+        Plotly.newPlot(container[0], initialData, timelineRelayoutResponse, initialConfig);
 
-        if (currentBinTimestamp != null) {
-            highlightSelectedBinByDate(container[0].data[0].x, currentBinTimestamp);
-        }
+        highlightSelectedBinByDate();
 
         // Add event to locate nearest bin to user's click
         container[0].addEventListener('mousemove', function(event) {
@@ -524,6 +745,12 @@ function createTimeSeries(metric) {
                 return
             }
 
+            // Prevent relaying out when switching metrics
+            if (_preventTimelineRelayout) {
+                _preventTimelineRelayout = false;
+                return;
+            }
+
             queryTimeline(container, metric);
         });
     });
@@ -556,8 +783,12 @@ function queryTimeline(container, metric) {
     var start = timelineRelayoutResponse["xaxis.range[0]"];
     var end = timelineRelayoutResponse["xaxis.range[1]"];
 
-    var url = "/api/" + _dataset + "/time-series/" + metric +
-        "?resolution=" + "auto";
+    var url = "/api/time-series/" + metric +
+        "?resolution=auto" +
+        "&dataset=" + _dataset +
+        "&instrument=" + _instrument +
+        "&tags=" + _tags;
+
     if(start)
         url += "&start=" + start;
     if(end)
@@ -568,7 +799,6 @@ function queryTimeline(container, metric) {
     timelineValid = true;
 
     $.get(url, function(dataResponse) {
-
         // the timeline has been invalidated so this response is out of date
         // if we're not already deferring an attempt, do so
         if (!timelineValid) {
@@ -580,10 +810,12 @@ function queryTimeline(container, metric) {
         currentResolution = dataResponse["resolution"];
 
         var updatedConfig = getTimelineConfig();
-        var updatedData = getTimelineData(dataResponse, currentBinTimestamp);
-        var updatedLayout = getTimelineLayout(dataResponse, timelineRelayoutResponse);
+        var updatedData = getTimelineData(dataResponse, _binTimestamp, currentResolution);
+        var updatedLayout = getTimelineLayout(dataResponse, timelineRelayoutResponse, metric);
 
-        Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
+        if (dataResponse.x.length > 0) {
+            Plotly.react(container[0], updatedData, updatedLayout, updatedConfig);
+        }
 
         // success, unlock the timeline
         timelineValid = true;
@@ -594,8 +826,6 @@ function queryTimeline(container, metric) {
     _requests += 1;
     return true;
 }
-
-
 
 function changeBin(binId, updateHistory) {
     _coordinates = [];
@@ -608,29 +838,57 @@ function changeBin(binId, updateHistory) {
     var viewSize = $("#view-size option:selected").val();
     var scaleFactor = $("#scale-factor option:selected").val();
 
-    var dataUrl = "/api" + (_dataset != "" ? "/" + _dataset : "") + "/bin/" + _bin;
+    var dataUrl = "/api/bin/" + _bin;
     dataUrl += "?view_size=" + viewSize;
     dataUrl += "&scale_factor=" + scaleFactor;
     dataUrl += "&preload_adjacent_bins=" + true;
     dataUrl += "&include_coordinates=" + false;
+    dataUrl += "&dataset=" + _dataset;
+    dataUrl += "&instrument=" + _instrument;
+    dataUrl += "&tags=" + _tags;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
     $("#mosaic").hide().attr("src","");
+    $("#mosaic-failed").hide();
+    // plot is loading
+    $("#plot-loading").toggleClass("d-none", false);
 
-    // Hide any selected images
+    // Hide any selected images and messages
     $("#mosaic-details").toggleClass("d-none", true);
     $("#plot-images").empty();
+    $("#plotImages").toggleClass("d-none", true);
     $("#too-many-images").toggle(false);
 
-    // Update bin name/link
-    var binUrl = "/bin?id=" + _bin;
-    $("#bin-header").attr("href", binUrl).html(binId);
-    $("#bin-crumb").attr("href", binUrl).html(binId);
+    // Update bin name/links
+    $("#view-list").click(function(e){
+        e.preventDefault();
+
+        var timeline_container = $("#primary-plot-container");
+        location.href = createListLink(
+            container[0].layout.xaxis.range[0],
+            container[0].layout.xaxis.range[1]
+        );
+
+        return false;
+    });
+
+    $("#bin-header")
+        .attr("href", createBinModeLink())
+        .html(binId);
 
     // disable next/previous buttons
     $("#previous-bin").addClass("disabled");
     $("#next-bin").addClass("disabled");
+
+    // Some other UI clean up once the bin changes
+    if (updateHistory) {
+        $("#bin-not-found").hide();
+    }
+
+    // reset sticky blob / outline
+    $("#detailed-image-blob").hide()
+    $("#detailed-image-outline").hide()
 
     _mosaicPage = 0;
     delayedMosaic(0);
@@ -642,8 +900,10 @@ function changeBin(binId, updateHistory) {
         updateBinStats(data);
         updateBinDownloadLinks(data);
         updateBinDatasets(data);
+        updateBinTags(data);
+        updateBinComments(data);
 
-        currentBinTimestamp = moment(data["timestamp_iso"]);
+        _binTimestamp = moment(data["timestamp_iso"]);
 
         $("#previous-bin").data("bin", data.previous_bin_id);
         $("#next-bin").data("bin", data.next_bin_id);
@@ -652,33 +912,80 @@ function changeBin(binId, updateHistory) {
         $("#detailed-image-blob-link").toggleClass("disabled", !data["has_blobs"]);
         $("#detailed-image-outline-link").toggleClass("disabled", !data["has_blobs"]);
 
-        // Update map location(s). If the map is not currently the visible workspace, we delay changing the map. If not
-        //   there are issues with Leaflet throwing errors because of how the dimensions of the container are
-        //   calculated. If the container has never been visible, Leaflet cannot get the dimensions and will fail
-        if (_workspace == "map") {
-            updateMapLocation(data);
-        } else {
-            _pendingMapLocation = {
-                "lat": data.lat,
-                "lng": data.lng,
-                "depth": data.lng
-            }
-        }
-
         if (updateHistory) {
-            {% if route == "dataset" %}
-                history.pushState({"bin_id": _bin, "dataset": _dataset}, null, "?id=" + _bin + "&dataset=" + _dataset);
+            {% if route == "timeline" %}
+                var parameters = getGroupingParameters(_bin);
+                var state = {
+                    "bin_id": _bin,
+                    "dataset": _dataset,
+                    "instrument": _instrument,
+                    "tags": _tags
+                };
+
+                history.pushState(state, null, "?" + parameters);
             {% endif %}
         }
 
         // Update the timeline to select the new bin
-        if (_dataset != "") {
-            var timeline = $("#primary-plot-container")[0];
-            highlightSelectedBinByDate(timeline.data[0].x, currentBinTimestamp);
+        if ("{{ route }}" == "timeline") {
+            highlightSelectedBinByDate();
         }
 
         _isBinLoading = false;
     });
+
+    resizeMap();
+    recenterMap();
+}
+
+// Update map location(s). If the map is not currently the visible workspace, we delay changing the map. If not
+//   there are issues with Leaflet throwing errors because of how the dimensions of the container are
+//   calculated. If the container has never been visible, Leaflet cannot get the dimensions and will fail
+function updateLocations() {
+    var payload = getGroupingPayload(_bin);
+    payload["csrfmiddlewaretoken"] = _csrf;
+
+    $.post("/api/search_timeline_locations", payload, function(locationData){
+    //    if (_workspace == "map") {
+            updateMapLocations(locationData);
+//        } else {
+    //        _pendingMapLocations = locationData;
+  //      }
+    });
+}
+
+function previewImage(img) {
+    $("#mosaic-details").toggleClass("d-none", false);
+    $("#scale-bar").toggleClass("d-none", false);
+    $(".detailed-image-link").toggleClass("d-none", false);
+    $("#image-not-found").toggleClass("d-none", true);
+    // TODO: Needs loading indicator
+    var sourceUrl = "/data/" + _bin + "_" + padDigits(img.pid, 5) + ".png";
+    var metaUrl = "/api/image/" + _bin + "/" + img.pid;
+    var imageUrl = createImageLink(padDigits(img.pid, 5));
+
+    changeImage(
+        $("#detailed-image"),
+        sourceUrl,
+        $("#detailed-image-blob"),
+        $("#detailed-image-outline")
+    );
+    $("#detailed-image").data("image-id", img.pid);
+    $(".detailed-image-link").attr("href", imageUrl);
+    $("#detailed-image-pid").html(_bin + "_" + padDigits(img.pid, 5));
+    $(".detailed-image-link").data("baseurl", imageUrl);
+
+    $("#detailed-image-metadata tbody").empty();
+    $.get(metaUrl, function(data){
+        $.each(data, function(key, val) {
+            var tr = $("<tr />");
+            tr.append($("<th>").html(key));
+            tr.append($("<td>").attr("scope", "row").html(val));
+            $("#detailed-image-metadata tbody").append(tr);
+        });
+
+    });
+    //resizeMap();
 }
 
 $("#mosaic").click(function(e){
@@ -690,38 +997,11 @@ $("#mosaic").click(function(e){
             x >= img.x && x <= img.x + img.width &&
             y >= img.y && y <= img.y + img.height) {
 
-            $("#mosaic-details").toggleClass("d-none", false);
-
-            // TODO: Needs loading indicator
-            var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(img.pid, 5);
-            var metaUrl = "/api/image/" + _bin + "/" + img.pid;
-
-            changeImage($("#detailed-image"), baseUrl + ".png", $("#detailed-image-blob"), $("#detailed-image-outline"));
-            $("#detailed-image").data("image-id", img.pid);
-            $("#detailed-image-link").attr("href", baseUrl + ".html");
-            $("#detailed-image-button").attr("href", baseUrl + ".html");
-            $("#image-modal").modal();
-
-            $("#detailed-image-metadata tbody").empty();
-            $.get(metaUrl, function(data){
-                $.each(data, function(key, val) {
-                    var tr = $("<tr />");
-                    tr.append($("<th>").html(key));
-                    tr.append($("<td>").attr("scope", "row").html(val));
-                    $("#detailed-image-metadata tbody").append(tr);
-                });
-
-            });
+            previewImage(img);
 
             return false;
         }
     });
-});
-
-$("#image-modal").on("hidden.bs.modal", function() {
-    $("#detailed-image").attr("src","");
-    $("#detailed-image-blob").attr("src","");
-    $("#detailed-image-outline").attr("src","");
 });
 
 $(".change-image").click(function(e){
@@ -740,8 +1020,9 @@ $(".change-image").click(function(e){
         $("#detailed-image-blob").attr("src", pixel);
 
         $.get(blobUrl, function(data){
-            if (data["blob"] != "")
+            if (data["blob"] != "") {
                 $("#detailed-image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+            }
         });
     }
 
@@ -751,24 +1032,46 @@ $(".change-image").click(function(e){
         $("#detailed-image-outline").attr("src", pixel);
 
         $.get(outlineUrl, function(data){
-            if (data["outline"] != "")
+            if (data["outline"] != "") {
                 $("#detailed-image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+            }
         });
+    }
+
+    var baseUrl = $(".detailed-image-link").data("baseurl");
+    if (target == "detailed-image-blob") {
+        $(".detailed-image-link").attr("href", baseUrl + "&mode=blob");
+    } else if (target == "detailed-image-outline") {
+        $(".detailed-image-link").attr("href", baseUrl + "&mode=outline");
+    } else {
+        $(".detailed-image-link").attr("href", baseUrl);
     }
 });
 
 $("#close-image").click(function() {
+  $("#images img").attr("src","");
   $("#mosaic-details").addClass("d-none");
+  resizeMap();
 });
 
 $(function() {
-    {% if dataset %}
-    createTimeSeries("concentration");
-    {% endif %}
+    _binTimestamp = moment("{{ details.timestamp_iso }}");
+
+    if ("{{ route }}" == "timeline") {
+        createTimeSeries("concentration", defaultStartDate, defaultEndDate);
+    }
 
     changeBin("{{ bin.pid }}", false);
+
+    updateLocations();
 });
 
+    function canUseFixedAspectRatio(parameter) {
+        return (
+            parameter === "roi_x" || parameter === "roi_y" ||
+            parameter === "roi_width" || parameter === "roi_height"
+        );
+    }
 
     function updatePlot() {
         var xAxis = $("#plot-x-axis").val();
@@ -779,6 +1082,8 @@ $(function() {
         var yOffset = $("#plot-y-offset").val();
         var xData = _plotData[xAxis];
         var yData = _plotData[yAxis];
+
+        $("#plot-loading").toggleClass("d-none",true);
 
         if ($.isNumeric(xOffset) && xOffset != 0) {
             xData = $.map(xData, function(value) { return value + parseFloat(xOffset); });
@@ -806,24 +1111,86 @@ $(function() {
             x: xData,
             y: yData,
             mode: 'markers',
-            type: 'scatter'
+            type: 'scattergl'
         }];
 
         var layout = {
-            margin: { l: 50, r: 50, b: 50, t: 00, pad: 2 },
-            xaxis: { type: xType, autorange: true },
-            yaxis: { type: yType, fixedrange: true, }
+            margin: { l: 50, r: 50, b: 40, t: 10, pad: 2 },
+            xaxis: {
+                type: xType,
+                showline: true,
+                zeroline:false,
+                mirror: 'ticks',
+                linewidth: 1,
+                linecolor: '#dee2e6',
+                 autorange: true,
+                 title: {
+                    text: xAxis
+                 },
+                titlefont: {
+                  size: 18,
+                },
+                constrain: "domain",
+                constraintoward: "left"
+            },
+            yaxis: {
+                type: yType,
+                showgrid: true,
+                zeroline:false,
+                showline: true,
+                mirror: 'ticks',
+                linewidth: 1,
+                linecolor: '#dee2e6',
+                autorange: true,
+                title: {
+                    text: yAxis
+                },
+                titlefont: {
+                  size: 18,
+                },
+                constrain: "domain",
+                constraintoward: "bottom"
+            }
         };
+
+        // Special handling of the x axis on ROI x/y plots
+        if (xAxis === "roi_x" || xAxis == "roi_y") {
+            var xMax = (xAxis == "roi_x" ? 1400 : 1050);
+            layout.xaxis.autorange = false;
+            layout.xaxis.fixedrange = true;
+            layout.xaxis.range = [0, xMax];
+        }
+
+        // Special handling of the y axis on ROI x/y plots
+        if (yAxis === "roi_x" || yAxis == "roi_y") {
+            var yMax = (yAxis == "roi_x" ? 1400 : 1050);
+            layout.yaxis.autorange = false;
+            layout.yaxis.fixedrange = true;
+            layout.yaxis.range = [0, yMax];
+        }
+
+        // Special handling of some pairs of x/y axis to force an aspect ratio
+        if (canUseFixedAspectRatio(xAxis) && canUseFixedAspectRatio(yAxis)) {
+            layout.yaxis.scaleanchor = "x";
+            layout.yaxis.scaleratio = 1;
+        }
 
         Plotly.react('plot', trace, layout, config);
 
+        var layout = ($("#plot")[0]).layout;
+        $("#plot-x-min").val(layout.xaxis.range[0])
+        $("#plot-y-min").val(layout.yaxis.range[0])
+        $("#plot-x-max").val(layout.xaxis.range[1])
+        $("#plot-y-max").val(layout.yaxis.range[1])
+
         $("#plot")[0].on('plotly_click', function(data){
+            $("#plotImages").toggleClass("d-none", false);
             var pts = '';
             for(var i=0; i < data.points.length; i++){
                 var idx = data.points[i].pointIndex;
 
                 var imageId = _plotData["target_number"][idx];
-                var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
+                var baseUrl = "/data/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 $("#plot-images").empty();
                 $("#plot-images").append(
@@ -832,6 +1199,19 @@ $(function() {
                         .attr("data-target", imageId)
                         .css("cursor","pointer")
                 );
+            }
+
+            resizeMap();
+        });
+
+        // When changing tools, clear any existing selection (and shown images)
+        $("#plot")[0].addEventListener('click', function(event) {
+            if ($(event.target).parents(".modebar").length > 0) {
+                $("#plotImages").toggleClass("d-none", true);
+                $("#too-many-images").toggle(false);
+                $("#plot-images").empty();
+                Plotly.restyle($("#plot")[0], {selectedpoints: [null]});
+                resizeMap();
             }
         });
 
@@ -846,7 +1226,7 @@ $(function() {
 
                 var idx = data.points[i].pointIndex;
                 var imageId = _plotData["target_number"][idx];
-                var imageUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(imageId, 5) + ".png";
+                var imageUrl = "/data/" + _bin + "_" + padDigits(imageId, 5) + ".png";
 
                 urls.push({
                     "id": imageId,
@@ -854,6 +1234,7 @@ $(function() {
                 });
             }
 
+            $("#plotImages").toggleClass("d-none", false);
             $("#plot-images").empty();
             $.each(urls, function(key, val){
                 $("#plot-images").append($("<img />")
@@ -863,11 +1244,36 @@ $(function() {
                   );
             });
             $("#too-many-images").toggle(maxImages);
+            resizeMap();
         });
     }
 
     $("#plot-x-axis, #plot-y-axis, #plot-x-offset, #plot-y-offset").change(function(e){
         updatePlot();
+    });
+
+    $("#plot-x-min, #plot-y-min, #plot-x-max, #plot-y-max").focus(function(e){
+        $(this).select();
+    });
+
+    $("#plot-x-min, #plot-y-min, #plot-x-max, #plot-y-max").change(function(e){
+        var plot = $("#plot")[0];
+        var layout = plot.layout;
+
+        layout.xaxis.autorange = false;
+        layout.xaxis.fixedrange = true;
+        layout.yaxis.autorange = false;
+        layout.yaxis.fixedrange = true;
+
+        layout.xaxis.range = [$("#plot-x-min").val(), $("#plot-x-max").val()];
+        layout.yaxis.range = [$("#plot-y-min").val(), $("#plot-y-max").val()];
+
+        try {
+            Plotly.relayout(plot, layout);
+        } catch(error) {
+            // Do nothing; user should be aware there was a data issue when the plot doesn't update
+        }
+
     });
 
     $("#plot-x-type").change(function(e){
@@ -892,15 +1298,66 @@ $(function() {
 
     $("#plot-images").on("click", "img", function(e){
         var target = $(this).data("target");
-        var baseUrl = (_dataset != "" ? "/" + _dataset : "") + "/" + _bin + "_" + padDigits(target, 5);
 
-        location.href = baseUrl + ".html";
+        location.href = createImageLink(padDigits(target, 5));
+    });
+
+    $("#close-plot-images").click(function(e){
+        e.preventDefault();
+
+        $("#plotImages").toggleClass("d-none", true);
     });
 
     {% if dataset %}
         _dataset = "{{ dataset.name }}";
+        _locations_dataset = "{{ dataset.name }}";
+    {% elif bin.primary_dataset %}
+        _dataset = "{{ bin.primary_dataset.name }}";
+    {% endif %}
+    {% if instrument %}
+        _instrument = "{{ instrument.number }}";
+    {% endif %}
+    {% if tags %}
+        _tags = "{{ tags }}";
     {% endif %}
     _bin = "{{ bin.pid }}";
+    _route = "{{ route }}";
+    _csrf = "{{ csrf_token }}";
+    {% if user.is_authenticated %}
+    _userId = {{ user.id }};
+    {% endif %}
+
+    // show timeline info
+    {% if route == 'timeline' %}
+    var timeline_info_url = 'api/timeline_info?dataset='+_dataset+
+      '&instrument='+_instrument+'&tags='+_tags;
+    $.get(timeline_info_url, function(data) {
+      $("#n_bins").html(data.n_bins+" bins, "+data.n_images+" images");
+      $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
+    })
+
+    var title = "";
+    {% if dataset %}title += " » {{ dataset.title }}";{% endif %}
+    {% if instrument %}title += " » IFCB{{ instrument.number }}";{% endif %}
+    {% if tags %}title += " » {{ tags }}"{% endif %}
+    document.title = title.substring(3);
+
+    {% else %}
+    document.title = _bin;
+    _route = 'bin';
+    {% endif %}
+
+    {% if bin_reset and route == "timeline" %}
+        var parameters = getGroupingParameters(_bin);
+        var state = {
+            "bin_id": _bin,
+            "dataset": _dataset,
+            "instrument": _instrument,
+            "tags": _tags
+        };
+
+        history.pushState(state, null, "?" + parameters);
+    {% endif %}
 
 </script>
 {% endblock %}

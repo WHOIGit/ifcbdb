@@ -5,8 +5,8 @@ RUN apt-get update
 # geospatial libraries
 RUN apt-get install -y binutils libproj-dev gdal-bin
 
-# prevent conda auto updating
-RUN conda config --set auto_update_conda False
+# update conda
+RUN conda update conda
 
 # nomkl to reduce image size (mkl is large)
 RUN conda install nomkl

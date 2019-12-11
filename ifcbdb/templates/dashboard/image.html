@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+{% block extra_head %}<title>{{ bin.pid }} » {{ image_id }}</title>{% endblock %}
+{% block content %}
+
+<div class="row d-flex justify-content-between">
+    <div class="col">
+        <span class="h3-responsive">
+            {% if dataset %}
+                <a href="/timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
+                {{ dataset.title }}</a> »
+            {% endif %}
+            <a id="bin-link" href="/bin?bin={{ bin.pid }}{% if dataset %}&dataset={{ dataset.name }}{% endif %}">{{ bin.pid }}</a> » <span id="image-crumb">{{ image_id }}</span>
+        </span>
+    </div>
+    <div class="col">
+        <ul class="nav justify-content-end" id="ImageTabs" role="tablist">
+            <li class="nav-item">
+                <a class="btn btn-sm btn-mdb-color" id="image-tab-label" data-toggle="tab" href="#image-tab" role="tab" aria-controls="image-tab" aria-selected="true">Image</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="blob-tab-label" data-toggle="tab" href="#blob-tab" role="tab" aria-controls="blob-tab" aria-selected="false">Blob</a>
+            </li>
+            <li class="nav-item">
+                <a class="btn btn-sm btn-mdb-color {% if not details.has_blobs %}disabled{% endif %}" id="outline-tab-label" data-toggle="tab" href="#outline-tab" role="tab" aria-controls="outline-tab" aria-selected="false">Outline</a>
+            </li>
+        </ul>
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-header py-1 px-0 white">
+                <div class="d-flex flex-row flex-wrap flex-md-nowrap justify-content-between align-items-center">
+                    <div class="w-100">
+                        <div class="d-flex flex-row justify-content-between align-items-center">
+                            <div class="flex-shrink-1 flex-md-shrink-0 flex-column">
+                            <a href="#" id="previous-image" data-bin="" class="btn btn-mdb-color btn-sm btn-previous">Previous Image</a>
+                            </div>
+                            <div class="flex-column flex-shrink text-center">
+                                <span class="p">
+                                    <strong>Selected Image:</strong>
+                                    <span id="image-header">{{ image_id }}</span>
+                                </span>
+                            </div>
+                            <div class="flex-shrink-1 flex-md-shrink-0 flex-column">
+                            <a href="#" id="next-image" data-bin="" class="btn btn-mdb-color btn-sm btn-next">Next Image</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="card-body text-center">
+                <div class="row h-100 justify-content-center align-items-center">
+                    <div class="col">
+                <div class="tab-content" id="ImageTabContent">
+                    <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab-label">
+                        <img id="image" src="data:image/png;base64,{{ image }}" />
+                    </div>
+                    <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab-label">
+                        <img id="image-blob">
+                    </div>
+                    <div class="tab-pane" id="outline-tab" role="tabpanel" aria-labelledby="outline-tab-label">
+                        <img id="image-outline">
+                    </div>
+                </div>
+                <div id="scale-bar">
+                  <div class="scale-bar mx-auto mt-2"></div>
+                  <div>10μm</div>
+                </div>
+            </div>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row py-2 px-3">
+    <div class="col-md-6 col-xl-8">
+        <div class="card vh-50 h-100">
+            <div class="card-header py-1 mdb-color lighten-5">
+                <span class="h5-responsive">Metadata</span>
+            </div>
+            <div class="card-body overflow-auto">
+                <div class="table-responsive text-nowrap">
+                    <table class="table table-striped table-sm table-hover" id="metadata">
+                        <thead>
+                            <tr>
+                                <th scope="col">Field</th>
+                                <th scope="col">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for key, value in metadata.items %}
+                            <tr>
+                                <th class="w-50" scope="row">{{ key }}</th>
+                                <td>{{ value|floatformat:-4 }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-4 mt-2 mt-md-0">
+        <div class="card h-100">
+            <div class="card-body">
+                <div id="map-container" class="h-100 min-vh-25"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal" id="share-modal" tabindex="-1" role="dialog" aria-labelledby="share-modal" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Share This Image</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+            </div>
+            <div class="modal-body">
+
+            {% if route == "timeline" %}
+                {% if group_type == "dataset" %}
+                    <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}&dataset={{ dataset.name }}">
+                    <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}&dataset={{ dataset.name }}">
+                {% elif group_type == "instrument" %}
+                    <!-- TODO: Implement -->
+                {% elif group_type == "tags" %}
+                    <!-- TODO: Implement -->
+                {% else %}
+                    <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
+                    <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
+                {% endif %}
+            {% else %}
+                <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
+                <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
+            {% endif %}
+
+            </div>
+            <div class="modal-footer">
+                <button id="copy-share-link" type="button" class="btn btn-mdb-color btn-sm">Copy to clipboard</button>
+                <!--button type="button" class="btn btn-mdb-color btn-sm" data-dismiss="modal">Close</button-->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var _mode = "{{ mode }}";
+    var _image_list = {{ image_list|safe }};
+    var _image_index = 0;
+    var _bin = "{{ bin.pid }}";
+    var _image_id = "{{ image_id }}";
+    var _dataset = "{{ dataset_name|default_if_none:'' }}";
+    var _instrument = "{{ instrument_number|default_if_none:'' }}";
+    var _tags = "{{ tags|default_if_none:'' }}";
+
+    function initImageIndex() {
+        for (var i = 0; i < _image_list.length; i++) {
+            if (_image_list[i].toString() == _image_id) {
+
+                _image_index = i;
+                break;
+            }
+        }
+        console.log(_image_index);
+    }
+
+    function getGroupingParameters(bin) {
+        var parameters = []
+        if (bin != "")
+            parameters.push("bin=" + bin);
+        if (_dataset != "")
+            parameters.push("dataset=" + _dataset);
+        if (_instrument != "")
+            parameters.push("instrument=" + _instrument);
+        if (_tags != "") {
+            parameters.push("tags=" + _tags);
+        }
+
+        if (parameters.length == 0)
+            return "";
+
+        return parameters.join("&");
+    }
+
+    function resetImage(selector, width, height) {
+        $(selector).removeAttr("src");
+        $(selector).width(width);
+        $(selector).height(height);
+    }
+
+    function fillImage(selector, data) {
+        $(selector).width("auto");
+        $(selector).height("auto");
+        $(selector).attr("src", "data:image/png;base64," + data);
+    }
+
+    function getCurrentUrl() {
+        var parameters = getGroupingParameters(_bin);
+
+        return "?image=" +  padDigits(_image_id, 5) + "&" + parameters;
+    }
+
+    function getImageInfo(mode) {
+        switch (mode) {
+            case "blob":
+                return {
+                    url: "/api/blob/" + _bin + "/" + _image_id,
+                    key: "blob",
+                    primary: "#image-blob",
+                    related: ["#image", "#image-outline"]
+                };
+            case "outline":
+                return {
+                    url: "/api/outline/" + _bin + "/" + _image_id,
+                    key: "outline",
+                    primary: "#image-outline",
+                    related: ["#image", "#image-blob"]
+                };
+            default:
+                return {
+                    url: "/api/image_data/" + _bin + "/" + _image_id,
+                    key: "data",
+                    primary: "#image",
+                    related: ["#image-blob", "#image-outline"]
+                };
+        }
+    }
+
+    function changeImage(initial) {
+        _image_id = _image_list[_image_index];
+
+        $("#previous-image").toggleClass("disabled", _image_index == 0);
+        $("#next-image").toggleClass("disabled", _image_index >= _image_list.length - 1);
+        $("#image-header").text(_image_id);
+        $("#image-crumb").text(_image_id);
+
+        if (!initial) {
+            var info = getImageInfo(_mode);
+
+            $.get(info.url, function(data){
+                if (data[info.key] == "") return;
+
+                $(info.primary).one("load", function(){
+                    var width = $(this).width();
+                    var height = $(this).height();
+
+                    $.each(info.related, function(idx, item) {
+                        resetImage(item, width, height);
+                    });
+                });
+                fillImage(info.primary, data[info.key]);
+            });
+
+            var metadata_url = "/api/image/" + _bin + "/" + _image_id;
+            $.get(metadata_url, function(data){
+                $("#metadata tbody").empty();
+                $.each(data, function(key){
+                    var row = $("<tr />");
+                    row.append("<th class='w-50' scope='row'>" + key + "</th>");
+                    row.append("<td>" + data[key] + "</td>");
+                    $("#metadata tbody").append(row);
+                });
+            });
+
+            var state = {
+                "image": _image_id,
+                "bin": _bin,
+                "dataset": _dataset,
+                "instrument": _instrument,
+                "tags": _tags
+            };
+
+            var rootUrl = "{{ request.scheme }}://{{ request.get_host }}/image";
+            var currentUrl = getCurrentUrl();
+
+            history.pushState(state, null, currentUrl);
+            $("#share-link-value").val(rootUrl + currentUrl);
+        }
+    }
+
+    $("#image-tab-label").click(function(e){
+        e.preventDefault();
+
+        if ($('#image').attr("src") == undefined) {
+            $.get("/api/image_data/" + _bin + "/" + _image_id, function(data){
+                if (data["data"] != "")
+                    $("#image").attr("src", "data:image/png;base64," + data["data"]);
+            });
+        }
+
+        _mode = "";
+    });
+
+    $("#blob-tab-label").click(function(e){
+        e.preventDefault();
+
+        if ($('#image-blob').attr("src") == undefined) {
+            $.get("/api/blob/" + _bin + "/" + _image_id, function(data){
+                if (data["blob"] != "")
+                    $("#image-blob").attr("src", "data:image/png;base64," + data["blob"]);
+            });
+        }
+
+        _mode = "blob";
+    });
+
+    $("#outline-tab-label").click(function(e){
+        e.preventDefault();
+
+        if ($("#image-outline").attr("src") == undefined) {
+            $.get("/api/outline/" + _bin + "/" + _image_id, function(data){
+                if (data["outline"] != "")
+                    $("#image-outline").attr("src", "data:image/png;base64," + data["outline"]);
+            });
+        }
+
+        _mode = "outline";
+    });
+
+    $("#previous-image").click(function(e){
+        if (_image_index == 0) return;
+
+        _image_index--;
+        changeImage(false);
+    });
+
+    $("#next-image").click(function(e){
+        if (_image_index >= _image_list.length) return;
+
+        _image_index++;
+        changeImage(false);
+    });
+
+    $(function(){
+        var map = createMap({{ details.lat }}, {{ details.lng }});
+        addMapMarker(map, {{ details.lat }}, {{ details.lng }}, {{ details.depth }});
+
+        // Default the width/height of the blob/outline images to prevent flicker when resizing
+        $("#image-blob").width($("#image").width());
+        $("#image-blob").height($("#image").height());
+        $("#image-outline").width($("#image").width());
+        $("#image-outline").height($("#image").height());
+
+        setTimeout(function(){
+            if (_mode == "blob") {
+                $("#blob-tab-label").click();
+            } else if (_mode == "outline") {
+                $("#outline-tab-label").click();
+            }
+        }, 10);
+
+        initImageIndex();
+        changeImage(true);
+    });
+
+    $("#share-button").click(function (e) {
+        e.preventDefault();
+
+        var url = $("#share-link-value").val() + (_mode != "" ? "&mode=" + _mode : "");
+
+        $("#share-link").val(url);
+        $("#share-modal").modal();
+        $("#share-link").select();
+    });
+
+    $("#copy-share-link").click(function() {
+        $("#share-link").select();
+        document.execCommand("Copy");
+    });
+
+    // uncomment below if images are to be scaled instead of having scroll bars
+    /*
+    function handleScaleBar() {
+        var currentImageWidth = $("#image").width();
+        if(currentImageWidth != {{ image_width }}) {
+            $("#scale-bar").hide();
+        } else {
+            $("#scale-bar").show();
+        }        
+    }
+    $(window).resize(function() {
+        handleScaleBar();
+    });
+
+    handleScaleBar();
+    */
+
+    $("#scale-bar").show();
+
+    $.get('/api/has_products/' + "{{ bin.pid }}", function(r) {
+        // Update outline/blob links
+        $("#blob-tab-label").toggleClass("disabled", !r["has_blobs"]);
+        $("#outline-tab-label").toggleClass("disabled", !r["has_blobs"]);
+    });
+</script>
+{% endblock %}

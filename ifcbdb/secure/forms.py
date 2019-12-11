@@ -1,21 +1,99 @@
+import re, os
 from django import forms
 
 from dashboard.models import Dataset, Instrument, DataDirectory
 
 
 class DatasetForm(forms.ModelForm):
+    latitude = forms.FloatField(required=False, widget=forms.TextInput(
+        attrs={"class": "form-control form-control-sm", "placeholder": "Latitude"}
+    ))
+    longitude = forms.FloatField(required=False, widget=forms.TextInput(
+        attrs={"class": "form-control form-control-sm", "placeholder": "Longitude"}
+    ))
+
     class Meta:
         model = Dataset
-        fields = ["id", "name", "title", "is_active", ]
+        fields = ["id", "name", "title", "doi", "attribution", "funding", "is_active", "depth", ]
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
-            "title": forms.Textarea(attrs={"class": "form-control form-control-sm", "placeholder": "Description", "rows": 3}),
+            "title": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Title"}),
+            "doi": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
+            "attribution": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
+            "funding": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
+            "depth": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Depth"}),
             "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
         }
 
+    def clean_doi(self):
+        doi = self.cleaned_data['doi']
+
+        if not doi or doi == "":
+            return doi
+
+        doi_regex = r'10\.[^ /]+/[^ ]+'
+
+        if not re.match(doi_regex, doi):
+            raise forms.ValidationError('invalid DOI format')
+
+        return doi
+
+    def __init__(self, *args, **kwargs):
+        super(DatasetForm, self).__init__(*args, **kwargs)
+
+        if "instance" in kwargs:
+            instance = kwargs["instance"]
+            if instance.location:
+                self.fields["latitude"].initial = instance.location.y
+                self.fields["longitude"].initial = instance.location.x
+
+    def save(self, commit=True):
+        instance = super(DatasetForm, self).save(commit=False)
+
+        latitude = self.cleaned_data["latitude"]
+        longitude = self.cleaned_data["longitude"]
+
+        if latitude and longitude:
+            instance.set_location(longitude, latitude)
+        else:
+            instance.location = None
+
+
+        if commit:
+            instance.save()
+        return instance
+
 
 class DirectoryForm(forms.ModelForm):
+
+    def clean_path(self):
+        path = self.cleaned_data["path"]
+
+        if not os.path.exists(path):
+            raise forms.ValidationError("The specified path does not exist")
+
+        return path
+
+    def clean_whitelist(self):
+        whitelist = self.cleaned_data['whitelist']
+        if not self._match_folder_names(whitelist):
+            raise forms.ValidationError("Whitelist must be a comma separated list of names (not full paths)")
+
+        # Return a list with each entried stripped of beginning/ending spaces
+        return ",".join([name.strip() for name in whitelist.split(",")])
+
+    def clean_blacklist(self):
+        blacklist = self.cleaned_data['blacklist']
+
+        if not self._match_folder_names(blacklist):
+            raise forms.ValidationError("Blacklist must be a comma separated list of names (not full paths)")
+
+        return ",".join([name.strip() for name in blacklist.split(",")])
+
+    def _match_folder_names(self, value):
+        return re.match(r'^[A-Za-z0-9,\s]*$', value)
+
     class Meta:
         model = DataDirectory
         fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", ]
@@ -26,7 +104,8 @@ class DirectoryForm(forms.ModelForm):
                 choices=[
                     (DataDirectory.RAW, DataDirectory.RAW),
                     (DataDirectory.BLOBS, DataDirectory.BLOBS),
-                    (DataDirectory.FEATURES, DataDirectory.FEATURES)
+                    (DataDirectory.FEATURES, DataDirectory.FEATURES),
+                    (DataDirectory.CLASS_SCORES, DataDirectory.CLASS_SCORES),
                 ],
                 attrs={"class": "form-control form-control-sm", "placeholder": "Kind"}),
             "whitelist": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Whitelist"}),
@@ -54,7 +133,10 @@ class InstrumentForm(forms.ModelForm):
 
     class Meta:
         model = Instrument
-        fields = ["id", "number", "nickname", "address", "username", "share_name", ]
+        fields = ["id", "number", "nickname", "address", "username", "share_name", "timeout", ]
+        help_texts = {
+            "timeout": "In seconds"
+        }
 
         widgets = {
             "number": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Number"}),
@@ -62,4 +144,9 @@ class InstrumentForm(forms.ModelForm):
             "address": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Domain or IP Address"}),
             "username": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Username"}),
             "share_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Share Name"}),
+            "timeout": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Timeout"}),
         }
+
+
+class MetadataUploadForm(forms.Form):
+    file = forms.FileField(label="Choose file", widget=forms.ClearableFileInput(attrs={"class": "custom-file-input"}))

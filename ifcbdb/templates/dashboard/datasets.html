@@ -1,76 +1,215 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_head %}
+<link href="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.Default.css' %}" rel="stylesheet" />
+<title>IFCB dashboard</title>
+{% endblock %}
+{% block content %}
+
 <div class="row">
     <div class="col">
-        <span class="h3-responsive">Locate a Dataset</span>
+        <span class="h3-responsive">Locate a Bin</span>
+        <div id="progress"><div id="progress-bar"></div></div>
     </div>
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-    <div class="col-xs-12 col-lg-8">
+    <div class="col-xs-12 col-lg-12">
         <div class="card h-100">
             <div class="card-body text-primary">
                 <div class="row">
                     <div class="col-xs-12 col-md-4 col-lg-6 col-xl-4 order-2 order-md-1 pt-2 pt-md-0">
-                        <form class="form black-text">
-
+                        <form method="post" class="form black-text" id="search-form">
+                            {% csrf_token %}
                             <div class="form-group">
-                                <label for="searchByTag">Tag / Keyword:</label>
-                                <input type="text" class="form-control" id="searchByTag">
-                            </div>
-
-
-                            <div class="form-group">
-                                <label for="startDate">Start Date:</label>
-                                <input type="text" id="startDate" class="form-control">
+                                <label for="id_start_date">Start Date:</label>
+                                {{ form.start_date }}
                             </div>
                             <div class="form-group">
-                                <label for="endDate">End Date:</label>
-                                <input type="text" id="endDate" class="form-control">
+                                <label for="id_end_date">End Date:</label>
+                                {{ form.end_date }}
                             </div>
 
-
                             <div class="form-group">
-                                <label for="minDepth">Min Depth:</label>
-                                <input type="text" class="form-control" id="minDepth">
+                                <label for="id_min_depth">Min Depth:</label>
+                                {{ form.min_depth }}
                             </div>
                             <div class="form-group">
-                                <label for="maxDepth">Max Depth:</label>
-                                <input type="text" class="form-control" id="maxDepth">
+                                <label for="id_max_depth">Max Depth:</label>
+                                {{ form.max_depth }}
                             </div>
-                            <button type="submit" class="btn btn-mdb-color btn-block">Search</button>
+                            <div class="form-group">
+                                <label>Region:</label><br />
+                                <a href="javascript:;" id="select-region" class="btn btn-sm btn-mdb-color">Select a Region</a>
+                                <div id="region" class="d-none card p-2">
+                                    <div class="row">
+                                        <div class="col-md-5">Southwest:</div>
+                                        <div class="col-md-3 p-0 mr-1">{{ form.region_sw_lat }}</div>
+                                        <div class="col-md-3 p-0">{{ form.region_sw_lon }}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-5">Northeast:</div>
+                                        <div class="col-md-3 p-0 mr-1">{{ form.region_ne_lat }}</div>
+                                        <div class="col-md-3 p-0">{{ form.region_ne_lon }}</div>
+                                    </div>
+                                    <a href="javascript:;" id="cancel-region" class="btn btn-sm btn-mdb-color">Cancel</a>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Dataset:</label>
+                                {{ form.dataset }}
+                            </div>
+                            <button id="search" type="submit" class="btn btn-mdb-color btn-block">Search</button>
                         </form>
                     </div>
                     <div class="col-xs-12 col-md-8 col-lg-6 col-xl-8 order-1 order-md-2">
-                        <div id="map-container" style="height:500px;"></div>
+                        <div id="map-container" style="height:600px;"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xs-12 col-lg-4 pt-3 pt-lg-0">
-        <div class="card h600 h-100">
-            <div class="card-header mdb-color lighten-5">
-                <span class="h5-responsive">Datasets:</span>
-            </div>
-            <div class="card-body overflow-auto">
-                <div>
-                    <ul class="list-group list-group-flush">
-                        {% for dataset in datasets %}
-                        <li class="list-group-item">
-                            <a href="{% url 'dataset' dataset.name %}">{{ dataset.title }}</a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="debug"></div>
 </div>
 {% endblock %} {% block scripts %}
+<script type="text/javascript" src="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.js' %}"></script>
+<script type="text/javascript" src="{% static 'vendor/leaflet-markercluster/leaflet.markercluster.js' %}"></script>
 <script>
+    var map;
+    var markers = null;
+    var markerList = [];
+    var fixedMarkers = null;
+    var areaSelect = null;
+
+    function updateSearchButton(enabled) {
+        $("#search")
+            .prop("disabled", enabled ? "" : "disabled")
+            .html(enabled ?
+                "Search":
+                "<i class='fas fa-circle-notch fa-spin'></i> Search"
+            );
+    }
+
+    function enableRegionSelection() {
+        areaSelect = L.areaSelect({width:200, height:250});
+        areaSelect.on("change", function() {
+            var bounds = this.getBounds();
+            $("#id_region_sw_lat").val(bounds.getSouthWest().lat);
+            $("#id_region_sw_lon").val(bounds.getSouthWest().lng);
+            $("#id_region_ne_lat").val(bounds.getNorthEast().lat);
+            $("#id_region_ne_lon").val(bounds.getNorthEast().lng);
+        });
+        areaSelect.addTo(map);
+
+        $("#select-region").toggleClass("d-none", true);
+        $("#region").toggleClass("d-none", false);
+    }
+
+    function cancelRegionSelection() {
+        if (areaSelect)
+            areaSelect.remove();
+
+        $("#id_region_sw_lat").val("");
+        $("#id_region_sw_lon").val("");
+        $("#id_region_ne_lat").val("");
+        $("#id_region_ne_lon").val("");
+        $("#select-region").toggleClass("d-none", false);
+        $("#region").toggleClass("d-none", true);
+        areaSelect = null;
+    }
+
+    function hideRegionSelection() {
+        if (areaSelect)
+            areaSelect.remove();
+
+        areaSelect = null;
+    }
+
+    function updateMapStatus(processed, total, elapsed, layersArray) {
+
+    }
+
+    function searchLocations() {
+        var formData = $("#search-form").serialize();
+        var binIcon = buildLeafletIcon("orange");
+        var datasetIcon = buildLeafletIcon("red");
+
+        updateSearchButton(false);
+        $.post("/api/search_bin_locations", formData, function(locationData){
+            markers.clearLayers();
+            fixedMarkers.clearLayers();
+
+            for (var i = 0; i < locationData.locations.length; i++) {
+                var location = locationData.locations[i];
+                var isBin = location[3] == "b";
+                var title = location[0];
+                var marker = L.marker(
+                    L.latLng(location[1], location[2]),
+                    {
+                        title: title,
+                        icon: isBin ? binIcon : datasetIcon
+                    }
+                );
+
+                if (isBin) {
+                    marker.bindPopup("Bin: <a href='/bin?bin=" + title + "'>" + title + "</a>");
+                    markerList.push(marker);
+                } else {
+                    var values = title.split("|");
+                    marker.bindPopup("Dataset: <a href='/timeline?dataset=" + values[0] + "'>" + values[1] + "</a>");
+                    fixedMarkers.addLayer(marker);
+                }
+            }
+
+            if (markerList.length > 0) {
+                markers.addLayers(markerList);
+                map.addLayer(markers);
+            }
+
+            map.addLayer(fixedMarkers);
+
+            markerList = [];
+            hideRegionSelection();
+
+            // The small timeout is intentionally to prevent flickering of the button UI as well as add a
+            //   small delay between runs of the search
+            setTimeout(function(){ updateSearchButton(true); }, 500);
+        });
+    }
+
     $(function() {
-        createMap();
+        map = createMap();
+        markers = L.markerClusterGroup({
+            chunkedLoading: true,
+            chunkProgress: updateMapStatus,
+            maxClusterRadius: 8,
+            iconCreateFunction: function(cluster) {
+                var children = cluster.getChildCount();
+
+                return new L.DivIcon({
+                    html: '<div style="width:20px;height:20px;margin-left:0px; margin-top:0px"><span style="font-size:10px;line-height:22px"></span></div>',
+                    className: 'text-center marker-cluster marker-cluster-custom',
+                    iconSize: new L.Point(8, 8)
+                });
+            }
+
+        });
+        fixedMarkers = L.layerGroup();
+
+        $("#select-region").click(function(e){
+            enableRegionSelection();
+        });
+
+        $("#cancel-region").click(function(){
+            cancelRegionSelection();
+        });
+
+        $("#search-form").submit(function(e){
+            e.preventDefault();
+
+            searchLocations();
+        });
     });
 </script>
 {% endblock %}

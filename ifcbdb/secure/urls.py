@@ -12,7 +12,7 @@ urlpatterns = [
     path('edit-dataset/<int:id>', views.edit_dataset, name='edit-dataset'),
     path('instrument-management', views.instrument_management, name='instrument-management'),
     path('edit-instrument/<int:id>', views.edit_instrument, name='edit-instrument'),
-    path('upload-geospatial', views.upload_geospatial, name='upload-geospatial'),
+    path('upload-metadata', views.upload_metadata, name='upload-metadata'),
     path('directory-management/<int:dataset_id>', views.directory_management, name='directory-management'),
     path('edit-directory/<int:dataset_id>/<int:id>', views.edit_directory, name='edit-directory'),
 
@@ -21,5 +21,16 @@ urlpatterns = [
     path('api/dt/instruments', views.dt_instruments, name='instruments_dt'),
     path('api/dt/directories/<int:dataset_id>', views.dt_directories, name='directories_dt'),
     path('api/delete-directory/<int:dataset_id>/<int:id>', views.delete_directory, name='delete-directory'),
-
+    path('api/add-tag/<slug:bin_id>', views.add_tag, name='add_tag'),
+    path('api/remove-tag/<slug:bin_id>', views.remove_tag, name='remove_tag'),
+    path('api/add-comment/<slug:bin_id>', views.add_comment, name='add_comment'),
+    path('api/delete-comment/<slug:bin_id>', views.delete_comment, name='delete_comment'),
+    path('api/edit-comment/<slug:bin_id>', views.edit_comment, name='edit_comment'),
+    path('api/update-comment/<slug:bin_id>', views.update_comment, name='update_comment'),
+    path('api/sync/<int:dataset_id>', views.sync_dataset, name='sync_dataset'),
+    path('api/sync/status/<int:dataset_id>', views.sync_dataset_status, name='sync_dataset_status'),
+    path('api/sync/cancel/<int:dataset_id>', views.sync_cancel, name='sync_cancel'),
+    path('api/metadata-upload/status', views.metadata_upload_status, name='metadata_upload_status'),
+    path('api/metadata-upload/cancel', views.metadata_upload_cancel, name="metadata_upload_cancel"),
+    path('api/toggle-skip', views.toggle_skip, name='toggle_skip'),
 ]

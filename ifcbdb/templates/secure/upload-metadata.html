@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block extra_head %}
+<title>Settings » Upload metadata</title>
+{% endblock %}
+{% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Upload Metadata</span>
+    </div>
+</div>
+<hr class="my-2">
+<div class="container">
+    <div class="row py-2 px-3">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                {{ field.label_tag }} {{ error|escape }}<br />
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            {{ error|escape }}<br />
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if confirm and not in_progress %}
+                    <div class="alert alert-success">File uploaded successfully</div>
+                    {% endif %}
+                    <div id="too-large-alert" class="alert alert-danger d-none">
+                        File is too large (size limit 2MB)
+                    </div>
+                    <div id="wrong-type-alert" class="alert alert-danger d-none">
+                        Wrong file type. Please upload a CSV file.
+                    </div>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Metadata File (*.csv)</label>
+                            <div class="custom-file">
+                                {{ form.file }}
+                                <label class="custom-file-label" for="id_file">
+                                    <span id="filename">Choose file</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <input id="submit" type="submit" value="Upload" class="btn btn-sm btn-mdb-color" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="upload-status-cancel" class="text-center d-none">
+    <span id="upload-status"></span>
+    <span id="cancel-button" class="btn btn-sm btn-mdb-color d-none">Cancel</span>
+</div>
+
+<div id="errors">
+    <ul id="errors-list" class="fa-ul">
+    </ul>
+</div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+    function reset_filename() {
+        $("#id_file").replaceWith($("#id_file").val('').clone(true));
+        $("#filename").html("Choose file");
+    }
+
+    $("#id_file").change(function() {
+        var file = $(this)[0].files[0];
+        $("#filename").html(file.name);
+        if (!file.name.endsWith('.csv')) {
+            $("#wrong-type-alert").removeClass("d-none");
+            reset_filename();
+        } else if (file.size > (1024 * 1024 * 2)) { // 2MB
+            $("#too-large-alert").removeClass('d-none');
+            reset_filename();
+        } else {
+            $("#too-large-alert").addClass("d-none");
+            $("#wrong-type-alert").addClass("d-none");
+        }
+        console.log($(this));
+    });
+
+    function showErrors(errors) {
+        var html = '';
+        var error_count = 0;
+        for (err of errors) {
+            error_count += 1;
+            if (error_count > 200) {
+                html += '<br>... more than 200 errors';
+                break
+            }
+            html += '<li><span class="fa-li"><i class="fas fa-exclamation-triangle"></i></span>';
+            html += ' Row '+err.row+': '+err.message+'</li>';
+        }
+        $('#errors-list').html(html);
+    }
+
+    function update_status() {
+        $.getJSON("{% url 'secure:metadata_upload_status' %}", function(r) {
+            $("#upload-status-cancel").removeClass('d-none');
+            if(r.state == 'SUCCESS') {
+                modded = r.info.n_modded;
+                errors = r.info.errors;
+                $("#upload-status").html('Complete. '+modded+' bins modified, '+errors.length+' error(s)');
+                $("#cancel-button").addClass('d-none');
+                $("#submit").removeAttr('disabled');
+                showErrors(errors);
+                return;
+            } else if(r.state == 'PROGRESS') {
+                modded = r.info.n_modded;
+                errors = r.info.errors;
+                $("#upload-status").html('Processing ... '+modded+' bins modified, '+errors.length+' error(s)');
+                $("#cancel-button").removeClass("d-none");
+                $("#submit").attr('disabled',true);
+                showErrors(errors);
+            } else if(r.state == 'PENDING') {
+                $("#upload-status").html('Starting ...');
+            }
+            setTimeout(update_status, 1000);
+        });
+    }
+
+    {% if in_progress %}
+    $("#upload-status-cancel").removeClass('d-none');
+    $("#upload-status").html("Previous upload still processing");
+    $("submit").attr('disabled',true);
+    {% endif %}
+
+    {% if confirm or in_progress %}
+    setTimeout(update_status, 10);
+    {% endif %}
+
+    $('#cancel-button').click(function() {
+        $('#upload_status').html('Cancelling ...');
+        var payload = {
+            "csrfmiddlewaretoken": "{{ csrf_token }}",
+        };
+        $.post("{% url 'secure:metadata_upload_cancel' %}", payload);
+    });
+
+</script>
+{% endblock %}

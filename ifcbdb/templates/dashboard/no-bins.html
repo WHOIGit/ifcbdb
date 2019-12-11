@@ -1,0 +1,20 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row">
+    <div class="col">
+        <span class="h3-responsive">No Bins Found</span>
+    </div>
+</div>
+<hr class="my-2">
+<div class="row">
+    <div class="alert alert-danger">
+        There are no bins matching the provided dataset, instrument and tag filters. Please use the button below to search for datasets
+    </div>
+</div>
+<div class="row">
+    <a href="{% url 'datasets' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-search magic mr-1'></i>
+        Search for Datasets
+    </a>
+</div>
+
+{% endblock %}

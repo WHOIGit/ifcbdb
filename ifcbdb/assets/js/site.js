@@ -9,10 +9,21 @@ var DEPTH_PRECISION = 1;
 var PLOT_X_DEFAULT = "roi_x";
 var PLOT_Y_DEFAULT = "roi_y";
 var MAX_SELECTABLE_IMAGES = 25;
+var _binFilterMode = "timeline";
 
 $(function(){
     $("#dataset-switcher").change(function(){
-        location.href = "/" + $(this).val();
+        location.href = "/timeline?dataset=" + $(this).val();
+    });
+
+    $("#go-to-bin").click(function(){
+        goToBin($("#go-to-bid-pid").val());
+    });
+
+    $("#go-to-bid-pid").keypress(function(e){
+        if (e.which == 13 /* Enter */) {
+            goToBin($(this).val());
+        }
     });
 })
 
@@ -87,6 +98,22 @@ function padDigits(number, digits) {
     return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
 }
 
+function getTimelineIndicatorShape() {
+    return {
+        type: "line",
+        yref: "paper",
+        x0: _binTimestamp.utc().format(),
+        y0: 0,
+        x1: _binTimestamp.utc().format(),
+        y1: 1,
+        line: {
+            color: "rgb(192, 32, 32)",
+            width: 3,
+            dash: "dash"
+        }
+    }
+}
+
 function getTimelineConfig() {
     return {
         responsive: true,
@@ -118,7 +145,7 @@ function getTimelineTypeByMetric(metric) {
         }
     }
 }
-function getTimelineData(data, selectedDate) {
+function getTimelineData(data, selectedDate, resolution) {
     plotlyType = getTimelineTypeByMetric(currentMetric);
 
     var series = {
@@ -131,26 +158,30 @@ function getTimelineData(data, selectedDate) {
         },
     };
 
-    if (selectedDate != null) {
-        var idx = getDataPointIndex(data.x, selectedDate);
-        var colors = buildColorArray(data.x, idx);
-
-        series["marker"] = {
-            color: colors
-        }
-    }
-
+    /*
+    // This fix should not be needed now that we always enforce the width of the bars on the plot
     // For bar graphs with only one data point, the width of the bar needs to be set explicitly or
     //   Plotly will not render anything visible to the user. The x range on a single entry plot is
     //   set to 24hours, so the bar is set to a width of 1 hour
     if (data["x"].length == 1) {
         series["width"] = [60*60*1000]
     }
+    */
+
+    var duration;
+    switch (resolution) {
+        case "week": duration = 7*24*60*60*1000; break;
+        case "day": duration = 24*60*60*1000; break;
+        case "hour": duration = 60*60*1000; break;
+        default: /* bin */ duration = 5*60*1000; break;
+    }
+
+    series["width"] = Array(data["x"].length).fill(duration)
 
     return [series];
 }
 
-function getTimelineLayout(data, range) {
+function getTimelineLayout(data, range, metric) {
     var layout =  {
         bargap: 0,
         margin: {
@@ -180,13 +211,22 @@ function getTimelineLayout(data, range) {
             },
             "color": "#0f0"
         }
+
     };
 
-    if (range !== undefined) {
-        layout["xaxis"]["range"] = [
-            range["xaxis.range[0]"],
-            range["xaxis.range[1]"]
+    if (_binTimestamp != null) {
+        layout.shapes = [
+            getTimelineIndicatorShape()
         ]
+    }
+
+    if (range !== undefined && range !== null) {
+        if (range["xaxis.range[0]"] != undefined && range["xaxis.range[1]"] != undefined) {
+            layout["xaxis"]["range"] = [
+                range["xaxis.range[0]"],
+                range["xaxis.range[1]"]
+            ]
+        }
     }
 
     // TODO: Special handling is needed when there is only one datapoint
@@ -199,9 +239,28 @@ function getTimelineLayout(data, range) {
         ]
     }
 
+    setYAxisRangeForMetric(layout, metric);
+
     return layout;
 }
 
+function setYAxisRangeForMetric(layout, metric) {
+    if (metric == "concentration") {
+        layout.yaxis.range = [0, 8500];
+    } else if (metric == "n-triggers" || metric == "n-images") {
+        layout.yaxis.range = [0, 10500];
+    } else if (metric == "ml-analyzed") {
+        layout.yaxis.range = [0, 5.5];
+    } else if (metric == "temperature") {
+        layout.yaxis.range = [0, 55];
+    } else if (metric == "humidity") {
+        layout.yaxis.range = [0, 120];
+    } else if (metric == "size") {
+	layout.yaxis.range = [0, 1024*1024*40]; // 40MB
+    }
+}
+
+/*
 function parseAndCalcResolution(plotlyData) {
     var start = plotlyData["xaxis.range[0]"];
     var end = plotlyData["xaxis.range[1]"];
@@ -231,15 +290,18 @@ function calcResolution(start, end) {
 
     return resolution;
 }
+*/
 
 // Special consideration is needed to capture the width/height of the newly loaded image so that we can also
 //   update the default width/height of the outline and blob images
 // See: https://stackoverflow.com/questions/19122625/how-i-can-get-image-width-after-set-src-attribute-without-reload-page
 function changeImage(img, src, blobImg, outlineImg){
-    blobImg.hide();
-    outlineImg.hide();
+    var blobShown = !blobImg.is(":hidden");
+    var outlineShown = !outlineImg.is(":hidden");
 
-    img.on('load', function() {
+    img.unbind("load").on('load', function() {
+        $(this).show();
+
         blobImg.attr("src", "");
         blobImg.width(this.width);
         blobImg.height(this.height);
@@ -247,12 +309,25 @@ function changeImage(img, src, blobImg, outlineImg){
         outlineImg.attr("src", "");
         outlineImg.width(this.width);
         outlineImg.height(this.height);
+
+        if (blobShown) {
+            $("#detailed-image-blob-link").click();
+        } else {
+            blobImg.hide();
+        }
+        if (outlineShown) {
+            $("#detailed-image-outline-link").click();
+        } else {
+            outlineImg.hide();
+        }
+
+        resizeMap();
     })
     .attr("src", src)
-    .show()
     .each(function() {
-        if (this.complete)
+        if (this.complete) {
             $(this).trigger('load');
+        }
     });
 }
 
@@ -264,34 +339,171 @@ function buildColorArray(dataPoints, index) {
     return colors;
 }
 
-function getDataPointIndex(dataPoints, selectedDate) {
-    var idx;
-    for (idx = 0; idx < dataPoints.length; idx++) {
-        if (moment(dataPoints[idx]) > selectedDate)
-            break;
-    }
-
-    // If the end of the list was reached, then the selected bin is not visible and we should
-    //   not try to highlight it
-    if (idx == dataPoints.length)
-        return -1;
-
-    return idx - 1;
-}
-
-function highlightSelectedBinByIndex(dataPoints, index) {
-    var plot = $("#primary-plot-container")[0];
-    if (!plot.data)
+function highlightSelectedBinByDate() {
+    if (_binTimestamp == null)
         return;
 
-    Plotly.restyle(plot, {
-        "marker": {
-            "color": buildColorArray(dataPoints, index)
-        }
+    var timeline = $("#primary-plot-container")[0];
+
+    _preventTimelineRelayout = true;
+    Plotly.relayout(timeline, {
+        shapes: [
+            getTimelineIndicatorShape()
+        ]
     });
 }
 
-function highlightSelectedBinByDate(dataPoints, selectedDate) {
-    var idx = getDataPointIndex(dataPoints, selectedDate);
-    highlightSelectedBinByIndex(dataPoints, idx);
+function buildLeafletIcon(color) {
+    return new L.Icon({
+        iconUrl: "/static/vendor/leaflet-color-markers/img/marker-icon-" + color + ".png",
+        shadowUrl: "/static/vendor/leaflet-color-markers/img/marker-shadow.png",
+        iconSize: [8, 12],
+        iconAnchor: [8, 12],
+        popupAnchor: [-8, -12],
+        shadowSize: [8, 12]
+    });
+}
+
+//************* Timeline/List Filtering Methods ***********************/
+function getQuerystringFromParameters(dataset, instrument, tags) {
+    var parameters = []
+    if (dataset != "")
+        parameters.push("dataset=" + dataset);
+    if (instrument != "")
+        parameters.push("instrument=" + instrument);
+    if (tags != "") {
+        parameters.push("tags=" + tags);
+    }
+
+    if (parameters.length == 0)
+        return "";
+
+    return parameters.join("&");
+}
+
+function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, initialValues) {
+
+    var dataset = initialValues ? initialValues["dataset"] : datasetFilter.val();
+    var instrument = initialValues ? initialValues["instrument"] : instrumentFilter.val();
+    var tags = initialValues ? initialValues["tags"] : tagFilter.val().join();
+    var selected_tags = tags == null ? [] : tags.split(",");
+
+    var url = "/api/filter_options" +
+        "?dataset=" + (dataset ? dataset : "") +
+        "&instrument=" + (instrument ? instrument : "") +
+        "&tags=" + (tags ? tags : "");
+
+    $.get(url, function(data){
+        datasetFilter.empty();
+        datasetFilter.append($("<option value='' />"));
+        for (var i = 0; i < data.dataset_options.length; i++) {
+            var option = data.dataset_options[i];
+            datasetFilter.append($("<option value='" + option + "'" + (option == dataset ? "selected" : "") + ">" + option + "</option>"));
+        }
+        datasetFilter.val(dataset);
+
+        instrumentFilter.empty();
+        instrumentFilter.append($("<option value='' />"));
+        for (var i = 0; i < data.instrument_options.length; i++) {
+            var option = data.instrument_options[i];
+            instrumentFilter.append($("<option value='" + option + "' " + (option == instrument ? "selected" : "") + ">IFCB" + option + "</option>"));
+        }
+        instrumentFilter.val(instrument);
+
+        tagFilter.empty();
+        for (var i = 0; i < data.tag_options.length; i++) {
+            var option = data.tag_options[i];
+
+            var element = $("<option value='" + option + "'>" + option + "</option>");
+            if (selected_tags.includes(option)) {
+                element.attr("selected", "selected");
+            }
+
+            tagFilter.append(element);
+        }
+
+        tagFilter.trigger('chosen:updated');
+    });
+}
+
+function initBinFilter(binFilterMode) {
+    _binFilterMode = binFilterMode;
+    var datasetFilter = $("#SearchPopoverContent .dataset-filter");
+    var instrumentFilter = $("#SearchPopoverContent .instrument-filter");
+    var tagFilter = $("#SearchPopoverContent .tag-filter");
+
+    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, {
+        "dataset": _dataset,
+        "instrument": _instrument,
+        "tags": _tags
+    });
+
+    _filterPopover = $('[data-toggle="popover"]').popover({
+      container: 'body',
+      title: 'Update Filters',
+      html: true,
+      placement: 'bottom',
+      sanitize: false,
+      content: function () {
+          return $("#SearchPopoverContent").html();
+      }
+    });
+
+    _filterPopover.on('shown.bs.popover', function () {
+        $(".popover .tag-filter").chosen({
+            placeholder_text_multiple: "Select Tags..."
+        });
+
+        $(".popover .dataset-filter, .popover .instrument-filter, .popover .tag-filter").change(function(){
+            var wrapper = $(this).closest(".filter-options");
+            var datasetFilter = wrapper.find(".dataset-filter");
+            var instrumentFilter = wrapper.find(".instrument-filter");
+            var tagFilter = wrapper.find(".tag-filter");
+
+            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, null);
+        });
+    });
+}
+
+function applyFilters() {
+    var dataset = $(".popover .dataset-filter").val();
+    var instrument = $(".popover .instrument-filter").val();
+    var tags = $(".popover .tag-filter option:selected")
+        .map(function() {return $(this).val()}).get()
+        .join();
+
+    var qs = getQuerystringFromParameters(dataset, instrument, tags);
+
+    $.get("/api/bin_exists?" + qs, function(data){
+        if (!data.exists) {
+            alert("No bins were found matching the specified filters. Please update the filters and try again")
+            return;
+        }
+
+        _dataset = dataset;
+        _instrument = instrument;
+        _tags = tags;
+
+        if (_binFilterMode == "list") {
+            location.href = createListLink();
+        } else {
+            location.href = createBinLink(_bin);
+        }
+    });
+
+    return false;
+}
+
+function goToBin(pid) {
+    if (!pid || pid.trim() == "")
+        return;
+
+    $.get("/api/single_bin_exists?pid=" + pid.trim(), function(data){
+        if (!data.exists) {
+            alert("No matching bin was found. Please check the PID and try again");
+            return;
+        }
+
+        location.href = "/bin?bin=" + pid.trim();
+    });
 }

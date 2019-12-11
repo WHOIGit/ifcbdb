@@ -13,6 +13,7 @@ class Command(BaseCommand):
         parser.add_argument('-lat','--latitude', type=float, help='latitiude to set all bins to')
         parser.add_argument('-lon','--longitude', type=float, help='longitude to set all bins to')
         parser.add_argument('-d', '--depth', type=float, help='depth to set all bins to')
+        parser.add_argument('-n', '--newest', help='only sync newest bins', action='store_true')
 
     def handle(self, *args, **options):
         # handle arguments
@@ -20,6 +21,7 @@ class Command(BaseCommand):
         lat = options.get('latitude')
         lon = options.get('longitude')
         depth = options.get('depth')
+        newest_only = options.get('newest',False)
         if (lat is None and lon is not None) or (lat is not None and lon is None):
             raise ValueError('must set both lat and lon')
         try:
@@ -27,5 +29,5 @@ class Command(BaseCommand):
         except Dataset.DoesNotExist:
             self.stderr.write('No such dataset "{}"'.format(dataset_name))
             return
-        acc = Accession(d, lat=lat, lon=lon, depth=depth)
-        acc.sync()
+        acc = Accession(d, lat=lat, lon=lon, depth=depth, newest_only=newest_only)
+        acc.sync(progress_callback=print, log_callback=print)

@@ -1,5 +1,7 @@
 import base64, json
 import numpy
+import math
+from itertools import compress, cycle
 
 from ifcb.data.imageio import format_image
 
@@ -42,6 +44,8 @@ def coordinates_to_json(coordinates):
     """
     Converts the coordinates from a mosaic image and puts them into a JSON serializable dictionary
     """
+    if coordinates.empty:
+        return '{}'
     c = coordinates.copy(deep=False)
     c.columns = ['page','y','x','height','width','pid']
     return c.to_json(orient='records')
@@ -72,3 +76,15 @@ def get_finer_resolution(resolution):
 
     # Covers "hour" and "bin" (which is the finest granularity supported)
     return "bin"
+
+def decimate(i, limit=None):
+    # returns subset of i no longer than the limit
+    # returns an iterator, not a list
+    if limit is None:
+        return i
+    chunk_size = int(math.ceil(len(i) / limit))
+    if chunk_size == 1:
+        return i
+    c = [0] * chunk_size
+    c[-1] = 1
+    return compress(i, cycle(c))

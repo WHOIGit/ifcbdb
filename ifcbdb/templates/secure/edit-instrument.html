@@ -72,6 +72,14 @@
         </div>
     </div>
     <div class="form-row">
+        <div class="form-group col">
+            <label for="id_timeout">Timeout <small class="text-muted">({{ form.timeout.help_text }})</small></label>
+            {{ form.timeout }}
+            {% if form.timeout.errors %}<span class="text-danger">{{ form.timeout.errors.as_text }}</span>{% endif %}
+
+        </div>
+    </div>
+    <div class="form-row">
         <a href="{% url 'secure:instrument-management' %}" class="btn btn-sm">Cancel</a>
         <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
     </div>

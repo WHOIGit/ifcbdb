@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% block extra_head %}
+<title>{{ dataset.title }} » Manage</title>
+{% endblock %}
+
 {% block content %}
 
 {% if status %}
@@ -8,7 +12,7 @@
 
 <div class="flex-row d-flex justify-content-between">
     <div class="flex-column">
-        <span class="h3-responsive">{% if dataset.id > 0 %}Edit{% else %}Add New{% endif %} Dataset</span>
+        <span class="h3-responsive">{% if dataset.id > 0 %}Edit Dataset {{ dataset.title }}{% else %}Add New Dataset{% endif %}</span>
     </div>
     <div class="flex-column">
         {% if dataset.id > 0 %}
@@ -48,35 +52,55 @@
             </div>
             <div class="form-row">
                 <div class="form-group col">
-                    <label for="id_title">Description</label>
+                    <label for="id_title">Title</label>
                     {{ form.title }}
                     {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
                 </div>
             </div>
-            <div class="form-row d-none">
+            <div class="form-row">
                 <div class="form-group col">
-                    <label for="datasetType">Type</label>
-                    <select class="form-control form-control-sm" id="datasetType">
-                        <option>Time Series</option>
-                        <option>Other</option>
-                      </select>
-                    <label><small>Most Recent Data: 45 Minutes Ago</small></label>
-                </div>
-            </div>
-            <div class="form-row d-none">
-                <div class="col">
-                    <label for="datasetRawDataInput">Raw Data</label>
-                    <input type="text" id="datasetRawDataInput" class="form-control form-control-sm" placeholder="Raw Data">
-                </div>
-            </div>
-            <div class="form-row d-none">
-                <div class="form-group col">
-                    <button type="submit" class="btn btn-sm btn-mdb-color">Scan</button>
-                    <button type="submit" class="btn btn-sm btn-mdb-color">Schedule Scan</button>
-                    <label><small>456456 Fileset(s), 4.5TB</small></label>
+                    <label for="id_doi">DOI (optional)</label>
+                    {{ form.doi }}
+                    {% if form.doi.errors %}<span class="text-danger">{{ form.doi.errors.as_text}}</span>{% endif %}
                 </div>
             </div>
             <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_attribution">Attribution (optional)</label>
+                    {{ form.attribution }}
+                    {% if form.attribution.errors %}<span class="text-danger">{{ form.attribution.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_funding">Funding (optional)</label>
+                    {{ form.funding }}
+                    {% if form.funding.errors %}<span class="text-danger">{{ form.funding.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+            <a class="btn btn-sm btn-mdb-color" data-toggle="collapse" href="#setFixedLocationInputs" role="button" aria-expanded="false" aria-controls="setFixedLocationInputs">Set Fixed Location</a>
+                  <div class="{% if not dataset.location and not dataset.depth %}collapse{% endif %}" id="setFixedLocationInputs">
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_depth">Depth</label>
+                    {{ form.depth }}
+                    {% if form.depth.errors %}<span class="text-danger">{{ form.depth.errors.as_text }}</span>{% endif %}
+                </div>
+                <div class="form-group col">
+                        <label for="id_latitude">Latitude</label>
+                        {{ form.latitude }}
+                        {% if form.latitude.errors %}<span class="text-danger">{{ form.latitude.errors.as_text }}</span>{% endif %}
+                    </div>
+                    <div class="form-group col">
+                            <label for="id_longitude">Longitude</label>
+                            {{ form.longitude }}
+                            {% if form.longitude.errors %}<span class="text-danger">{{ form.longitude.errors.as_text }}</span>{% endif %}
+                        </div>                
+            </div>
+
+        </div>
+
+           <div class="form-row justify-content-end border-top mt-1 pt-1">
                 <a href="{% url 'secure:dataset-management' %}" class="btn btn-sm">Cancel</a>
                 <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
             </div>
@@ -85,7 +109,14 @@
     <div class="col-md-6">
         {% if dataset.id > 0 %}
         <div class="card card-body ">
-            <button id="sync-button" class="btn btn-sm btn-mdb-color col-sm-2">Sync</button>
+            <span>
+                <button id="sync-button" class="btn btn-sm btn-mdb-color disabled">Sync</button>
+                <button id="cancel-button" class="btn btn-sm btn-mdb-color disabled">Cancel</button>
+                <span class="custom-control custom-switch">
+                    <input type="checkbox" id="newest-only" class="custom-control-input">
+                    <label class="custom-control-label" for="newest-only">newest data only</label>
+                </span>
+            </span>
             <div id="sync-status" class="d-none">
                 <div>
                     <span id="sync-spinner" class="d-none">
@@ -94,9 +125,13 @@
                     <span id="sync-state"></span>
                     <span id="sync-total"></span> bins synced,
                     <span id="sync-existing"></span> existing / 
-                    <span id="sync-added"></span> new
+                    <span id="sync-added"></span> new /
+                    <span id="sync-bad"></span> bad
                 </div>
                 <div id="sync-bin-id"></div>
+            </div>
+            <div>
+                <ul id="sync-errors" class="fa-ul"></ul>
             </div>
         </div>
         {% endif %}
@@ -106,21 +141,29 @@
 {% endblock %} {% block scripts %}
 
 <script>
+    var _csrf = "{{ csrf_token }}";
+
     {% if dataset.id > 0 %}
     function dataset_sync_status() {
-        $.getJSON("{% url 'sync_dataset_status' dataset.id %}", function(data) {
+        $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'LOCKED') { // job hasn't started yet
+                $("#sync-button").addClass("disabled");
                 setTimeout(dataset_sync_status, 1000); // wait for it to start
             } else if(data.state == 'PROGRESS') {
+                $("#sync-button").addClass("disabled");
+                $("#cancel-button").removeClass("disabled");
                 $('#sync-spinner').removeClass('d-none');
                 $('#sync-status').removeClass('d-none');
                 $('#sync-state').html('Syncing ...');
                 $('#sync-total').html(data.info.total);
                 $('#sync-added').html(data.info.added);
+                $('#sync-bad').html(data.info.bad);
                 $('#sync-existing').html(data.info.existing);
                 $('#sync-bin-id').html(data.info.bin_id);
                 setTimeout(dataset_sync_status, 1000);
             } else {
+                $("#sync-button").removeClass("disabled");
+                $("#cancel-button").addClass("disabled");
                 // job has either succeeded or failed
                 if(data.state == 'SUCCESS') {
                     $('#sync-spinner').addClass('d-none');
@@ -128,29 +171,55 @@
                     $('#sync-total').html(data.info.total);
                     $('#sync-added').html(data.info.added);
                     $('#sync-existing').html(data.info.existing);
+                    $('#sync-bad').html(data.info.bad);
                     $('#sync-bin-id').empty();
+                    $('#cancel-button').addClass("disabled");
                 } else if(data.state == 'FAILURE') {
                     $('#sync-state').html('Sync failed.');
                 }
+            }
+            if(data.info.errors.length > 0) {
+                var errors_html = "";
+                for(error of data.info.errors) {
+                    errors_html += '<li><span class="fa-li"><i class="fas fa-exclamation-triangle"></i></span>';
+                    errors_html += error.bin+": "+error.message+"</li>";
+                }
+                $("#sync-errors").html(errors_html);
             }
         });
     }
 
     $('#sync-button').click(function() {
-        $.getJSON("{% url 'sync_dataset' dataset.id %}", function(data) {
+        var payload = {
+            "csrfmiddlewaretoken": _csrf,
+            "newest_only": $("#newest-only").is(":checked")
+        };
+        $.post("{% url 'secure:sync_dataset' dataset.id %}", payload, function(data) {
             // ignore data
             setTimeout(dataset_sync_status, 100);
         });
     })
 
+    $('#cancel-button').click(function() {
+        var payload = {
+            "csrfmiddlewaretoken": _csrf,
+        };
+        $("#cancel-button").addClass("disabled");
+        $.post("{% url 'secure:sync_cancel' dataset.id %}", payload);
+    });
+
     setTimeout(function() {
         // check dataset syncing status initially or when user reloads the page
-        $.getJSON("{% url 'sync_dataset_status' dataset.id %}", function(data) {
+        $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'PROGRESS') {
+                $("#sync-button").addClass("disabled");
+                $("#cancel-button").removeClass("disabled");
                 dataset_sync_status();
+            } else {
+                $("#sync-button").removeClass("disabled");
             }
         });
-    }, 100);
+    }, 10);
     {% endif %}
 </script>
 
