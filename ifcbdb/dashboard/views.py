@@ -485,7 +485,7 @@ def image_jpg_legacy(request, bin_id, target, dataset_name):
 
 def fully_qualified_timeseries_url(request, dataset_name):
     scheme = request.scheme
-    host_port = request.META['HTTP_HOST']
+    host_port = request.get_host()
     return '{}://{}/{}'.format(scheme, host_port, dataset_name)
 
 def legacy_short_json(request, dataset_name, bin_id):
