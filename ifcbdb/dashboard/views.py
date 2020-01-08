@@ -597,9 +597,9 @@ def class_scores_mat(request, bin_id, **kw):
 
 def class_scores_csv(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
-    version = get_product_version_parameter(request, 1)
+    version = get_product_version_parameter(request, None)
     try:
-        class_scores = b.class_scores(version=None)
+        class_scores = b.class_scores(version=version)
     except KeyError:
         raise Http404
     class_scores.index = ['{}_{:05d}'.format(bin_id, tn) for tn in class_scores.index]
