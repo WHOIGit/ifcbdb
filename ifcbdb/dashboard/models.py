@@ -106,10 +106,10 @@ class Timeline(object):
             return previous_bin
 
     def previous_bin(self, bin):
-        return self.bins.filter(sample_time__lt=bin.sample_time).order_by("-sample_time","-pid").first()
+        return self.bins.exclude(id=bin.id).filter(sample_time__lte=bin.sample_time).order_by("-sample_time","-pid").first()
 
     def next_bin(self, bin):
-        return self.bins.filter(sample_time__gt=bin.sample_time).order_by("sample_time","pid").first()
+        return self.bins.exclude(id=bin.id).filter(sample_time__gte=bin.sample_time).order_by("sample_time","pid").first()
 
     def nearest_bin(self, longitude, latitude):
         location = Point(longitude, latitude, srid=SRID)
@@ -618,7 +618,7 @@ class Bin(models.Model):
     def class_scores_path(self, version=None):
         return self.class_scores_file(version=version).path
 
-    def class_scores(self, version=1):
+    def class_scores(self, version=None):
         return self.class_scores_file(version=version).class_scores()
 
     # mosaics
