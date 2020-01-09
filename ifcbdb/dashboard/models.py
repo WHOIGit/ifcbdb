@@ -186,7 +186,10 @@ class Timeline(object):
         # total data size in bytes for everything in this Timeline
         return self.bins.aggregate(Sum('size'))['size__sum']       
 
-def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None, filter_skip=True):
+def normalize_tag_name(tag_name):
+    return re.sub(r' ','_',tag_name.lower().strip())
+
+def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None, cruise=None, filter_skip=True):
     qs = Bin.objects
     if filter_skip:
         qs = qs.filter(skip=False)
@@ -199,6 +202,8 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_numbe
             qs = qs.filter(tags__name__iexact=tag)
     if instrument_number is not None:
         qs = qs.filter(instrument__number=instrument_number)
+    if cruise is not None:
+        qs = qs.filter(cruise__iexact=cruise)
     return qs
 
 class Dataset(models.Model):
@@ -675,11 +680,8 @@ class Bin(models.Model):
     def tag_names(self):
         return [t.name for t in self.tags.all()]
 
-    def _normalize_tag_name(self, tag_name):
-        return re.sub(r' ','_',tag_name.lower().strip())
-
     def add_tag(self, tag_name, user=None):
-        tag_name = self._normalize_tag_name(tag_name)
+        tag_name = normalize_tag_name(tag_name)
         tag, created = Tag.objects.get_or_create(name=tag_name)
         # don't add this tag if was already added
         event, created = TagEvent.objects.get_or_create(bin=self, tag=tag)
@@ -689,7 +691,7 @@ class Bin(models.Model):
 
     def delete_tag(self, tag_name, normalize=True):
         if normalize:
-            tag_name = self._normalize_tag_name(tag_name)
+            tag_name = normalize_tag_name(tag_name)
         tag = Tag.objects.get(name=tag_name)
         event = TagEvent.objects.get(bin=self, tag=tag)
         event.delete()

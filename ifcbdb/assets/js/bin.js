@@ -1,9 +1,10 @@
 //************* Local Variables ***********************/
 var _bin = ""; // Bin Id
-var _dataset = ""; // Dataset Name (for grouping)
-var _locations_dataset = ""; // Dataset name use for grouping w/o it being set to the primary dataset in bin mode
-var _tags = ""; // Tags, comma separated (for grouping)
-var _instrument = ""; // Instrument name (for grouping)
+var _dataset = ""; // Dataset Name (for filtering)
+var _locations_dataset = ""; // Dataset name use for filtering w/o it being set to the primary dataset in bin mode
+var _tags = ""; // Tags, comma separated (for filtering)
+var _instrument = ""; // Instrument name (for filtering)
+var _cruise = ""; // Cruise ID (for filtering)
 var _mosaicPage = 0; // Current page being displayed in the mosaic
 var _mosaicPages = -1; // Total number of pages for the mosaic
 var _coordinates = []; // Coordinates of images within the current mosaic
@@ -44,6 +45,9 @@ function createLink() {
         if (_tags != "") {
             args += "&tags="+_tags;
         }
+        if (_cruise != "") {
+            args += "&cruise="+_cruise;
+        }
         if (args != "") {
             args = "?" + args.substring(1);
         }
@@ -58,8 +62,8 @@ function createLink() {
 }
 
 function createListLink(start, end) {
-    if (_dataset != "" || _instrument != "" || _tags != "") {
-        var link = "/list?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags;
+    if (_dataset != "" || _instrument != "" || _tags != "" || _cruise != "") {
+        var link = "/list?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags+"&cruise="+_cruise;
         if (_bin != "") {
             link += "&bin=" + _bin;
         }
@@ -91,6 +95,9 @@ function getGroupingParameters(bin) {
     if (_tags != "") {
         parameters.push("tags=" + _tags);
     }
+    if (_cruise != "") {
+        parameters.push("cruise=" + _cruise);
+    }
 
     if (parameters.length == 0)
         return "";
@@ -109,6 +116,9 @@ function getGroupingPayload(bin) {
         payload["instrument"] = _instrument;
     if (_tags != "") {
         payload["tags"] = _tags;
+    }
+    if (_cruise != "") {
+        payload["cruise"] = _cruise;
     }
 
     return payload;
@@ -290,7 +300,8 @@ function changeToClosestBin(targetDate) {
         "target_date": targetDate,
         "dataset": _dataset,
         "instrument": _instrument,
-        "tags": _tags
+        "tags": _tags,
+        "cruise": _cruise,
     }
 
     $.post("/api/closest_bin", payload, function(resp) {
@@ -312,7 +323,8 @@ function changeToNearestBin(lat, lng) {
         latitude: lat,
         longitude: lng,
         instrument: _instrument,
-        tags: _tags
+        tags: _tags,
+        cruise: _cruise,
     };
 
     $.post("/api/nearest_bin", payload, function(resp) {
@@ -372,6 +384,9 @@ function displayTags(tags) {
         }
         if (_instrument != "") {
             link += "&instrument="+_instrument;
+        }
+        if (_cruise != "") {
+            link += "&cruise="+_cruise;
         }
         var span = li.html("<a href='"+link+"'>"+tag+"</a>");
         var icon = $("<i class='fas fa-times pl-1'></i>");
@@ -551,7 +566,8 @@ function loadMosaic(pageNumber) {
         "&scale_factor=" + scaleFactor +
         "&dataset=" + _dataset +
         "&instrument=" + _instrument +
-        "&tags=" + _tags;
+        "&tags=" + _tags +
+        "&cruise=" + _cruise;
 
     $.get(binDataUrl, function(data) {
 
