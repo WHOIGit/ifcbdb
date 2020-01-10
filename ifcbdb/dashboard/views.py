@@ -158,7 +158,7 @@ def timeline_page(request):
     end_date = request.GET.get("end_date")
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
-    if not dataset_name and not tags and instrument_number is None and cruise is not None:
+    if not dataset_name and not tags and instrument_number is None and cruise is None:
         return bin_page(request)
 
     # Verify that the selecting bin is actually within the grouping options. If its not, pick the latest one
