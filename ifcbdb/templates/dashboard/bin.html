@@ -18,13 +18,13 @@
                 <a href="/timeline?dataset={{ dataset.name }}">
                   {{ dataset.title }}
                 </a>
-                {% if instrument or tags %}» {% endif %}
+                {% if instrument or tags or cruise %}» {% endif %}
               {% endif %}
               {% if instrument %}
                 <a href="/timeline?instrument={{ instrument.number }}">
                   IFCB{{ instrument.number }}
                 </a>
-                {% if tags %}» {% endif %}
+                {% if tags or cruise %}» {% endif %}
               {% endif %}
               {% if tags %}
                 <a href="/timeline?tags={{ tags }}">
@@ -32,7 +32,7 @@
                 </a>
               {% endif %}
               {% if cruise %}
-                <a href="/timeline?cruise={{ cruise }}">» {{ cruise }}</a>
+                <a href="/timeline?cruise={{ cruise }}">{{ cruise }}</a>
               {% endif %}
             </span>
             {% if user.is_authenticated %}<a id="view-list" class="pl-3 my-auto" href="#"title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
