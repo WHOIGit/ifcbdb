@@ -107,8 +107,8 @@ class Timeline(object):
 
     def previous_bin(self, bin):
         same_time = self.bins.filter(sample_time=bin.sample_time)
-        prev_time = self.bins.filter(sample_time__lt=bin.sample_time).order_by('-sample_time')
-        if same_time.count() == 1:
+        prev_time = self.bins.filter(sample_time__lt=bin.sample_time).order_by('-sample_time','-pid')
+        if same_time.count() == 1: # only bin with this sample time
             return prev_time.first()
         else:
             prev = same_time.filter(pid__lt=bin.pid).order_by('-pid').first()
@@ -119,7 +119,7 @@ class Timeline(object):
 
     def next_bin(self, bin):
         same_time = self.bins.filter(sample_time=bin.sample_time)
-        next_time = self.bins.filter(sample_time__gt=bin.sample_time).order_by('sample_time')
+        next_time = self.bins.filter(sample_time__gt=bin.sample_time).order_by('sample_time','pid')
         if same_time.count() == 1:
             return next_time.first()
         else:
