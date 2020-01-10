@@ -106,10 +106,28 @@ class Timeline(object):
             return previous_bin
 
     def previous_bin(self, bin):
-        return self.bins.filter(sample_time__lte=bin.sample_time, pid__lt=bin.pid).order_by("-sample_time","-pid").first()
+        same_time = self.bins.filter(sample_time=bin.sample_time)
+        prev_time = self.bins.filter(sample_time__lt=bin.sample_time).order_by('-sample_time')
+        if same_time.count() == 1:
+            return prev_time.first()
+        else:
+            prev = same_time.filter(pid__lt=bin.pid).order_by('-pid').first()
+            if prev is None:
+                return prev_time.first()
+            else:
+                return prev
 
     def next_bin(self, bin):
-        return self.bins.filter(sample_time__gte=bin.sample_time, pid__gt=bin.pid).order_by("sample_time","pid").first()
+        same_time = self.bins.filter(sample_time=bin.sample_time)
+        next_time = self.bins.filter(sample_time__gt=bin.sample_time).order_by('sample_time')
+        if same_time.count() == 1:
+            return next_time.first()
+        else:
+            _next = same_time.filter(pid__gt=bin.pid).order_by('pid').first()
+            if _next is None:
+                return next_time.first()
+            else:
+                return _next
 
     def nearest_bin(self, longitude, latitude):
         location = Point(longitude, latitude, srid=SRID)
