@@ -766,7 +766,7 @@ function updateMapLocations(data) {
         _markers = L.markerClusterGroup({
             chunkedLoading: true,
             chunkProgress: function updateMapStatus(processed, total, elapsed, layersArray) {},
-            maxClusterRadius: 8,
+            maxClusterRadius: 5,
             iconCreateFunction: function(cluster) {
                 var children = cluster.getChildCount();
 
