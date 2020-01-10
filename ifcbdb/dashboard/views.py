@@ -50,18 +50,19 @@ def search_timeline_locations(request):
     dataset_name = request.POST.get("dataset")
     tags = request_get_tags(request.POST.get("tags"))
     instrument_number = request_get_instrument(request.POST.get("instrument"))
+    cruise = request_get_cruise(request.POST.get("cruise"))
     start_date = request.POST.get("start_date")
     end_date = request.POST.get("end_date")
 
-    cache_key = 'tloc_b={};d={};t={};i={}'.format(bin_id, dataset_name, tags, instrument_number)
+    cache_key = 'tloc_b={};d={};t={};i={};c={}'.format(bin_id, dataset_name, tags, instrument_number, cruise)
     cached = cache.get(cache_key)
     if cached is not None:
         return JsonResponse(cached)
 
-    if not dataset_name and not tags and instrument_number is None:
+    if not dataset_name and not tags and instrument_number is None and cruise is None:
         qs = Bin.objects.filter(pid=bin_id)
     else:
-        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
+        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise)
 
     # TODO: Eventually, this should handle start/end date
     # if end_date:
