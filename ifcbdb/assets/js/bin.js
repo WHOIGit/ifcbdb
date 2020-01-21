@@ -751,6 +751,7 @@ function updateMapLocations(data) {
             chunkedLoading: true,
             chunkProgress: function updateMapStatus(processed, total, elapsed, layersArray) {},
             maxClusterRadius: 8,
+            zoomToBoundsOnClick: false,
             iconCreateFunction: function(cluster) {
                 var children = cluster.getChildCount();
 
@@ -762,6 +763,14 @@ function updateMapLocations(data) {
             }
 
         });
+
+        // This event is needed to make the disabling of zoomToBoundsOnClick work properly. Without it, if clicking
+        //   on the cluster would have normally spiderfied the cluster, it won't. This forces the spiderfy to happen
+        //   regarldess, making things work as a user would expect
+        _markers.on('clusterclick', function (cluster) {
+            cluster.layer.spiderfy();
+        });
+
         _fixedMarkers = L.layerGroup();
     }
 
