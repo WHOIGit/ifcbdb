@@ -727,12 +727,15 @@ function recenterMap() {
 }
 
 function selectMapMarker(marker) {
-    _markers.zoomToShowLayer(marker, function(){
-        marker.openPopup();
-    });
+    // If the selected marker is within a cluster, spiderfy the cluster to make sure the marker is
+    //   visible and we can open the popup
+    var parentCluster = _markers.getVisibleParent(marker);
+    if (parentCluster.spiderfy) {
+        parentCluster.spiderfy();
+    }
 
-    var zoom = _map.getZoom();
-    _map.setView(marker.getLatLng(), zoom)
+    marker.openPopup();
+
     $("#no-bin-location").toggleClass("d-none", true);
 }
 
