@@ -239,7 +239,6 @@ function updateBinDatasets(data) {
     $("#dataset-links").empty();
 
     for (var i = 0; i < data.datasets.length; i++) {
-        // <a href="#" class="d-block">asdasd</a>
         $("#dataset-links").append(
             $("<a class='d-block' />")
             .attr("href", "/timeline?bin=" + _bin + "&dataset=" + data.datasets[i])
@@ -757,6 +756,10 @@ function updateMapLocations(data) {
         }
 
         _map = createMap(lat, lng);
+        _map.on("zoomend", function(e) {
+            // A small delay is needed for the spiderfy call within recentermap() won't work
+            setTimeout(function(){ recenterMap(); }, 500);
+        });
 
         // TODO: Re-enable clicking functionality, or is that not need since users click on hte map should change to that bin?
         // TODO:   ^ if so, what happens when clicking on a dataset?
