@@ -187,6 +187,9 @@
         if (_tags != "") {
             parameters.push("tags=" + _tags);
         }
+        if (_cruise != "") {
+            parameters.push("cruise=" + _cruise);
+        }
 
         if (parameters.length == 0)
             return "";

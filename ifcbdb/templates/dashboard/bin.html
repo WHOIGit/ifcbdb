@@ -18,6 +18,10 @@
                 <a href="/timeline?dataset={{ dataset.name }}">
                   {{ dataset.title }}
                 </a>
+                {% if instrument or tags or cruise %}» {% endif %}
+              {% endif %}
+              {% if cruise %}
+                <a href="/timeline?cruise={{ cruise }}">{{ cruise }}</a>
                 {% if instrument or tags %}» {% endif %}
               {% endif %}
               {% if instrument %}
@@ -199,7 +203,9 @@
             <!-- Card body -->
             <div class="card-body">
                 <div class="card z-depth-0 border d-none text-right" id="plotImages">
-                        <a id="close-plot-images" href="#" class="btn btn-light text-dark btn-sm" style="width:75px">X</a>
+                  <div class="card-header py-0 white border-bottom-0">
+                        <a id="close-plot-images" href="#" class="btn btn-light text-dark btn-sm px-1 py-1"><i class="far fa-2x fa-times-circle px-1 py-1"></i></a>
+                      </div>
                     <div class="card-body text-center overflow-auto" id="plot-images-container">
                         <div>
                             <div class="alert" id="too-many-images" style="display:none">
@@ -418,11 +424,13 @@
                           </div>
 
                       <!-- Map Tap -->
-                      <div id="map-tab-content" class="tab-pane" role="tabpanel">
+                      <div id="map-tab-content" class="tab-pane py-2" role="tabpanel">
+                        <div class="card">
                         <div class="card-body py-1">
                           <div id="map-container" style="height:600px" ></div>
                             <div id="no-bin-location" class="alert alert-warning text-center d-none">The selected bin does not have a latitude/longitude set</div>
                         </div>
+                      </div>
                       </div>
                       <!--End Map Tab-->
                   </div>
@@ -672,7 +680,8 @@ function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
         "?resolution=auto" +
         "&dataset=" + _dataset +
         "&instrument=" + _instrument +
-        "&tags=" + _tags;
+        "&tags=" + _tags +
+        "&cruise=" + _cruise;
 
     var currentRange = null;
     if (plot) {
@@ -783,7 +792,8 @@ function queryTimeline(container, metric) {
         "?resolution=auto" +
         "&dataset=" + _dataset +
         "&instrument=" + _instrument +
-        "&tags=" + _tags;
+        "&tags=" + _tags +
+        "&cruise=" + _cruise;
 
     if(start)
         url += "&start=" + start;
@@ -842,6 +852,7 @@ function changeBin(binId, updateHistory) {
     dataUrl += "&dataset=" + _dataset;
     dataUrl += "&instrument=" + _instrument;
     dataUrl += "&tags=" + _tags;
+    dataUrl += "&cruise=" + _cruise;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
@@ -915,7 +926,8 @@ function changeBin(binId, updateHistory) {
                     "bin_id": _bin,
                     "dataset": _dataset,
                     "instrument": _instrument,
-                    "tags": _tags
+                    "tags": _tags,
+                    "cruise": _cruise,
                 };
 
                 history.pushState(state, null, "?" + parameters);
@@ -1316,6 +1328,9 @@ $(function() {
     {% if tags %}
         _tags = "{{ tags }}";
     {% endif %}
+    {% if cruise %}
+        _cruise = "{{ cruise }}";
+    {% endif %}
     _bin = "{{ bin.pid }}";
     _route = "{{ route }}";
     _csrf = "{{ csrf_token }}";
@@ -1326,7 +1341,7 @@ $(function() {
     // show timeline info
     {% if route == 'timeline' %}
     var timeline_info_url = 'api/timeline_info?dataset='+_dataset+
-      '&instrument='+_instrument+'&tags='+_tags;
+      '&instrument='+_instrument+'&tags='+_tags+"&cruise="+_cruise;
     $.get(timeline_info_url, function(data) {
       $("#n_bins").html(data.n_bins+" bins, "+data.n_images+" images");
       $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
@@ -1335,6 +1350,7 @@ $(function() {
     var title = "";
     {% if dataset %}title += " » {{ dataset.title }}";{% endif %}
     {% if instrument %}title += " » IFCB{{ instrument.number }}";{% endif %}
+    {% if cruise %}title += " » {{ cruise }}"{% endif %}
     {% if tags %}title += " » {{ tags }}"{% endif %}
     document.title = title.substring(3);
 
@@ -1349,7 +1365,8 @@ $(function() {
             "bin_id": _bin,
             "dataset": _dataset,
             "instrument": _instrument,
-            "tags": _tags
+            "tags": _tags,
+            "cruise": _cruise
         };
 
         history.pushState(state, null, "?" + parameters);

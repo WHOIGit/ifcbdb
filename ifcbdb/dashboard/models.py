@@ -106,10 +106,28 @@ class Timeline(object):
             return previous_bin
 
     def previous_bin(self, bin):
-        return self.bins.filter(sample_time__lt=bin.sample_time).order_by("-sample_time","-pid").first()
+        same_time = self.bins.filter(sample_time=bin.sample_time)
+        prev_time = self.bins.filter(sample_time__lt=bin.sample_time).order_by('-sample_time','-pid')
+        if same_time.count() == 1: # only bin with this sample time
+            return prev_time.first()
+        else:
+            prev = same_time.filter(pid__lt=bin.pid).order_by('-pid').first()
+            if prev is None:
+                return prev_time.first()
+            else:
+                return prev
 
     def next_bin(self, bin):
-        return self.bins.filter(sample_time__gt=bin.sample_time).order_by("sample_time","pid").first()
+        same_time = self.bins.filter(sample_time=bin.sample_time)
+        next_time = self.bins.filter(sample_time__gt=bin.sample_time).order_by('sample_time','pid')
+        if same_time.count() == 1:
+            return next_time.first()
+        else:
+            _next = same_time.filter(pid__gt=bin.pid).order_by('pid').first()
+            if _next is None:
+                return next_time.first()
+            else:
+                return _next
 
     def nearest_bin(self, longitude, latitude):
         location = Point(longitude, latitude, srid=SRID)
@@ -186,7 +204,10 @@ class Timeline(object):
         # total data size in bytes for everything in this Timeline
         return self.bins.aggregate(Sum('size'))['size__sum']       
 
-def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None, filter_skip=True):
+def normalize_tag_name(tag_name):
+    return re.sub(r' ','_',tag_name.lower().strip())
+
+def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None, cruise=None, filter_skip=True):
     qs = Bin.objects
     if filter_skip:
         qs = qs.filter(skip=False)
@@ -199,6 +220,8 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_numbe
             qs = qs.filter(tags__name__iexact=tag)
     if instrument_number is not None:
         qs = qs.filter(instrument__number=instrument_number)
+    if cruise is not None:
+        qs = qs.filter(cruise__iexact=cruise)
     return qs
 
 class Dataset(models.Model):
@@ -618,7 +641,7 @@ class Bin(models.Model):
     def class_scores_path(self, version=None):
         return self.class_scores_file(version=version).path
 
-    def class_scores(self, version=1):
+    def class_scores(self, version=None):
         return self.class_scores_file(version=version).class_scores()
 
     # mosaics
@@ -676,6 +699,7 @@ class Bin(models.Model):
         return [t.name for t in self.tags.all()]
 
     def add_tag(self, tag_name, user=None):
+        tag_name = normalize_tag_name(tag_name)
         tag, created = Tag.objects.get_or_create(name=tag_name)
         # don't add this tag if was already added
         event, created = TagEvent.objects.get_or_create(bin=self, tag=tag)
@@ -683,7 +707,9 @@ class Bin(models.Model):
             event.user = user
         return event
 
-    def delete_tag(self, tag_name):
+    def delete_tag(self, tag_name, normalize=True):
+        if normalize:
+            tag_name = normalize_tag_name(tag_name)
         tag = Tag.objects.get(name=tag_name)
         event = TagEvent.objects.get(bin=self, tag=tag)
         event.delete()

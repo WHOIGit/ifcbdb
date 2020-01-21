@@ -84,6 +84,7 @@
     var _dataset = "{{ dataset_name|default_if_none:'' }}";
     var _instrument = "{{ instrument_number|default_if_none:'' }}";
     var _tags = "{{ tags|default_if_none:'' }}";
+    var _cruise = "{{ cruise|default_if_none:'' }}";
     var _startDate = "{{ start_date|default_if_none:'' }}";
     var _endDate = "{{ end_date|default_if_none:'' }}";
     var binsTable;
@@ -98,6 +99,9 @@
             parameters.push("instrument=" + _instrument);
         if (_tags != "" && _tags.length > 0) {
             parameters.push("tags=" + _tags);
+        }
+        if (_cruise != "") {
+            parameters.push("cruise=" + _cruise);
         }
 
         if (parameters.length == 0)
