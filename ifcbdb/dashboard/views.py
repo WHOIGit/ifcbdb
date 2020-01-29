@@ -43,6 +43,11 @@ def datasets(request):
         "form": form,
     })
 
+def dataframe_csv_response(df, **kw):
+    csv_buf = StringIO()
+    df.to_csv(csv_buf, **kw)
+    csv_buf.seek(0)
+    return StreamingHttpResponse(csv_buf, content_type='text/csv')
 
 @require_POST
 def search_timeline_locations(request):
@@ -613,11 +618,8 @@ def class_scores_csv(request, dataset_name, bin_id):
         raise Http404
     class_scores.index = ['{}_{:05d}'.format(bin_id, tn) for tn in class_scores.index]
     class_scores.index.name = 'pid'
-    csv_buf = StringIO()
-    class_scores.to_csv(csv_buf)
-    csv_buf.seek(0)
+    resp = dataframe_csv_response(class_scores)
     filename = '{}_class_v{}.csv'.format(bin_id, version)
-    resp = StreamingHttpResponse(csv_buf, content_type='text/csv')
     resp['Content-Disposition'] = 'attachment; filename={}'.format(filename)
     return resp
 
@@ -1073,7 +1075,6 @@ def timeline_info(request):
         })
 
 
-@login_required
 def list_bins(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
@@ -1082,6 +1083,7 @@ def list_bins(request):
     skip_filter = request.GET.get("skip_filter")
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
+    output_format = request.GET.get("format")
 
     # Initial query for pulling bins. Note that skipped bins are included so it can be filtered based
     #   on the querystring options
@@ -1093,18 +1095,24 @@ def list_bins(request):
 
     if start_date:
         start_date = pd.to_datetime(start_date, utc=True)
-        bin_qs = bin_qs.filter(timestamp__gte=start_date)
+        bin_qs = bin_qs.filter(sample_time__gte=start_date)
 
     if end_date:
         end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
-        bin_qs = bin_qs.filter(timestamp__lte=end_date)
+        bin_qs = bin_qs.filter(sample_time__lte=end_date)
 
     if skip_filter == "exclude":
         bin_qs = bin_qs.exclude(skip=True)
     elif skip_filter == "only":
         bin_qs = bin_qs.filter(skip=True)
 
+    bin_qs = bin_qs.order_by('sample_time')
+
     bins = list(bin_qs.values("pid", "sample_time", "skip"))
+
+    if output_format and output_format == 'csv':
+        df = pd.DataFrame.from_dict(bins)
+        return dataframe_csv_response(df, index=None)
 
     return JsonResponse({
         "data": bins
