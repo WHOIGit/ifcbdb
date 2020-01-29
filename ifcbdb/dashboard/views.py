@@ -297,7 +297,7 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
     else:
-        dataset = None
+        dataset = bin.primary_dataset()
 
     try:
         image = bin.image(image_number)
