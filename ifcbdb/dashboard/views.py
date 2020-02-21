@@ -514,7 +514,7 @@ def legacy_short_json(request, dataset_name, bin_id):
 def legacy_roisizes(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     fq_ts_url = fully_qualified_timeseries_url(request, dataset_name)
-    ii = b.images(infilled=True)
+    ii = b.images()
     tns, pids, widths, heights = [], [], [], []
     for target_number in ii:
         tns.append(target_number)
