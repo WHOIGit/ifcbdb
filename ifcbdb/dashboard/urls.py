@@ -126,4 +126,5 @@ urlpatterns = [
     path('api/list_bins', views.list_bins, name='list_bins'),
     path('api/list_images/<slug:pid>', views.list_images, name='list_images'),
     path('api/update_skip', views.update_skip, name='update_skip'),
+    path('api/export_metadata/<slug:dataset_name>', views.export_metadata_view, name='export_metadata'),
  ]
