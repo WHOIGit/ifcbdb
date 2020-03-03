@@ -2,6 +2,7 @@ import os
 import json
 import time
 
+from collections import defaultdict
 from itertools import islice
 
 from django.db import IntegrityError, transaction
@@ -9,7 +10,7 @@ from django.db import IntegrityError, transaction
 import pandas as pd
 import numpy as np
 
-from .models import Bin, DataDirectory, Instrument, Timeline
+from .models import Bin, DataDirectory, Instrument, Timeline, Dataset
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
@@ -381,3 +382,45 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     progress_callback(progress)
 
     return progress
+
+def export_metadata(dataset_name):
+    name = dataset_name
+    ds = Dataset.objects.get(name=name)
+    dataset_location = ds.location
+    dataset_depth = ds.depth
+    qs = ds.bins.values('id','pid','sample_time','location','ml_analyzed', 'cruise','cast','niskin','depth', 'instrument__number', 'skip').order_by('pid')
+    r = defaultdict(list)
+    r.update({ 'dataset': name })
+    for item in qs:
+        def add(field, rename=None):
+            if rename is not None:
+                r[rename].append(item[field])
+            else:
+                r[field].append(item[field])
+        add('pid')
+        add('sample_time')
+        add('instrument__number', rename='ifcb')
+        add('ml_analyzed')
+        if item['location'] is not None:
+            r['latitude'].append(item['location'].y)
+            r['longitude'].append(item['location'].x)
+        elif dataset_location is not None:
+            r['latitude'].append(dataset_location.y)
+            r['longitude'].append(dataset_location.x)
+        else:
+            r['latitude'].append(np.nan)
+            r['longitude'].append(np.nan)
+        if item['depth'] is not None:
+            add('depth')
+        elif dataset_depth is not None:
+            r['depth'].append(dataset_depth)
+        else:
+            r['depth'].append(np.nan)
+        add('cruise')
+        add('cast')
+        add('niskin')
+        r['skip'].append(1 if item['skip'] else 0)
+
+    df = pd.DataFrame(r)
+
+    return df

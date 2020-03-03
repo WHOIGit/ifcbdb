@@ -25,6 +25,7 @@ from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment,
 from .forms import DatasetSearchForm
 from common.utilities import *
 
+from dashboard.accession import export_metadata
 
 def index(request):
     if settings.DEFAULT_DATASET:
@@ -1139,6 +1140,10 @@ def update_skip(request):
         "skip": skip,
         "bins": bin_ids
     })
+
+def export_metadata_view(request, dataset_name):
+    df = export_metadata(dataset_name)
+    return dataframe_csv_response(df, index=None)
 
 def about_page(request):
     return render(request, 'dashboard/about.html')
