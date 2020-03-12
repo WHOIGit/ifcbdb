@@ -21,10 +21,11 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name
 from .forms import DatasetSearchForm
 from common.utilities import *
 
+from dashboard.accession import export_metadata
 
 def index(request):
     if settings.DEFAULT_DATASET:
@@ -43,6 +44,11 @@ def datasets(request):
         "form": form,
     })
 
+def dataframe_csv_response(df, **kw):
+    csv_buf = StringIO()
+    df.to_csv(csv_buf, **kw)
+    csv_buf.seek(0)
+    return StreamingHttpResponse(csv_buf, content_type='text/csv')
 
 @require_POST
 def search_timeline_locations(request):
@@ -50,18 +56,19 @@ def search_timeline_locations(request):
     dataset_name = request.POST.get("dataset")
     tags = request_get_tags(request.POST.get("tags"))
     instrument_number = request_get_instrument(request.POST.get("instrument"))
+    cruise = request_get_cruise(request.POST.get("cruise"))
     start_date = request.POST.get("start_date")
     end_date = request.POST.get("end_date")
 
-    cache_key = 'tloc_b={};d={};t={};i={}'.format(bin_id, dataset_name, tags, instrument_number)
+    cache_key = 'tloc_b={};d={};t={};i={};c={}'.format(bin_id, dataset_name, tags, instrument_number, cruise)
     cached = cache.get(cache_key)
     if cached is not None:
         return JsonResponse(cached)
 
-    if not dataset_name and not tags and instrument_number is None:
+    if not dataset_name and not tags and instrument_number is None and cruise is None:
         qs = Bin.objects.filter(pid=bin_id)
     else:
-        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
+        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise)
 
     # TODO: Eventually, this should handle start/end date
     # if end_date:
@@ -141,24 +148,29 @@ def request_get_tags(tags_string):
     if t is not None:
         if not t:
             return []
-        return t.split(',')
+        return [normalize_tag_name(tag) for tag in t.split(',')]
+
+def request_get_cruise(cruise_string):
+    if cruise_string:
+        return cruise_string
 
 def timeline_page(request):
     bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
     bin_reset = False
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
-    if not dataset_name and not tags and instrument_number is None:
+    if not dataset_name and not tags and instrument_number is None and cruise is None:
         return bin_page(request)
 
     # Verify that the selecting bin is actually within the grouping options. If its not, pick the latest one
     if bin_id:
-        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
+        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise)
         if not qs.filter(pid=bin_id).exists():
             bin_id = None
             bin_reset = True
@@ -166,6 +178,7 @@ def timeline_page(request):
     return _details(request,
                     bin_id=bin_id, route="timeline", bin_reset=bin_reset,
                     dataset_name=dataset_name, tags=tags, instrument_number=instrument_number,
+                    cruise=cruise,
                     default_start_date=start_date, default_end_date=end_date)
 
 
@@ -285,7 +298,7 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
     else:
-        dataset = None
+        dataset = bin.primary_dataset()
 
     try:
         image = bin.image(image_number)
@@ -333,16 +346,17 @@ def legacy_image_page_alt(request, bin_id, image_id):
     return _image_details(request, image_id, bin_id)
 
 
-def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, bin_reset=False,
+def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, cruise=None, bin_reset=False,
              default_start_date=None, default_end_date=None):
-    if not bin_id and not dataset_name and not tags and not instrument_number:
+    if not bin_id and not dataset_name and not tags and not instrument_number and not cruise:
         # TODO: 404 error; don't have enough info to proceed
         pass
 
 
     bin_qs = bin_query(dataset_name=dataset_name,
         tags=tags,
-        instrument_number=instrument_number)
+        instrument_number=instrument_number,
+        cruise=cruise)
     timeline = Timeline(bin_qs)
 
     if bin_id:
@@ -362,6 +376,7 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         "can_filter_page": (route == "timeline"),
         "dataset": dataset,
         "instrument": instrument,
+        "cruise": cruise,
         "tags": ','.join(tags) if tags else '',
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
         "mosaic_view_sizes": Bin.MOSAIC_VIEW_SIZES,
@@ -485,7 +500,7 @@ def image_jpg_legacy(request, bin_id, target, dataset_name):
 
 def fully_qualified_timeseries_url(request, dataset_name):
     scheme = request.scheme
-    host_port = request.META['HTTP_HOST']
+    host_port = request.get_host()
     return '{}://{}/{}'.format(scheme, host_port, dataset_name)
 
 def legacy_short_json(request, dataset_name, bin_id):
@@ -500,7 +515,7 @@ def legacy_short_json(request, dataset_name, bin_id):
 def legacy_roisizes(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     fq_ts_url = fully_qualified_timeseries_url(request, dataset_name)
-    ii = b.images(infilled=True)
+    ii = b.images()
     tns, pids, widths, heights = [], [], [], []
     for target_number in ii:
         tns.append(target_number)
@@ -597,18 +612,15 @@ def class_scores_mat(request, bin_id, **kw):
 
 def class_scores_csv(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
-    version = get_product_version_parameter(request, 1)
+    version = get_product_version_parameter(request, None)
     try:
-        class_scores = b.class_scores(version=None)
+        class_scores = b.class_scores(version=version)
     except KeyError:
         raise Http404
     class_scores.index = ['{}_{:05d}'.format(bin_id, tn) for tn in class_scores.index]
     class_scores.index.name = 'pid'
-    csv_buf = StringIO()
-    class_scores.to_csv(csv_buf)
-    csv_buf.seek(0)
+    resp = dataframe_csv_response(class_scores)
     filename = '{}_class_v{}.csv'.format(bin_id, version)
-    resp = StreamingHttpResponse(csv_buf, content_type='text/csv')
     resp['Content-Disposition'] = 'attachment; filename={}'.format(filename)
     return resp
 
@@ -623,7 +635,7 @@ def zip(request, bin_id, **kw):
 
 
 def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_adjacent_bins=False,
-                 include_coordinates=True, instrument_number=None, tags=None):
+                 include_coordinates=True, instrument_number=None, tags=None, cruise=None):
     if not view_size:
         view_size = Bin.MOSAIC_DEFAULT_VIEW_SIZE
     if not scale_factor:
@@ -655,7 +667,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         else:
             dataset_name = None
         bin_qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number,
-            tags=tags)
+            tags=tags, cruise=cruise)
         previous_bin = Timeline(bin_qs).previous_bin(bin)
         next_bin = Timeline(bin_qs).next_bin(bin)
 
@@ -753,9 +765,10 @@ def generate_time_series(request, metric,):
 
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
 
     bin_qs = bin_query(dataset_name=dataset_name,
-        tags=tags,
+        tags=tags, cruise=cruise,
         instrument_number=instrument_number)
 
     def query_timeline(metric, start, end, resolution):
@@ -811,6 +824,7 @@ def bin_data(request, bin_id):
 
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
 
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
@@ -824,7 +838,7 @@ def bin_data(request, bin_id):
     include_coordinates = request.GET.get("include_coordinates", "true").lower() == "true"
 
     details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates,
-                           instrument_number=instrument_number, tags=tags)
+                           instrument_number=instrument_number, tags=tags, cruise=cruise)
 
     return JsonResponse(details)
 
@@ -833,6 +847,8 @@ def closest_bin(request):
     dataset_name = request.POST.get("dataset")
     instrument = request_get_instrument(request.POST.get("instrument"))  # limit to instrument
     tags = request_get_tags(request.POST.get("tags"))  # limit to tag(s)
+    cruise = request_get_cruise(request.POST.get("cruise"))
+
     target_date = request.POST.get("target_date", None)
 
     try:
@@ -840,7 +856,7 @@ def closest_bin(request):
     except:
         dte = None
 
-    bin_qs = bin_query(dataset_name=dataset_name, instrument_number=instrument, tags=tags)
+    bin_qs = bin_query(dataset_name=dataset_name, instrument_number=instrument, tags=tags, cruise=cruise)
     bin = Timeline(bin_qs).bin_closest_in_time(dte)
 
     return JsonResponse({
@@ -854,6 +870,8 @@ def nearest_bin(request):
     start = request.POST.get('start')  # limit to start time
     end = request.POST.get('end')  # limit to end time
     tags = request_get_tags(request.POST.get("tags"))  # limit to tag(s)
+    cruise = request_get_cruise(request.POST.get("cruise")) # limit to cruise
+
     lat = request.POST.get('latitude')
     lon = request.POST.get('longitude')
     if lat is None or lon is None:
@@ -862,7 +880,7 @@ def nearest_bin(request):
         tags = []
     else:
         tags = ','.split(tags)
-    bins = bin_query(dataset_name=dataset, start=start, end=end, tags=tags, instrument_number=instrument)
+    bins = bin_query(dataset_name=dataset, start=start, end=end, tags=tags, instrument_number=instrument, cruise=cruise)
     lon = float(lon)
     lat = float(lat)
     bin_id = Timeline(bins).nearest_bin(lon, lat).pid
@@ -943,7 +961,9 @@ def bin_exists(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
-    exists = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags).exists()
+    cruise = request_get_cruise(request.GET.get("cruise"))
+
+    exists = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise).exists()
 
     return JsonResponse({
         "exists": exists
@@ -963,6 +983,7 @@ def filter_options(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
 
     if dataset_name:
         ds = Dataset.objects.get(name=dataset_name)
@@ -975,16 +996,18 @@ def filter_options(request):
 
     tag_options = Tag.list(ds, instr)
 
-    bq = bin_query(dataset_name=dataset_name, tags=tags)
+    bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise)
     qs = bq.values('instrument__number').order_by('instrument__number').distinct()
 
     instruments_options = [i['instrument__number'] for i in qs]
     datasets_options = [ds.name for ds in Dataset.objects.filter(is_active=True).order_by('name')]
+    cruise_options = [c['cruise'] for c in bq.exclude(cruise='').values('cruise').order_by('cruise').distinct()]
 
     return JsonResponse({
         "instrument_options": instruments_options,
         "dataset_options": datasets_options,
         "tag_options": tag_options,
+        "cruise_options": cruise_options,
         })
 
 def has_products(request, bin_id):
@@ -1040,9 +1063,11 @@ def timeline_info(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
+    cruise = request_get_cruise(request.GET.get('cruise'))
     bin_qs = bin_query(dataset_name=dataset_name,
         tags=tags,
-        instrument_number=instrument_number)
+        instrument_number=instrument_number,
+        cruise=cruise)
     timeline = Timeline(bin_qs)
     return JsonResponse({
         'n_bins': len(timeline),
@@ -1051,36 +1076,44 @@ def timeline_info(request):
         })
 
 
-@login_required
 def list_bins(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
     skip_filter = request.GET.get("skip_filter")
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
+    output_format = request.GET.get("format")
 
     # Initial query for pulling bins. Note that skipped bins are included so it can be filtered based
     #   on the querystring options
     bin_qs = bin_query(dataset_name=dataset_name,
                        tags=tags,
                        instrument_number=instrument_number,
+                       cruise=cruise,
                        filter_skip=False)
 
     if start_date:
         start_date = pd.to_datetime(start_date, utc=True)
-        bin_qs = bin_qs.filter(timestamp__gte=start_date)
+        bin_qs = bin_qs.filter(sample_time__gte=start_date)
 
     if end_date:
         end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
-        bin_qs = bin_qs.filter(timestamp__lte=end_date)
+        bin_qs = bin_qs.filter(sample_time__lte=end_date)
 
     if skip_filter == "exclude":
         bin_qs = bin_qs.exclude(skip=True)
     elif skip_filter == "only":
         bin_qs = bin_qs.filter(skip=True)
 
+    bin_qs = bin_qs.order_by('sample_time')
+
     bins = list(bin_qs.values("pid", "sample_time", "skip"))
+
+    if output_format and output_format == 'csv':
+        df = pd.DataFrame.from_dict(bins)
+        return dataframe_csv_response(df, index=None)
 
     return JsonResponse({
         "data": bins
@@ -1107,6 +1140,10 @@ def update_skip(request):
         "skip": skip,
         "bins": bin_ids
     })
+
+def export_metadata_view(request, dataset_name):
+    df = export_metadata(dataset_name)
+    return dataframe_csv_response(df, index=None)
 
 def about_page(request):
     return render(request, 'dashboard/about.html')

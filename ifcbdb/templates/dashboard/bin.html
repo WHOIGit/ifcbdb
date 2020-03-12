@@ -18,6 +18,10 @@
                 <a href="/timeline?dataset={{ dataset.name }}">
                   {{ dataset.title }}
                 </a>
+                {% if instrument or tags or cruise %}» {% endif %}
+              {% endif %}
+              {% if cruise %}
+                <a href="/timeline?cruise={{ cruise }}">{{ cruise }}</a>
                 {% if instrument or tags %}» {% endif %}
               {% endif %}
               {% if instrument %}
@@ -676,7 +680,8 @@ function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
         "?resolution=auto" +
         "&dataset=" + _dataset +
         "&instrument=" + _instrument +
-        "&tags=" + _tags;
+        "&tags=" + _tags +
+        "&cruise=" + _cruise;
 
     var currentRange = null;
     if (plot) {
@@ -787,7 +792,8 @@ function queryTimeline(container, metric) {
         "?resolution=auto" +
         "&dataset=" + _dataset +
         "&instrument=" + _instrument +
-        "&tags=" + _tags;
+        "&tags=" + _tags +
+        "&cruise=" + _cruise;
 
     if(start)
         url += "&start=" + start;
@@ -846,6 +852,7 @@ function changeBin(binId, updateHistory) {
     dataUrl += "&dataset=" + _dataset;
     dataUrl += "&instrument=" + _instrument;
     dataUrl += "&tags=" + _tags;
+    dataUrl += "&cruise=" + _cruise;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
@@ -919,7 +926,8 @@ function changeBin(binId, updateHistory) {
                     "bin_id": _bin,
                     "dataset": _dataset,
                     "instrument": _instrument,
-                    "tags": _tags
+                    "tags": _tags,
+                    "cruise": _cruise,
                 };
 
                 history.pushState(state, null, "?" + parameters);
@@ -1320,6 +1328,9 @@ $(function() {
     {% if tags %}
         _tags = "{{ tags }}";
     {% endif %}
+    {% if cruise %}
+        _cruise = "{{ cruise }}";
+    {% endif %}
     _bin = "{{ bin.pid }}";
     _route = "{{ route }}";
     _csrf = "{{ csrf_token }}";
@@ -1330,7 +1341,7 @@ $(function() {
     // show timeline info
     {% if route == 'timeline' %}
     var timeline_info_url = 'api/timeline_info?dataset='+_dataset+
-      '&instrument='+_instrument+'&tags='+_tags;
+      '&instrument='+_instrument+'&tags='+_tags+"&cruise="+_cruise;
     $.get(timeline_info_url, function(data) {
       $("#n_bins").html(data.n_bins+" bins, "+data.n_images+" images");
       $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
@@ -1339,6 +1350,7 @@ $(function() {
     var title = "";
     {% if dataset %}title += " » {{ dataset.title }}";{% endif %}
     {% if instrument %}title += " » IFCB{{ instrument.number }}";{% endif %}
+    {% if cruise %}title += " » {{ cruise }}"{% endif %}
     {% if tags %}title += " » {{ tags }}"{% endif %}
     document.title = title.substring(3);
 
@@ -1353,7 +1365,8 @@ $(function() {
             "bin_id": _bin,
             "dataset": _dataset,
             "instrument": _instrument,
-            "tags": _tags
+            "tags": _tags,
+            "cruise": _cruise
         };
 
         history.pushState(state, null, "?" + parameters);

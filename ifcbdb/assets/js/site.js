@@ -365,7 +365,7 @@ function buildLeafletIcon(color) {
 }
 
 //************* Timeline/List Filtering Methods ***********************/
-function getQuerystringFromParameters(dataset, instrument, tags) {
+function getQuerystringFromParameters(dataset, instrument, tags, cruise) {
     var parameters = []
     if (dataset != "")
         parameters.push("dataset=" + dataset);
@@ -374,6 +374,9 @@ function getQuerystringFromParameters(dataset, instrument, tags) {
     if (tags != "") {
         parameters.push("tags=" + tags);
     }
+    if (cruise != "" ) {
+        parameters.push("cruise=" + cruise);
+    }
 
     if (parameters.length == 0)
         return "";
@@ -381,17 +384,20 @@ function getQuerystringFromParameters(dataset, instrument, tags) {
     return parameters.join("&");
 }
 
-function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, initialValues) {
+function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, initialValues) {
 
     var dataset = initialValues ? initialValues["dataset"] : datasetFilter.val();
     var instrument = initialValues ? initialValues["instrument"] : instrumentFilter.val();
+    var cruise = initialValues ? initialValues["cruise"] : cruiseFilter.val();
     var tags = initialValues ? initialValues["tags"] : tagFilter.val().join();
+
     var selected_tags = tags == null ? [] : tags.split(",");
 
     var url = "/api/filter_options" +
         "?dataset=" + (dataset ? dataset : "") +
         "&instrument=" + (instrument ? instrument : "") +
-        "&tags=" + (tags ? tags : "");
+        "&tags=" + (tags ? tags : "") + 
+        "&cruise=" + (cruise ? cruise : "");
 
     $.get(url, function(data){
         datasetFilter.empty();
@@ -409,6 +415,14 @@ function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, initi
             instrumentFilter.append($("<option value='" + option + "' " + (option == instrument ? "selected" : "") + ">IFCB" + option + "</option>"));
         }
         instrumentFilter.val(instrument);
+
+        cruiseFilter.empty();
+        cruiseFilter.append($("<option value='' />"));
+        for (var i = 0; i < data.cruise_options.length; i++) {
+            var option = data.cruise_options[i];
+            cruiseFilter.append($("<option value='" + option + "' " + (option == cruise ? "selected": "") + ">" + option + "</option>"));
+        }
+        cruiseFilter.val(cruise);
 
         tagFilter.empty();
         for (var i = 0; i < data.tag_options.length; i++) {
@@ -431,11 +445,13 @@ function initBinFilter(binFilterMode) {
     var datasetFilter = $("#SearchPopoverContent .dataset-filter");
     var instrumentFilter = $("#SearchPopoverContent .instrument-filter");
     var tagFilter = $("#SearchPopoverContent .tag-filter");
+    var cruiseFilter = $("#SearchPopoverContent .cruise-filter");
 
-    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, {
+    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, {
         "dataset": _dataset,
         "instrument": _instrument,
-        "tags": _tags
+        "tags": _tags,
+        "cruise": _cruise,
     });
 
     _filterPopover = $('[data-toggle="popover"]').popover({
@@ -459,22 +475,24 @@ function initBinFilter(binFilterMode) {
             var datasetFilter = wrapper.find(".dataset-filter");
             var instrumentFilter = wrapper.find(".instrument-filter");
             var tagFilter = wrapper.find(".tag-filter");
+            var cruiseFilter = wrapper.find(".cruise-filter");
 
-            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, null);
+            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, null);
         });
     });
 }
 
 function applyFilters() {
     var dataset = $(".popover .dataset-filter").val();
-    var instrument = $(".popover .instrument-filter").val();
+    var instrument = $(".popover .instrument-filter").val(); 
+    var cruise = $(".popover .cruise-filter").val();
     var tags = $(".popover .tag-filter option:selected")
         .map(function() {return $(this).val()}).get()
         .join();
 
-    var qs = getQuerystringFromParameters(dataset, instrument, tags);
+    var qs = getQuerystringFromParameters(dataset, instrument, tags, cruise);
 
-    $.get("/api/bin_exists?" + qs, function(data){
+    $.get("/api/bin_exists?" + qs, function(data) {
         if (!data.exists) {
             alert("No bins were found matching the specified filters. Please update the filters and try again")
             return;
@@ -483,6 +501,7 @@ function applyFilters() {
         _dataset = dataset;
         _instrument = instrument;
         _tags = tags;
+        _cruise = cruise;
 
         if (_binFilterMode == "list") {
             location.href = createListLink();

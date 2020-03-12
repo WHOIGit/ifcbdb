@@ -57,7 +57,7 @@
                     <div class="col">
                 <div class="tab-content" id="ImageTabContent">
                     <div class="tab-pane show active" id="image-tab" role="tabpanel" aria-labelledby="image-tab-label">
-                        <img id="image" src="data:image/png;base64,{{ image }}" />
+                        <a id="direct-image-link" href="/{{ dataset.name }}/{{ bin.pid }}_{{ image_id|stringformat:"05d" }}.png"><img id="image" src="data:image/png;base64,{{ image }}" /></a>
                     </div>
                     <div class="tab-pane" id="blob-tab" role="tabpanel" aria-labelledby="blob-tab-label">
                         <img id="image-blob">
@@ -126,22 +126,9 @@
             </div>
             <div class="modal-body">
 
-            {% if route == "timeline" %}
-                {% if group_type == "dataset" %}
-                    <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}&dataset={{ dataset.name }}">
-                    <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}&dataset={{ dataset.name }}">
-                {% elif group_type == "instrument" %}
-                    <!-- TODO: Implement -->
-                {% elif group_type == "tags" %}
-                    <!-- TODO: Implement -->
-                {% else %}
-                    <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
-                    <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
-                {% endif %}
-            {% else %}
-                <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
-                <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?image={{ image_id|stringformat:"05d" }}&bin={{ bin.pid }}">
-            {% endif %}
+            <!-- image_id|stringformat:"05d" -->
+            <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?dataset={{ dataset.name }}&bin={{ bin.pid }}&image={{ image_id }}">
+            <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?dataset={{ dataset.name }}&bin={{ bin.pid }}&image={{ image_id }}">
 
             </div>
             <div class="modal-footer">
@@ -151,6 +138,7 @@
         </div>
     </div>
 </div>
+
 <!-- Modal -->
 {% endblock %}
 
@@ -173,7 +161,6 @@
                 break;
             }
         }
-        console.log(_image_index);
     }
 
     function getGroupingParameters(bin) {
@@ -186,6 +173,9 @@
             parameters.push("instrument=" + _instrument);
         if (_tags != "") {
             parameters.push("tags=" + _tags);
+        }
+        if (_cruise != "") {
+            parameters.push("cruise=" + _cruise);
         }
 
         if (parameters.length == 0)
@@ -207,9 +197,11 @@
     }
 
     function getCurrentUrl() {
-        var parameters = getGroupingParameters(_bin);
+        //var parameters = getGroupingParameters(_bin);
 
-        return "?image=" +  padDigits(_image_id, 5) + "&" + parameters;
+        //return "?image=" +  padDigits(_image_id, 5) + "&" + parameters;
+
+        return "?dataset={{ dataset.name }}&bin={{ bin.pid }}&image=" + _image_id;
     }
 
     function getImageInfo(mode) {
@@ -286,7 +278,10 @@
             var currentUrl = getCurrentUrl();
 
             history.pushState(state, null, currentUrl);
+            $("#share-link").val(rootUrl + currentUrl);
             $("#share-link-value").val(rootUrl + currentUrl);
+
+            $("#direct-image-link").attr('href', '{{ request.scheme }}://{{ request.get_host }}/{{ dataset.name }}/{{ bin.pid }}_' + padDigits(_image_id, 5) + '.png');
         }
     }
 
@@ -330,6 +325,8 @@
     });
 
     $("#previous-image").click(function(e){
+        e.preventDefault();
+
         if (_image_index == 0) return;
 
         _image_index--;
@@ -337,6 +334,8 @@
     });
 
     $("#next-image").click(function(e){
+        e.preventDefault();
+        
         if (_image_index >= _image_list.length) return;
 
         _image_index++;
@@ -379,23 +378,6 @@
         $("#share-link").select();
         document.execCommand("Copy");
     });
-
-    // uncomment below if images are to be scaled instead of having scroll bars
-    /*
-    function handleScaleBar() {
-        var currentImageWidth = $("#image").width();
-        if(currentImageWidth != {{ image_width }}) {
-            $("#scale-bar").hide();
-        } else {
-            $("#scale-bar").show();
-        }        
-    }
-    $(window).resize(function() {
-        handleScaleBar();
-    });
-
-    handleScaleBar();
-    */
 
     $("#scale-bar").show();
 

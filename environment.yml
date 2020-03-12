@@ -2,14 +2,16 @@ name: ifcbdb
 channels:
   - conda-forge
 dependencies:
-- python=3.6
-- django=2.1.7
+- python
+- django
+- gunicorn
 - psycopg2
 - pycrypto
 - pip
 - celery>4.1
 - gdal
 - libiconv
+- numba
 - pip:
   - python-memcached
   - redis
