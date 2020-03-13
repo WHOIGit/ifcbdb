@@ -27,7 +27,6 @@ import ifcb
 
 from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
-from ifcb.viz.mosaic import Mosaic
 from ifcb.viz.blobs import blob_outline
 from ifcb.data.adc import schema_names
 from ifcb.data.products.blobs import BlobDirectory
@@ -39,6 +38,7 @@ from ifcb.data.files import Fileset, FilesetBin
 
 from .crypto import AESCipher
 from .tasks import mosaic_coordinates_task
+from .mosaic import Mosaic
 
 logger = logging.getLogger(__name__)
 
@@ -646,7 +646,7 @@ class Bin(models.Model):
 
     # mosaics
 
-    def mosaic_coordinates(self, shape=(600,800), scale=0.33, block=True):
+    def slow_mosaic_coordinates(self, shape=(600,800), scale=0.33, block=True):
         h, w = shape
         cache_key = 'mosaic_coords_{}_{}x{}_{}'.format(self.pid, h, w, int(scale*100))
         cached = cache.get(cache_key)
@@ -660,6 +660,21 @@ class Bin(models.Model):
             except:
                 return pd.DataFrame()
         return None
+
+    def fast_mosaic_coordinates(self, shape=(600, 800), scale=0.33, block=True):
+        h, w = shape
+        cache_key = 'mosaic_coords_{}_{}x{}_{}'.format(self.pid, h, w, int(scale*100))
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return pd.DataFrame.from_dict(cached)
+        b = self._get_bin()
+        coordinates = Mosaic(b, shape, scale).pack()
+        to_cache = coordinates.to_dict('list')
+        cache.set(cache_key, to_cache)
+        return coordinates
+
+    def mosaic_coordinates(self, shape=(600, 800), scale=0.33, block=True):
+        return self.slow_mosaic_coordinates(shape, scale, block)
 
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
         b = self._get_bin().read()
