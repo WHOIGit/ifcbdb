@@ -2,6 +2,8 @@ import os
 import json
 import time
 
+import tempfile
+
 from collections import defaultdict
 from itertools import islice
 
@@ -17,6 +19,9 @@ import ifcb
 from ifcb.data.files import time_filter
 from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
+
+from ifcb.data.transfer.remote import RemoteIfcb
+from ifcb.data.transfer.deposit import fileset_destination_dir
 
 def progress(bin_id, added, total, bad, errors={}):
     error_list = [{ 'bin': k, 'message': v} for k,v in errors.items()]
@@ -223,6 +228,41 @@ class Accession(object):
         if b.concentration < 0: # metadata is bogus!
             return b, 'rois/ml is < 0'
         return b, None # defer save
+
+def transfer_and_sync(instrument, dataset):
+    # figure out what directory to transfer to
+    raw_directory = None
+    for dd in dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
+        if not os.path.exists(dd.path):
+            continue # skip and continue searching
+        raw_directory = dd.path
+        break
+    if raw_directory is None:
+        raise ValueError('no raw destination directory found')
+    # construct remote IFCB instance
+    address = instrument.address
+    username = instrument.username
+    password = instrument.password
+    netbios_name = instrument.netbios_name
+    if not netbios_name:
+        netbios_name = None
+    share_name = instrument.share_name
+    timeout = instrument.timeout
+    ifcb = RemoteIfcb(address, username, password,
+        netbios_name=netbios_name,
+        share=share_name,
+        timeout=timeout)
+    # transfer
+    with ifcb:
+        pids = []
+        def destination_dir(pid):
+            pids.append(pid)
+            return os.path.join(raw_directory, fileset_destination_dir(pid))
+        ifcb.sync(destination_dir)
+    # sync
+    acc = Accession(dataset)
+    for pid in pids:
+        acc.sync_one(pid)
 
 def import_progress(bin_id, n_modded, errors, done=False):
     #print(bin_id, n_modded, errors, error_message, done) # FIXME debug
