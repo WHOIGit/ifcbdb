@@ -802,6 +802,7 @@ class Instrument(models.Model):
     _password = models.CharField(max_length=128, db_column='password', blank=True)
     share_name = models.CharField(max_length=128, default='Data', blank=True)
     timeout = models.IntegerField(default=30)
+    netbios_name = models.CharField(max_length=128, blank=True)
 
     @staticmethod
     def _get_cipher():

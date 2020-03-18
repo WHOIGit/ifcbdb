@@ -73,6 +73,13 @@
     </div>
     <div class="form-row">
         <div class="form-group col">
+            <label for="id_share_name">NetBIOS name</label>
+            {{ form.netbios_name }}
+            {% if form.netbios_name.errors %}<span class="text-danger">{{ form.netbios_name.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
             <label for="id_timeout">Timeout <small class="text-muted">({{ form.timeout.help_text }})</small></label>
             {{ form.timeout }}
             {% if form.timeout.errors %}<span class="text-danger">{{ form.timeout.errors.as_text }}</span>{% endif %}
