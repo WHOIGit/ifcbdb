@@ -229,7 +229,7 @@ class Accession(object):
             return b, 'rois/ml is < 0'
         return b, None # defer save
 
-def transfer_and_sync(instrument, dataset):
+def transfer_and_sync(instrument, dataset, progress_callback=do_nothing):
     # figure out what directory to transfer to
     raw_directory = None
     for dd in dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
@@ -252,17 +252,15 @@ def transfer_and_sync(instrument, dataset):
         netbios_name=netbios_name,
         share=share_name,
         timeout=timeout)
-    # transfer
-    with ifcb:
-        pids = []
-        def destination_dir(pid):
-            pids.append(pid)
-            return os.path.join(raw_directory, fileset_destination_dir(pid))
-        ifcb.sync(destination_dir)
-    # sync
+    # transfer / sync
     acc = Accession(dataset)
-    for pid in pids:
-        acc.sync_one(pid)
+    with ifcb:
+        def destination_dir(pid):
+            return os.path.join(raw_directory, fileset_destination_dir(pid))
+        def fileset_callback(pid):
+            acc.sync_one(pid)
+        ifcb.sync(destination_dir, fileset_callback=fileset_callback,
+            progress_callback=progress_callback)
 
 def import_progress(bin_id, n_modded, errors, done=False):
     #print(bin_id, n_modded, errors, error_message, done) # FIXME debug
