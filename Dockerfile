@@ -1,34 +1,35 @@
-from continuumio/miniconda3:4.5.12
-
-RUN apt-get update
+from continuumio/miniconda3
 
 # geospatial libraries
-RUN apt-get install -y binutils libproj-dev gdal-bin
+RUN apt-get update && apt-get install -y binutils libproj-dev
+# gdal-bin
 
-# update conda
+RUN conda config --remove channels defaults
+RUN conda config --append channels conda-forge
+
 RUN conda update conda
 
 # nomkl to reduce image size (mkl is large)
-RUN conda install nomkl
+RUN conda install -c conda-forge nomkl conda-merge
 
 # install pyifcb and ifcbdb dependencies first
 # pyifcb must be cloned into the same directory as this dockerfile
 
 WORKDIR /pyifcb
 COPY ./pyifcb .
-RUN conda env update -n root -f environment.yml
+COPY ./pyifcb/environment.yml /envs/pyifcb_env.yml
 
 WORKDIR /ifcbdb
-COPY environment.yml .
-RUN conda env update -n root -f environment.yml
+COPY environment.yml /envs/ifcbdb_env.yml
 
-# now install pyifcb
+WORKDIR /envs
+RUN conda-merge pyifcb_env.yml ifcbdb_env.yml > merged-environment.yml
+RUN cat merged-environment.yml
+
+RUN conda env update -n root -f merged-environment.yml
+
 WORKDIR /pyifcb
 RUN python setup.py develop
-
-# this application
-
-RUN conda install gunicorn=19.9.0
 
 EXPOSE 8000
 
