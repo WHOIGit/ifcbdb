@@ -388,7 +388,7 @@ def export_metadata(dataset_name):
     ds = Dataset.objects.get(name=name)
     dataset_location = ds.location
     dataset_depth = ds.depth
-    qs = ds.bins.values('id','pid','sample_time','location','ml_analyzed', 'cruise','cast','niskin','depth', 'instrument__number', 'skip').order_by('pid')
+    qs = ds.bins.values('id','pid','sample_time','location','ml_analyzed', 'cruise','cast','niskin','depth', 'instrument__number', 'skip', 'sample_type').order_by('pid')
     r = defaultdict(list)
     r.update({ 'dataset': name })
     for item in qs:
@@ -419,6 +419,7 @@ def export_metadata(dataset_name):
         add('cruise')
         add('cast')
         add('niskin')
+        add('sample_type')
         r['skip'].append(1 if item['skip'] else 0)
 
     df = pd.DataFrame(r)
