@@ -1336,6 +1336,7 @@ $(function() {
     _csrf = "{{ csrf_token }}";
     {% if user.is_authenticated %}
     _userId = {{ user.id }};
+    _userStaff = {% if user.is_staff %}true{% else %}false{% endif %};
     {% endif %}
 
     // show timeline info

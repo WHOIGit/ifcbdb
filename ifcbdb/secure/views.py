@@ -202,7 +202,7 @@ def add_comment(request, bin_id):
 def edit_comment(request, bin_id):
     comment_id = request.GET.get("id")
     comment = get_object_or_404(Comment, pk=comment_id)
-    if comment.user != request.user:
+    if not request.user.is_staff:
         return HttpResponseForbidden()
 
     return JsonResponse({
@@ -220,7 +220,7 @@ def update_comment(request, bin_id):
     content = request.POST.get("content")
     comment = get_object_or_404(Comment, pk=comment_id)
 
-    if comment.user != request.user:
+    if not request.user.is_staff:
         return HttpResponseForbidden()
 
     comment.content = content
@@ -238,7 +238,7 @@ def delete_comment(request, bin_id):
     comment_id = request.POST.get("id")
     comment = get_object_or_404(Comment, pk=comment_id)
 
-    if comment.user != request.user:
+    if not request.user.is_staff:
         return HttpResponseForbidden()
 
     bin = get_object_or_404(Bin, pid=bin_id)

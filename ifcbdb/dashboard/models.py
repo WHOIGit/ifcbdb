@@ -727,7 +727,7 @@ class Bin(models.Model):
     def delete_comment(self, comment_id, user):
         try:
             comment = Comment.objects.get(bin=self, pk=comment_id)
-            if comment.user == user:
+            if user.is_staff:
                 comment.delete()
         except:
             pass
