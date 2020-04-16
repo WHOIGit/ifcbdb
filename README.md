@@ -29,7 +29,7 @@ cp nginx/ifcbdb.conf.example nginx/ifcbdb.conf
 
 #### Initialize docker
 ```shell script
-docker-compose up
+docker-compose up -d
 ```
 
 #### Run migrations and update static files
