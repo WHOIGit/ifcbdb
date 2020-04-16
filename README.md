@@ -9,7 +9,7 @@ IFCB dashboard
 * Docker
 * Docker Compose
 
-#### Set up a new project director
+#### Set up a new project directory
 ```shell script
 mkdir ifcb && cd ifcb
 ```
