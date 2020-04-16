@@ -23,6 +23,7 @@ var _workspace = "mosaic"; // The current workspace a user is seeing
 var _pendingMapLocations = null; // The next map positions to render (see notes in updateMapLocations)
 var _csrf = null; // CSRF token from Django for post requests
 var _userId = null; // Id of the currently logged in user
+var _userStaff = null; // is user.is_staff True?
 var _commentTable = null; // Variable to keep track of the DataTables object once created
 var _route = ""; // Tracks the route used to render this page (timeline or bin)
 var _binTimestamp = null; // Timestamp for the currently selected bin
@@ -503,8 +504,8 @@ function displayComments(comments) {
                 targets: -1,
                 render: function(data, type, row ) {
                     var html = "";
-                    // Only show edit/delete if the comment was posted by the user viewing them
-                    if (row[4] == _userId) {
+                    // Only show edit/delete if the user is staff
+                    if (_userStaff) {
                         html +=
                             "<button class='btn btn-sm py-1 px-2 edit-comment' data-id='" + data + "'><i class='fas fa-edit'></i></button>" +
                             "<button class='btn btn-sm py-1 px-2 delete-comment' data-id='" + data + "'><i class='fas fa-minus-circle'></i></button>";
