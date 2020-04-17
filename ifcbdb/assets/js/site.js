@@ -384,7 +384,7 @@ function getQuerystringFromParameters(dataset, instrument, tags, cruise) {
     return parameters.join("&");
 }
 
-function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, initialValues) {
+function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, applyFilters, initialValues) {
 
     var dataset = initialValues ? initialValues["dataset"] : datasetFilter.val();
     var instrument = initialValues ? initialValues["instrument"] : instrumentFilter.val();
@@ -393,6 +393,13 @@ function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruis
     var sampleType = initialValues ? initialValues["sample_type"] : sampleTypeFilter.val();
 
     var selected_tags = tags == null ? [] : tags.split(",");
+
+    if (dataset == "" && instrument == "" && cruise == "" && tags == "" && sampleType == "") {
+        applyFilters.prop("disabled", true);
+        return;
+    }
+
+    applyFilters.prop("disabled", false);
 
     var url = "/api/filter_options" +
         "?dataset=" + (dataset ? dataset : "") +
@@ -457,8 +464,9 @@ function initBinFilter(binFilterMode) {
     var tagFilter = $("#SearchPopoverContent .tag-filter");
     var cruiseFilter = $("#SearchPopoverContent .cruise-filter");
     var sampleTypeFilter = $("#SearchPopoverContent .sample-type-filter");
+    var applyFilters = $("#SearchPopoverContent .apply-filters");
 
-    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, {
+    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, applyFilters, {
         "dataset": _dataset,
         "instrument": _instrument,
         "tags": _tags,
@@ -489,8 +497,9 @@ function initBinFilter(binFilterMode) {
             var tagFilter = wrapper.find(".tag-filter");
             var cruiseFilter = wrapper.find(".cruise-filter");
             var sampleTypeFilter = wrapper.find(".sample-type-filter");
+            var applyFilters = wrapper.find(".apply-filters");
 
-            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, null);
+            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, applyFilters, null);
         });
     });
 }
