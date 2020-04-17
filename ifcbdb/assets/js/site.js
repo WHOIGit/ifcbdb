@@ -396,10 +396,9 @@ function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruis
 
     if (dataset == "" && instrument == "" && cruise == "" && tags == "" && sampleType == "") {
         applyFilters.prop("disabled", true);
-        return;
+    } else {
+        applyFilters.prop("disabled", false);
     }
-
-    applyFilters.prop("disabled", false);
 
     var url = "/api/filter_options" +
         "?dataset=" + (dataset ? dataset : "") +
