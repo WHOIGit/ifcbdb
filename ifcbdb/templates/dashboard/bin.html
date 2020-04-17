@@ -1334,8 +1334,6 @@ $(function() {
     {% if dataset %}
         _dataset = "{{ dataset.name }}";
         _locations_dataset = "{{ dataset.name }}";
-    {% elif bin.primary_dataset %}
-        _dataset = "{{ bin.primary_dataset.name }}";
     {% endif %}
     {% if instrument %}
         _instrument = "{{ instrument.number }}";
