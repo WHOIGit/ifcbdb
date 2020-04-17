@@ -384,12 +384,13 @@ function getQuerystringFromParameters(dataset, instrument, tags, cruise) {
     return parameters.join("&");
 }
 
-function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, initialValues) {
+function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, initialValues) {
 
     var dataset = initialValues ? initialValues["dataset"] : datasetFilter.val();
     var instrument = initialValues ? initialValues["instrument"] : instrumentFilter.val();
     var cruise = initialValues ? initialValues["cruise"] : cruiseFilter.val();
     var tags = initialValues ? initialValues["tags"] : tagFilter.val().join();
+    var sampleType = initialValues ? initialValues["sample_type"] : sampleTypeFilter.val();
 
     var selected_tags = tags == null ? [] : tags.split(",");
 
@@ -397,7 +398,8 @@ function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruis
         "?dataset=" + (dataset ? dataset : "") +
         "&instrument=" + (instrument ? instrument : "") +
         "&tags=" + (tags ? tags : "") + 
-        "&cruise=" + (cruise ? cruise : "");
+        "&cruise=" + (cruise ? cruise : "") +
+        "&sample_type=" + (sampleType ? sampleType : "");
 
     $.get(url, function(data){
         datasetFilter.empty();
@@ -437,6 +439,14 @@ function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruis
         }
 
         tagFilter.trigger('chosen:updated');
+
+        sampleTypeFilter.empty();
+        sampleTypeFilter.append($("<option value='' />"));
+        for (var i = 0; i < data.sample_type_options.length; i++) {
+            var option = data.sample_type_options[i];
+            sampleTypeFilter.append($("<option value='" + option + "' " + (option == sampleType ? "selected": "") + ">" + option + "</option>"));
+        }
+        sampleTypeFilter.val(cruise);
     });
 }
 
@@ -446,12 +456,14 @@ function initBinFilter(binFilterMode) {
     var instrumentFilter = $("#SearchPopoverContent .instrument-filter");
     var tagFilter = $("#SearchPopoverContent .tag-filter");
     var cruiseFilter = $("#SearchPopoverContent .cruise-filter");
+    var sampleTypeFilter = $("#SearchPopoverContent .sample-type-filter");
 
-    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, {
+    updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, {
         "dataset": _dataset,
         "instrument": _instrument,
         "tags": _tags,
         "cruise": _cruise,
+        "sample_type": _sampleType
     });
 
     _filterPopover = $('[data-toggle="popover"]').popover({
@@ -476,8 +488,9 @@ function initBinFilter(binFilterMode) {
             var instrumentFilter = wrapper.find(".instrument-filter");
             var tagFilter = wrapper.find(".tag-filter");
             var cruiseFilter = wrapper.find(".cruise-filter");
+            var sampleTypeFilter = wrapper.find(".sample-type-filter");
 
-            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, null);
+            updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruiseFilter, sampleTypeFilter, null);
         });
     });
 }
@@ -486,6 +499,7 @@ function applyFilters() {
     var dataset = $(".popover .dataset-filter").val();
     var instrument = $(".popover .instrument-filter").val(); 
     var cruise = $(".popover .cruise-filter").val();
+    var sampleType = $(".popover .sample-type-filter").val();
     var tags = $(".popover .tag-filter option:selected")
         .map(function() {return $(this).val()}).get()
         .join();
@@ -502,6 +516,7 @@ function applyFilters() {
         _instrument = instrument;
         _tags = tags;
         _cruise = cruise;
+        _sampleType = sampleType;
 
         if (_binFilterMode == "list") {
             location.href = createListLink();

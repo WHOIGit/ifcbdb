@@ -5,6 +5,7 @@ var _locations_dataset = ""; // Dataset name use for filtering w/o it being set 
 var _tags = ""; // Tags, comma separated (for filtering)
 var _instrument = ""; // Instrument name (for filtering)
 var _cruise = ""; // Cruise ID (for filtering)
+var _sampleType = ""; // Sample Type (for filtering)
 var _mosaicPage = 0; // Current page being displayed in the mosaic
 var _mosaicPages = -1; // Total number of pages for the mosaic
 var _coordinates = []; // Coordinates of images within the current mosaic
@@ -49,6 +50,9 @@ function createLink() {
         if (_cruise != "") {
             args += "&cruise="+_cruise;
         }
+        if (_sampleType != "") {
+            args += "&sample_type=" + _sampleType;
+        }
         if (args != "") {
             args = "?" + args.substring(1);
         }
@@ -63,8 +67,8 @@ function createLink() {
 }
 
 function createListLink(start, end) {
-    if (_dataset != "" || _instrument != "" || _tags != "" || _cruise != "") {
-        var link = "/list?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags+"&cruise="+_cruise;
+    if (_dataset != "" || _instrument != "" || _tags != "" || _cruise != "" || _sampleType != "") {
+        var link = "/list?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags+"&cruise="+_cruise+"&sample_type="+_sampleType;
         if (_bin != "") {
             link += "&bin=" + _bin;
         }
@@ -99,6 +103,9 @@ function getGroupingParameters(bin) {
     if (_cruise != "") {
         parameters.push("cruise=" + _cruise);
     }
+    if (_sampleType != "") {
+        parameters.push("sample_type=" + _sampleType);
+    }
 
     if (parameters.length == 0)
         return "";
@@ -120,6 +127,9 @@ function getGroupingPayload(bin) {
     }
     if (_cruise != "") {
         payload["cruise"] = _cruise;
+    }
+    if (_sampleType != "") {
+        payload["sample_type"] = _sampleType;
     }
 
     return payload;
@@ -205,6 +215,8 @@ function updateBinStats(data) {
     $("#stat-trigger-freq").html(data["trigger_freq"]);
     $("#stat-ml-analyzed").html(data["ml_analyzed"]);
     $("#stat-concentration").html(data["concentration"]);
+    $("#stat-cruise").html(data["cruise"]);
+    $("#stat-sample-type").html(data["sample_type"]);
     $("#stat-size").html(filesize(data["size"]));
     $("#stat-skip")
         .text(data["skip"] ? "Yes" : "No")
@@ -218,6 +230,7 @@ function updateBinStats(data) {
     }
     showOrHideField(data, "depth");
     showOrHideField(data, "cruise");
+    showOrHideField(data, "sample_type");
     showOrHideField(data, "cast");
     showOrHideField(data, "niskin");
 }
@@ -303,6 +316,7 @@ function changeToClosestBin(targetDate) {
         "instrument": _instrument,
         "tags": _tags,
         "cruise": _cruise,
+        "sample_type": _sampleType
     }
 
     $.post("/api/closest_bin", payload, function(resp) {
@@ -326,6 +340,7 @@ function changeToNearestBin(lat, lng) {
         instrument: _instrument,
         tags: _tags,
         cruise: _cruise,
+        sample_type: _sampleType
     };
 
     $.post("/api/nearest_bin", payload, function(resp) {
@@ -388,6 +403,9 @@ function displayTags(tags) {
         }
         if (_cruise != "") {
             link += "&cruise="+_cruise;
+        }
+        if (_sampleType != "") {
+            link += "&sample_type=" + _sampleType;
         }
         var span = li.html("<a href='"+link+"'>"+tag+"</a>");
         var icon = $("<i class='fas fa-times pl-1'></i>");
@@ -568,7 +586,8 @@ function loadMosaic(pageNumber) {
         "&dataset=" + _dataset +
         "&instrument=" + _instrument +
         "&tags=" + _tags +
-        "&cruise=" + _cruise;
+        "&cruise=" + _cruise +
+        "&sample_type=" + _sampleType;
 
     $.get(binDataUrl, function(data) {
 
