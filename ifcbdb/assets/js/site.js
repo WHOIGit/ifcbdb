@@ -446,7 +446,7 @@ function updateTimelineFilters(datasetFilter, instrumentFilter, tagFilter, cruis
             var option = data.sample_type_options[i];
             sampleTypeFilter.append($("<option value='" + option + "' " + (option == sampleType ? "selected": "") + ">" + option + "</option>"));
         }
-        sampleTypeFilter.val(cruise);
+        sampleTypeFilter.val(sampleType);
     });
 }
 
@@ -482,7 +482,7 @@ function initBinFilter(binFilterMode) {
             placeholder_text_multiple: "Select Tags..."
         });
 
-        $(".popover .dataset-filter, .popover .instrument-filter, .popover .tag-filter").change(function(){
+        $(".popover .dataset-filter, .popover .instrument-filter, .popover .tag-filter, .popover .cruise-filter, .popover .sample-type-filter").change(function(){
             var wrapper = $(this).closest(".filter-options");
             var datasetFilter = wrapper.find(".dataset-filter");
             var instrumentFilter = wrapper.find(".instrument-filter");
