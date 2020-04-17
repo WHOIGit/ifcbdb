@@ -995,7 +995,7 @@ def filter_options(request):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     cruise = request_get_cruise(request.GET.get("cruise"))
-    sample_type = request.GET.get('sample_type')
+    sample_type = request_get_sample_type(request.GET.get('sample_type'))
 
     if dataset_name:
         ds = Dataset.objects.get(name=dataset_name)
@@ -1005,15 +1005,20 @@ def filter_options(request):
         instr = Instrument.objects.get(number=instrument_number)
     else:
         instr = None
+        instrument_number = 0
 
     tag_options = Tag.list(ds, instr)
 
     bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise, sample_type=sample_type)
     qs = bq.values('instrument__number').order_by('instrument__number').distinct()
-
     instruments_options = [i['instrument__number'] for i in qs]
+
     datasets_options = [ds.name for ds in Dataset.objects.filter(is_active=True).order_by('name')]
+
+    bq = bin_query(dataset_name=dataset_name, tags=tags, instrument_number=instrument_number, sample_type=sample_type)
     cruise_options = [c['cruise'] for c in bq.exclude(cruise='').values('cruise').order_by('cruise').distinct()]
+
+    bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise, instrument_number=instrument_number)
     sample_type_options = [c['sample_type'] for c in bq.exclude(sample_type='').values('sample_type').order_by('sample_type').distinct()]
 
     return JsonResponse({
