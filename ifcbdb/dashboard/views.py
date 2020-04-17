@@ -995,7 +995,7 @@ def filter_options(request):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     cruise = request_get_cruise(request.GET.get("cruise"))
-    sample_type = request.GET.get('sample_type')
+    sample_type = request_get_sample_type(request.GET.get('sample_type'))
 
     if dataset_name:
         ds = Dataset.objects.get(name=dataset_name)
