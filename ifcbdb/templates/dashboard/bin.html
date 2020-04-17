@@ -120,6 +120,16 @@
                 {{ bin.primary_dataset.title }}
               </a>
             {% endif %}
+            {% if cruise %}»
+                <a href="/timeline?cruise={{ cruise }}&bin={{ bin.pid }}">
+                    {{ cruise }}
+                </a>
+            {% endif %}
+            {% if sample_type %}»
+                <a href="/timeline?sample_type={{ sample_type }}&bin={{ bin.pid }}">
+                {{ sample_type }}
+              </a>
+            {% endif %}
             {% if instrument %}»
               <a href="/timeline?instrument={{ instrument.number }}&bin={{ bin.pid }}">
                 IFCB{{ instrument.number }}
