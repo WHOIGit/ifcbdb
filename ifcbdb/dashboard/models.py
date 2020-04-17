@@ -219,7 +219,7 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
     if tags is not None:
         for tag in tags:
             qs = qs.filter(tags__name__iexact=tag)
-    if instrument_number is not None:
+    if instrument_number is not None and instrument_number != 0:
         qs = qs.filter(instrument__number=instrument_number)
     if cruise is not None:
         qs = qs.filter(cruise__iexact=cruise)
