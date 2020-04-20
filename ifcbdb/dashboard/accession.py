@@ -6,6 +6,7 @@ from collections import defaultdict
 from itertools import islice
 
 from django.db import IntegrityError, transaction
+from django.db.models import Count, Max
 
 import pandas as pd
 import numpy as np
@@ -388,9 +389,11 @@ def export_metadata(dataset_name):
     ds = Dataset.objects.get(name=name)
     dataset_location = ds.location
     dataset_depth = ds.depth
-    qs = ds.bins.values('id','pid','sample_time','location','ml_analyzed',
+    bqs = ds.bins
+    qs = bqs.values('id','pid','sample_time','location','ml_analyzed',
         'cruise','cast','niskin','depth', 'instrument__number', 'skip',
-        'sample_type', 'n_images').order_by('pid')
+        'sample_type', 'n_images', 'tags').order_by('pid')
+    n_tag_cols = bqs.annotate(Count('tags')).values('tags__count').aggregate(Max('tags__count'))['tags__count__max']
     r = defaultdict(list)
     r.update({ 'dataset': name })
     for item in qs:
@@ -423,6 +426,13 @@ def export_metadata(dataset_name):
         add('niskin')
         add('sample_type')
         add('n_images')
+        if item['tags']:
+            tag_names = [t['name'] for t in Bin.objects.get(id=item['id']).tags.values('name')]
+        else:
+            tag_names = []
+        for i in range(n_tag_cols):
+            v = tag_names[i] if i < len(tag_names) else ''
+            r[f'tag{i+1}'].append(v) 
         r['skip'].append(1 if item['skip'] else 0)
 
     df = pd.DataFrame(r)
