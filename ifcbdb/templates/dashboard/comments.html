@@ -21,6 +21,8 @@
         <input type="hidden" id="dataset-filter" value="{{ dataset|default_if_none:'' }}" />
         <input type="hidden" id="instrument-filter" value="{{ instrument|default_if_none:'' }}" />
         <input type="hidden" id="tag-filter" value="{{ tags|default_if_none:'' }}" />
+        <input type="hidden" id="cruise-filter" value="{{ cruise|default_if_none:'' }}" />
+        <input type="hidden" id="sample-type-filter" value="{{ sample_type|default_if_none:'' }}" />
         Search for comments containing:
         <input type="text" class="form-control ml-2" id="query" />
         <button type="button" class="btn btn-mdb-color" id="search">Search</button>
@@ -61,7 +63,9 @@
                         "query": $("#query").val(),
                         "dataset": $("#dataset-filter").val(),
                         "instrument": $("#instrument-filter").val(),
-                        "tags": $("#tag-filter").val()
+                        "tags": $("#tag-filter").val(),
+                        "cruise": $("#cruise-filter").val(),
+                        "sample_type": $("#sample-type-filter").val()
                     }
                 }
             },
@@ -94,6 +98,8 @@
             $("#dataset-filter").val("");
             $("#instrument-filter").val("");
             $("#tag-filter").val("");
+            $("#cruise-filter").val("");
+            $("#sample-type-filter").val("");
 
             if (commentsTable)
                 commentsTable.ajax.reload();

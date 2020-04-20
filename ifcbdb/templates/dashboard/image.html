@@ -152,6 +152,8 @@
     var _dataset = "{{ dataset_name|default_if_none:'' }}";
     var _instrument = "{{ instrument_number|default_if_none:'' }}";
     var _tags = "{{ tags|default_if_none:'' }}";
+    var _cruise = "{{ cruise|default_if_none:'' }}";
+    var _sampleType = "{{ sample_type|default_if_none:'' }}";
 
     function initImageIndex() {
         for (var i = 0; i < _image_list.length; i++) {
@@ -164,19 +166,9 @@
     }
 
     function getGroupingParameters(bin) {
-        var parameters = []
+        var parameters = buildFilterOptionsArray(true);
         if (bin != "")
             parameters.push("bin=" + bin);
-        if (_dataset != "")
-            parameters.push("dataset=" + _dataset);
-        if (_instrument != "")
-            parameters.push("instrument=" + _instrument);
-        if (_tags != "") {
-            parameters.push("tags=" + _tags);
-        }
-        if (_cruise != "") {
-            parameters.push("cruise=" + _cruise);
-        }
 
         if (parameters.length == 0)
             return "";
@@ -197,10 +189,6 @@
     }
 
     function getCurrentUrl() {
-        //var parameters = getGroupingParameters(_bin);
-
-        //return "?image=" +  padDigits(_image_id, 5) + "&" + parameters;
-
         return "?dataset={{ dataset.name }}&bin={{ bin.pid }}&image=" + _image_id;
     }
 
@@ -271,7 +259,9 @@
                 "bin": _bin,
                 "dataset": _dataset,
                 "instrument": _instrument,
-                "tags": _tags
+                "tags": _tags,
+                "cruise": _cruise,
+                "sample_type": _sampleType
             };
 
             var rootUrl = "{{ request.scheme }}://{{ request.get_host }}/image";

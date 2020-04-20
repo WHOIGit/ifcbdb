@@ -36,81 +36,39 @@ var _originalMapHeight = null; // Initial size of the map on first render
 
 // Generates a relative link to the current bin/dataset
 function createLink() {
-    if (_route == "timeline") {
-        var args = "";
-        if (_dataset != "") {
-            args += "&dataset="+_dataset;
-        }
-        if (_instrument != "") {
-            args += "&instrument="+_instrument;
-        }
-        if (_tags != "") {
-            args += "&tags="+_tags;
-        }
-        if (_cruise != "") {
-            args += "&cruise="+_cruise;
-        }
-        if (_sampleType != "") {
-            args += "&sample_type=" + _sampleType;
-        }
-        if (args != "") {
-            args = "?" + args.substring(1);
-        }
-        var link = "/timeline" + args;
-        if (_bin != "") {
-            link += "&bin=" + _bin;
-        }
-        return link;
-    } else { // bin mode
+    // Bin Mode
+    if (_route != "timeline")
         return createBinModeLink();
-    }
+
+    // Timeline Mode
+    return "/timeline?" +
+        buildFilterOptionsQueryString(true) +
+        (_bin != "" ? "&bin=" + _bin : "");
 }
 
 function createListLink(start, end) {
-    if (_dataset != "" || _instrument != "" || _tags != "" || _cruise != "" || _sampleType != "") {
-        var link = "/list?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags+"&cruise="+_cruise+"&sample_type="+_sampleType;
-        if (_bin != "") {
-            link += "&bin=" + _bin;
-        }
+    if (!isFilteringUsed())
+        return "javascript:;;";
 
-        link += "&start_date=" + start;
-        link += "&end_date=" + end;
-
-        return link;
-    }
-
-    return "javascript:;";
+    return "/list?" + getGroupingParameters(_bin) +
+        "&start_date=" + start +
+        "&end_date=" + end;
 }
 
 function createBinModeLink(bin) {
     if (bin == "" || typeof bin == "undefined") {
         bin = _bin;
     }
+
     return "/bin?" + getGroupingParameters(bin);
 }
 
 function getGroupingParameters(bin) {
-    var parameters = []
+    var parameters = buildFilterOptionsArray(true);
     if (bin != "")
         parameters.push("bin=" + bin);
-    if (_dataset != "")
-        parameters.push("dataset=" + _dataset);
-    if (_instrument != "")
-        parameters.push("instrument=" + _instrument);
-    if (_tags != "") {
-        parameters.push("tags=" + _tags);
-    }
-    if (_cruise != "") {
-        parameters.push("cruise=" + _cruise);
-    }
-    if (_sampleType != "") {
-        parameters.push("sample_type=" + _sampleType);
-    }
 
-    if (parameters.length == 0)
-        return "";
-
-    return parameters.join("&");
+    return parameters.length == 0 ? "" : parameters.join("&");
 }
 
 function getGroupingPayload(bin) {
@@ -150,10 +108,8 @@ function createImageLink(imageId) {
 
     var url = "/image?image=" + imageId;
     var parameters = getGroupingParameters(_bin);
-    if (parameters != "")
-        url += "&" + parameters;
 
-    return url;
+    return url + (parameters != "" ? "&" + parameters : "");
 }
 
 // Switches between workspaces: map, plot, mosaic
@@ -392,21 +348,12 @@ function displayTags(tags) {
     list.empty();
 
     for (var i = 0; i < tags.length; i++) {
+        console.log("ASD");
         var tag = tags[i];
         var li = $("<span class='badge badge-pill badge-light mx-1'>");
-        var link = "timeline?tags="+tag;
-        if (_dataset != "") {
-            link += "&dataset="+_dataset;
-        }
-        if (_instrument != "") {
-            link += "&instrument="+_instrument;
-        }
-        if (_cruise != "") {
-            link += "&cruise="+_cruise;
-        }
-        if (_sampleType != "") {
-            link += "&sample_type=" + _sampleType;
-        }
+        var link = "timeline?tags=" + tag + "&" +
+            buildFilterOptionsQueryString(false, _dataset, _instrument, null, _cruise, _sampleType);
+
         var span = li.html("<a href='"+link+"'>"+tag+"</a>");
         var icon = $("<i class='fas fa-times pl-1'></i>");
         var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "' />");
@@ -583,11 +530,7 @@ function loadMosaic(pageNumber) {
     var binDataUrl = "/api/bin/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor +
-        "&dataset=" + _dataset +
-        "&instrument=" + _instrument +
-        "&tags=" + _tags +
-        "&cruise=" + _cruise +
-        "&sample_type=" + _sampleType;
+        "&" + buildFilterOptionsQueryString(true);
 
     $.get(binDataUrl, function(data) {
 

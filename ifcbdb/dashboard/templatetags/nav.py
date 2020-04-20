@@ -2,7 +2,6 @@ from django import template
 from django.shortcuts import reverse
 
 from dashboard.models import Dataset, Instrument, Tag, bin_query
-from dashboard.views import request_get_instrument, request_get_tags
 
 register = template.Library()
 
@@ -36,6 +35,8 @@ def comments_nav(context):
     dataset = context["request"].GET.get("dataset")
     instrument = context["request"].GET.get("instrument")
     tags = context["request"].GET.get("tags")
+    cruise = context["request"].GET.get("cruise")
+    sample_type = context["request"].GET.get("sample_type")
 
     parameters = []
     if dataset:
@@ -44,6 +45,10 @@ def comments_nav(context):
         parameters.append("instrument=" + instrument)
     if tags:
         parameters.append("tags=" + tags)
+    if cruise:
+        parameters.append("cruise=" + cruise)
+    if sample_type:
+        parameters.append("sample_type=" + sample_type)
 
     url = reverse("comment_page")
     if len(parameters) > 0:

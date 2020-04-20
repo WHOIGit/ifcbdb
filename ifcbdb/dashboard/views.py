@@ -261,6 +261,8 @@ def image_page(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request_get_sample_type(request.GET.get("sample_type"))
 
     return _image_details(
         request,
@@ -268,7 +270,9 @@ def image_page(request):
         bin_id,
         dataset_name,
         instrument_number,
-        tags
+        tags,
+        cruise,
+        sample_type
     )
 
 
@@ -276,6 +280,9 @@ def comments_page(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request_get_sample_type(request.GET.get("sample_type"))
+
     filters = []
     if dataset_name:
         filters.append("Dataset: " + dataset_name)
@@ -283,11 +290,17 @@ def comments_page(request):
         filters.append("Instrument: IFCB" + str(instrument_number))
     if tags:
         filters.append("Tags: " + ', '.join(tags))
+    if cruise:
+        filters.append("Cruise: " + cruise)
+    if sample_type:
+        filters.append("Sample Type: " + sample_type)
 
     return render(request, "dashboard/comments.html", {
         'dataset': '' if dataset_name is None else dataset_name,
         'instrument': '' if instrument_number is None else instrument_number,
         'tags': '' if not tags else ','.join(tags),
+        'cruise': '' if cruise is None else cruise,
+        'sample_type': '' if sample_type is None else sample_type,
         'filters': '' if not filters else ', '.join(filters),
     })
 
@@ -319,7 +332,7 @@ def search_comments(request):
 
 
 # FIXME needs cruise and sample type?
-def _image_details(request, image_id, bin_id, dataset_name=None, instrument_number=None, tags=None):
+def _image_details(request, image_id, bin_id, dataset_name=None, instrument_number=None, tags=None, cruise=None, sample_type=None):
     image_number = int(image_id)
     bin = get_object_or_404(Bin, pid=bin_id)
     if dataset_name:
@@ -351,7 +364,8 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
         "dataset_name": dataset_name,
         "instrument_number": instrument_number,
         "tags": tags,
-
+        "cruise": cruise,
+        "sample_type": sample_type,
     })
 
 
