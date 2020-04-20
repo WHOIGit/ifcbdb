@@ -57,10 +57,11 @@ def search_timeline_locations(request):
     tags = request_get_tags(request.POST.get("tags"))
     instrument_number = request_get_instrument(request.POST.get("instrument"))
     cruise = request_get_cruise(request.POST.get("cruise"))
+    sample_type = request_get_sample_type(request.POST.get('sample_type'))
     start_date = request.POST.get("start_date")
     end_date = request.POST.get("end_date")
 
-    cache_key = 'tloc_b={};d={};t={};i={};c={}'.format(bin_id, dataset_name, tags, instrument_number, cruise)
+    cache_key = 'tloc_b={};d={};t={};i={};c={};st={}'.format(bin_id, dataset_name, tags, instrument_number, cruise, sample_type)
     cached = cache.get(cache_key)
     if cached is not None:
         return JsonResponse(cached)
@@ -68,7 +69,7 @@ def search_timeline_locations(request):
     if not dataset_name and not tags and instrument_number is None and cruise is None:
         qs = Bin.objects.filter(pid=bin_id)
     else:
-        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise)
+        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise, sample_type=sample_type)
 
     # TODO: Eventually, this should handle start/end date
     # if end_date:
@@ -154,23 +155,42 @@ def request_get_cruise(cruise_string):
     if cruise_string:
         return cruise_string
 
+def request_get_sample_type(sample_type_string):
+    if sample_type_string:
+        return sample_type_string
+
+# FIXME add start and end?
+def filter_parameters_bin_query(method):
+    dataset_name = method.get('dataset')
+    tags = request_get_tags(method.get('tags'))
+    instrument_number = request_get_instrument(method.get('instrument'))
+    cruise = request_get_cruise(method.get('cruise'))
+    sample_type = request_get_sample_type(method.get('sample_type'))
+
+    bin_qs = bin_query(dataset_name=dataset_name,
+        tags=tags, cruise=cruise, sample_type=sample_type,
+        instrument_number=instrument_number)
+
+    return bin_qs
+
 def timeline_page(request):
     bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request_get_sample_type(request.GET.get('sample_type'))
     bin_reset = False
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
 
     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
-    if not dataset_name and not tags and instrument_number is None and cruise is None:
+    if not dataset_name and not tags and instrument_number is None and cruise is None and not sample_type:
         return bin_page(request)
 
     # Verify that the selecting bin is actually within the grouping options. If its not, pick the latest one
     if bin_id:
-        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise)
+        qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise, sample_type=sample_type)
         if not qs.filter(pid=bin_id).exists():
             bin_id = None
             bin_reset = True
@@ -178,7 +198,7 @@ def timeline_page(request):
     return _details(request,
                     bin_id=bin_id, route="timeline", bin_reset=bin_reset,
                     dataset_name=dataset_name, tags=tags, instrument_number=instrument_number,
-                    cruise=cruise,
+                    cruise=cruise, sample_type=sample_type,
                     default_start_date=start_date, default_end_date=end_date)
 
 
@@ -187,6 +207,9 @@ def list_page(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    cruise = request_get_cruise(request.GET.get('cruise'))
+    sample_type = request_get_sample_type(request.GET.get('sample_type'))
+
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
     skip_filters = request.GET.get("skip_filters")
@@ -202,6 +225,8 @@ def list_page(request):
         "dataset_name": dataset_name,
         "instrument_number": instrument_number,
         "tags": ','.join(tags) if tags else '',
+        'cruise': cruise,
+        'sample_type': sample_type,
         "start_date": start_date,
         "end_date": end_date,
         "can_filter_page": True,
@@ -213,6 +238,8 @@ def bin_page(request):
     dataset_name = request.GET.get("dataset",None)
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    cruise = request_get_cruise(request.GET.get('cruise'))
+    sample_type = request_get_sample_type(request.GET.get('sample_type'))
     bin_id = request.GET.get("bin",None)
 
     return _details(
@@ -221,6 +248,8 @@ def bin_page(request):
         bin_id=bin_id,
         dataset_name=dataset_name,
         instrument_number=instrument_number,
+        cruise=cruise,
+        sample_type=sample_type,
         tags=tags
     )
 
@@ -232,6 +261,8 @@ def image_page(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request_get_sample_type(request.GET.get("sample_type"))
 
     return _image_details(
         request,
@@ -239,7 +270,9 @@ def image_page(request):
         bin_id,
         dataset_name,
         instrument_number,
-        tags
+        tags,
+        cruise,
+        sample_type
     )
 
 
@@ -247,6 +280,9 @@ def comments_page(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request_get_sample_type(request.GET.get("sample_type"))
+
     filters = []
     if dataset_name:
         filters.append("Dataset: " + dataset_name)
@@ -254,11 +290,17 @@ def comments_page(request):
         filters.append("Instrument: IFCB" + str(instrument_number))
     if tags:
         filters.append("Tags: " + ', '.join(tags))
+    if cruise:
+        filters.append("Cruise: " + cruise)
+    if sample_type:
+        filters.append("Sample Type: " + sample_type)
 
     return render(request, "dashboard/comments.html", {
         'dataset': '' if dataset_name is None else dataset_name,
         'instrument': '' if instrument_number is None else instrument_number,
         'tags': '' if not tags else ','.join(tags),
+        'cruise': '' if cruise is None else cruise,
+        'sample_type': '' if sample_type is None else sample_type,
         'filters': '' if not filters else ', '.join(filters),
     })
 
@@ -267,11 +309,8 @@ def comments_page(request):
 def search_comments(request):
     query = request.POST.get("query")
 
-    dataset_name = request.POST.get("dataset")
-    instrument_number = request_get_instrument(request.POST.get("instrument"))
-    tags = request_get_tags(request.POST.get("tags"))
+    bq = filter_parameters_bin_query(request.POST)
 
-    bq = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags)
     bq = bq.filter(comments__content__icontains=query).values('pid')
     b_pids = [t['pid'] for t in bq]
 
@@ -292,7 +331,8 @@ def search_comments(request):
     })
 
 
-def _image_details(request, image_id, bin_id, dataset_name=None, instrument_number=None, tags=None):
+# FIXME needs cruise and sample type?
+def _image_details(request, image_id, bin_id, dataset_name=None, instrument_number=None, tags=None, cruise=None, sample_type=None):
     image_number = int(image_id)
     bin = get_object_or_404(Bin, pid=bin_id)
     if dataset_name:
@@ -324,7 +364,8 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
         "dataset_name": dataset_name,
         "instrument_number": instrument_number,
         "tags": tags,
-
+        "cruise": cruise,
+        "sample_type": sample_type,
     })
 
 
@@ -347,8 +388,8 @@ def legacy_image_page_alt(request, bin_id, image_id):
 
 
 def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, cruise=None, bin_reset=False,
-             default_start_date=None, default_end_date=None):
-    if not bin_id and not dataset_name and not tags and not instrument_number and not cruise:
+             default_start_date=None, default_end_date=None, sample_type=None):
+    if not bin_id and not dataset_name and not tags and not instrument_number and not cruise and not sample_type:
         # TODO: 404 error; don't have enough info to proceed
         pass
 
@@ -356,7 +397,8 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
     bin_qs = bin_query(dataset_name=dataset_name,
         tags=tags,
         instrument_number=instrument_number,
-        cruise=cruise)
+        cruise=cruise,
+        sample_type=sample_type)
     timeline = Timeline(bin_qs)
 
     if bin_id:
@@ -376,6 +418,7 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         "can_filter_page": (route == "timeline"),
         "dataset": dataset,
         "instrument": instrument,
+        'sample_type': sample_type,
         "cruise": cruise,
         "tags": ','.join(tags) if tags else '',
         "mosaic_scale_factors": Bin.MOSAIC_SCALE_FACTORS,
@@ -635,7 +678,7 @@ def zip(request, bin_id, **kw):
 
 
 def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_adjacent_bins=False,
-                 include_coordinates=True, instrument_number=None, tags=None, cruise=None):
+                 include_coordinates=True, instrument_number=None, tags=None, cruise=None, sample_type=None):
     if not view_size:
         view_size = Bin.MOSAIC_DEFAULT_VIEW_SIZE
     if not scale_factor:
@@ -661,13 +704,13 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
     previous_bin = None
     next_bin = None
 
-    if (dataset or instrument_number or tags):
+    if (dataset or instrument_number or tags or cruise or sample_type):
         if dataset is not None:
             dataset_name = dataset.name
         else:
             dataset_name = None
         bin_qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number,
-            tags=tags, cruise=cruise)
+            tags=tags, cruise=cruise, sample_type=sample_type)
         previous_bin = Timeline(bin_qs).previous_bin(bin)
         next_bin = Timeline(bin_qs).next_bin(bin)
 
@@ -743,7 +786,6 @@ def _mosaic_page_image(request, bin_id):
 
     return arr
 
-
 # TODO: The below views are API/AJAX calls; in the future, it would be beneficial to use a proper API framework
 # TODO: The logic to flow through to a finer resolution if the higher ones only return one data item works, but
 #   it causes the UI to need to download data on each zoom level when scroll up, only to then ignore the data. Updates
@@ -751,7 +793,6 @@ def _mosaic_page_image(request, bin_id):
 #   just going to force us down to a finer resolution anyway
 # TODO: Handle tag/instrument grouping
 def generate_time_series(request, metric,):
-    dataset_name = request.GET.get("dataset",None)
     resolution = request.GET.get("resolution", "auto")
     start = request.GET.get("start",None)
     end = request.GET.get("end",None)
@@ -763,13 +804,7 @@ def generate_time_series(request, metric,):
     # Allows us to keep consistent url names
     metric = metric.replace("-", "_")
 
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    tags = request_get_tags(request.GET.get("tags"))
-    cruise = request_get_cruise(request.GET.get("cruise"))
-
-    bin_qs = bin_query(dataset_name=dataset_name,
-        tags=tags, cruise=cruise,
-        instrument_number=instrument_number)
+    bin_qs = filter_parameters_bin_query(request.GET)
 
     def query_timeline(metric, start, end, resolution):
         time_series, resolution = Timeline(bin_qs).metrics(metric, start, end, resolution=resolution)
@@ -825,6 +860,7 @@ def bin_data(request, bin_id):
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
     cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request_get_sample_type(request.GET.get('sample_type'))
 
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
@@ -838,16 +874,13 @@ def bin_data(request, bin_id):
     include_coordinates = request.GET.get("include_coordinates", "true").lower() == "true"
 
     details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates,
-                           instrument_number=instrument_number, tags=tags, cruise=cruise)
+                           instrument_number=instrument_number, tags=tags, cruise=cruise, sample_type=sample_type)
 
     return JsonResponse(details)
 
 
 def closest_bin(request):
-    dataset_name = request.POST.get("dataset")
-    instrument = request_get_instrument(request.POST.get("instrument"))  # limit to instrument
-    tags = request_get_tags(request.POST.get("tags"))  # limit to tag(s)
-    cruise = request_get_cruise(request.POST.get("cruise"))
+    bin_qs = filter_parameters_bin_query(request.POST)
 
     target_date = request.POST.get("target_date", None)
 
@@ -856,7 +889,6 @@ def closest_bin(request):
     except:
         dte = None
 
-    bin_qs = bin_query(dataset_name=dataset_name, instrument_number=instrument, tags=tags, cruise=cruise)
     bin = Timeline(bin_qs).bin_closest_in_time(dte)
 
     return JsonResponse({
@@ -865,12 +897,9 @@ def closest_bin(request):
 
 
 def nearest_bin(request):
-    dataset = request.POST.get('dataset')  # limit to dataset
-    instrument = request_get_instrument(request.POST.get("instrument"))  # limit to instrument
+    bins = filter_parameters_bin_query(request.POST)
     start = request.POST.get('start')  # limit to start time
     end = request.POST.get('end')  # limit to end time
-    tags = request_get_tags(request.POST.get("tags"))  # limit to tag(s)
-    cruise = request_get_cruise(request.POST.get("cruise")) # limit to cruise
 
     lat = request.POST.get('latitude')
     lon = request.POST.get('longitude')
@@ -880,7 +909,6 @@ def nearest_bin(request):
         tags = []
     else:
         tags = ','.split(tags)
-    bins = bin_query(dataset_name=dataset, start=start, end=end, tags=tags, instrument_number=instrument, cruise=cruise)
     lon = float(lon)
     lat = float(lat)
     bin_id = Timeline(bins).nearest_bin(lon, lat).pid
@@ -958,12 +986,9 @@ def bin_metadata(request, bin_id):
 
 
 def bin_exists(request):
-    dataset_name = request.GET.get("dataset")
-    tags = request_get_tags(request.GET.get("tags"))
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    cruise = request_get_cruise(request.GET.get("cruise"))
+    bin_qs = filter_parameters_bin_query(request.GET)
 
-    exists = bin_query(dataset_name=dataset_name, instrument_number=instrument_number, tags=tags, cruise=cruise).exists()
+    exists = bin_qs.exists()
 
     return JsonResponse({
         "exists": exists
@@ -984,6 +1009,7 @@ def filter_options(request):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request_get_sample_type(request.GET.get('sample_type'))
 
     if dataset_name:
         ds = Dataset.objects.get(name=dataset_name)
@@ -993,21 +1019,28 @@ def filter_options(request):
         instr = Instrument.objects.get(number=instrument_number)
     else:
         instr = None
+        instrument_number = 0
 
     tag_options = Tag.list(ds, instr)
 
-    bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise)
+    bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise, sample_type=sample_type)
     qs = bq.values('instrument__number').order_by('instrument__number').distinct()
-
     instruments_options = [i['instrument__number'] for i in qs]
+
     datasets_options = [ds.name for ds in Dataset.objects.filter(is_active=True).order_by('name')]
+
+    bq = bin_query(dataset_name=dataset_name, tags=tags, instrument_number=instrument_number, sample_type=sample_type)
     cruise_options = [c['cruise'] for c in bq.exclude(cruise='').values('cruise').order_by('cruise').distinct()]
+
+    bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise, instrument_number=instrument_number)
+    sample_type_options = [c['sample_type'] for c in bq.exclude(sample_type='').values('sample_type').order_by('sample_type').distinct()]
 
     return JsonResponse({
         "instrument_options": instruments_options,
         "dataset_options": datasets_options,
         "tag_options": tag_options,
         "cruise_options": cruise_options,
+        'sample_type_options': sample_type_options,
         })
 
 def has_products(request, bin_id):
@@ -1060,15 +1093,10 @@ def tags(request):
     return JsonResponse({'cloud': list(cloud)})
 
 def timeline_info(request):
-    dataset_name = request.GET.get("dataset")
-    tags = request_get_tags(request.GET.get("tags"))
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    cruise = request_get_cruise(request.GET.get('cruise'))
-    bin_qs = bin_query(dataset_name=dataset_name,
-        tags=tags,
-        instrument_number=instrument_number,
-        cruise=cruise)
+    bin_qs = filter_parameters_bin_query(request.GET)
+
     timeline = Timeline(bin_qs)
+
     return JsonResponse({
         'n_bins': len(timeline),
         'total_data_volume': timeline.total_data_volume(),
@@ -1081,6 +1109,7 @@ def list_bins(request):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request.GET.get('sample_type')
     skip_filter = request.GET.get("skip_filter")
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
@@ -1092,6 +1121,7 @@ def list_bins(request):
                        tags=tags,
                        instrument_number=instrument_number,
                        cruise=cruise,
+                       sample_type=sample_type,
                        filter_skip=False)
 
     if start_date:

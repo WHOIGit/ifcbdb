@@ -207,7 +207,8 @@ class Timeline(object):
 def normalize_tag_name(tag_name):
     return re.sub(r' ','_',tag_name.lower().strip())
 
-def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_number=None, cruise=None, filter_skip=True):
+def bin_query(dataset_name=None, start=None, end=None, tags=[],
+        instrument_number=None, cruise=None, filter_skip=True, sample_type=None):
     qs = Bin.objects
     if filter_skip:
         qs = qs.filter(skip=False)
@@ -218,10 +219,12 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[], instrument_numbe
     if tags is not None:
         for tag in tags:
             qs = qs.filter(tags__name__iexact=tag)
-    if instrument_number is not None:
+    if instrument_number is not None and instrument_number != 0:
         qs = qs.filter(instrument__number=instrument_number)
     if cruise is not None:
         qs = qs.filter(cruise__iexact=cruise)
+    if sample_type is not None and sample_type != "":
+        qs = qs.filter(sample_type__iexact=sample_type)
     return qs
 
 class Dataset(models.Model):

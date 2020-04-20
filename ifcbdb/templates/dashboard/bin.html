@@ -14,27 +14,35 @@
         <div class="col-sm-auto">
         <div class="pl-3 d-flex flex-row flex-sm-col">
             <span class="h3-responsive">
-              {% if dataset %}
-                <a href="/timeline?dataset={{ dataset.name }}">
-                  {{ dataset.title }}
-                </a>
-                {% if instrument or tags or cruise %}» {% endif %}
-              {% endif %}
-              {% if cruise %}
-                <a href="/timeline?cruise={{ cruise }}">{{ cruise }}</a>
-                {% if instrument or tags %}» {% endif %}
-              {% endif %}
-              {% if instrument %}
-                <a href="/timeline?instrument={{ instrument.number }}">
-                  IFCB{{ instrument.number }}
-                </a>
-                {% if tags %}» {% endif %}
-              {% endif %}
-              {% if tags %}
-                <a href="/timeline?tags={{ tags }}">
-                  {{ tags }}
-                </a>
-              {% endif %}
+                {% if dataset %}
+                    <a href="/timeline?dataset={{ dataset.name }}">
+                      {{ dataset.title }}
+                    </a>
+                    {% if instrument or tags or cruise or sample_type %}» {% endif %}
+                {% endif %}
+
+                {% if cruise %}
+                    <a href="/timeline?cruise={{ cruise }}">{{ cruise }}</a>
+                    {% if instrument or tags or sample_type %}» {% endif %}
+                {% endif %}
+
+                {% if sample_type %}
+                    <a href="/timeline?sample_type={{ sample_type }}">
+                        {{ sample_type }}
+                    </a>
+                   {% if instrument or tags %}» {% endif %}
+                {% endif %}
+
+                {% if instrument %}
+                    <a href="/timeline?instrument={{ instrument.number }}">
+                      IFCB{{ instrument.number }}
+                    </a>
+                    {% if tags %}» {% endif %}
+                {% endif %}
+
+                {% if tags %}
+                    <a href="/timeline?tags={{ tags }}">{{ tags }}</a>
+                {% endif %}
             </span>
             {% if user.is_authenticated %}<a id="view-list" class="pl-3 my-auto" href="#"title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
             <a class="d-sm-none d-inline tstabcollapser ml-auto" data-toggle="collapse" data-target="#ts-tabs" aria-expanded="false"></a>
@@ -110,6 +118,16 @@
             {% elif bin.primary_dataset %}
               <a href="/timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
                 {{ bin.primary_dataset.title }}
+              </a>
+            {% endif %}
+            {% if cruise %}»
+                <a href="/timeline?cruise={{ cruise }}&bin={{ bin.pid }}">
+                    {{ cruise }}
+                </a>
+            {% endif %}
+            {% if sample_type %}»
+                <a href="/timeline?sample_type={{ sample_type }}&bin={{ bin.pid }}">
+                {{ sample_type }}
               </a>
             {% endif %}
             {% if instrument %}»
@@ -509,6 +527,9 @@
                       <div id="show-cruise" class="flex-row d-none">
                         <div class="flex-column">Cruise: <span id="stat-cruise"></span></div>
                       </div>
+                      <div id="show-sample_type" class="flex-row d-none">
+                        <div class="flex-column">Sample Type: <span id="stat-sample_type"></span></div>
+                      </div>
                       <div id="show-cast" class="flex-row d-none">
                         <div class="flex-column">Cast: <span id="stat-cast"></span></div>
                       </div>
@@ -681,7 +702,8 @@ function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
         "&dataset=" + _dataset +
         "&instrument=" + _instrument +
         "&tags=" + _tags +
-        "&cruise=" + _cruise;
+        "&cruise=" + _cruise +
+        "&sample_type=" + _sampleType;
 
     var currentRange = null;
     if (plot) {
@@ -793,7 +815,8 @@ function queryTimeline(container, metric) {
         "&dataset=" + _dataset +
         "&instrument=" + _instrument +
         "&tags=" + _tags +
-        "&cruise=" + _cruise;
+        "&cruise=" + _cruise
+        "&sample_type=" + _sampleType;
 
     if(start)
         url += "&start=" + start;
@@ -853,6 +876,7 @@ function changeBin(binId, updateHistory) {
     dataUrl += "&instrument=" + _instrument;
     dataUrl += "&tags=" + _tags;
     dataUrl += "&cruise=" + _cruise;
+    dataUrl += "&sample_type=" + _sampleType;
 
     // This also gets called when changing the mosaic, but do it earlier here to indicate the bin is loading as well
     $("#mosaic-loading").show();
@@ -928,6 +952,7 @@ function changeBin(binId, updateHistory) {
                     "instrument": _instrument,
                     "tags": _tags,
                     "cruise": _cruise,
+                    "sample_type": _sampleType
                 };
 
                 history.pushState(state, null, "?" + parameters);
@@ -1319,8 +1344,6 @@ $(function() {
     {% if dataset %}
         _dataset = "{{ dataset.name }}";
         _locations_dataset = "{{ dataset.name }}";
-    {% elif bin.primary_dataset %}
-        _dataset = "{{ bin.primary_dataset.name }}";
     {% endif %}
     {% if instrument %}
         _instrument = "{{ instrument.number }}";
@@ -1330,6 +1353,9 @@ $(function() {
     {% endif %}
     {% if cruise %}
         _cruise = "{{ cruise }}";
+    {% endif %}
+    {% if sample_type %}
+        _sampleType = "{{ sample_type }}"
     {% endif %}
     _bin = "{{ bin.pid }}";
     _route = "{{ route }}";
@@ -1342,7 +1368,7 @@ $(function() {
     // show timeline info
     {% if route == 'timeline' %}
     var timeline_info_url = 'api/timeline_info?dataset='+_dataset+
-      '&instrument='+_instrument+'&tags='+_tags+"&cruise="+_cruise;
+      '&instrument='+_instrument+'&tags='+_tags+"&cruise="+_cruise+"&sample_type="+_sampleType;
     $.get(timeline_info_url, function(data) {
       $("#n_bins").html(data.n_bins+" bins, "+data.n_images+" images");
       $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
@@ -1352,6 +1378,7 @@ $(function() {
     {% if dataset %}title += " » {{ dataset.title }}";{% endif %}
     {% if instrument %}title += " » IFCB{{ instrument.number }}";{% endif %}
     {% if cruise %}title += " » {{ cruise }}"{% endif %}
+        {% if sample_type %}title += " » {{ sample_type }}"{% endif %}
     {% if tags %}title += " » {{ tags }}"{% endif %}
     document.title = title.substring(3);
 
@@ -1367,7 +1394,8 @@ $(function() {
             "dataset": _dataset,
             "instrument": _instrument,
             "tags": _tags,
-            "cruise": _cruise
+            "cruise": _cruise,
+            "sample_type": _sampleType
         };
 
         history.pushState(state, null, "?" + parameters);

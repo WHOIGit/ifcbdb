@@ -5,6 +5,7 @@ var _locations_dataset = ""; // Dataset name use for filtering w/o it being set 
 var _tags = ""; // Tags, comma separated (for filtering)
 var _instrument = ""; // Instrument name (for filtering)
 var _cruise = ""; // Cruise ID (for filtering)
+var _sampleType = ""; // Sample Type (for filtering)
 var _mosaicPage = 0; // Current page being displayed in the mosaic
 var _mosaicPages = -1; // Total number of pages for the mosaic
 var _coordinates = []; // Coordinates of images within the current mosaic
@@ -35,75 +36,39 @@ var _originalMapHeight = null; // Initial size of the map on first render
 
 // Generates a relative link to the current bin/dataset
 function createLink() {
-    if (_route == "timeline") {
-        var args = "";
-        if (_dataset != "") {
-            args += "&dataset="+_dataset;
-        }
-        if (_instrument != "") {
-            args += "&instrument="+_instrument;
-        }
-        if (_tags != "") {
-            args += "&tags="+_tags;
-        }
-        if (_cruise != "") {
-            args += "&cruise="+_cruise;
-        }
-        if (args != "") {
-            args = "?" + args.substring(1);
-        }
-        var link = "/timeline" + args;
-        if (_bin != "") {
-            link += "&bin=" + _bin;
-        }
-        return link;
-    } else { // bin mode
+    // Bin Mode
+    if (_route != "timeline")
         return createBinModeLink();
-    }
+
+    // Timeline Mode
+    return "/timeline?" +
+        buildFilterOptionsQueryString(true) +
+        (_bin != "" ? "&bin=" + _bin : "");
 }
 
 function createListLink(start, end) {
-    if (_dataset != "" || _instrument != "" || _tags != "" || _cruise != "") {
-        var link = "/list?dataset="+_dataset+"&instrument="+_instrument+"&tags="+_tags+"&cruise="+_cruise;
-        if (_bin != "") {
-            link += "&bin=" + _bin;
-        }
+    if (!isFilteringUsed())
+        return "javascript:;;";
 
-        link += "&start_date=" + start;
-        link += "&end_date=" + end;
-
-        return link;
-    }
-
-    return "javascript:;";
+    return "/list?" + getGroupingParameters(_bin) +
+        "&start_date=" + start +
+        "&end_date=" + end;
 }
 
 function createBinModeLink(bin) {
     if (bin == "" || typeof bin == "undefined") {
         bin = _bin;
     }
+
     return "/bin?" + getGroupingParameters(bin);
 }
 
 function getGroupingParameters(bin) {
-    var parameters = []
+    var parameters = buildFilterOptionsArray(true);
     if (bin != "")
         parameters.push("bin=" + bin);
-    if (_dataset != "")
-        parameters.push("dataset=" + _dataset);
-    if (_instrument != "")
-        parameters.push("instrument=" + _instrument);
-    if (_tags != "") {
-        parameters.push("tags=" + _tags);
-    }
-    if (_cruise != "") {
-        parameters.push("cruise=" + _cruise);
-    }
 
-    if (parameters.length == 0)
-        return "";
-
-    return parameters.join("&");
+    return parameters.length == 0 ? "" : parameters.join("&");
 }
 
 function getGroupingPayload(bin) {
@@ -120,6 +85,9 @@ function getGroupingPayload(bin) {
     }
     if (_cruise != "") {
         payload["cruise"] = _cruise;
+    }
+    if (_sampleType != "") {
+        payload["sample_type"] = _sampleType;
     }
 
     return payload;
@@ -140,10 +108,8 @@ function createImageLink(imageId) {
 
     var url = "/image?image=" + imageId;
     var parameters = getGroupingParameters(_bin);
-    if (parameters != "")
-        url += "&" + parameters;
 
-    return url;
+    return url + (parameters != "" ? "&" + parameters : "");
 }
 
 // Switches between workspaces: map, plot, mosaic
@@ -205,6 +171,8 @@ function updateBinStats(data) {
     $("#stat-trigger-freq").html(data["trigger_freq"]);
     $("#stat-ml-analyzed").html(data["ml_analyzed"]);
     $("#stat-concentration").html(data["concentration"]);
+    $("#stat-cruise").html(data["cruise"]);
+    $("#stat-sample-type").html(data["sample_type"]);
     $("#stat-size").html(filesize(data["size"]));
     $("#stat-skip")
         .text(data["skip"] ? "Yes" : "No")
@@ -218,6 +186,7 @@ function updateBinStats(data) {
     }
     showOrHideField(data, "depth");
     showOrHideField(data, "cruise");
+    showOrHideField(data, "sample_type");
     showOrHideField(data, "cast");
     showOrHideField(data, "niskin");
 }
@@ -303,6 +272,7 @@ function changeToClosestBin(targetDate) {
         "instrument": _instrument,
         "tags": _tags,
         "cruise": _cruise,
+        "sample_type": _sampleType
     }
 
     $.post("/api/closest_bin", payload, function(resp) {
@@ -326,6 +296,7 @@ function changeToNearestBin(lat, lng) {
         instrument: _instrument,
         tags: _tags,
         cruise: _cruise,
+        sample_type: _sampleType
     };
 
     $.post("/api/nearest_bin", payload, function(resp) {
@@ -377,18 +348,12 @@ function displayTags(tags) {
     list.empty();
 
     for (var i = 0; i < tags.length; i++) {
+        console.log("ASD");
         var tag = tags[i];
         var li = $("<span class='badge badge-pill badge-light mx-1'>");
-        var link = "timeline?tags="+tag;
-        if (_dataset != "") {
-            link += "&dataset="+_dataset;
-        }
-        if (_instrument != "") {
-            link += "&instrument="+_instrument;
-        }
-        if (_cruise != "") {
-            link += "&cruise="+_cruise;
-        }
+        var link = "timeline?tags=" + tag + "&" +
+            buildFilterOptionsQueryString(false, _dataset, _instrument, null, _cruise, _sampleType);
+
         var span = li.html("<a href='"+link+"'>"+tag+"</a>");
         var icon = $("<i class='fas fa-times pl-1'></i>");
         var remove = $("<a href='javascript:;' class='remove-tag' data-tag='" + tag + "' />");
@@ -565,10 +530,7 @@ function loadMosaic(pageNumber) {
     var binDataUrl = "/api/bin/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor +
-        "&dataset=" + _dataset +
-        "&instrument=" + _instrument +
-        "&tags=" + _tags +
-        "&cruise=" + _cruise;
+        "&" + buildFilterOptionsQueryString(true);
 
     $.get(binDataUrl, function(data) {
 

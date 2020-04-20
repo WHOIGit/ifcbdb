@@ -85,34 +85,15 @@
     var _instrument = "{{ instrument_number|default_if_none:'' }}";
     var _tags = "{{ tags|default_if_none:'' }}";
     var _cruise = "{{ cruise|default_if_none:'' }}";
+    var _sampleType = "{{ sample_type|default_if_none:'' }}";
     var _startDate = "{{ start_date|default_if_none:'' }}";
     var _endDate = "{{ end_date|default_if_none:'' }}";
     var binsTable;
     var selectedBins = [];
 
-    function getGroupingParameters() {
-        var parameters = []
-
-        if (_dataset != "")
-            parameters.push("dataset=" + _dataset);
-        if (_instrument != "")
-            parameters.push("instrument=" + _instrument);
-        if (_tags != "" && _tags.length > 0) {
-            parameters.push("tags=" + _tags);
-        }
-        if (_cruise != "") {
-            parameters.push("cruise=" + _cruise);
-        }
-
-        if (parameters.length == 0)
-            return "";
-
-        return parameters.join("&");
-    }
-
     function createListLink(bin) {
         return "/list?" +
-            getGroupingParameters(bin) +
+            buildFilterOptionsQueryString(true) +
             "&start_date=" + _startDate +
             "&end_date=" + _endDate +
             "&skip_filters=" + $("#skip-filters input[type=radio]:checked").data("option");
@@ -198,7 +179,7 @@
             location.href = "/timeline" +
             "?start_date=" + _startDate +
             "&end_date=" + _endDate +
-            "&" + getGroupingParameters();
+            "&" + buildFilterOptionsQueryString(true);
         });
 
         $("#select-all").click(function(){
@@ -236,7 +217,7 @@
                     "?skip_filter=" + opt +
                     "&start_date=" + _startDate +
                     "&end_date=" + _endDate +
-                    "&" + getGroupingParameters()
+                    "&" + buildFilterOptionsQueryString(true)
                 $.get(url, function(data){
                     callback(data);
                 });
