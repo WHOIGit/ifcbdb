@@ -344,7 +344,8 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
             if tag_cols:
                 for c in tag_cols:
                     tag = get_cell(row, c)
-                    if tag is not None:
+                    # don't allow tags that are just whitespace
+                    if tag is not None and tag.strip():
                         b.add_tag(tag)
 
             if comments_col is not None:
