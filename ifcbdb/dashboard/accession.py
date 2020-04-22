@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import re
 
 from collections import defaultdict
 from itertools import islice
@@ -11,7 +12,7 @@ from django.db.models import Count, Max
 import pandas as pd
 import numpy as np
 
-from .models import Bin, DataDirectory, Instrument, Timeline, Dataset
+from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, normalize_tag_name
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
@@ -343,10 +344,14 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
 
             if tag_cols:
                 for c in tag_cols:
-                    tag = get_cell(row, c)
-                    # don't allow tags that are just whitespace
-                    if tag is not None and tag.strip():
-                        b.add_tag(tag)
+                    tag = str(get_cell(row, c))
+                    if tag is not None:
+                        normalized = normalize_tag_name(tag)
+                        if not tag or not normalized:
+                            raise ValueError('blank tag name "{}"'.format(tag))
+                        if re.match(r'^[0-9]+$',normalized):
+                            raise ValueError('tag "{}" consists of digits'.format(tag))
+                        b.add_tag(normalized)
 
             if comments_col is not None:
                 body = get_cell(row, comments_col)
