@@ -205,7 +205,8 @@ class Timeline(object):
         return self.bins.aggregate(Sum('size'))['size__sum']       
 
 def normalize_tag_name(tag_name):
-    return re.sub(r' ','_',tag_name.lower().strip())
+    normalized = re.sub(r'[^_a-zA-Z0-9]','_',tag_name.lower().strip())
+    return normalized
 
 def bin_query(dataset_name=None, start=None, end=None, tags=[],
         instrument_number=None, cruise=None, filter_skip=True, sample_type=None):
@@ -703,6 +704,8 @@ class Bin(models.Model):
 
     def add_tag(self, tag_name, user=None):
         tag_name = normalize_tag_name(tag_name)
+        if not tag_name: # don't add a blank tag name
+            return
         tag, created = Tag.objects.get_or_create(name=tag_name)
         # don't add this tag if was already added
         event, created = TagEvent.objects.get_or_create(bin=self, tag=tag)
