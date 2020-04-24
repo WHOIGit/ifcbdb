@@ -598,6 +598,8 @@ function updateMosaicPaging() {
 }
 
 function findImageByPID(pid) {
+    pid = pid.replace(/^0+/, "");
+    
     for (var i = 0; i < _coordinates.length; i++) {
         if (_coordinates[i].pid.toString() == pid) {
             return _coordinates[i];
