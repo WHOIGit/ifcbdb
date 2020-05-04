@@ -1177,3 +1177,23 @@ def export_metadata_view(request, dataset_name):
 
 def about_page(request):
     return render(request, 'dashboard/about.html')
+
+def fullbin_json(request, bin_id):
+    image_format = request.GET.get('format')
+    if image_format in ['jpg', 'jpeg']:
+        mimetype = 'image/jpeg'
+    else:
+        mimetype = 'image/png'
+
+    bin = get_object_or_404(Bin, pid=bin_id)
+    b = bin._get_bin()
+    
+    encoded_images = {}
+
+    with b:
+        for roi_number, image in bin.images(b).items():
+            encoded_images[roi_number] = embed_image(image, mimetype=mimetype)
+
+    return JsonResponse({
+        'images': encoded_images
+        })
