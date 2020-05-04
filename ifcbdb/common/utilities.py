@@ -6,12 +6,12 @@ from itertools import compress, cycle
 from ifcb.data.imageio import format_image
 
 
-def embed_image(image):
+def embed_image(image, mimetype='image/png'):
     """
     Converts an IFCB formatted image array into a base64 encoded string that can be shown as an embedded
     image in HTML
     """
-    image_data = format_image(image).getvalue()
+    image_data = format_image(image, mimetype=mimetype).getvalue()
 
     return base64.b64encode(image_data).decode('ascii')
 
