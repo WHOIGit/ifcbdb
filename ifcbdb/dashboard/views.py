@@ -1197,3 +1197,8 @@ def fullbin_json(request, bin_id):
     return JsonResponse({
         'images': encoded_images
         })
+
+def fullbin(request, bin_id):
+    return render(request, 'dashboard/fullbin_json.html', {
+            'bin_id': bin_id
+        })

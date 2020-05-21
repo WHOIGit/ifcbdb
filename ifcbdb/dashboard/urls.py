@@ -128,4 +128,6 @@ urlpatterns = [
     path('api/update_skip', views.update_skip, name='update_skip'),
     path('api/export_metadata/<slug:dataset_name>', views.export_metadata_view, name='export_metadata'),
     path('api/fullbin_json/<slug:bin_id>', views.fullbin_json, name='fullbin_json'),
+
+    path('fullbin/<slug:bin_id>', views.fullbin, name='fullbin'), # FIXME experimental
  ]
