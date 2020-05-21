@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+Hello, world.
+<div id="images"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var bin_id = "{{ bin_id }}";
+
+    var fullbin_url = "/api/fullbin_json/" + bin_id + '?format=jpg'
+
+    $.getJSON(fullbin_url, function(r) {
+        $.each(r.images, function(k, v) {
+            tag = '<img src="data:image/jpeg;base64,' + v + '">';
+            $("#images").append(tag);
+        })
+    });
+</script>
+{% endblock %}
