@@ -945,6 +945,7 @@ BIN_METADATA_ORDER = [
     'FileComment',
     'runType',
     'SyringeNumber',
+    'Syringe Number',
     'SyringeSampleVolume',
     'sampleVolume2skip',
     'runTime',
