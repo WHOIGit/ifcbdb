@@ -25,7 +25,7 @@ from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment,
 from .forms import DatasetSearchForm
 from common.utilities import *
 
-from dashboard.accession import export_metadata
+from dashboard.accession import Accession, export_metadata
 
 def index(request):
     if settings.DEFAULT_DATASET:
@@ -1175,6 +1175,19 @@ def update_skip(request):
 def export_metadata_view(request, dataset_name):
     df = export_metadata(dataset_name)
     return dataframe_csv_response(df, index=None)
+
+def sync_bin(request):
+    dataset_name = request.GET.get("dataset")
+    bin_id = request.GET.get('bin')
+    dataset = get_object_or_404(Dataset, name=dataset_name)
+    try:
+        b = Bin.objects.get(pid=bin_id)
+        return JsonResponse({'result':'exists'})
+    except Bin.DoesNotExist:
+        pass
+    acc = Accession(dataset)
+    acc.sync_one(bin_id)
+    return JsonResponse({'result':'synced'})
 
 def about_page(request):
     return render(request, 'dashboard/about.html')

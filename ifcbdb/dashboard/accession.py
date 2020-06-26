@@ -57,6 +57,48 @@ class Accession(object):
             directory = ifcb.DataDirectory(dd.path)
             for b in directory:
                 yield b
+    def sync_one(self, pid):
+        bin = None
+        for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
+            if not os.path.exists(dd.path):
+                continue # skip and continue searching
+            directory = ifcb.DataDirectory(dd.path)
+            try:
+                bin = directory[pid]
+            except KeyError:
+                continue
+        if bin is None:
+            return 'bin {} not found'.format(pid)
+        # create instrument if necessary
+        i = bin.pid.instrument
+        version = bin.pid.schema_version
+        instrument, created = Instrument.objects.get_or_create(number=i, defaults={
+            'version': version
+        })
+        # create model object
+        timestamp = bin.pid.timestamp
+        b, created = Bin.objects.get_or_create(pid=pid, defaults={
+            'timestamp': timestamp,
+            'sample_time': timestamp,
+            'instrument': instrument,
+            'skip': True, # in case accession is interrupted
+        })
+        if not created and not dataset in b.datasets:
+            self.dataset.bins.add(b)
+            return 
+        b2s, error = self.add_bin(bin, b)
+        if error is not None:
+            # there was an error. if we created a bin, delete it
+            if created:
+                b.delete()
+                return error
+        with transaction.atomic():
+            if not b2s.qc_no_rois:
+                b2s.skip = False
+                b2s.save()
+                self.dataset.bins.add(b2s)
+            else:
+                b2s.save()
     def sync(self, progress_callback=do_nothing, log_callback=do_nothing):
         progress_callback(progress('',0,0,0,{}))
         bins_added = 0
