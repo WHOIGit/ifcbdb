@@ -43,7 +43,7 @@ services:
       - 8000:80
     volumes:
       - ./nginx:/etc/nginx/conf.d
-      - ./static:/static
+      - ifcbdb_static:/static
     depends_on:
       - ifcbdb
     networks:
