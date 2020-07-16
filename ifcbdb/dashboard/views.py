@@ -1005,6 +1005,26 @@ def single_bin_exists(request):
         return JsonResponse({"exists" : False})
 
 
+def bin_location(request):
+    try:
+        location = Bin.objects.get(pid=request.GET.get("pid")).get_location()
+
+        if location:
+            return JsonResponse({
+                "lat": location.y,
+                "lng": location.x
+            })
+    except:
+        pass
+
+    # None that we're specifically returning none, rather than the fill value, so the front-end is clear that
+    #  there is no location for this bin
+    return JsonResponse({
+        "lat": None,
+        "lng": None
+    })
+
+
 def filter_options(request):
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
