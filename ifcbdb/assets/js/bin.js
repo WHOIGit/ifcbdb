@@ -15,10 +15,13 @@ var _plotData = null; // Local storage of the current bin's plot data
 var _map = null; // Current Leaflet map
 var _marker = null; // Current marker shown on the map
 var _binIcon = null; // Icon used for marking bins on the map
+var _selectedIcon = null; // Icon used for the currently selected bin on the map
 var _datasetIcon = null; // Icon used for marking datasets on the map
 var _markers = null; // Used for marker clustering on the map
 var _markerList = []; // Used for marker clustering on the map
 var _fixedMarkers = null; // Used for marker clustering on the map
+var _selectedMarkers = null; // Used for the currently selected bin (will only ever have one item)
+var _selectedMarker = null; // The marker used to show the currently selected bin
 
 var _workspace = "mosaic"; // The current workspace a user is seeing
 var _pendingMapLocations = null; // The next map positions to render (see notes in updateMapLocations)
@@ -348,7 +351,6 @@ function displayTags(tags) {
     list.empty();
 
     for (var i = 0; i < tags.length; i++) {
-        console.log("ASD");
         var tag = tags[i];
         var li = $("<span class='badge badge-pill badge-light mx-1'>");
         var link = "timeline?tags=" + tag + "&" +
@@ -664,40 +666,90 @@ function resizeMap()
     }
 }
 
+function changeMarker(index) {
+    // If there was a selected marker, put it back in the clustering list
+    if (_selectedMarker) {
+        _selectedMarker.setIcon(_binIcon)
+        _markerList.push(_selectedMarker);
+        _markers.addLayers(_selectedMarker)
+        _selectedMarkers.clearLayers();
+    }
+
+    // If there is no target marker, nothing more needs to be done
+    if (index == null) {
+        return;
+    }
+
+    // Remove the now selected layer from the main list (cluster)
+    _markers.removeLayer(_markerList[index]);
+    _markerList.splice(index, 1);
+
+    // A secondary call to get the location of the select bin is required, because the currently stored lat/lng
+    //   isn't always accurate. It will be the location of the marker, which is based on the spidering, and we
+    //   need the actual location of that bin to plot it correctly. If we use the stored value, the marker will be
+    //   put at the edge of the spidering effect
+    $.get("/api/bin_location?pid=" + _bin, function(resp){
+         if (resp.lat && resp.lng) {
+            // Create a new marker based on the information on the matched marker from the main list
+            let newMarker = L.marker(
+                L.latLng(resp.lat, resp.lng),
+                {
+                    title: _bin,
+                    icon: _selectedIcon
+                }
+            )
+
+            if (_route == "timeline") {
+                newMarker.bindPopup("Bin: <a href='javascript:changeBinFromMap(\"" + _bin + "\")'>" + _bin + "</a>");
+            } else {
+                let url = createBinModeLink(title);
+                newMarker.bindPopup("Bin: <a href='" + url + "'>" + title + "</a>");
+            }
+
+            // Add the new marker to the map as it's own layer
+            _selectedMarker = newMarker;
+            _selectedMarkers.clearLayers();
+            _selectedMarkers.addLayer(_selectedMarker);
+         }
+
+         selectMapMarker(_selectedMarker);
+    });
+}
+
 function recenterMap() {
     if (_map == null)
         return;
 
-    for (var i = 0; i < _markerList.length; i++) {
-        if (_markerList[i].options.title == _bin) {
-            selectMapMarker(_markerList[i]);
-            return;
-        }
-    }
+    // If the current bin si already selected, nothing more needs to be done
+    if (_selectedMarker != null && _selectedMarker.options.title == _bin)
+        return;
 
-    // TODO: This can be optimized to not look through the marker list twice
-    if (_dataset) {
-        for (var i = 0; i < _markerList.length; i++) {
-            if (_markerList[i].options.title.includes(_dataset)) {
-                selectMapMarker(_markerList[i]);
-                return;
-            }
+    for (let i = 0; i < _markerList.length; i++) {
+        let title = _markerList[i].options.title;
+
+        if (title == _bin || (_dataset && title.includes(_dataset))) {
+            changeMarker(i);
+            return;
         }
     }
 
     // If this code is reached, it means that no location was found for the selected bin. Close all
     //   open popups and show the user a warning message
+    changeMarker(null);
     _map.closePopup()
+    _selectedMarker = null;
     $("#no-bin-location").toggleClass("d-none", false);
 }
 
 function selectMapMarker(marker) {
-    _markers.zoomToShowLayer(marker, function(){
-        marker.openPopup();
-    });
+    // TODO: Make sure zooming to layer is no longer required (might have only been needed to handle clustering)
+    // _selectedMarkers.zoomToShowLayer(marker, function(){
+    //     marker.openPopup();
+    // });
+    marker.openPopup();
 
-    var zoom = _map.getZoom();
-    _map.setView(marker.getLatLng(), zoom)
+    let zoom = _map.getZoom();
+    _map.setView(marker.getLatLng(), zoom);
     $("#no-bin-location").toggleClass("d-none", true);
 }
 
@@ -728,6 +780,8 @@ function updateMapLocations(data) {
 
         _binIcon = buildLeafletIcon("orange");
         _datasetIcon = buildLeafletIcon("red");
+        _selectedIcon = buildLeafletIcon("violet");
+
         _markers = L.markerClusterGroup({
             chunkedLoading: true,
             chunkProgress: function updateMapStatus(processed, total, elapsed, layersArray) {},
@@ -753,14 +807,16 @@ function updateMapLocations(data) {
         });
 
         _fixedMarkers = L.layerGroup();
+        _selectedMarkers = L.layerGroup();
     }
 
     var locationData = data;
     _markers.clearLayers();
     _fixedMarkers.clearLayers();
+    _selectedMarkers.clearLayers();
     _markerList = [];
 
-    var selectedMarker = null;
+    _selectedMarker = null;
     for (var i = 0; i < locationData.locations.length; i++) {
         var location = locationData.locations[i];
         var isBin = location[3] == "b";
@@ -781,16 +837,18 @@ function updateMapLocations(data) {
                 marker.bindPopup("Bin: <a href='" + url + "'>" + title + "</a>");
             }
 
+            // Keep the selected bin out of the clustering
             if (_bin == title) {
-                selectedMarker = marker;
+                marker.setIcon(_selectedIcon);
+                _selectedMarker = marker;
+            } else {
+                _markerList.push(marker);
             }
 
-            _markerList.push(marker);
         } else {
             var values = title.split("|");
             marker.bindPopup("Dataset: " + values[1]);
             _fixedMarkers.addLayer(marker);
-
             _markerList.push(marker);
         }
     }
@@ -800,7 +858,20 @@ function updateMapLocations(data) {
         _map.addLayer(_markers);
     }
 
+    if (_selectedMarker != null) {
+        _selectedMarkers.addLayer(_selectedMarker);
+
+        // A slight delay is needed or the popup will not open. However, this indirectly as a nice "progressive"
+        //   effect as the page is loading various components
+        setTimeout(function() {
+            _selectedMarker.openPopup();
+        }, 500);
+
+        $("#no-bin-location").toggleClass("d-none", true);
+    }
+
     _map.addLayer(_fixedMarkers);
+    _map.addLayer(_selectedMarkers);
 
     recenterMap();
 }
