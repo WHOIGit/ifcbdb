@@ -669,8 +669,7 @@ function resizeMap()
 function changeMarker(index) {
     // If there was a selected marker, put it back in the clustering list
     if (_selectedMarker) {
-        // TODO: Return the icon back to the normal color
-        _selectedMarker.setIcon(buildLeafletIcon("green"))
+        _selectedMarker.setIcon(_binIcon)
         _markerList.push(_selectedMarker);
         _markers.addLayers(_selectedMarker)
         _selectedMarkers.clearLayers();
