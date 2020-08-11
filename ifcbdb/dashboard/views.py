@@ -1193,7 +1193,32 @@ def update_skip(request):
     })
 
 def export_metadata_view(request, dataset_name):
-    df = export_metadata(dataset_name)
+    tags = request_get_tags(request.GET.get("tags"))
+    instrument_number = request_get_instrument(request.GET.get("instrument"))
+    cruise = request_get_cruise(request.GET.get("cruise"))
+    sample_type = request.GET.get('sample_type')
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    bin_qs = bin_query(dataset_name=dataset_name,
+                       tags=tags,
+                       instrument_number=instrument_number,
+                       cruise=cruise,
+                       sample_type=sample_type)
+
+    if start_date:
+        start_date = pd.to_datetime(start_date, utc=True)
+        bin_qs = bin_qs.filter(sample_time__gte=start_date)
+
+    if end_date:
+        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+        bin_qs = bin_qs.filter(sample_time__lte=end_date)
+
+    if bin_qs.count() == 0:
+        raise Http404('no bins match the given query')
+
+    ds = Dataset.objects.get(name=dataset_name)
+    df = export_metadata(ds, bin_qs)
     return dataframe_csv_response(df, index=None)
 
 def sync_bin(request):
