@@ -245,7 +245,7 @@
                           <div id="mosaic-column-container" class="col-xs-12 flex-lg-column order-1 py-2 px-1">
                             <!-- Mosaic -->
                             <div class="card h-100 min-vh-50">
-                              <div class="card-body mw-100 text-center">
+                              <div class="card-body mw-100 text-center p-2">
                                 <div class="overflow-auto">
                                   <img id="mosaic" src="" style="display:none" />
                                 </div>
@@ -263,7 +263,7 @@
                               <div class="card-footer text-center py-0">
                                 <div class="d-flex flex-row align-middle align-items-center justify-content-between pt-1" id="mosaic-footer">
                                   <nav aria-label="Bin Paging">
-                                    <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-left" style="display:none">
+                                    <ul id="bin-paging" class="pagination pg-dark pagination-sm justify-content-left mb-0" style="display:none">
                                         <li class="page-item page-previous disabled">
                                             <a class="page-link" tabindex="-1">Previous</a>
                                         </li>
@@ -271,41 +271,44 @@
                                             <a class="page-link">Next</a>
                                         </li>
                                     </ul>
-                                  </nav>
-                                  <form class="form-inline border mb-1">
-                                    <input type="text" class="form-control form-control-sm ml-1 mw-25" placeholder="Jump to ROI #" id="roi-number" />
-                                    <button type="button" class="btn btn-sm btn-mdb-color" id="preview-image">Preview</button>
-                                    <button type="button" class="btn btn-sm btn-mdb-color" id="goto-image">Details</button>
-                                </form>
-                                  <div class="dropdown text-right">
-                                    <a class="btn btn-sm btn-mdb-color" href="#" role="button" id="mosaicConfigMenuLink"
-                                      data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                      <i class="fas fa-cogs"></i>
-                                    </a>
-                                    <div class="dropdown-menu">
-                                      <form class="px-4 py-3">
-                                        <label class="my-1 mr-2" for="view-size">View Size:</label>
-                                        <select id="view-size" class="custom-select custom-select-sm form-control"
-                                          name="view-size">
-                                          {% for size in mosaic_view_sizes %}
-                                          <option value="{{ size }}" autocomplete="off"
-                                            {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
-                                          {% endfor %}
-                                        </select>
-
-                                        <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>
-                                        <select id="scale-factor" class="custom-select custom-select-sm form-control"
-                                          name="scale-factor">
-                                          {% for factor in mosaic_scale_factors %}
-                                          <option value="{{ factor }}" autocomplete="off"
-                                            {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%
-                                          </option>
-                                          {% endfor %}
-                                        </select>
-                                      </form>
-                                    </div>
-                                  </div>
-                                </div>
+                                  </nav>  
+                                  <p class="mb-0">Showing <strong>43</strong> of <strong>192</strong> ROIs</p>                              
+                                                                  </div>
+                                                                  <div class="d-flex flex-row align-middle align-items-center justify-content-between pt-1" id="mosaic-header">
+                                                                    <form class="form-inline mb-1">
+                                                                        <input type="text" class="form-control form-control-sm ml-1 mw-25" placeholder="Jump to ROI #" id="roi-number" />
+                                                                        <button type="button" class="btn btn-sm btn-mdb-color" id="preview-image">Preview</button>
+                                                                        <button type="button" class="btn btn-sm btn-mdb-color" id="goto-image">Details</button>
+                                                                    </form>  
+                                                                    <div class="dropdown text-right">
+                                                                        <a class="btn btn-sm btn-mdb-color p-2" href="#" role="button" id="mosaicConfigMenuLink"
+                                                                          data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                                          <i class="fas fa-cogs"></i>
+                                                                        </a>
+                                                                        <div class="dropdown-menu" style="z-index:99999999">
+                                                                          <form class="px-4 py-3">
+                                                                            <label class="my-1 mr-2" for="view-size">View Size:</label>
+                                                                            <select id="view-size" class="custom-select custom-select-sm form-control"
+                                                                              name="view-size">
+                                                                              {% for size in mosaic_view_sizes %}
+                                                                              <option value="{{ size }}" autocomplete="off"
+                                                                                {% if size == mosaic_default_view_size %}selected{% endif %}>{{ size }}</option>
+                                                                              {% endfor %}
+                                                                            </select>
+                                    
+                                                                            <label class="my-1 mr-2 pl-2" for="scale-factor">Scale Factor:</label>
+                                                                            <select id="scale-factor" class="custom-select custom-select-sm form-control"
+                                                                              name="scale-factor">
+                                                                              {% for factor in mosaic_scale_factors %}
+                                                                              <option value="{{ factor }}" autocomplete="off"
+                                                                                {% if factor == mosaic_default_scale_factor %}selected{% endif %}>{{ factor }}%
+                                                                              </option>
+                                                                              {% endfor %}
+                                                                            </select>
+                                                                          </form>
+                                                                        </div>
+                                                                      </div>                                    
+                                                                </div>
                               </div>
                             </div>
                           </div>
