@@ -108,7 +108,7 @@
     </div>
     <div class="col-md-6">
         {% if dataset.id > 0 %}
-        <div class="card card-body ">
+        <div class="card card-body">
             <span>
                 <button id="sync-button" class="btn btn-sm btn-mdb-color disabled">Sync</button>
                 <button id="cancel-button" class="btn btn-sm btn-mdb-color disabled">Cancel</button>
@@ -117,8 +117,8 @@
                     <label class="custom-control-label" for="newest-only">newest data only</label>
                 </span>
             </span>
-            <div id="sync-status" class="d-none">
-                <div>
+            <div id="sync-status" class="d-none py-2">
+                <div><p class="lead">
                     <span id="sync-spinner" class="d-none">
                         <i class="fa fa-spinner fa-spin"></i> 
                     </span>
@@ -127,10 +127,11 @@
                     <span id="sync-existing"></span> existing / 
                     <span id="sync-added"></span> new /
                     <span id="sync-bad"></span> bad
+                </p>
                 </div>
                 <div id="sync-bin-id"></div>
             </div>
-            <div>
+            <div id="sync-errors-wrapper" class="alert alert-secondary d-none">
                 <ul id="sync-errors" class="fa-ul"></ul>
             </div>
         </div>
@@ -185,6 +186,7 @@
                     errors_html += error.bin+": "+error.message+"</li>";
                 }
                 $("#sync-errors").html(errors_html);
+                $('#sync-errors-wrapper').removeClass("d-none");
             }
         });
     }
