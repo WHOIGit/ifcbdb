@@ -432,12 +432,11 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
 
     return progress
 
-def export_metadata(dataset_name):
-    name = dataset_name
-    ds = Dataset.objects.get(name=name)
+def export_metadata(ds, bins):
+    name = ds.name
     dataset_location = ds.location
     dataset_depth = ds.depth
-    bqs = ds.bins
+    bqs = bins
     qs = bqs.values('id','pid','sample_time','location','ml_analyzed',
         'cruise','cast','niskin','depth', 'instrument__number', 'skip',
         'sample_type', 'n_images', 'tags').order_by('pid')
