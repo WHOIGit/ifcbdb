@@ -440,10 +440,25 @@ def export_metadata(ds, bins):
     qs = bqs.values('id','pid','sample_time','location','ml_analyzed',
         'cruise','cast','niskin','depth', 'instrument__number', 'skip',
         'sample_type', 'n_images', 'tags').order_by('pid')
-    n_tag_cols = bqs.annotate(Count('tags')).values('tags__count').aggregate(Max('tags__count'))['tags__count__max']
+    # fetch all tags and compute number of tag columns
+    tags_by_id = defaultdict(list)
+    n_tag_cols = 0
+    for item in qs:
+        if item['tags']:
+            id = item['id']
+            for i, tag in enumerate(Bin.objects.get(id=id).tags.values('name')):
+                tags_by_id[id].append(tag['name'])
+                if i+1 > n_tag_cols:
+                    n_tag_cols = i+1
+    # now construct the dataframe
     r = defaultdict(list)
     r.update({ 'dataset': name })
+    # fast way to remove duplicates
+    prev_pid = None
     for item in qs:
+        if item['pid'] == prev_pid:
+            continue
+        prev_pid = item['pid']
         def add(field, rename=None):
             if rename is not None:
                 r[rename].append(item[field])
@@ -473,10 +488,7 @@ def export_metadata(ds, bins):
         add('niskin')
         add('sample_type')
         add('n_images')
-        if item['tags']:
-            tag_names = [t['name'] for t in Bin.objects.get(id=item['id']).tags.values('name')]
-        else:
-            tag_names = []
+        tag_names = tags_by_id[item['id']]
         for i in range(n_tag_cols):
             v = tag_names[i] if i < len(tag_names) else ''
             r[f'tag{i+1}'].append(v) 
