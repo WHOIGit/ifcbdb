@@ -388,3 +388,7 @@ a.tstabcollapser:after
     margin-top:8px;
     margin-left:2px
 }
+#sync-errors-wrapper{
+    max-height:35vh;
+    overflow-y:auto;
+}
