@@ -945,6 +945,7 @@ function initEvents() {
         var base = link.data("scheme") + "://" + link.data("host");
 
         $("#share-modal").modal();
+        $("#share-modal .modal-title").text($("#share-modal .modal-title").data("default-text"));
         $("#share-link").val(base + createLink()).select();
     });
 

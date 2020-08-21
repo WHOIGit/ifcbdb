@@ -403,7 +403,7 @@
                                   </a>
                                 </div>
                               </div>
-                              <a class="detailed-image-link" href="#" class="">
+                              <a class="detailed-image-link" id="detailed-image-link-id" href="#" class="">
                                 <img class="fluid mb-2 align-middle" id="detailed-image" src="data:image/png;base64,{{image}}" />
                                 <img class="fluid mb-2 align-middle" id="detailed-image-blob" src="" style="display:none" />
                                 <img class="fluid mb-2 align-middle" id="detailed-image-outline" src="" style="display:none" />
@@ -434,6 +434,7 @@
                               id="detailed-image-outline-link">Outline</a>
 
                             <a id="close-image" class="float-right btn btn-light text-dark btn-sm">X</a>
+                            <a id="share-image" class="float-right btn btn-mdb-color btn-sm">Share Image</a>
                           </div>
                         </div>
                         <!--End of Mosaic Details Card-->
@@ -652,7 +653,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Share This Page</h5>
+                <h5 class="modal-title" data-default-text="Share This Page">Share This Page</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -1085,6 +1086,20 @@ $("#close-image").click(function() {
   $("#images img").attr("src","");
   $("#mosaic-details").addClass("d-none");
   resizeMap();
+});
+
+
+$("#share-image").click(function (e) {
+  e.preventDefault();
+
+  var rootUrl = "{{ request.scheme }}://{{ request.get_host }}";
+  var url = $("#detailed-image-link-id").attr("href");
+
+  $("#share-link").val(rootUrl + url);
+
+  $("#share-modal .modal-title").text("Share This Image");
+  $("#share-modal").modal();
+  $("#share-link").select();
 });
 
 $(function() {
