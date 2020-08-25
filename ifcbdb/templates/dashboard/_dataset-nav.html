@@ -1,12 +1,10 @@
-<div class="btn-group dropdown position-static">
-    <a class="dropdown-toggle-split nav-link" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fa fa-database mr-2"></i>Datasets
-    </a>
-    <div class="dropdown-menu w-100" id="dataset-nav-menu-container">
-        <ul class="list-unstyled" id="dataset-nav-menu">
-            {% for dataset in datasets %}
-            <li><a class="dropdown-item" href="{% url 'timeline_page' %}?dataset={{ dataset.name }}">{{ dataset.title }}</a></li>
-            {% endfor %}            
-        </ul>
-    </div>
-    </div>
+
+    <a tabindex="0" class="white-text nav-link" id="dataset-popover" style="outline:none;" role="button"
+    data-toggle="popover"
+    data-content="<ul class='list-unstyled' id='dataset-nav-menu'>
+        {% for dataset in datasets %}
+        <li><a class='dropdown-item' href='{% url 'timeline_page' %}?dataset={{ dataset.name }}'>{{ dataset.title }}</a></li>        
+        {% endfor %}            
+    </ul>"><i class="fa fa-database mr-2"></i>Datasets</a>
+
+
