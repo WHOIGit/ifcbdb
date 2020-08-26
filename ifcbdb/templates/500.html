@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block extra_head %}<title>Server Error</title>{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="flex-row d-flex justify-content-center mb-100">
+    <div class="flex-column">
+        <div class="h1-responsive font-weight-bold">Server Error</div>
+    </div>
+</div>
+<div class="flex-row d-flex justify-content-center">
+    <div class="flex-column">
+        An internal server error occurred.
+        This usually indicates a bug or misconfiguration.
+        Please contact the server administrator to report the issue.
+    </div>
+</div>
+{% endblock %}

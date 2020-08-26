@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block extra_head %}<title>Not Found</title>{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="flex-row d-flex justify-content-center mb-100">
+    <div class="flex-column">
+        <div class="h1-responsive font-weight-bold">Not Found</div>
+    </div>
+</div>
+<div class="flex-row d-flex justify-content-center">
+    <div class="flex-column">
+        The page or object you requested was not found.
+        Please check the URL for correctness.
+    </div>
+</div>
+{% endblock %}
