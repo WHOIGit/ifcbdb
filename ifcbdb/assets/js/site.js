@@ -558,3 +558,13 @@ function isFilteringUsed() {
     if (_sampleType != "" && _sampleType != "null")
         return true;
 }
+$(function () {
+    $('#dataset-popover').popover({
+        container: 'body',
+        title: 'Select Dataset',
+        html: true,
+        placement: 'bottom',
+        sanitize: false,
+        template:  '<div class="popover" style="max-width:66%;" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body" style="max-height:50vh; overflow-y:auto;"></div></div>'
+    })
+  })

@@ -229,11 +229,23 @@ table .btn-mdb-color {
     color: #fff;
 }
 
+#dataset-nav-menu-container{
+    max-height:80vh;
+    overflow-y:auto;
+}
+
 #dataset-nav-menu {
-    -webkit-columns: 4;
-    -moz-columns: 4;
-    columns: 4;
+    -webkit-columns: 3;
+    -moz-columns: 3;
+    columns: 3;
     list-style-position: inside;
+    overflow-x: auto;    
+}
+
+#dataset-nav-menu li a{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 #filter-content {

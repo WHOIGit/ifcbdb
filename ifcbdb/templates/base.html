@@ -47,8 +47,10 @@
                     {% if user.is_authenticated %}
                         <a class="white-text nav-link" href="/secure/" title="Settings" data-toggle="tooltip" data-placement="bottom"><span class="h5-responsive fa fa-cog"></span> Settings</a>
                     {% endif %}
+                    <div class="custom-control-inline">
                     <input id="go-to-bid-pid" type="text" class="form-control-sm" placeholder="Enter Bin PID..." />
                     <button id="go-to-bin" type="button" class="btn btn-sm btn-default btn-mdb-color">Go</button>
+                </div>
                 </nav>
 
                 <!-- Right -->
