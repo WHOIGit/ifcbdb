@@ -565,6 +565,6 @@ $(function () {
         html: true,
         placement: 'bottom',
         sanitize: false,
-        template:  '<div class="popover" style="max-width:100%;" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body" style="max-height:50vh; overflow-y:auto;"></div></div>'
+        template:  '<div class="popover" style="max-width:50%;" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body" style="max-height:50vh; overflow-y:auto;"></div></div>'
     })
   })
