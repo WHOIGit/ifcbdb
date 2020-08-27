@@ -32,6 +32,10 @@ def timeline_filters(context):
 
 @register.inclusion_tag("dashboard/_comments-nav.html", takes_context=True)
 def comments_nav(context):
+    
+    if not 'request' in context: # specifically for 500 custom error page
+        return reverse('comment_page')
+
     dataset = context["request"].GET.get("dataset")
     instrument = context["request"].GET.get("instrument")
     tags = context["request"].GET.get("tags")

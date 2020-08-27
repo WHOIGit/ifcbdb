@@ -44,6 +44,23 @@ def datasets(request):
         "form": form,
     })
 
+def bin_in_dataset_or_404(bin, dataset):
+    "bin can be either a Bin instance or a bin pid"
+    "dataset can be either a Dataset instance or a dataset name"
+    try:
+        bin = Bin.objects.get(pid=bin)
+    except Bin.DoesNotExist:
+        raise Http404(f'No such bin {bin}')
+    if not dataset:
+        return bin, None
+    try:
+        dataset = Dataset.objects.get(name=dataset)
+    except Dataset.DoesNotExist:
+        raise Http404(f'No such dataset {dataset}')
+    if dataset in list(bin.datasets.all()):
+        return bin, dataset
+    raise Http404(f'Bin {bin.pid} is not in dataset {dataset}')
+
 def dataframe_csv_response(df, **kw):
     csv_buf = StringIO()
     df.to_csv(csv_buf, **kw)
@@ -340,6 +357,8 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
     else:
         dataset = bin.primary_dataset()
 
+    bin_in_dataset_or_404(bin, dataset)
+
     try:
         image = bin.image(image_number)
     except KeyError:
@@ -406,7 +425,13 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
     else:
         bin = timeline.most_recent_bin()
 
-    dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
+    if dataset_name:
+        dataset = get_object_or_404(Dataset, name=dataset_name)
+    else:
+        dataset = None
+
+    bin, dataset = bin_in_dataset_or_404(bin, dataset)
+
     instrument = get_object_or_404(Instrument, number=instrument_number) if instrument_number else None
 
     if bin is None:
@@ -535,10 +560,12 @@ def image_jpg(request, bin_id, target):
 
 
 def image_png_legacy(request, bin_id, target, dataset_name):
+    bin_in_dataset_or_404(bin_id, dataset_name)
     return _image_data(bin_id, target, 'image/png')
 
 
 def image_jpg_legacy(request, bin_id, target, dataset_name):
+    bin_in_dataset_or_404(bin_id, dataset_name)
     return _image_data(bin_id, target, 'image/jpeg')
 
 def fully_qualified_timeseries_url(request, dataset_name):
@@ -548,6 +575,7 @@ def fully_qualified_timeseries_url(request, dataset_name):
 
 def legacy_short_json(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
+    bin_in_dataset_or_404(b, dataset_name)
     metadata = b.metadata
     metadata['date'] = b.timestamp
     fq_ts_url = fully_qualified_timeseries_url(request, dataset_name)
@@ -557,6 +585,7 @@ def legacy_short_json(request, dataset_name, bin_id):
 
 def legacy_roisizes(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
+    bin_in_dataset_or_404(b, dataset_name)
     fq_ts_url = fully_qualified_timeseries_url(request, dataset_name)
     ii = b.images()
     tns, pids, widths, heights = [], [], [], []
@@ -576,6 +605,8 @@ def legacy_roisizes(request, dataset_name, bin_id):
 
 def adc_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     try:
         adc_path = b.adc_path()
     except KeyError:
@@ -584,9 +615,10 @@ def adc_data(request, bin_id, **kw):
     fin = open(adc_path)
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
-
 def hdr_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     try:
         hdr_path = b.hdr_path()
     except KeyError:
@@ -598,6 +630,8 @@ def hdr_data(request, bin_id, **kw):
 
 def roi_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     try:
         roi_path = b.roi_path()
     except KeyError:
@@ -616,6 +650,8 @@ def get_product_version_parameter(request, default=None):
 
 def blob_zip(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     version = get_product_version_parameter(request)
     try:
         blob_file = b.blob_file(version=version)
@@ -629,6 +665,8 @@ def blob_zip(request, bin_id, **kw):
 
 def features_csv(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     version = get_product_version_parameter(request)
     try:
         features_file = b.features_file(version=version)
@@ -642,6 +680,8 @@ def features_csv(request, bin_id, **kw):
 
 def class_scores_mat(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     version = get_product_version_parameter(request)
     try:
         class_scores_file = b.class_scores_file(version=version)
@@ -655,6 +695,7 @@ def class_scores_mat(request, bin_id, **kw):
 
 def class_scores_csv(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
+    bin_in_dataset_or_404(b, dataset_name)
     version = get_product_version_parameter(request, None)
     try:
         class_scores = b.class_scores(version=version)
@@ -669,6 +710,8 @@ def class_scores_csv(request, dataset_name, bin_id):
 
 def zip(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     try:
         zip_buf = b.zip()
     except KeyError:
