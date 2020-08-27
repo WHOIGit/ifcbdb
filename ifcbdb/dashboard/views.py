@@ -605,8 +605,8 @@ def legacy_roisizes(request, dataset_name, bin_id):
 
 def adc_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset' in kw:
-        bin_in_dataset_or_404(b, kw['dataset'])
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     try:
         adc_path = b.adc_path()
     except KeyError:
@@ -617,8 +617,8 @@ def adc_data(request, bin_id, **kw):
 
 def hdr_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset' in kw:
-        bin_in_dataset_or_404(b, kw['dataset'])
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     try:
         hdr_path = b.hdr_path()
     except KeyError:
@@ -630,8 +630,8 @@ def hdr_data(request, bin_id, **kw):
 
 def roi_data(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset' in kw:
-        bin_in_dataset_or_404(b, kw['dataset'])
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     try:
         roi_path = b.roi_path()
     except KeyError:
@@ -650,8 +650,8 @@ def get_product_version_parameter(request, default=None):
 
 def blob_zip(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset' in kw:
-        bin_in_dataset_or_404(b, kw['dataset'])
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     version = get_product_version_parameter(request)
     try:
         blob_file = b.blob_file(version=version)
@@ -665,8 +665,8 @@ def blob_zip(request, bin_id, **kw):
 
 def features_csv(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset' in kw:
-        bin_in_dataset_or_404(b, kw['dataset'])
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     version = get_product_version_parameter(request)
     try:
         features_file = b.features_file(version=version)
@@ -680,8 +680,8 @@ def features_csv(request, bin_id, **kw):
 
 def class_scores_mat(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset' in kw:
-        bin_in_dataset_or_404(b, kw['dataset'])
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     version = get_product_version_parameter(request)
     try:
         class_scores_file = b.class_scores_file(version=version)
@@ -710,8 +710,8 @@ def class_scores_csv(request, dataset_name, bin_id):
 
 def zip(request, bin_id, **kw):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset' in kw:
-        bin_in_dataset_or_404(b, kw['dataset'])
+    if 'dataset_name' in kw:
+        bin_in_dataset_or_404(b, kw['dataset_name'])
     try:
         zip_buf = b.zip()
     except KeyError:
