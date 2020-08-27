@@ -214,6 +214,11 @@ function getTimelineLayout(data, range, metric) {
 
     };
 
+    if (_timelineForceAutoRange) {
+        layout.yaxis.fixedrange = false;
+        layout.yaxis.autorange = true;
+    }
+
     if (_binTimestamp != null) {
         layout.shapes = [
             getTimelineIndicatorShape()

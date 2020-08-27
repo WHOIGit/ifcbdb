@@ -81,6 +81,15 @@
           
       </div>
     </div>
+
+    <div>
+        Scaling:
+        <select id="change-timeline-scaling">
+            <option value="fixed">Fixed</option>
+            <option value="auto">Auto</option>
+        </select>
+    </div>
+
     <!-- Timeline control -->
     <div class="row px-1">
         <div class="col-sm-12">
@@ -1416,5 +1425,8 @@ $(function() {
         history.pushState(state, null, "?" + parameters);
     {% endif %}
 
+    $("#change-timeline-scaling").change(function(){
+        changeScaling($(this).val() == "fixed");
+    });
 </script>
 {% endblock %}

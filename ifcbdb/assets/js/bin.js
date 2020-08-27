@@ -34,6 +34,7 @@ var _binTimestamp = null; // Timestamp for the currently selected bin
 var _preventTimelineRelayout = false; // Used to prevent a relayout on the timeline when switching metrics
 var _filterPopover; // Tracks the container created by the popover library for applying filters
 var _originalMapHeight = null; // Initial size of the map on first render
+let _timelineForceAutoRange = false; // Used to forcibly remove the fixed range option on the y axis of the timeline
 
 //************* Common Methods ***********************/
 
@@ -926,6 +927,13 @@ function updatePlotData() {
 }
 
 //************* Timeline Methods ***********************/
+function changeScaling(fixed) {
+    _timelineForceAutoRange = !fixed;
+
+    let timeline = $("#primary-plot-container")[0];
+
+    Plotly.relayout(timeline, {});
+}
 
 //************* Events ***********************/
 function initEvents() {
