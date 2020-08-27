@@ -747,9 +747,23 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
     previous_bin = None
     next_bin = None
 
-    if (dataset or instrument_number or tags or cruise or sample_type):
+    try:
+        datasets = [d.name for d in bin.datasets.all()]
+    except:
+        datasets = []
+
+    if dataset is not None:
+        primary_dataset = dataset.name
+    elif len(datasets) > 0:
+        primary_dataset = datasets[0]
+    else:
+        primary_dataset = None
+
+    if (dataset or instrument_number or tags or cruise or sample_type or primary_dataset):
         if dataset is not None:
             dataset_name = dataset.name
+        elif primary_dataset is not None:
+            dataset_name = primary_dataset
         else:
             dataset_name = None
         bin_qs = bin_query(dataset_name=dataset_name, instrument_number=instrument_number,
@@ -763,17 +777,6 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         if next_bin is not None:
             next_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
 
-    try:
-        datasets = [d.name for d in bin.datasets.all()]
-    except:
-        datasets = []
-
-    if dataset is not None:
-        primary_dataset = dataset.name
-    elif len(datasets) > 0:
-        primary_dataset = datasets[0]
-    else:
-        primary_dataset = None
 
     return {
         "scale": mosaic_scale,
