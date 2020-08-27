@@ -34,7 +34,7 @@ function isKnownLocation(lat, lng) {
 function createMap(lat, lng) {
     // Center the map on the default location if the bin doesn't have real gps coordinates
     if (!isKnownLocation(lat, lng)) {
-        lat = u;
+        lat = defaultLat;
         lng = defaultLng;
     }
 
