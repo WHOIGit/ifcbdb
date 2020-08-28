@@ -26,6 +26,17 @@ class DatasetForm(forms.ModelForm):
             "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
         }
 
+    def clean_name(self):
+        name = self.cleaned_data['name']
+
+        if not name or name == "":
+            return name
+
+        if ' ' in name:
+            raise forms.ValidationError('Name may not contain spaces')
+
+        return name
+
     def clean_doi(self):
         doi = self.cleaned_data['doi']
 
