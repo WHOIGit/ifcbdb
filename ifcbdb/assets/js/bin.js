@@ -702,8 +702,8 @@ function changeMarker(index) {
             if (_route == "timeline") {
                 newMarker.bindPopup("Bin: <a href='javascript:changeBinFromMap(\"" + _bin + "\")'>" + _bin + "</a>");
             } else {
-                let url = createBinModeLink(title);
-                newMarker.bindPopup("Bin: <a href='" + url + "'>" + title + "</a>");
+                let url = createBinModeLink(_bin);
+                newMarker.bindPopup("Bin: <a href='" + url + "'>" + _bin + "</a>");
             }
 
             // Add the new marker to the map as it's own layer
