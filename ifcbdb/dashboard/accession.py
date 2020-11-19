@@ -439,17 +439,18 @@ def export_metadata(ds, bins):
     bqs = bins
     qs = bqs.values('id','pid','sample_time','location','ml_analyzed',
         'cruise','cast','niskin','depth', 'instrument__number', 'skip',
-        'sample_type', 'n_images', 'tags').order_by('pid')
+        'sample_type', 'n_images', 'tags__name').order_by('pid','tags__name')
     # fetch all tags and compute number of tag columns
     tags_by_id = defaultdict(list)
     n_tag_cols = 0
     for item in qs:
-        if item['tags']:
+        tag_name = item['tags__name']
+        if tag_name:
             id = item['id']
-            for i, tag in enumerate(Bin.objects.get(id=id).tags.values('name')):
-                tags_by_id[id].append(tag['name'])
-                if i+1 > n_tag_cols:
-                    n_tag_cols = i+1
+            tags = tags_by_id[id]
+            tags.append(tag_name)
+            if len(tags) > n_tag_cols:
+                n_tag_cols = len(tags)
     # now construct the dataframe
     r = defaultdict(list)
     r.update({ 'dataset': name })
