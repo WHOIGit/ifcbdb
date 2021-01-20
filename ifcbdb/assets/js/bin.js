@@ -195,7 +195,11 @@ function updateBinStats(data) {
 }
 
 function updateBinMetadata() {
-    $.get("/api/metadata/" + _bin, function(data) {
+    let payload = {
+        csrfmiddlewaretoken: _csrf
+    };
+
+    $.post("/api/metadata/" + _bin, payload, function(data) {
         tbody = $("#bin-metadata tbody");
         tbody.empty();
 
@@ -563,12 +567,14 @@ function loadMosaic(pageNumber) {
         _isMosaicLoading = false;
     });
 
-    var mosaicUrl = "/api/mosaic/encoded_image/" + _bin +
-        "?view_size=" + viewSize +
-        "&scale_factor=" + scaleFactor +
-        "&page=" + pageNumber;
+    let payload = {
+        view_size: viewSize,
+        scale_factor: scaleFactor,
+        page: pageNumber,
+        csrfmiddlewaretoken: _csrf
+    };
 
-    $.get(mosaicUrl, function(data) {
+    $.post("/api/mosaic/encoded_image/" + _bin, payload, function(data) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
@@ -898,7 +904,11 @@ function updatePlotVariables(plotData) {
 }
 
 function initPlotData() {
-    $.get("/api/plot/" + _bin, function(data) {
+    let payload = {
+        csrfmiddlewaretoken: _csrf
+    };
+
+    $.post("/api/plot/" + _bin, payload, function(data) {
         _plotData = data;
 
         var plotXAxis = $("#plot-x-axis");
@@ -916,7 +926,11 @@ function initPlotData() {
 function updatePlotData() {
     // TODO: The plot container has a hard coded height on it that we should make dynamic. However, doing so causes
     //   the plot, when rendering a second time, to revert back to the minimum height
-    $.get("/api/plot/" + _bin, function(data) {
+    let payload = {
+        csrfmiddlewaretoken: _csrf
+    };
+
+    $.post("/api/plot/" + _bin, payload, function(data) {
         _plotData = data;
 
         updatePlotVariables(data);

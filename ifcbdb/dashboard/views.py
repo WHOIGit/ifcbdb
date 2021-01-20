@@ -496,6 +496,7 @@ def image_outline(request, bin_id, target):
 
 
 # TODO: Needs to change from width/height parameters to single widthXheight
+
 def mosaic_coordinates(request, bin_id):
     width = int(request.GET.get("width", 800))
     height = int(request.GET.get("height", 600))
@@ -517,6 +518,7 @@ def mosaic_page_image(request, bin_id):
 
 
 @cache_control(max_age=31557600) # client cache for 1y
+@require_POST
 def mosaic_page_encoded_image(request, bin_id):
     arr = _mosaic_page_image(request, bin_id)
 
@@ -838,6 +840,7 @@ def _mosaic_page_image(request, bin_id):
 #   are needed to let the UI know that certain levels are "off limits" and avoid re-running data when we know it's
 #   just going to force us down to a finer resolution anyway
 # TODO: Handle tag/instrument grouping
+@require_POST
 def generate_time_series(request, metric,):
     resolution = request.GET.get("resolution", "auto")
     start = request.GET.get("start",None)
@@ -925,6 +928,7 @@ def bin_data(request, bin_id):
     return JsonResponse(details)
 
 
+@require_POST
 def closest_bin(request):
     bin_qs = filter_parameters_bin_query(request.POST)
 
@@ -942,6 +946,7 @@ def closest_bin(request):
     })
 
 
+@require_POST
 def nearest_bin(request):
     bins = filter_parameters_bin_query(request.POST)
     start = request.POST.get('start')  # limit to start time
@@ -963,6 +968,7 @@ def nearest_bin(request):
     })
 
 
+@require_POST
 def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
@@ -1012,6 +1018,7 @@ BIN_METADATA_ORDER = [
     'runSampleFast',
 ]
 
+@require_POST
 def bin_metadata(request, bin_id):
     bin = get_object_or_404(Bin, pid=bin_id)
 
@@ -1159,6 +1166,8 @@ def tags(request):
     cloud = Tag.cloud(dataset=dataset, instrument=instrument)
     return JsonResponse({'cloud': list(cloud)})
 
+
+@require_POST
 def timeline_info(request):
     bin_qs = filter_parameters_bin_query(request.GET)
 

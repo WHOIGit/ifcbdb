@@ -696,26 +696,27 @@ var defaultEndDate = null;
 
 function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
     container = $("#primary-plot-container");
-
     currentMetric = metric;
-    var dataUrl = "/api/time-series/" + metric +
-        "?resolution=auto" +
-        "&dataset=" + _dataset +
-        "&instrument=" + _instrument +
-        "&tags=" + _tags +
-        "&cruise=" + _cruise +
-        "&sample_type=" + _sampleType;
 
-    var currentRange = null;
+    let payload = {
+        resolution: "auto",
+        dataset: _dataset,
+        instrument: _instrument,
+        tags: _tags,
+        cruise: _cruise,
+        sample_type:  _sampleType,
+        csrfmiddlewaretoken: _csrf
+    };
+
+    let currentRange = null;
     if (plot) {
         currentRange = {
             "xaxis.range[0]": container[0].layout.xaxis.range[0],
             "xaxis.range[1]": container[0].layout.xaxis.range[1]
         }
 
-        dataUrl +=
-            "&start=" + container[0].layout.xaxis.range[0] +
-            "&end=" + container[0].layout.xaxis.range[1];
+        payload["start"] = container[0].layout.xaxis.range[0];
+        payload["end"] = container[0].layout.xaxis.range[1];
     }
 
     if (defaultStartDate != null && defaultEndDate != null) {
@@ -724,47 +725,51 @@ function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
             "xaxis.range[1]": defaultEndDate
         }
 
-        dataUrl +=
-            "&start=" + defaultStartDate +
-            "&end=" + defaultEndDate;
+        payload["start"] = defaultStartDate;
+        payload["end"] = defaultEndDate;
     }
 
-    plot = Plotly.d3.json(dataUrl, function(err, response) {
-        currentResolution = response["resolution"];
+    $.post("/api/time-series/" + metric, payload, function(response) {
+        createPlotFromTimelineData(response, currentRange, metric);
+    });
+}
 
-        var initialConfig = getTimelineConfig();
-        var initialData = getTimelineData(response, _binTimestamp, currentResolution);
-        timelineRelayoutResponse = getTimelineLayout(response, currentRange, metric);
+function createPlotFromTimelineData(response, currentRange, metric) {
+    currentResolution = response["resolution"];
 
-        Plotly.newPlot(container[0], initialData, timelineRelayoutResponse, initialConfig);
+    var initialConfig = getTimelineConfig();
+    var initialData = getTimelineData(response, _binTimestamp, currentResolution);
+    timelineRelayoutResponse = getTimelineLayout(response, currentRange, metric);
 
-        highlightSelectedBinByDate();
+    Plotly.newPlot(container[0], initialData, timelineRelayoutResponse, initialConfig);
 
-        // Add event to locate nearest bin to user's click
-        container[0].addEventListener('mousemove', function(event) {
-            var xaxis = container[0]._fullLayout.xaxis;
-            var margin = container[0]._fullLayout.margin.l;
-            var containerMargin = $(container[0]).offset().left;
-            var x = xaxis.p2c(event.x - margin - containerMargin);
-            var date = (new Date(x)).toISOString();
-            $(container[0]).data('date', date);
-        });
+    highlightSelectedBinByDate();
 
-        container[0].addEventListener('click', function(event) {
-            // Prevent clicks on plotly controls (modebar actions)
-            if ($(event.target).parents(".modebar").length > 0) {
-                return
-            }
+    // Add event to locate nearest bin to user's click
+    container[0].addEventListener('mousemove', function(event) {
+        var xaxis = container[0]._fullLayout.xaxis;
+        var margin = container[0]._fullLayout.margin.l;
+        var containerMargin = $(container[0]).offset().left;
+        var x = xaxis.p2c(event.x - margin - containerMargin);
+        var date = (new Date(x)).toISOString();
+        $(container[0]).data('date', date);
+    });
 
-            _coordinates = [];
-            $("#previous-bin").addClass("disabled");
-            $("#next-bin").addClass("disabled");
+    container[0].addEventListener('click', function(event) {
+        // Prevent clicks on plotly controls (modebar actions)
+        if ($(event.target).parents(".modebar").length > 0) {
+            return
+        }
 
-            changeToClosestBin($(container[0]).data("date"));
-        });
+        _coordinates = [];
+        $("#previous-bin").addClass("disabled");
+        $("#next-bin").addClass("disabled");
 
-        // Add event to handle resolution change when zooming
-        container[0].on("plotly_relayout", function(relayoutResponse){
+        changeToClosestBin($(container[0]).data("date"));
+    });
+
+    // Add event to handle resolution change when zooming
+    container[0].on("plotly_relayout", function(relayoutResponse){
             timelineValid = false;
             timelineRelayoutResponse = relayoutResponse;
 
@@ -781,7 +786,6 @@ function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
 
             queryTimeline(container, metric);
         });
-    });
 }
 
 function queryTimeline(container, metric) {
@@ -811,24 +815,26 @@ function queryTimeline(container, metric) {
     var start = timelineRelayoutResponse["xaxis.range[0]"];
     var end = timelineRelayoutResponse["xaxis.range[1]"];
 
-    var url = "/api/time-series/" + metric +
-        "?resolution=auto" +
-        "&dataset=" + _dataset +
-        "&instrument=" + _instrument +
-        "&tags=" + _tags +
-        "&cruise=" + _cruise
-        "&sample_type=" + _sampleType;
+    let payload = {
+        resolution: "auto",
+        dataset: _dataset,
+        instrument: _instrument,
+        tags: _tags,
+        cruise: _cruise,
+        sample_type: _sampleType,
+        csrfmiddlewaretoken: _csrf
+    }
 
     if(start)
-        url += "&start=" + start;
+        payload["start"] = start;
     if(end)
-        url += "&end=" + end;
+        payload["end"] = end;
 
     // validate the timeline, so that upon return from
     // the AJAX call we know if it's been invalidated in the meantime
     timelineValid = true;
 
-    $.get(url, function(dataResponse) {
+    $.post("/api/time-series/" + metric, payload, function(dataResponse) {
         // the timeline has been invalidated so this response is out of date
         // if we're not already deferring an attempt, do so
         if (!timelineValid) {
@@ -1382,12 +1388,19 @@ $(function() {
 
     // show timeline info
     {% if route == 'timeline' %}
-    var timeline_info_url = 'api/timeline_info?dataset='+_dataset+
-      '&instrument='+_instrument+'&tags='+_tags+"&cruise="+_cruise+"&sample_type="+_sampleType;
-    $.get(timeline_info_url, function(data) {
-      $("#n_bins").html(data.n_bins+" bins, "+data.n_images+" images");
-      $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
-    })
+    let timeline_info_payload = {
+        dataset: _dataset,
+        instrument: _instrument,
+        tags: _tags,
+        cruise: _cruise,
+        sample_type: _sampleType,
+        csrfmiddlewaretoken: _csrf
+    };
+
+    $.post("api/timeline_info", timeline_info_payload, function(data) {
+        $("#n_bins").html(data.n_bins+" bins, "+data.n_images+" images");
+        $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
+    });
 
     var title = "";
     {% if dataset %}title += " » {{ dataset.title }}";{% endif %}
