@@ -18,3 +18,9 @@
 </div>
 
 {% endblock %}
+
+{% block scripts %}
+<script>
+    let _csrf = "{{ csrf_token }}";
+</script>
+{% endblock %}

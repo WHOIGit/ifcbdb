@@ -249,7 +249,7 @@ function updateBinDownloadLinks(data) {
     $("#download-features").attr("href", infix + _bin + "_features.csv");
     $("#download-class-scores").attr("href", infix + _bin + "_class_scores.csv");
 
-    $.get('/api/has_products/' + _bin, function(r) {
+    $.post('/api/has_products/' + _bin, { csrfmiddlewaretoken: _csrf }, function(r) {
         $("#download-blobs").toggle(r["has_blobs"]);
         $("#download-blobs-disabled").toggle(!r["has_blobs"]);
 
@@ -533,12 +533,12 @@ function loadMosaic(pageNumber) {
     // indicate to the user that coordinates are loading
     $("#mosaic").css("cursor", "wait");
 
-    var binDataUrl = "/api/bin/" + _bin +
-        "?view_size=" + viewSize +
-        "&scale_factor=" + scaleFactor +
-        "&" + buildFilterOptionsQueryString(true);
+    let binDataPayload = buildFilterOptionsPayload(true);
+    binDataPayload.view_size = viewSize;
+    binDataPayload.scale_factor = scaleFactor;
+    binDataPayload.csrfmiddlewaretoken = _csrf;
 
-    $.get(binDataUrl, function(data) {
+    $.post("/api/bin/" + _bin, binDataPayload, function(data) {
 
         // Update the coordinates for the image
         _coordinates = JSON.parse(data["coordinates"]);
@@ -567,14 +567,14 @@ function loadMosaic(pageNumber) {
         _isMosaicLoading = false;
     });
 
-    let payload = {
+    let imagePayload = {
         view_size: viewSize,
         scale_factor: scaleFactor,
         page: pageNumber,
         csrfmiddlewaretoken: _csrf
     };
 
-    $.post("/api/mosaic/encoded_image/" + _bin, payload, function(data) {
+    $.post("/api/mosaic/encoded_image/" + _bin, imagePayload, function(data) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
@@ -694,7 +694,7 @@ function changeMarker(index) {
     //   isn't always accurate. It will be the location of the marker, which is based on the spidering, and we
     //   need the actual location of that bin to plot it correctly. If we use the stored value, the marker will be
     //   put at the edge of the spidering effect
-    $.get("/api/bin_location?pid=" + _bin, function(resp){
+    $.post("/api/bin_location?pid=" + _bin, { csrfmiddlewaretoken: _csrf }, function(resp){
          if (resp.lat && resp.lng) {
             // Create a new marker based on the information on the matched marker from the main list
             let newMarker = L.marker(
@@ -726,7 +726,7 @@ function recenterMap() {
     if (_map == null)
         return;
 
-    // If the current bin si already selected, nothing more needs to be done
+    // If the current bin is already selected, nothing more needs to be done
     if (_selectedMarker != null && _selectedMarker.options.title == _bin)
         return;
 

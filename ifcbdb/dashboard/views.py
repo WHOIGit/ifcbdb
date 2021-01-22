@@ -903,13 +903,14 @@ def generate_time_series(request, metric,):
 
 
 # TODO: This is also where page caching could occur...
+@require_POST
 def bin_data(request, bin_id):
-    dataset_name = request.GET.get("dataset")
+    dataset_name = request.POST.get("dataset")
 
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    tags = request_get_tags(request.GET.get("tags"))
-    cruise = request_get_cruise(request.GET.get("cruise"))
-    sample_type = request_get_sample_type(request.GET.get('sample_type'))
+    instrument_number = request_get_instrument(request.POST.get("instrument"))
+    tags = request_get_tags(request.POST.get("tags"))
+    cruise = request_get_cruise(request.POST.get("cruise"))
+    sample_type = request_get_sample_type(request.POST.get('sample_type'))
 
     if dataset_name:
         dataset = get_object_or_404(Dataset, name=dataset_name)
@@ -917,10 +918,10 @@ def bin_data(request, bin_id):
         dataset = None
 
     bin = get_object_or_404(Bin, pid=bin_id)
-    view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
-    scale_factor = request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
-    preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
-    include_coordinates = request.GET.get("include_coordinates", "true").lower() == "true"
+    view_size = request.POST.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
+    scale_factor = request.POST.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
+    preload_adjacent_bins = request.POST.get("preload_adjacent_bins", "false").lower() == "true"
+    include_coordinates = request.POST.get("include_coordinates", "true").lower() == "true"
 
     details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates,
                            instrument_number=instrument_number, tags=tags, cruise=cruise, sample_type=sample_type)
@@ -1039,8 +1040,9 @@ def bin_metadata(request, bin_id):
     })
 
 
+@require_POST
 def bin_exists(request):
-    bin_qs = filter_parameters_bin_query(request.GET)
+    bin_qs = filter_parameters_bin_query(request.POST)
 
     exists = bin_qs.exists()
 
@@ -1049,18 +1051,20 @@ def bin_exists(request):
     })
 
 
+@require_POST
 def single_bin_exists(request):
     try:
-        bin = Bin.objects.get(pid=request.GET.get("pid"))
+        bin = Bin.objects.get(pid=request.POST.get("pid"))
 
         return JsonResponse({"exists": True})
     except:
         return JsonResponse({"exists" : False})
 
 
+@require_POST
 def bin_location(request):
     try:
-        location = Bin.objects.get(pid=request.GET.get("pid")).get_location()
+        location = Bin.objects.get(pid=request.POST.get("pid")).get_location()
 
         if location:
             return JsonResponse({
@@ -1078,12 +1082,13 @@ def bin_location(request):
     })
 
 
+@require_POST
 def filter_options(request):
-    dataset_name = request.GET.get("dataset")
-    tags = request_get_tags(request.GET.get("tags"))
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    cruise = request_get_cruise(request.GET.get("cruise"))
-    sample_type = request_get_sample_type(request.GET.get('sample_type'))
+    dataset_name = request.POST.get("dataset")
+    tags = request_get_tags(request.POST.get("tags"))
+    instrument_number = request_get_instrument(request.POST.get("instrument"))
+    cruise = request_get_cruise(request.POST.get("cruise"))
+    sample_type = request_get_sample_type(request.POST.get('sample_type'))
 
     if dataset_name:
         ds = Dataset.objects.get(name=dataset_name)
@@ -1117,6 +1122,8 @@ def filter_options(request):
         'sample_type_options': sample_type_options,
         })
 
+
+@require_POST
 def has_products(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
 
@@ -1169,7 +1176,7 @@ def tags(request):
 
 @require_POST
 def timeline_info(request):
-    bin_qs = filter_parameters_bin_query(request.GET)
+    bin_qs = filter_parameters_bin_query(request.POST)
 
     timeline = Timeline(bin_qs)
 
@@ -1180,16 +1187,17 @@ def timeline_info(request):
         })
 
 
+@require_POST
 def list_bins(request):
-    dataset_name = request.GET.get("dataset")
-    tags = request_get_tags(request.GET.get("tags"))
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    cruise = request_get_cruise(request.GET.get("cruise"))
-    sample_type = request.GET.get('sample_type')
-    skip_filter = request.GET.get("skip_filter")
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
-    output_format = request.GET.get("format")
+    dataset_name = request.POST.get("dataset")
+    tags = request_get_tags(request.POST.get("tags"))
+    instrument_number = request_get_instrument(request.POST.get("instrument"))
+    cruise = request_get_cruise(request.POST.get("cruise"))
+    sample_type = request.POST.get('sample_type')
+    skip_filter = request.POST.get("skip_filter")
+    start_date = request.POST.get("start_date")
+    end_date = request.POST.get("end_date")
+    output_format = request.POST.get("format")
 
     # Initial query for pulling bins. Note that skipped bins are included so it can be filtered based
     #   on the querystring options
@@ -1234,6 +1242,7 @@ def list_images(request, pid):
 
 
 @login_required
+@require_POST
 def update_skip(request):
     skip = request.POST.get("skip") == "true"
     bin_ids = request.POST.getlist("bins[]")
