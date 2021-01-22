@@ -154,6 +154,7 @@
     var _tags = "{{ tags|default_if_none:'' }}";
     var _cruise = "{{ cruise|default_if_none:'' }}";
     var _sampleType = "{{ sample_type|default_if_none:'' }}";
+    let _csrf = "{{ csrf_token }}";
 
     function initImageIndex() {
         for (var i = 0; i < _image_list.length; i++) {
@@ -371,7 +372,7 @@
 
     $("#scale-bar").show();
 
-    $.get('/api/has_products/' + "{{ bin.pid }}", function(r) {
+    $.post('/api/has_products/' + "{{ bin.pid }}", { csrfmiddlewaretoken: _csrf }, function(r) {
         // Update outline/blob links
         $("#blob-tab-label").toggleClass("disabled", !r["has_blobs"]);
         $("#outline-tab-label").toggleClass("disabled", !r["has_blobs"]);

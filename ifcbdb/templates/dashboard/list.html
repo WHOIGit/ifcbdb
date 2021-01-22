@@ -90,6 +90,7 @@
     var _endDate = "{{ end_date|default_if_none:'' }}";
     var binsTable;
     var selectedBins = [];
+    let _csrf = "{{ csrf_token }}";
 
     function createListLink(bin) {
         return "/list?" +
@@ -208,17 +209,17 @@
         binsTable = $('#bins').DataTable({
             searching: false,
             lengthChange: false,
-            "scrollX": true,
+            scrollX: true,
             order: [[1, "asc"]],
             ajax: function (data, callback, settings) {
-                var opt = $("#skip-filters input[type=radio]:checked").data("option");
+                let opt = $("#skip-filters input[type=radio]:checked").data("option");
+                let payload = buildFilterOptionsPayload(true);
+                payload.skip_filter = opt;
+                payload.start_date = _startDate;
+                payload.end_date = _endDate;
+                payload.csrfmiddlewaretoken = "{{ csrf_token }}";
 
-                var url = "/api/list_bins" +
-                    "?skip_filter=" + opt +
-                    "&start_date=" + _startDate +
-                    "&end_date=" + _endDate +
-                    "&" + buildFilterOptionsQueryString(true)
-                $.get(url, function(data){
+                $.post("/api/list_bins", payload, function(data){
                     callback(data);
                 });
             },

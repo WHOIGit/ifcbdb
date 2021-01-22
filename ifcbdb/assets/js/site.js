@@ -390,9 +390,10 @@ function updateTimelineFilters(wrapper, initialValues) {
         applyFilters.prop("disabled", false);
     }
 
-    var qs = buildFilterOptionsQueryString(false, dataset, instrument, tags, cruise, sampleType);
+    let payload = buildFilterOptionsPayload(false, dataset, instrument, tags, cruise, sampleType);
+    payload.csrfmiddlewaretoken = _csrf;
 
-    $.get("/api/filter_options?" + qs, function(data){
+    $.post("/api/filter_options", payload, function(data){
         reloadFilterDropdown(datasetFilter, data.dataset_options, dataset);
         reloadFilterDropdown(instrumentFilter, data.instrument_options, instrument, "IFCB");
         reloadFilterDropdown(cruiseFilter, data.cruise_options, cruise);
@@ -457,9 +458,10 @@ function applyFilters() {
         .map(function() {return $(this).val()}).get()
         .join();
 
-    var qs = buildFilterOptionsQueryString(false, dataset, instrument, tags, cruise, sampleType);
+    let payload = buildFilterOptionsPayload(false, dataset, instrument, tags, cruise, sampleType);
+    payload.csrfmiddlewaretoken = _csrf;
 
-    $.get("/api/bin_exists?" + qs, function(data) {
+    $.post("/api/bin_exists", payload, function(data) {
         if (!data.exists) {
             alert("No bins were found matching the specified filters. Please update the filters and try again")
             return;
@@ -485,7 +487,12 @@ function goToBin(pid) {
     if (!pid || pid.trim() == "")
         return;
 
-    $.get("/api/single_bin_exists?pid=" + pid.trim(), function(data){
+    let payload = {
+        pid: pid.trim(),
+        csrfmiddlewaretoken: _csrf
+    };
+
+    $.post("/api/single_bin_exists", payload, function(data){
         if (!data.exists) {
             alert("No matching bin was found. Please check the PID and try again");
             return;
@@ -527,6 +534,19 @@ function buildFilterOptionsQueryString(fromGlobals, dataset, instrument, tags, c
     var args = buildFilterOptionsArray(fromGlobals, dataset, instrument, tags, cruise, sampleType);
 
     return args.length == 0 ? "" : args.join("&");
+}
+
+function buildFilterOptionsPayload(fromGlobals, dataset, instrument, tags, cruise, sampleType) {
+    let args = buildFilterOptionsArray(fromGlobals, dataset, instrument, tags, cruise, sampleType);
+    let payload = {};
+
+    for (let i = 0; i < args.length; i++) {
+        var parts = args[i].split("=");
+
+        payload[parts[0]] = parts[1];
+    }
+
+    return payload;
 }
 
 function reloadFilterDropdown(dropdown, options, value, textPrefix) {
