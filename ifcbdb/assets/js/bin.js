@@ -733,6 +733,19 @@ function recenterMap() {
         }
     }
 
+    if (_markerList.length == 0 && _selectedMarker != null) {
+        _selectedMarker.options.title = _bin;
+
+        if (_route == "timeline") {
+            _selectedMarker._popup.setContent("Bin: <a href='javascript:changeBinFromMap(\"" + _bin + "\")'>" + _bin + "</a>");
+        } else {
+            let url = createBinModeLink(_bin);
+            _selectedMarker._popup.setContent("Bin: <a href='" + url + "'>" + _bin + "</a>");
+        }
+
+        return;
+    }
+
     // If this code is reached, it means that no location was found for the selected bin. Close all
     //   open popups and show the user a warning message
     changeMarker(null);
