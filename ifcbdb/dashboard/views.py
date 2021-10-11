@@ -1245,12 +1245,16 @@ def export_metadata_view(request, dataset_name):
     sample_type = request.GET.get('sample_type')
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
+    include_skip = request.GET.get('include_skip', 'false')
+
+    filter_skip = not include_skip.lower() == 'true'
 
     bin_qs = bin_query(dataset_name=dataset_name,
                        tags=tags,
                        instrument_number=instrument_number,
                        cruise=cruise,
-                       sample_type=sample_type)
+                       sample_type=sample_type,
+                       filter_skip=filter_skip)
 
     if start_date:
         start_date = pd.to_datetime(start_date, utc=True)
