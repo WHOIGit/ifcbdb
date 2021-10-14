@@ -1245,7 +1245,7 @@ def export_metadata_view(request, dataset_name):
     sample_type = request.GET.get('sample_type')
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
-    include_skip = request.GET.get('include_skip', 'false')
+    include_skip = request.GET.get('include_skip', 'true')
 
     filter_skip = not include_skip.lower() == 'true'
 
