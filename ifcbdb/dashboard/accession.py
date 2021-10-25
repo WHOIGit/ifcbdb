@@ -504,7 +504,7 @@ def export_metadata(ds, bins):
             v = tag_names[i] if i < len(tag_names) else ''
             r[f'tag{i+1}'].append(v)
         r['comment_summary'].append(comment_summary_by_id.get(item['id'], ''))
-        r['trigger_selection'] = trigger_selection_by_id.get(item['id'])
+        r['trigger_selection'].append(trigger_selection_by_id.get(item['id'], ''))
         r['skip'].append(1 if item['skip'] else 0)
 
     df = pd.DataFrame(r)
