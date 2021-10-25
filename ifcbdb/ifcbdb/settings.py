@@ -150,6 +150,8 @@ LOGIN_URL = 'secure:login'
 LOGIN_REDIRECT_URL = 'secure:index'
 LOGOUT_REDIRECT_URL = 'secure:login'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 try:
     from .local_settings import *
 except ImportError as e:
