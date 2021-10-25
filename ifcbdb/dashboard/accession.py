@@ -8,6 +8,7 @@ from itertools import islice
 
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max
+from django.contrib.postgres.aggregates.general import StringAgg
 
 import pandas as pd
 import numpy as np
@@ -451,6 +452,10 @@ def export_metadata(ds, bins):
             tags.append(tag_name)
             if len(tags) > n_tag_cols:
                 n_tag_cols = len(tags)
+    # fetch all comment summaries
+    comment_summary_by_id = \
+        dict(bqs.filter(comments__isnull=False).values_list('id') \
+             .annotate(comment_summary=StringAgg('comments__content', delimiter='; ', ordering='comments__timestamp')))
     # now construct the dataframe
     r = defaultdict(list)
     r.update({ 'dataset': name })
@@ -492,7 +497,8 @@ def export_metadata(ds, bins):
         tag_names = tags_by_id[item['id']]
         for i in range(n_tag_cols):
             v = tag_names[i] if i < len(tag_names) else ''
-            r[f'tag{i+1}'].append(v) 
+            r[f'tag{i+1}'].append(v)
+        r['comment_summary'].append(comment_summary_by_id.get(item['id'], ''))
         r['skip'].append(1 if item['skip'] else 0)
 
     df = pd.DataFrame(r)
