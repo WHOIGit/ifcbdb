@@ -456,6 +456,11 @@ def export_metadata(ds, bins):
     comment_summary_by_id = \
         dict(bqs.filter(comments__isnull=False).values_list('id') \
              .annotate(comment_summary=StringAgg('comments__content', delimiter='; ', ordering='comments__timestamp')))
+    # fetch selected metadata fields
+    # PMTtriggerSelection_DAQ_MCConly
+    trigger_selection_key = 'PMTtriggerSelection_DAQ_MCConly'
+    id2md = bqs.filter(metadata_json__contains=trigger_selection_key).values_list('id', 'metadata_json')
+    trigger_selection_by_id = dict([(id, json.loads(md).get(trigger_selection_key)) for id, md in id2md])
     # now construct the dataframe
     r = defaultdict(list)
     r.update({ 'dataset': name })
@@ -499,6 +504,7 @@ def export_metadata(ds, bins):
             v = tag_names[i] if i < len(tag_names) else ''
             r[f'tag{i+1}'].append(v)
         r['comment_summary'].append(comment_summary_by_id.get(item['id'], ''))
+        r['trigger_selection'] = trigger_selection_by_id.get(item['id'])
         r['skip'].append(1 if item['skip'] else 0)
 
     df = pd.DataFrame(r)
