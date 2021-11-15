@@ -2,9 +2,6 @@ from continuumio/miniconda3
 
 # geospatial libraries
 RUN apt-get update && apt-get install -y binutils libproj-dev
-# gdal-bin
-
-RUN conda install "python<3.8"
 
 RUN conda config --remove channels defaults
 RUN conda config --append channels conda-forge
