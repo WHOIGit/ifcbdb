@@ -37,7 +37,7 @@ services:
       - memcached_network
 
   nginx:
-    image: nginx:1.15
+    image: nginx:latest
     container_name: nginx
     ports:
       - 8000:80
@@ -62,14 +62,14 @@ services:
       - postgres_network
 
   memcached:
-    image: memcached:1.5.12-alpine
+    image: memcached:latest
     container_name: memcached
     command: ["-m", "64m"]
     networks:
       - memcached_network
 
   redis:
-    image: redis:5.0.4-alpine
+    image: redis:latest
     container_name: redis
     networks:
       - redis_network
