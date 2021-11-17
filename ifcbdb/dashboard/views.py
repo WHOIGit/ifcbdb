@@ -1,6 +1,6 @@
 import json
 import re
-from io import StringIO
+from io import BytesIO
 
 import numpy as np
 import pandas as pd
@@ -62,8 +62,8 @@ def bin_in_dataset_or_404(bin, dataset):
     raise Http404(f'Bin {bin.pid} is not in dataset {dataset}')
 
 def dataframe_csv_response(df, **kw):
-    csv_buf = StringIO()
-    df.to_csv(csv_buf, **kw)
+    csv_buf = BytesIO()
+    df.to_csv(csv_buf, mode='wb', **kw)
     csv_buf.seek(0)
     return StreamingHttpResponse(csv_buf, content_type='text/csv')
 
@@ -612,7 +612,7 @@ def adc_data(request, bin_id, **kw):
     except KeyError:
         raise Http404("raw data not found")
     filename = '{}.adc'.format(bin_id)
-    fin = open(adc_path)
+    fin = open(adc_path, 'rb')
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
 def hdr_data(request, bin_id, **kw):
@@ -624,7 +624,7 @@ def hdr_data(request, bin_id, **kw):
     except KeyError:
         raise Http404("raw data not found")
     filename = '{}.hdr'.format(bin_id)
-    fin = open(hdr_path)
+    fin = open(hdr_path, 'rb')
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/plain')
 
 
@@ -637,7 +637,7 @@ def roi_data(request, bin_id, **kw):
     except KeyError:
         raise Http404("raw data not found")
     filename = '{}.roi'.format(bin_id)
-    fin = open(roi_path)
+    fin = open(roi_path, 'rb')
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')
 
 def get_product_version_parameter(request, default=None):
@@ -660,7 +660,7 @@ def blob_zip(request, bin_id, **kw):
     except KeyError:
         raise Http404
     filename = '{}_blobs_v{}.zip'.format(bin_id, version)
-    fin = open(blob_path)
+    fin = open(blob_path, 'rb')
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/zip')
 
 def features_csv(request, bin_id, **kw):
@@ -675,7 +675,7 @@ def features_csv(request, bin_id, **kw):
     except KeyError:
         raise Http404
     filename = '{}_features_v{}.csv'.format(bin_id, version)
-    fin = open(features_path)
+    fin = open(features_path, 'rb')
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
 def class_scores_mat(request, bin_id, **kw):
@@ -690,7 +690,7 @@ def class_scores_mat(request, bin_id, **kw):
     except KeyError:
         raise Http404
     filename = '{}_class_v{}.mat'.format(bin_id, version)
-    fin = open(class_scores_path)
+    fin = open(class_scores_path, 'rb')
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')    
 
 def class_scores_csv(request, dataset_name, bin_id):
