@@ -216,7 +216,7 @@ class Accession(object):
         b.ml_analyzed = ml_analyzed
         b.look_time = bin.look_time
         b.run_time = bin.run_time
-        b.n_triggers = len(bin)
+        b.n_triggers = bin.n_triggers
         if bin.pid.schema_version == SCHEMA_VERSION_1:
             ii = InfilledImages(bin)
             b.n_images = len(ii)
