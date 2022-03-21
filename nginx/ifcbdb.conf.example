@@ -9,6 +9,10 @@ server {
 
     server_name localhost;
 
+    gzip on;
+    gzip_proxied any;
+    gzip_types application/javascript application/json text/css text/html;
+
     location /static/ {
         alias /static/;
         autoindex on;
