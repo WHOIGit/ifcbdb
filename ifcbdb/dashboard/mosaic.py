@@ -62,29 +62,29 @@ def join(x, y, w, h, xx, yy, ww, hh):
 
     if contains(x, y, w, h, xx, yy, ww, hh):
         # first rectangle contains the second one, return the first one
-        return '1 contains 2', True, x, y, w, h
+        return True, x, y, w, h
 
     if contains(xx, yy, ww, hh, x, y, w, h):
         # second rectangle contains the first one, return the second one
-        return '2 contains 1', True, xx, yy, ww, hh
+        return True, xx, yy, ww, hh
 
     if not intersects(x, y, h, w, xx, yy, ww, hh):
         # cannot join--not intersecting
-        return 'intersects', False, x, y, w, h
+        return False, x, y, w, h
 
     if y == yy and h == hh:
         # vertically aligned
         x_min = min(x, xx)
         x_max = max(x + w, xx + ww)
-        return 'vertically aligned', True, x_min, y, x_max - x_min, h
+        return True, x_min, y, x_max - x_min, h
 
     if x == xx and w == ww:
         # horizontally aligned
         y_min = min(y, yy)
         y_max = max(y + h, yy + hh)
-        return 'horizontally aligned', True, x, y_min, w, y_max - y_min
+        return True, x, y_min, w, y_max - y_min
 
-    return 'fallthrough', False, x, y, w, h
+    return False, x, y, w, h
 
 
 @jitclass([
@@ -111,8 +111,6 @@ class Packer(object):
         self.append_section(0, 0, self.w, self.h)
 
     def append_section(self, x, y, w, h):
-        if not self.isok(x, y, w, h):
-            print(f'appending invalid section {x},{y},{x+w},{y+h}')
         for i in range(self.sections.shape[0]):
             if self.sections[i, DELETION_FLAG] == DELETED:
                 self.sections[i, X] = x
@@ -125,11 +123,6 @@ class Packer(object):
                     self.next_section += 1
                 return
         # fatal condition: out of space
-        raise IndexError('out of space in sections array')
-
-    def isok(self, x, y, w, h):
-        # check if rectangle fits on page
-        return x < self.w and x + w <= self.w and y < self.h and y + h <= self.h
 
     def delete_section(self, i):
         self.sections[i, DELETION_FLAG] = DELETED
@@ -149,17 +142,7 @@ class Packer(object):
                 yy = self.sections[i, Y]
                 ww = self.sections[i, W]
                 hh = self.sections[i, H]
-                wasok = self.isok(x, y, w, h)
-                x_was, y_was, w_was, h_was = x, y, w, h
-                case, joinp, x, y, w, h = join(x, y, w, h, xx, yy, ww, hh)
-                isok = self.isok(x, y, w, h)
-                if joinp and not isok and wasok:
-                    if x + w > self.w:
-                        print(f'{case}, off x edge {x_was},{y_was},{x_was+w_was},{y_was+h_was}; {xx},{yy},{xx+ww},{yy+hh}')
-                        raise ValueError
-                    if y + h > self.h:
-                        print('off y edge')
-                        raise ValueError
+                joinp, x, y, w, h = join(x, y, w, h, xx, yy, ww, hh)
                 if joinp:
                     self.delete_section(i)
                     deleting = True
@@ -287,11 +270,7 @@ class Mosaic(object):
         pages = np.zeros(len(ids), dtype=np.int32)
         H, W = self.shape
 
-        from time import time
-        then = time()
         pack(H, W, hs, ws, ys, xs, pages)
-        elapsed = time() - then
-        print(f'packed in {elapsed}s')
 
         pages -= 1
         self.coordinates = pd.DataFrame({
