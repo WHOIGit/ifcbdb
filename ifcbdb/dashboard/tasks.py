@@ -3,7 +3,8 @@ import pandas as pd
 
 from django.core.cache import cache
 
-from ifcb.viz.mosaic import Mosaic
+#from ifcb.viz.mosaic import Mosaic
+from .mosaic import Mosaic
 
 @shared_task
 def mosaic_coordinates_task(bin_id, shape=(600,800), scale=0.33, cache_key=None):
