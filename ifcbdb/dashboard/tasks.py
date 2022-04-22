@@ -1,10 +1,26 @@
+import time
+
 from celery import shared_task
+from celery import signals
+
+import numpy as np
 import pandas as pd
 
 from django.core.cache import cache
 
-#from ifcb.viz.mosaic import Mosaic
 from .mosaic import Mosaic
+
+@signals.worker_process_init.connect
+def precompile_bin_packer(sender, **kw):
+    print('precompiling bin packer', end='')
+    from .mosaic import pack
+    hs = np.array([10, 20, 30], dtype=np.int32)
+    ws = np.array([30, 20, 10], dtype=np.int32)
+    ids = np.array([0, 1, 2], dtype=np.int32)
+    xs = np.zeros(3, dtype=np.int32)
+    ys = np.zeros(3, dtype=np.int32)
+    pages = np.zeros(3, dtype=np.int32)
+    pack(100, 100, hs, ws, ys, xs, pages)
 
 @shared_task
 def mosaic_coordinates_task(bin_id, shape=(600,800), scale=0.33, cache_key=None):
@@ -13,8 +29,10 @@ def mosaic_coordinates_task(bin_id, shape=(600,800), scale=0.33, cache_key=None)
     bin = Bin.objects.get(pid=bin_id)
     b = bin._get_bin()
     m = Mosaic(b, shape=shape, scale=scale)
-    print('computing mosaic coordinates for {}'.format(bin.pid))
+    then = time.time()
     coordinates = m.pack(max_pages=20)
+    elapsed = time.time() - then
+    print('computing mosaic coordinates for {} took {}s'.format(bin.pid, elapsed), end='')
     result = coordinates.to_dict('list')
     if cache_key is not None:
         cache.set(cache_key, result)
