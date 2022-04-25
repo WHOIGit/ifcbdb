@@ -666,7 +666,7 @@ class Bin(models.Model):
         return None
 
     def mosaic(self, page=0, shape=(600,800), scale=0.33, bg_color=200):
-        b = self._get_bin().read()
+        b = self._get_bin()
         coordinates = self.mosaic_coordinates(shape, scale)
         m = Mosaic(b, shape, scale=scale, bg_color=bg_color, coordinates=coordinates)
         image = m.page(page)

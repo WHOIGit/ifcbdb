@@ -258,7 +258,6 @@ class Mosaic(object):
     def pack(self, max_pages=None):
         if self.coordinates is not None:
             return self.coordinates
-        page_h, page_w = self.shape
         hs, ws, ids = self.shapes()
         area = hs * ws
         sort_order = np.flip(np.argsort(area))
