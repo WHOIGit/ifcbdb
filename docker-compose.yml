@@ -40,7 +40,7 @@ services:
     image: nginx:latest
     container_name: nginx
     ports:
-      - 8006:80
+      - 8000:80
     volumes:
       - ./nginx:/etc/nginx/conf.d
       - ./static:/static
