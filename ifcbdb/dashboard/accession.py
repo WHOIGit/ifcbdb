@@ -197,10 +197,29 @@ class Accession(object):
             return b, 'ml_analyzed: {}'.format(str(e))
         # metadata
         try:
-            b.metadata_json = json.dumps(bin.hdr_attributes)
+            headers = bin.hdr_attributes
         except Exception as e:
             b.qc_bad = True
             return b, 'header: {}'.format(str(e))
+        b.metadata_json = json.dumps(headers)
+        #
+        # lat/lon/depth
+        latitude = headers.get('latitude')
+        longitude = headers.get('longitude')
+        depth = headers.get('depth')
+        if latitude is not None and longitude is not None:
+            try:
+                latitude = float(latitude)
+                longitude = float(longitude)
+            except TypeError:
+                latitude = None
+                longitude = None
+            try:
+                depth = float(depth)
+            except TypeError:
+                depth = None
+            if latitude is not None and longitude is not None:
+                b.set_location(longitude, latitude, depth)
         #
         b.qc_no_rois = check_no_rois(bin)
         # metrics
