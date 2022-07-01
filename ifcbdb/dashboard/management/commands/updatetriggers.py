@@ -1,5 +1,6 @@
 from dashboard.models import Bin
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 import csv
 import os
 
@@ -20,9 +21,9 @@ class Command(BaseCommand):
         if not os.path.exists(input_csv):
             raise CommandError('specified file does not exist')
         with open(input_csv,'r') as csvin:
-                reader = csv.reader(csvin)
-                row = next(reader)
-
+            reader = csv.reader(csvin)
+            row = next(reader)
+            with transaction.atomic():
                 for row in reader:
                     res = 0
                     res = Bin.objects.filter(pid=row[0]).update(n_triggers=row[1])
@@ -37,8 +38,6 @@ class Command(BaseCommand):
         if not input_csv:
             self.get_all_bins()
         else:
-            print(input_csv)
-            print(len(input_csv))
             self.parse_input_csv(input_csv)
         print("Done.")
         
