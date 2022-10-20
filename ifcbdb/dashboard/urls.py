@@ -100,19 +100,33 @@ urlpatterns = [
     ##################################
     # Paths used for API/Ajax requests
     ##################################
+
+    # TODO: Done
     path('api/time-series/<slug:metric>', views.generate_time_series, name='generate_time_series'),
     path('api/bin/<slug:bin_id>', views.bin_data, name='bin_data'),
     path('api/bin/<slug:bin_id>', views.bin_data),
     path('api/closest_bin', views.closest_bin, name='closest_bin'),  # closest bin in time
+
+    ## TODO: Not used (called in changeToNearestBin, which is not called)? Already a post
     path('api/nearest_bin', views.nearest_bin, name='nearest_bin'),
+
+    ## TODO: Neither of these are used?
     path('api/mosaic/coordinates/<slug:bin_id>', views.mosaic_coordinates, name='mosaic_coordintes'),
     path('api/mosaic/encoded_image/<slug:bin_id>', views.mosaic_page_encoded_image, name='mosaic_page_encoded_image'),
+
+    # TODO: Done
     path('api/mosaic/image/<slug:bin_id>.png', views.mosaic_page_image, name='mosaic_page_image'),
+
+    ## TODO: All of these should remain a get call?
     path('api/image/<slug:bin_id>/<int:target>', views.image_metadata, name='image_metadata'),
     path('api/image_data/<slug:bin_id>/<int:target>', views.image_data, name='image_data'),
     path('api/blob/<slug:bin_id>/<int:target>', views.image_blob, name='image_blob'),
     path('api/outline/<slug:bin_id>/<int:target>', views.image_outline, name='image_outline'),
+
+    ## TODO: Done; also found and fixed in one unused method: initPlotData. Deprecate/remove?
     path('api/plot/<slug:bin_id>', views.plot_data, name='plot_data'),
+
+    # TODO: Done
     path('api/metadata/<slug:bin_id>', views.bin_metadata, name='bin_metadata'),
     path('api/bin_exists', views.bin_exists, name='bin_exists'),
     path('api/single_bin_exists', views.single_bin_exists, name='single_bin_exists'),
@@ -122,11 +136,21 @@ urlpatterns = [
     path('api/search_bin_locations', views.search_bin_locations, name='search_bin_locations'),
     path('api/search_timeline_locations', views.search_timeline_locations, name='search_timeline_locations'),
     path('api/search_comments', views.search_comments, name='search_comments'),
+
+    ## TODO: Deprecated? Nothing is calling this endpoint
     path('api/tags', views.tags, name='tags'),
+
+    # TODO: Done
     path('api/timeline_info', views.timeline_info, name='timeline_info'),
     path('api/list_bins', views.list_bins, name='list_bins'),
+
+    # TODO: Nothing is calling this one? Might be used externally?
     path('api/list_images/<slug:pid>', views.list_images, name='list_images'),
+
+    # TODO: Done
     path('api/update_skip', views.update_skip, name='update_skip'),
+
+    # TODO: Nothing is calling these? Might be used externally?
     path('api/export_metadata/<slug:dataset_name>', views.export_metadata_view, name='export_metadata'),
     path('api/sync_bin', views.sync_bin, name='sync_bin'),
  ]
