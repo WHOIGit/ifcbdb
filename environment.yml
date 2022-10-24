@@ -11,6 +11,8 @@ dependencies:
 - gdal
 - libiconv
 - numba
+- tiledb=2.2
+- gcc>=12.1.10
 - pip:
-  - python-memcached
+  - pymemcache
   - redis
