@@ -532,6 +532,7 @@ function loadMosaic(pageNumber) {
     var binDataUrl = "/api/bin/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor +
+        "&include_coordinates=true" +
         "&" + buildFilterOptionsQueryString(true);
 
     $.get(binDataUrl, function(data) {
