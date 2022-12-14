@@ -15,7 +15,6 @@ server {
 
     location /static/ {
         alias /static/;
-        autoindex on;
     }
 
     location / {
