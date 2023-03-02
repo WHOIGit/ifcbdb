@@ -272,8 +272,8 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     NISKIN_COLUMNS = ['niskin','bottle']
     SAMPLE_TYPE_COLUMNS = ['sampletype','sample_type']
 
-    SKIP_POSITIVE_VALUES = ['skip','yes','y','true','t']
-    SKIP_NEGATIVE_VALUES = ['noskip','no','n','false','f']
+    SKIP_POSITIVE_VALUES = ['skip','yes','y','true','t','1']
+    SKIP_NEGATIVE_VALUES = ['noskip','no','n','false','f','0']
 
     def get_column(df, possible_names):
         for possible in possible_names:
@@ -426,10 +426,18 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
                 skip = get_cell(row, skip_col)
                 if skip is None:
                     pass
-                elif skip.lower() in SKIP_POSITIVE_VALUES:
-                    b.skip = True
-                elif skip.lower() in SKIP_NEGATIVE_VALUES:
-                    b.skip = False
+                elif type(skip) is bool:
+                    b.skip = skip
+                elif type(skip) is int and skip in [0,1]:
+                    b.skip = bool(skip)
+                elif type(skip) is str:
+                    if skip.lower() in SKIP_POSITIVE_VALUES:
+                        b.skip = True
+                    elif skip.lower() in SKIP_NEGATIVE_VALUES:
+                        b.skip = False
+                else:
+                    raise ValueError(
+                        'skip value "{}" had unsupported type "{}"'.format(skip, type(skip).__name__))
 
             n_modded += 1
             b.save()
