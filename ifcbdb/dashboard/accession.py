@@ -426,9 +426,9 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
                 skip = get_cell(row, skip_col)
                 if skip is None:
                     pass
-                elif skip in SKIP_POSITIVE_VALUES:
+                elif skip.lower() in SKIP_POSITIVE_VALUES:
                     b.skip = True
-                elif skip in SKIP_NEGATIVE_VALUES:
+                elif skip.lower() in SKIP_NEGATIVE_VALUES:
                     b.skip = False
 
             n_modded += 1
