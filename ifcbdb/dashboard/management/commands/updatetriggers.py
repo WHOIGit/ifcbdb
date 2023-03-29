@@ -16,8 +16,6 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('-i','--input', type=str, help='Path to csv of mapping of of bin ID and trigger count')
         parser.add_argument('-d', '--dataset', type=str, help='Name of dataset to process(Optional)')
-        parser.add_argument('-p', '--path', type=str, help='absolute path of ifcb data')
-
 
     def last_line(self, filename):
         d = deque(open(filename), 1)
