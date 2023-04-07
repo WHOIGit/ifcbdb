@@ -31,6 +31,9 @@ def progress(bin_id, added, total, bad, errors={}):
         'existing': total - added - bad,
         'errors': error_list,
     }
+def print_progress(progress):
+        print(progress)
+        return True
 
 def do_nothing(*args, **kwargs):
     pass
@@ -101,7 +104,7 @@ class Accession(object):
             else:
                 b2s.save()
     def sync(self, progress_callback=do_nothing, log_callback=do_nothing):
-        progress_callback(progress('',0,0,0,{}))
+        progress_callback(print_progress(progress('',0,0,0,{})))
         bins_added = 0
         total_bins = 0
         bad_bins = 0
