@@ -1159,6 +1159,11 @@ def feed_legacy(request, ds_plus_tags, metric, start, end):
     # set "safe" to False because we're returning a list, not a dict
     return JsonResponse(records, safe=False)
 
+def tag_list(request):
+    tags = Tag.list()
+
+    return JsonResponse({'tags': list(tags)})
+
 def tags(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
