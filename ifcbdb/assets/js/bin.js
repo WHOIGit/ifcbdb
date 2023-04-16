@@ -35,6 +35,8 @@ var _preventTimelineRelayout = false; // Used to prevent a relayout on the timel
 var _filterPopover; // Tracks the container created by the popover library for applying filters
 var _originalMapHeight = null; // Initial size of the map on first render
 
+var _autoCompleteJS;
+
 //************* Common Methods ***********************/
 
 // Generates a relative link to the current bin/dataset
@@ -316,19 +318,18 @@ function toggleTagInput(isAdding) {
     $("#tag-cancel").toggleClass("d-none", !isAdding)
 }
 
-function addTag() {
-    var tag = $("#tag-name").val();
-    if (tag.trim() === "")
-        return;
-
+function addTag(value) {
     var payload = {
         "csrfmiddlewaretoken": _csrf,
-        "tag_name": tag
+        "tag_name": value
     };
 
     $.post("/secure/api/add-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
-        $("#tag-name").val("");
+
+        $('#tag-name').val('');
+        initAutoComplete();
+        $("#tag-name").focus();
     });
 }
 
@@ -343,6 +344,7 @@ function removeTag(tag) {
 
     $.post("/secure/api/remove-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
+        initAutoComplete();
     });
 }
 
@@ -1093,13 +1095,7 @@ function initEvents() {
     });
 
     $("#tag-confirm").click(function(e) {
-        addTag();
-    });
-
-    $("#tag-name").on("keyup", function(e) {
-        if (e.keyCode == 13) {
-            addTag();
-        }
+        addTag($('#tag-name').val());
     });
 
     // Remove a tag from a bin
@@ -1163,6 +1159,53 @@ function initEvents() {
                 .data("skipped", resp["skipped"]);
         });
     });
+
+    $('#tag-name').keyup(function(e) {
+        if (e.keyCode != 13)
+            return;
+
+        let value = $('#tag-name').val();
+        if (value.trim() == '')
+            return;
+
+        addTag(value);
+    });
+}
+
+function initAutoComplete() {
+    if (_autoCompleteJS) {
+        _autoCompleteJS.unInit();
+    }
+
+    _autoCompleteJS = new autoComplete({
+        selector: '#tag-name',
+        placeHolder: "tag name",
+        data: {
+            src: async function() {
+                let tags = await fetch('/api/tag_list')
+                    .then(function(response) { return response.json() })
+                    .then(function(data) { return data.tags; })
+
+                return tags;
+            },
+            cache: true,
+        },
+        resultItem: {
+            highlight: true,
+        },
+        resultsList: {
+            tabSelect: true,
+        },
+        submit: true,
+        events: {
+            input: {
+                selection: function(e) {
+                    e.preventDefault();
+                    addTag(e.detail.selection.value);
+                }
+            },
+        }
+    });
 }
 
 //************* Initialization methods and page hooks ***********************/
@@ -1170,6 +1213,8 @@ $(function() {
 
     // Misc UI elements based on constants
     $("#max-images").text(MAX_SELECTABLE_IMAGES);
+
+    initAutoComplete();
 
     initEvents();
     //initPlotData();

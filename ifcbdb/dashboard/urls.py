@@ -123,6 +123,7 @@ urlpatterns = [
     path('api/search_timeline_locations', views.search_timeline_locations, name='search_timeline_locations'),
     path('api/search_comments', views.search_comments, name='search_comments'),
     path('api/tags', views.tags, name='tags'),
+    path('api/tag_list', views.tag_list, name='tag_list'),
     path('api/timeline_info', views.timeline_info, name='timeline_info'),
     path('api/list_bins', views.list_bins, name='list_bins'),
     path('api/list_images/<slug:pid>', views.list_images, name='list_images'),
