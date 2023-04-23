@@ -50,7 +50,7 @@ services:
       - nginx_network
 
   postgres:
-    image: mdillon/postgis:11-alpine
+    image: postgis/postgis:11-3.3-alpine
     container_name: postgres
     environment:
       - POSTGRES_USER=ifcb
