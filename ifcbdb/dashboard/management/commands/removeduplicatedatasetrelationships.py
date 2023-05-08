@@ -17,23 +17,26 @@ def verify_dataset_exists(dataset_name):
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
-        parser.add_argument('-d1', '--dataset1', type=str, help='Name of dataset1')
-        parser.add_argument('-d2', '--dataset2', type=str, help='Name of dataset2')
+        parser.add_argument('-r', '--remove', type=str, help='Name of dataset to remove from bins')
+        parser.add_argument('-k', '--keep', type=str, help='Name of dataset to keep in bins')
+
 
     # assume directory is flat
     def handle(self, *args, **options):
-        dataset1 = options.get('dataset1')
-        dataset2 = options.get('dataset2')
+        dataset_to_remove = options.get('remove')
+        dataset_to_keep = options.get('keep')
 
         # Verify dataset names provided exist
-        if dataset1 == None or dataset2 == None:
+        if dataset_to_remove == None or dataset_to_keep == None:
             raise CommandError("Please provide two dataset names.")
-        verify_dataset_exists(dataset1)
-        verify_dataset_exists(dataset2)
+        if dataset_to_remove == dataset_to_keep:
+            raise CommandError("Please provide two different dataset names.")
+        verify_dataset_exists(dataset_to_remove)
+        verify_dataset_exists(dataset_to_keep)
 
-        bins = get_bins_in_datasets(dataset1, dataset2)
-        rm_dataset = Dataset.objects.get(name=dataset1)
-        print("Removing {} from the bins.".format(dataset1))
+        bins = get_bins_in_datasets(dataset_to_keep, dataset_to_remove)
+        rm_dataset = Dataset.objects.get(name=dataset_to_remove)
+        print("Removing {} from the bins.".format(dataset_to_remove))
         for bin in bins:
             bin.datasets.remove(rm_dataset)
         
