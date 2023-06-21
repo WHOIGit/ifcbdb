@@ -9,7 +9,7 @@ RUN conda config --append channels conda-forge
 RUN conda update conda
 
 # nomkl to reduce image size (mkl is large)
-RUN conda install -c conda-forge nomkl conda-merge
+RUN conda install -c conda-forge nomkl conda-merge mamba
 
 # install pyifcb and ifcbdb dependencies first
 # pyifcb must be cloned into the same directory as this dockerfile
@@ -25,7 +25,7 @@ WORKDIR /envs
 RUN conda-merge pyifcb_env.yml ifcbdb_env.yml > merged-environment.yml
 RUN cat merged-environment.yml
 
-RUN conda env update -n root -f merged-environment.yml
+RUN mamba env update -n root -f merged-environment.yml
 
 WORKDIR /pyifcb
 RUN python setup.py develop
