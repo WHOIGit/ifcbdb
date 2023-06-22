@@ -2,7 +2,7 @@ name: ifcbdb
 channels:
   - conda-forge
 dependencies:
-- django
+- django<4.2
 - gunicorn
 - psycopg2
 - pycrypto
