@@ -35,4 +35,6 @@ EXPOSE 8000
 # descend into app directory
 WORKDIR /ifcbdb
 
+COPY ./ifcbdb .
+
 CMD gunicorn --bind :8000 ifcbdb.wsgi:application --reload
