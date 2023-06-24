@@ -159,7 +159,7 @@ class Timeline(object):
                 resolution = 'bin'
             elif time_range < pd.Timedelta('60d'):
                 resolution = 'hour'
-            elif time_range < pd.Timedelta('3y'):
+            elif time_range < pd.Timedelta('1095d'): #3 years, pandas doesn't allow y units
                 resolution = 'day'
             else:
                 resolution = 'week'
