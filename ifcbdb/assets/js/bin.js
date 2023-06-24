@@ -538,7 +538,7 @@ function loadMosaic(pageNumber) {
     $.get(binDataUrl, function(data) {
 
         // Update the coordinates for the image
-        _coordinates = JSON.parse(data["coordinates"]);
+        _coordinates = data["coordinates"];
 
         // Indicate to the user that the mosaic is clickable
         $("#mosaic").css("cursor", "pointer");
