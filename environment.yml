@@ -1,18 +1,13 @@
 name: ifcbdb
-channels:
-  - conda-forge
 dependencies:
-- django<4.2
+- django
 - gunicorn
 - psycopg2
-- pycrypto
-- pip
-- celery>4.1
-- gdal
 - libiconv
+- tiledb
 - numba
-- tiledb=2.2
-- gcc>=12.1.10
+- pip
 - pip:
+  - celery
   - pymemcache
   - redis
