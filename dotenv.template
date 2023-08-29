@@ -1,0 +1,6 @@
+LOCAL_SETTINGS=./local_settings.py
+
+PRIMARY_DATA_DIR=/Users/someone/Data/ifcb-data
+
+POSTGIS_IMAGE=ghcr.io/giovannicandido/postgis:latest
+POSTGIS_VOLUME=ifcbdb-postgis-data

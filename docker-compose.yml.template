@@ -2,13 +2,12 @@ version: '3'
 
 services:
   ifcbdb:
-    build: .
+    image: whoi/ifcb-dashboard:latest
     container_name: ifcbdb
     volumes:
-      - ./pyifcb:/pyifcb
-      - ./ifcbdb:/ifcbdb
-      - ifcbdb_static:/static
-      - ./ifcb_data:/data
+      - ./static:/static
+      - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
+      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
     networks:
       - nginx_network
       - postgres_network
@@ -20,13 +19,12 @@ services:
       - redis
 
   celery:
-    build: .
+    image: whoi/ifcb-dashboard:latest
     container_name: celery
     command: celery -A ifcbdb worker -l info
     volumes:
-      - ./pyifcb:/pyifcb
-      - ./ifcbdb:/ifcbdb
-      - ./ifcb_data:/data
+      - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
+      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
     depends_on:
       - postgres
       - memcached
@@ -43,21 +41,21 @@ services:
       - 8000:80
     volumes:
       - ./nginx:/etc/nginx/conf.d
-      - ifcbdb_static:/static
+      - ./static:/static
     depends_on:
       - ifcbdb
     networks:
       - nginx_network
 
   postgres:
-    image: mdillon/postgis:11-alpine
+    image: ${POSTGIS_IMAGE:-postgis/postgis:latest}
     container_name: postgres
     environment:
       - POSTGRES_USER=ifcb
       - POSTGRES_PASSWORD=ifcb
       - POSTGRES_DB=ifcb
     volumes:
-      - ifcbdb_pg_data:/var/lib/postgresql/data
+      - ifcbdb-postgis-data:/var/lib/postgresql/data
     networks:
       - postgres_network
 
@@ -85,5 +83,5 @@ networks:
     driver: bridge
 
 volumes:
-  ifcbdb_static:
-  ifcbdb_pg_data:
+  ifcbdb-postgis-data:
+    name: ${POSTGIS_VOLUME:-ifcbdb-postgis-data}
