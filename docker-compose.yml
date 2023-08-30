@@ -9,6 +9,7 @@ services:
       - NGINX_HTTP_PORT=${HTTP_PORT:-80}
       - NGINX_HTTPS_PORT=${HTTPS_PORT:-443}
       - DEFAULT_DATASET=${DEFAULT_DATASET:-}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
     volumes:
       - nginx-static:/static
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
@@ -26,6 +27,8 @@ services:
     image: whoi/ifcb-dashboard:latest
     container_name: celery
     command: celery -A ifcbdb worker -l info
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
     volumes:
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
     depends_on:
