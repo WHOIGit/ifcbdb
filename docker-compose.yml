@@ -8,10 +8,10 @@ services:
       - NGINX_HOST=${HOST:-localhost}
       - NGINX_HTTP_PORT=${HTTP_PORT:-80}
       - NGINX_HTTPS_PORT=${HTTPS_PORT:-443}
+      - DEFAULT_DATASET=${DEFAULT_DATASET:-}
     volumes:
       - nginx-static:/static
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
-      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
     networks:
       - nginx_network
       - postgres_network
@@ -28,7 +28,6 @@ services:
     command: celery -A ifcbdb worker -l info
     volumes:
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
-      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
     depends_on:
       - postgres
       - memcached
