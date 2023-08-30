@@ -2,13 +2,16 @@ version: '3'
 
 services:
   ifcbdb:
-    build: .
+    image: whoi/ifcb-dashboard:latest
     container_name: ifcbdb
+    environment:
+      - NGINX_HOST=${HOST:-localhost}
+      - NGINX_HTTP_PORT=${HTTP_PORT:-80}
+      - NGINX_HTTPS_PORT=${HTTPS_PORT:-443}
     volumes:
-      - ./pyifcb:/pyifcb
-      - ./ifcbdb:/ifcbdb
-      - ./static:/static
-      - ./ifcb_data:/data
+      - nginx-static:/static
+      - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
+      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
     networks:
       - nginx_network
       - postgres_network
@@ -20,13 +23,12 @@ services:
       - redis
 
   celery:
-    build: .
+    image: whoi/ifcb-dashboard:latest
     container_name: celery
     command: celery -A ifcbdb worker -l info
     volumes:
-      - ./pyifcb:/pyifcb
-      - ./ifcbdb:/ifcbdb
-      - ./ifcb_data:/data
+      - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
+      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
     depends_on:
       - postgres
       - memcached
@@ -39,25 +41,32 @@ services:
   nginx:
     image: nginx:latest
     container_name: nginx
+    environment:
+      - NGINX_HOST=${HOST:-localhost}
+      - NGINX_HTTP_PORT=${HTTP_PORT:-80}
+      - NGINX_HTTPS_PORT=${HTTPS_PORT:-443}
     ports:
-      - 8000:80
+      - ${HTTP_PORT:-80}:80
+      - ${HTTPS_PORT:-443}:443
     volumes:
-      - ./nginx:/etc/nginx/conf.d
-      - ./static:/static
+      - ${NGINX_TEMPLATE}:/etc/nginx/templates/default.conf.template
+      - nginx-static:/static
+      - ${SSL_KEY}:/ssl/ssl.key:ro
+      - ${SSL_CERT}:/ssl/ssl.cer:ro
     depends_on:
       - ifcbdb
     networks:
       - nginx_network
 
   postgres:
-    image: mdillon/postgis:11-alpine
+    image: ${POSTGIS_IMAGE:-postgis/postgis:latest}
     container_name: postgres
     environment:
       - POSTGRES_USER=ifcb
       - POSTGRES_PASSWORD=ifcb
       - POSTGRES_DB=ifcb
     volumes:
-      - ./pg_data:/var/lib/postgresql/data
+      - ifcbdb-postgis-data:/var/lib/postgresql/data
     networks:
       - postgres_network
 
@@ -83,3 +92,9 @@ networks:
     driver: bridge
   redis_network:
     driver: bridge
+
+volumes:
+  ifcbdb-postgis-data:
+    name: ${POSTGIS_VOLUME:-ifcbdb-postgis-data}
+  nginx-static:
+    name: ${NGINX_STATIC_VOLUME:-ifcbdb-nginx-static}
