@@ -1,6 +1,8 @@
-LOCAL_SETTINGS=./local_settings.py
+PRIMARY_DATA_DIR=/my/data/dir
 
-PRIMARY_DATA_DIR=/Users/jfutrelle/Data/ifcb-data
+POSTGIS_VOLUME=postgis/postgis
+# uncomment the following line for ARM architectures
+# POSTGIS_IMAGE=ghcr.io/giovannicandido/postgis
 
 POSTGIS_VOLUME=ifcbdb-postgis-data
 
@@ -12,3 +14,5 @@ HTTPS_PORT=8443
 
 SSL_CERT=./ssl/cert.pem
 SSL_KEY=./ssl/key.pem
+
+DJANGO_SECRET_KEY=changeme
