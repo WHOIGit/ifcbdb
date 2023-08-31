@@ -1,17 +1,12 @@
-FROM continuumio/miniconda3
-
-RUN conda update conda
+FROM python
 
 # geospatial libraries
-RUN apt-get update && apt-get install -y binutils libproj-dev
+RUN apt-get update && apt-get install -y binutils libproj-dev libgdal-dev libpoppler-dev
 
-WORKDIR /envs
-COPY ./pyifcb/environment.yml pyifcb_env.yml
-COPY environment.yml ifcbdb_env.yml
+WORKDIR /build
+COPY requirements.txt .
 
-RUN conda install gdal
-RUN conda env update -n base -f pyifcb_env.yml
-RUN conda env update -n base -f ifcbdb_env.yml
+RUN pip install -r requirements.txt
 
 WORKDIR /pyifcb
 COPY ./pyifcb .

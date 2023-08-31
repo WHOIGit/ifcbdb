@@ -1,0 +1,16 @@
+django
+gunicorn
+psycopg2
+numba
+celery
+pymemcache
+redis
+scipy
+pandas
+h5py
+requests
+Pillow
+rectpack
+scikit-image
+pysmb
+pyyaml
