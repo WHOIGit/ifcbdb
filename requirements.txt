@@ -14,3 +14,4 @@ rectpack
 scikit-image
 pysmb
 pyyaml
+git+https://github.com/joefutrelle/pyifcb@new_build

@@ -1,4 +1,4 @@
-FROM python
+FROM python:3.11
 
 # geospatial libraries
 RUN apt-get update && apt-get install -y binutils libproj-dev libgdal-dev libpoppler-dev
@@ -7,10 +7,6 @@ WORKDIR /build
 COPY requirements.txt .
 
 RUN pip install -r requirements.txt
-
-WORKDIR /pyifcb
-COPY ./pyifcb .
-RUN python setup.py install
 
 WORKDIR /ifcbdb
 COPY ./ifcbdb .
