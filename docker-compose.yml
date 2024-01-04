@@ -13,6 +13,7 @@ services:
     volumes:
       - nginx-static:/static
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
+      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
     networks:
       - nginx_network
       - postgres_network
@@ -31,6 +32,7 @@ services:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
     volumes:
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
+      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
     depends_on:
       - postgres
       - memcached
