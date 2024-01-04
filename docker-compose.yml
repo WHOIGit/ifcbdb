@@ -2,7 +2,7 @@ version: '3'
 
 services:
   ifcbdb:
-    image: whoi/ifcb-dashboard:latest
+    image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
     container_name: ifcbdb
     environment:
       - NGINX_HOST=${HOST:-localhost}
@@ -25,7 +25,7 @@ services:
       - redis
 
   celery:
-    image: whoi/ifcb-dashboard:latest
+    image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
     container_name: celery
     command: celery -A ifcbdb worker -l info
     environment:
