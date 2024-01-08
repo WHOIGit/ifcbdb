@@ -1,6 +1,6 @@
 PRIMARY_DATA_DIR=/my/data/dir
 
-POSTGIS_VOLUME=postgis/postgis
+POSTGIS_IMAGE=postgis/postgis
 # uncomment the following line for ARM architectures
 # POSTGIS_IMAGE=ghcr.io/giovannicandido/postgis
 
