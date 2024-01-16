@@ -11,6 +11,9 @@ RUN pip install -r requirements.txt
 WORKDIR /ifcbdb
 COPY ./ifcbdb .
 
+WORKDIR /utilities
+COPY ./utilities .
+
 EXPOSE 8000
 
 CMD gunicorn --bind :8000 ifcbdb.wsgi:application --reload
