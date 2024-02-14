@@ -29,3 +29,8 @@ In addition to SSL, there is a security parameter in the `.env` file called `DJA
 ## Running the dashboard
 
 Once you have configured `.env`, you can bring the dashboard up by running `docker-compose up -d` from the directory containing the `docker-compose.yml` file.
+
+## Building the image yourself
+
+If you don't want to use the image from Docker Hub (for instance, if you've made modifications) you can build it yourself. Once you build and tag the image from the provided Dockerfile, configure the `IFCBDB_IMAGE` parameter in `.env` to refer to your image tag.
+
