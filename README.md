@@ -34,3 +34,7 @@ Once you have configured `.env`, you can bring the dashboard up by running `dock
 
 If you don't want to use the image from Docker Hub (for instance, if you've made modifications) you can build it yourself. Once you build and tag the image from the provided Dockerfile, configure the `IFCBDB_IMAGE` parameter in `.env` to refer to your image tag.
 
+## Notes on ARM platforms (e.g., Apple Silicon)
+
+Note that as of February 2024 the official postgis image in Docker Hub is currently not available for ARM platforms. An alternate image is provided as an example configuration in `dotenv.template`.
+
