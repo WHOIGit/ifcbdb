@@ -18,7 +18,7 @@ Here are the key parameters to edit in that file:
 * `HOST` should be the fully qualified domain name of the computer where you are running the dashboard. The default is `localhost` which is used for testing purposes only.
 * `HTTP_PORT` and `HTTPS_PORT` control which ports the dashboard will respond at. The defaults are 80 and 443 and they should work unless you are already running a web service on your computer that is already listening on those ports.
 
-## Security configuration
+### Security configuration
 
 To run the dashboard, you'll need an SSL certificate. This should be able to be provided by your host organization. If you cannot acquire an SSL certificate, you will need to generate a "self-signed" certificate but that configuration should only be used for testing, because it will give users a security warning in their browsers that strongly encourage them to reject access to the site.
 
@@ -26,15 +26,31 @@ Once you have acquired the certificate and placed the certificate file and key f
 
 In addition to SSL, there is a security parameter in the `.env` file called `DJANGO_SECRET_KEY`. You will need to change that parameter and set it to some unique value that can't be easily guessed.
 
-## Running the dashboard
-
-Once you have configured `.env`, you can bring the dashboard up by running `docker-compose up -d` from the directory containing the `docker-compose.yml` file.
-
-## Building the image yourself
+### Building the image yourself
 
 If you don't want to use the image from Docker Hub (for instance, if you've made modifications) you can build it yourself. Once you build and tag the image from the provided Dockerfile, configure the `IFCBDB_IMAGE` parameter in `.env` to refer to your image tag.
 
-## Notes on ARM platforms (e.g., Apple Silicon)
+### Notes on ARM platforms (e.g., Apple Silicon)
 
 Note that as of February 2024 the official postgis image in Docker Hub is currently not available for ARM platforms. An alternate image is provided as an example configuration in `dotenv.template`.
 
+## Running the dashboard
+
+Once you have configured `.env`, you can bring the dashboard up by running `docker-compose up -d` from the directory containing the `.env` and `docker-compose.yml` files.
+
+### Post-installation steps
+
+After starting the dashboard for the first time, you'll need to run the following commands to initialize the dashboard's backend database and files.
+
+```
+docker exec -it ifcbdb python manage.py migrate
+docker exec -it ifcbdb python manage.py collectstatic
+```
+
+### Logging in for the first time
+
+You will need to create a "superuser" account, specifying its username and password. To do that, run this command to create your user and password.
+
+```
+docker exec -it ifcbdb python manage.py createsuperuser
+```
