@@ -3,7 +3,6 @@ version: '3'
 services:
   ifcbdb:
     image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
-    container_name: ifcbdb
     environment:
       - NGINX_HOST=${HOST:-localhost}
       - NGINX_HTTP_PORT=${HTTP_PORT:-80}
@@ -26,7 +25,6 @@ services:
 
   celery:
     image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
-    container_name: celery
     command: celery -A ifcbdb worker -l info
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
@@ -44,7 +42,6 @@ services:
 
   nginx:
     image: nginx:latest
-    container_name: nginx
     environment:
       - NGINX_HOST=${HOST:-localhost}
       - NGINX_HTTP_PORT=${HTTP_PORT:-80}
@@ -64,26 +61,23 @@ services:
 
   postgres:
     image: ${POSTGIS_IMAGE:-postgis/postgis:latest}
-    container_name: postgres
     environment:
       - POSTGRES_USER=ifcb
       - POSTGRES_PASSWORD=ifcb
       - POSTGRES_DB=ifcb
     volumes:
-      - ifcbdb-postgis-data:/var/lib/postgresql/data
+      - postgis-data:/var/lib/postgresql/data
     networks:
       - postgres_network
 
   memcached:
     image: memcached:latest
-    container_name: memcached
     command: ["-m", "64m"]
     networks:
       - memcached_network
 
   redis:
     image: redis:latest
-    container_name: redis
     networks:
       - redis_network
 
@@ -98,7 +92,5 @@ networks:
     driver: bridge
 
 volumes:
-  ifcbdb-postgis-data:
-    name: ${POSTGIS_VOLUME:-ifcbdb-postgis-data}
+  postgis-data:
   nginx-static:
-    name: ${NGINX_STATIC_VOLUME:-ifcbdb-nginx-static}
