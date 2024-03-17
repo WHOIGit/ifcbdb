@@ -9,10 +9,11 @@ services:
       - NGINX_HTTPS_PORT=${HTTPS_PORT:-443}
       - DEFAULT_DATASET=${DEFAULT_DATASET:-}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
     volumes:
       - nginx-static:/static
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
-      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
+      - ${LOCAL_SETTINGS:-/dev/null}:/ifcbdb/ifcbdb/local_settings.py
     networks:
       - nginx_network
       - postgres_network
@@ -28,9 +29,10 @@ services:
     command: celery -A ifcbdb worker -l info
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
     volumes:
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
-      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
+      - ${LOCAL_SETTINGS:-/dev/null}:/ifcbdb/ifcbdb/local_settings.py
     depends_on:
       - postgres
       - memcached
@@ -63,7 +65,7 @@ services:
     image: ${POSTGIS_IMAGE:-postgis/postgis:latest}
     environment:
       - POSTGRES_USER=ifcb
-      - POSTGRES_PASSWORD=ifcb
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
       - POSTGRES_DB=ifcb
     volumes:
       - postgis-data:/var/lib/postgresql/data

@@ -57,3 +57,9 @@ docker compose exec ifcbdb python manage.py createsuperuser
 
 If you need to create the superuser non-interactively, you can set the `DJANGO_SUPERUSER_PASSWORD` environment variable
 ([see Django docs](https://docs.djangoproject.com/en/5.0/ref/django-admin/#envvar-DJANGO_SUPERUSER_PASSWORD)).
+
+### Advanced configuration
+
+If you need to set configuration options beyond the available environment variables, you can create a
+`local_settings.py` file and set environment variable `LOCAL_SETTINGS` to its path. The file will
+be imported at the end of Django's `settings.py`, allowing you to override any previous setting.
