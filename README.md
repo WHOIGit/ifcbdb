@@ -43,8 +43,8 @@ Once you have configured `.env`, you can bring the dashboard up by running `dock
 After starting the dashboard for the first time, you'll need to run the following commands to initialize the dashboard's backend database and files.
 
 ```
-docker exec -it ifcbdb python manage.py migrate
-docker exec -it ifcbdb python manage.py collectstatic
+docker compose exec ifcbdb python manage.py migrate
+docker compose exec ifcbdb python manage.py collectstatic
 ```
 
 ### Logging in for the first time
@@ -52,5 +52,8 @@ docker exec -it ifcbdb python manage.py collectstatic
 You will need to create a "superuser" account, specifying its username and password. To do that, run this command to create your user and password.
 
 ```
-docker exec -it ifcbdb python manage.py createsuperuser
+docker compose exec ifcbdb python manage.py createsuperuser
 ```
+
+If you need to create the superuser non-interactively, you can set the `DJANGO_SUPERUSER_PASSWORD` environment variable
+([see Django docs](https://docs.djangoproject.com/en/5.0/ref/django-admin/#envvar-DJANGO_SUPERUSER_PASSWORD)).
