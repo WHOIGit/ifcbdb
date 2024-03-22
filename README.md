@@ -20,11 +20,13 @@ Here are the key parameters to edit in that file:
 
 ### Security configuration
 
-To run the dashboard, you'll need an SSL certificate. This should be able to be provided by your host organization. If you cannot acquire an SSL certificate, you will need to generate a "self-signed" certificate but that configuration should only be used for testing, because it will give users a security warning in their browsers that strongly encourage them to reject access to the site.
+To run the dashboard, you'll need an SSL certificate (unless you're handling TLS termination in a web proxy, see below). This should be able to be provided by your host organization. If you cannot acquire an SSL certificate, you will need to generate a "self-signed" certificate but that configuration should only be used for testing, because it will give users a security warning in their browsers that strongly encourage them to reject access to the site.
 
 Once you have acquired the certificate and placed the certificate file and key file in appropriate locations on your system, you will need to configure the dashboard to access that certificate using the `SSL_CERT` and `SSL_KEY` parameters in `.env`, using the path to each file.
 
 In addition to SSL, there is a security parameter in the `.env` file called `DJANGO_SECRET_KEY`. You will need to change that parameter and set it to some unique value that can't be easily guessed.
+
+If you're terminating TLS at the web proxy layer you can run ifcbdb in HTTP-only mode by setting `NGINX_TEMPLATE=./nginx.conf.template`.
 
 ### Building the image yourself
 
@@ -43,8 +45,8 @@ Once you have configured `.env`, you can bring the dashboard up by running `dock
 After starting the dashboard for the first time, you'll need to run the following commands to initialize the dashboard's backend database and files.
 
 ```
-docker exec -it ifcbdb python manage.py migrate
-docker exec -it ifcbdb python manage.py collectstatic
+docker compose exec ifcbdb python manage.py migrate
+docker compose exec ifcbdb python manage.py collectstatic
 ```
 
 ### Logging in for the first time
@@ -52,5 +54,14 @@ docker exec -it ifcbdb python manage.py collectstatic
 You will need to create a "superuser" account, specifying its username and password. To do that, run this command to create your user and password.
 
 ```
-docker exec -it ifcbdb python manage.py createsuperuser
+docker compose exec ifcbdb python manage.py createsuperuser
 ```
+
+If you need to create the superuser non-interactively, you can set the `DJANGO_SUPERUSER_PASSWORD` environment variable
+([see Django docs](https://docs.djangoproject.com/en/5.0/ref/django-admin/#envvar-DJANGO_SUPERUSER_PASSWORD)).
+
+### Advanced configuration
+
+If you need to set configuration options beyond the available environment variables, you can create a
+`local_settings.py` file and set environment variable `LOCAL_SETTINGS` to its path. The file will
+be imported at the end of Django's `settings.py`, allowing you to override any previous setting.

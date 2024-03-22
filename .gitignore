@@ -115,6 +115,7 @@ pyifcb
 pg_data
 ifcb_data
 static
+local_settings.py
 
 .DS_Store
 .vscode

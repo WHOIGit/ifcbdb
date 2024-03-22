@@ -3,17 +3,17 @@ version: '3'
 services:
   ifcbdb:
     image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
-    container_name: ifcbdb
     environment:
       - NGINX_HOST=${HOST:-localhost}
       - NGINX_HTTP_PORT=${HTTP_PORT:-80}
       - NGINX_HTTPS_PORT=${HTTPS_PORT:-443}
       - DEFAULT_DATASET=${DEFAULT_DATASET:-}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
     volumes:
       - nginx-static:/static
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
-      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
+      - ${LOCAL_SETTINGS:-/dev/null}:/ifcbdb/ifcbdb/local_settings.py
     networks:
       - nginx_network
       - postgres_network
@@ -26,13 +26,13 @@ services:
 
   celery:
     image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
-    container_name: celery
     command: celery -A ifcbdb worker -l info
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
     volumes:
       - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
-      - ${LOCAL_SETTINGS:-./local_settings.py}:/ifcbdb/ifcbdb/local_settings.py
+      - ${LOCAL_SETTINGS:-/dev/null}:/ifcbdb/ifcbdb/local_settings.py
     depends_on:
       - postgres
       - memcached
@@ -43,8 +43,7 @@ services:
       - memcached_network
 
   nginx:
-    image: nginx:latest
-    container_name: nginx
+    image: ${NGINX_IMAGE:-nginx:1.25}
     environment:
       - NGINX_HOST=${HOST:-localhost}
       - NGINX_HTTP_PORT=${HTTP_PORT:-80}
@@ -63,27 +62,24 @@ services:
       - nginx_network
 
   postgres:
-    image: ${POSTGIS_IMAGE:-postgis/postgis:latest}
-    container_name: postgres
+    image: ${POSTGIS_IMAGE:-postgis/postgis:16-3.4}
     environment:
       - POSTGRES_USER=ifcb
-      - POSTGRES_PASSWORD=ifcb
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
       - POSTGRES_DB=ifcb
     volumes:
-      - ifcbdb-postgis-data:/var/lib/postgresql/data
+      - postgis-data:/var/lib/postgresql/data
     networks:
       - postgres_network
 
   memcached:
-    image: memcached:latest
-    container_name: memcached
+    image: ${MEMCACHED_IMAGE:-memcached:1.6}
     command: ["-m", "64m"]
     networks:
       - memcached_network
 
   redis:
-    image: redis:latest
-    container_name: redis
+    image: ${REDIS_IMAGE:-redis:7.2}
     networks:
       - redis_network
 
@@ -98,7 +94,5 @@ networks:
     driver: bridge
 
 volumes:
-  ifcbdb-postgis-data:
-    name: ${POSTGIS_VOLUME:-ifcbdb-postgis-data}
+  postgis-data:
   nginx-static:
-    name: ${NGINX_STATIC_VOLUME:-ifcbdb-nginx-static}

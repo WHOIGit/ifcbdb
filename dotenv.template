@@ -16,3 +16,7 @@ SSL_CERT=./ssl/cert.pem
 SSL_KEY=./ssl/key.pem
 
 DJANGO_SECRET_KEY=changeme
+
+POSTGRES_PASSWORD=changeme
+
+#LOCAL_SETTINGS=./local_settings.py

@@ -79,7 +79,7 @@ DATABASES = {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'ifcb',
         'USER': 'ifcb',
-        'PASSWORD': 'ifcb',
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'ifcb'),
         'HOST': 'postgres',  # <-- IMPORTANT: same name as docker-compose service!
         'PORT': '5432',
     }
@@ -151,7 +151,6 @@ LOGOUT_REDIRECT_URL = 'secure:login'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # local settings configured externally
-
 IFCB_PASSWORD_KEY = 'ignore'
 
 _HOST = os.getenv('NGINX_HOST', 'localhost')
@@ -164,3 +163,8 @@ CSRF_TRUSTED_ORIGINS = [f'https://{_HOST}:{_HTTPS_PORT}', f'http://{_HOST}:{_HTT
 
 DEFAULT_DATASET = os.getenv('DEFAULT_DATASET', '')
 
+try:
+    from .local_settings import *
+except ImportError as e:
+    # local_settings are optional since typical deployments can be configured using only env vars above
+    pass
