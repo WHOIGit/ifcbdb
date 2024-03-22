@@ -1,0 +1,14 @@
+dashboard:
+  url: http://localhost:8000 # base URL of dashboard, no trailing slash
+sleep: 60 # how many seconds to pause between transfer/sync runs
+ifcbs:
+  underway: # you can call each IFCB whatever you want
+    address: 10.0.0.23
+    netbios_name: some_name # the "computer name" of the IFCB as reported by Windows
+    username: some_username # username to connect to IFCB
+    password: some_password # password to connect to IFCB
+    share: Data
+    destination: /data/ifcb # container path where data will be copied to
+    beads_destination: /data/beads # container path where beads will be copied to
+    day_dirs: true # whether to organize files into year/day directories
+    dataset: underway # name of dataset in dashboard

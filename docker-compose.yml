@@ -2,13 +2,18 @@ version: '3'
 
 services:
   ifcbdb:
-    build: .
-    container_name: ifcbdb
+    image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
+    environment:
+      - NGINX_HOST=${HOST:-localhost}
+      - NGINX_HTTP_PORT=${HTTP_PORT:-80}
+      - NGINX_HTTPS_PORT=${HTTPS_PORT:-443}
+      - DEFAULT_DATASET=${DEFAULT_DATASET:-}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
     volumes:
-      - ./pyifcb:/pyifcb
-      - ./ifcbdb:/ifcbdb
-      - ./static:/static
-      - ./ifcb_data:/data
+      - nginx-static:/static
+      - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
+      - ${LOCAL_SETTINGS:-/dev/null}:/ifcbdb/ifcbdb/local_settings.py
     networks:
       - nginx_network
       - postgres_network
@@ -20,13 +25,14 @@ services:
       - redis
 
   celery:
-    build: .
-    container_name: celery
+    image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
     command: celery -A ifcbdb worker -l info
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
     volumes:
-      - ./pyifcb:/pyifcb
-      - ./ifcbdb:/ifcbdb
-      - ./ifcb_data:/data
+      - ${PRIMARY_DATA_DIR:-./ifcb_data}:/data
+      - ${LOCAL_SETTINGS:-/dev/null}:/ifcbdb/ifcbdb/local_settings.py
     depends_on:
       - postgres
       - memcached
@@ -37,40 +43,43 @@ services:
       - memcached_network
 
   nginx:
-    image: nginx:latest
-    container_name: nginx
+    image: ${NGINX_IMAGE:-nginx:1.25}
+    environment:
+      - NGINX_HOST=${HOST:-localhost}
+      - NGINX_HTTP_PORT=${HTTP_PORT:-80}
+      - NGINX_HTTPS_PORT=${HTTPS_PORT:-443}
     ports:
-      - 8000:80
+      - ${HTTP_PORT:-80}:80
+      - ${HTTPS_PORT:-443}:443
     volumes:
-      - ./nginx:/etc/nginx/conf.d
-      - ./static:/static
+      - ${NGINX_TEMPLATE:-./nginx-ssl.conf.template}:/etc/nginx/templates/default.conf.template
+      - nginx-static:/static
+      - ${SSL_KEY}:/ssl/ssl.key:ro
+      - ${SSL_CERT}:/ssl/ssl.cer:ro
     depends_on:
       - ifcbdb
     networks:
       - nginx_network
 
   postgres:
-    image: mdillon/postgis:11-alpine
-    container_name: postgres
+    image: ${POSTGIS_IMAGE:-postgis/postgis:16-3.4}
     environment:
       - POSTGRES_USER=ifcb
-      - POSTGRES_PASSWORD=ifcb
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
       - POSTGRES_DB=ifcb
     volumes:
-      - ./pg_data:/var/lib/postgresql/data
+      - postgis-data:/var/lib/postgresql/data
     networks:
       - postgres_network
 
   memcached:
-    image: memcached:latest
-    container_name: memcached
+    image: ${MEMCACHED_IMAGE:-memcached:1.6}
     command: ["-m", "64m"]
     networks:
       - memcached_network
 
   redis:
-    image: redis:latest
-    container_name: redis
+    image: ${REDIS_IMAGE:-redis:7.2}
     networks:
       - redis_network
 
@@ -83,3 +92,7 @@ networks:
     driver: bridge
   redis_network:
     driver: bridge
+
+volumes:
+  postgis-data:
+  nginx-static:

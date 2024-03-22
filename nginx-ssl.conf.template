@@ -1,0 +1,39 @@
+client_max_body_size 2M;
+
+upstream ifcbdb_server {
+  server ifcbdb:8000;
+}
+
+server {
+    listen 80;
+    server_name ${NGINX_HOST};
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name ${NGINX_HOST};
+
+    gzip on;
+    gzip_proxied any;
+    gzip_types application/javascript application/json text/css text/html;
+
+    location /static/ {
+        alias /static/;
+    }
+
+    ssl_certificate /ssl/ssl.cer;
+    ssl_certificate_key /ssl/ssl.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_set_header X-Forwarder-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+
+        proxy_pass http://ifcbdb_server;
+    }
+}

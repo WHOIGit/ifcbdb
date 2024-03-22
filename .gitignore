@@ -53,7 +53,6 @@ coverage.xml
 
 # Django stuff:
 *.log
-local_settings.py
 db.sqlite3
 
 # Flask stuff:
@@ -116,6 +115,7 @@ pyifcb
 pg_data
 ifcb_data
 static
+local_settings.py
 
 .DS_Store
 .vscode

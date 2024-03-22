@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker exec -it ifcbdb python manage.py shell
+docker compose exec python manage.py shell
 

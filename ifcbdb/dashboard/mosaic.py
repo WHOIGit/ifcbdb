@@ -27,7 +27,7 @@ DELETED = 0
 NOT_DELETED = 1
 
 
-@nb.jit
+@nb.jit(nopython=True)
 def intersects(x, y, w, h, xx, yy, ww, hh):
     self_left, self_right = x, x + w
     self_bottom, self_top = y, y + h
@@ -51,13 +51,13 @@ def intersects(x, y, w, h, xx, yy, ww, hh):
     return True
 
 
-@nb.jit
+@nb.jit(nopython=True)
 def contains(x, y, w, h, xx, yy, ww, hh):
     # does the first rectangle contain the second one?
     return yy >= y and xx >= x and yy + hh <= y + h and xx + ww <= x + w
 
 
-@nb.jit
+@nb.jit(nopython=True)
 def join(x, y, w, h, xx, yy, ww, hh):
 
     if contains(x, y, w, h, xx, yy, ww, hh):
@@ -209,7 +209,7 @@ class Packer(object):
         return x, y
 
 
-@nb.jit
+@nb.jit(nopython=True)
 def pack(w, h, ws, hs, xs, ys, pages):
     n = len(ws)
     p = Packer(w, h, max(n, 128))  # should be enough overhead
