@@ -176,7 +176,7 @@ function updateBinStats(data) {
     $("#stat-concentration").html(data["concentration"]);
     $("#stat-cruise").html(data["cruise"]);
     $("#stat-sample-type").html(data["sample_type"]);
-    $("#stat-size").html(filesize(data["size"]));
+    $("#stat-size").html(filesize.filesize(data["size"]));
     $("#stat-skip")
         .text(data["skip"] ? "Yes" : "No")
         .data("skipped", data["skip"]);
