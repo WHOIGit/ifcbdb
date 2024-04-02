@@ -20,10 +20,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'ju3ugk&gwd&tf7=l!5^o(&j^5ha22yq9ov%^mx%%s4-gw0-a0#'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'changeme')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -81,7 +79,7 @@ DATABASES = {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'ifcb',
         'USER': 'ifcb',
-        'PASSWORD': 'ifcb',
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'ifcb'),
         'HOST': 'postgres',  # <-- IMPORTANT: same name as docker-compose service!
         'PORT': '5432',
     }
@@ -152,7 +150,21 @@ LOGOUT_REDIRECT_URL = 'secure:login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# local settings configured externally
+IFCB_PASSWORD_KEY = 'ignore'
+
+_HOST = os.getenv('NGINX_HOST', 'localhost')
+_HTTPS_PORT = os.getenv('NGINX_HTTPS_PORT', '443')
+_HTTP_PORT = os.getenv('NGINX_HTTP_PORT', '80')
+
+ALLOWED_HOSTS = [_HOST]
+
+CSRF_TRUSTED_ORIGINS = [f'https://{_HOST}:{_HTTPS_PORT}', f'http://{_HOST}:{_HTTP_PORT}']
+
+DEFAULT_DATASET = os.getenv('DEFAULT_DATASET', '')
+
 try:
     from .local_settings import *
 except ImportError as e:
-    raise ImportError('local settings not found') from e
+    # local_settings are optional since typical deployments can be configured using only env vars above
+    pass

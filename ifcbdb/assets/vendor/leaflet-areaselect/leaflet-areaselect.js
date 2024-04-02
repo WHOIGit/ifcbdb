@@ -40,34 +40,29 @@ L.AreaSelect = L.Class.extend({
         
         return new L.LatLngBounds(sw, ne);
     },
-    
-    getBBoxCoordinates: function() {
-        var size = this.map.getSize();
-      
-        var topRight = new L.Point();
-        var bottomLeft = new L.Point();
-        var topLeft = new L.Point();
-        var bottomRight = new L.Point();
 
-        bottomLeft.x = Math.round((size.x - this._width) / 2);
-        topRight.y = Math.round((size.y - this._height) / 2);
-        topRight.x = size.x - bottomLeft.x;
-        bottomLeft.y = size.y - topRight.y;
+    /**
+     * Adjust the map bounds to fit the desired selection, and resize the selection to match the bounds parameter.
+     * 
+     * Note that the actual bounds after running this function may not match the bounds parameter exactly, since 
+     * we're converting between pixels and latlng coordinates.
+     * 
+     * This method is not compatible with the keepAspectRatio option.
+     */
+    setBounds: function(bounds) {
+        bounds = L.latLngBounds(bounds);
+        this.map.fitBounds(bounds, {
+            animate: false,
+            paddingTopLeft: [this.options.minHorizontalSpacing/2, this.options.minVerticalSpacing/2],
+            paddingBottomRight:[this.options.minHorizontalSpacing/2, this.options.minVerticalSpacing/2],
+        });
 
-        topLeft.x = bottomLeft.x;
-        topLeft.y = topRight.y;
-        bottomRight.x = topRight.x;
-        bottomRight.y = bottomLeft.y;
-
-        var coordinates = 
-            [
-                {"sw": this.map.containerPointToLatLng(bottomLeft)},
-                {"nw": this.map.containerPointToLatLng(topLeft)},
-                {"ne": this.map.containerPointToLatLng(topRight)},
-                {"se": this.map.containerPointToLatLng(bottomRight)}
-            ]
-		
-        return coordinates
+        let nwPx = this.map.latLngToLayerPoint(bounds.getNorthWest());
+        let sePx = this.map.latLngToLayerPoint(bounds.getSouthEast());
+        this.setDimensions({
+            width: sePx.x - nwPx.x,
+            height: sePx.y - nwPx.y,
+        })
     },
     
     remove: function() {
@@ -90,6 +85,14 @@ L.AreaSelect = L.Class.extend({
     },
 
     
+    getDimensions: function () {
+        return {
+            height: this._height,
+            width: this._width
+        };
+    },
+	
+	
     _createElements: function() {
         if (!!this._container)
             return;
@@ -122,47 +125,77 @@ L.AreaSelect = L.Class.extend({
         yMod = yMod || 1;
         
         var self = this;
-        function onMouseDown(event) {
-            event.stopPropagation();
+        var mapContainer = self.map.getContainer();
+        let curX, curY, ratio, size;
+
+        function dragStart(pageX, pageY) {
             self.map.dragging.disable();
-            L.DomEvent.removeListener(this, "touchstart", onMouseDown);
-            var curX = event.pageX;
-            var curY = event.pageY;
-            var ratio = self._width / self._height;
-            var size = self.map.getSize();
-            var mapContainer = self.map.getContainer();
-            
-            function onMouseMove(event) {
-                if (self.options.keepAspectRatio) {
-                    var maxHeight = (self._height >= self._width ? size.y : size.y * (1/ratio) ) - Math.max(self.options.minVerticalSpacing, self.options.minHorizontalSpacing);
-                    self._height += (curY - event.pageY) * 2 * yMod;
-                    self._height = Math.max(self.options.minHeight, self.options.minWidth, self._height);
-                    self._height = Math.min(maxHeight, self._height);
-                    self._width = self._height * ratio;
-                } else {
-                    self._width += (curX - event.pageX) * 2 * xMod;
-                    self._height += (curY - event.pageY) * 2 * yMod;
-                    self._width = Math.max(self.options.minWidth, self._width);
-                    self._height = Math.max(self.options.minHeight, self._height);
-                    self._width = Math.min(size.x-self.options.minHorizontalSpacing, self._width);
-                    self._height = Math.min(size.y-self.options.minVerticalSpacing, self._height);
-                }
-                
-                curX = event.pageX;
-                curY = event.pageY;
-                self._render();
-            }
-            function onMouseUp(event) {
-                self.map.dragging.enable();
-                L.DomEvent.removeListener(mapContainer, "touchend", onMouseUp);
-                L.DomEvent.removeListener(mapContainer, "touchmove", onMouseMove);
-                L.DomEvent.addListener(handle, "touchstart", onMouseDown);
-                self.fire("change");
-            }
-            L.DomEvent.addListener(mapContainer, "touchmove", onMouseMove);
-            L.DomEvent.addListener(mapContainer, "touchend", onMouseUp);
+            curX = pageX;
+            curY = pageY;
+            ratio = self._width / self._height;
+            size = self.map.getSize();
+            mapContainer = self.map.getContainer();
         }
-        L.DomEvent.addListener(handle, "touchstart", onMouseDown);
+        function dragMove(pageX, pageY) {
+            if (self.options.keepAspectRatio) {
+                var maxHeight = (self._height >= self._width ? size.y : (size.x / ratio) ) - Math.max(self.options.minVerticalSpacing, self.options.minHorizontalSpacing);
+                self._height += (curY - pageY) * 2 * yMod;
+                self._height = Math.max(self.options.minHeight, self.options.minWidth, self._height);
+                self._height = Math.min(maxHeight, self._height);
+                self._width = self._height * ratio;
+            } else {
+                self._width += (curX - pageX) * 2 * xMod;
+                self._height += (curY - pageY) * 2 * yMod;
+                self._width = Math.max(self.options.minWidth, self._width);
+                self._height = Math.max(self.options.minHeight, self._height);
+                self._width = Math.min(size.x-self.options.minHorizontalSpacing, self._width);
+                self._height = Math.min(size.y-self.options.minVerticalSpacing, self._height);
+            }
+            
+            curX = pageX;
+            curY = pageY;
+            self._render();
+        }
+        function dragEnd(event) {
+            self.map.dragging.enable();
+            self.fire("change");
+        }
+
+        // mouse event listeners
+        function onMouseMove(event) {
+            dragMove(event.pageX, event.pageY);
+        }
+        function onMouseUp(event) {
+            dragEnd(event);
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+        }
+        L.DomEvent.addListener(handle, "mousedown", (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+
+            dragStart(event.pageX, event.pageY)
+            document.addEventListener("mousemove", onMouseMove);
+            document.addEventListener("mouseup", onMouseUp);
+        });
+
+        // touch event listeners
+        function onTouchMove(event) {
+            dragMove(event.targetTouches[0].pageX, event.targetTouches[0].pageY);
+        }
+        function onTouchEnd(event) {
+            dragEnd(event);
+            L.DomEvent.removeListener(mapContainer, "touchmove", onTouchMove);
+            L.DomEvent.removeListener(mapContainer, "touchend", onTouchEnd);
+        }
+        L.DomEvent.addListener(handle, "touchstart", (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+
+            dragStart(event.targetTouches[0].pageX, event.targetTouches[0].pageY)
+            L.DomEvent.addListener(mapContainer, "touchmove", onTouchMove);
+            L.DomEvent.addListener(mapContainer, "touchend", onTouchEnd);
+        });
     },
     
     _onMapResize: function() {
@@ -176,9 +209,11 @@ L.AreaSelect = L.Class.extend({
     _render: function() {
         var size = this.map.getSize();
         var handleOffset = Math.round(this._nwHandle.offsetWidth/2);
-        
-        var topBottomHeight = Math.round((size.y-this._height)/2);
-        var leftRightWidth = Math.round((size.x-this._width)/2);
+
+        var topBottomWidth = size.x
+        var topBottomHeight = Math.round((size.y - this._height) / 2);
+        var leftRightWidth = Math.round((size.x - this._width) / 2);
+        var leftRightHeight = size.y - (topBottomHeight * 2);
         
         function setDimensions(element, dimension) {
             element.style.width = dimension.width + "px";
@@ -188,20 +223,30 @@ L.AreaSelect = L.Class.extend({
             element.style.bottom = dimension.bottom + "px";
             element.style.right = dimension.right + "px";
         }
-        
-        setDimensions(this._topShade, {width:size.x, height:topBottomHeight, top:0, left:0});
-        setDimensions(this._bottomShade, {width:size.x, height:topBottomHeight, bottom:0, left:0});
+
+        setDimensions(this._topShade, {
+            width: topBottomWidth,
+            height: topBottomHeight,
+            top: 0,
+            left: 0
+        });
+        setDimensions(this._bottomShade, {
+            width: topBottomWidth,
+            height: topBottomHeight,
+            top: size.y - topBottomHeight,
+            left: 0
+        });
         setDimensions(this._leftShade, {
-            width: leftRightWidth, 
-            height: size.y-(topBottomHeight*2), 
-            top: topBottomHeight, 
+            width: leftRightWidth,
+            height: leftRightHeight,
+            top: topBottomHeight,
             left: 0
         });
         setDimensions(this._rightShade, {
-            width: leftRightWidth, 
-            height: size.y-(topBottomHeight*2), 
-            top: topBottomHeight, 
-            right: 0
+            width: leftRightWidth,
+            height: leftRightHeight,
+            top: topBottomHeight,
+            left: size.x - leftRightWidth
         });
         
         setDimensions(this._nwHandle, {left:leftRightWidth-handleOffset, top:topBottomHeight-7});
@@ -213,4 +258,4 @@ L.AreaSelect = L.Class.extend({
 
 L.areaSelect = function(options) {
     return new L.AreaSelect(options);
-}
+};

@@ -1386,7 +1386,7 @@ $(function() {
       '&instrument='+_instrument+'&tags='+_tags+"&cruise="+_cruise+"&sample_type="+_sampleType;
     $.get(timeline_info_url, function(data) {
       $("#n_bins").html(data.n_bins+" bins, "+data.n_images+" images");
-      $("#total-data-volume").html("("+filesize(data.total_data_volume)+")");
+      $("#total-data-volume").html("("+filesize.filesize(data.total_data_volume)+")");
     })
 
     var title = "";

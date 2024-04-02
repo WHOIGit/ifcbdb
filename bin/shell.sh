@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker exec -it ifcbdb bash
+docker compose exec bash
 
