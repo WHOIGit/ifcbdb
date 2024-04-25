@@ -21,7 +21,6 @@ def load_config(config_file):
 
 def sync_ifcb(name, dashboard_url, ifcb_config):
     address = ifcb_config['address']
-    netbios_name = ifcb_config.get('netbios_name',None)
     username = ifcb_config.get('username','ifcb')
     password = ifcb_config.get('password','ifcb')
     share = ifcb_config.get('share','Data')
@@ -53,7 +52,7 @@ def sync_ifcb(name, dashboard_url, ifcb_config):
     logging.info(f'connecting to {name} ...')
 
     try:
-        ifcb = RemoteIfcb(address, username, password, netbios_name=netbios_name,
+        ifcb = RemoteIfcb(address, username, password,
             share=share, directory=directory, timeout=timeout)
 
         with ifcb:
@@ -67,7 +66,7 @@ def sync_ifcb(name, dashboard_url, ifcb_config):
         logging.info(f'transferring beads ...')
 
         try:
-            ifcb = RemoteIfcb(address, username, password, netbios_name=netbios_name,
+            ifcb = RemoteIfcb(address, username, password,
                 share=share, directory='beads', timeout=timeout)
 
             with ifcb:
