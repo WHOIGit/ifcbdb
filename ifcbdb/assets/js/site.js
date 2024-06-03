@@ -25,6 +25,14 @@ $(function(){
             goToBin($(this).val());
         }
     });
+
+    $('body').on('click', function (e) {
+        var $target = $(e.target);
+
+        if ($target.data('toggle') !== 'popover' && $target.parents('.popover').length === 0) {
+            $('[data-toggle="popover"]').popover('hide');
+        }
+    });
 })
 
 function isKnownLocation(lat, lng) {
