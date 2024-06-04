@@ -24,6 +24,42 @@ services:
       - memcached
       - redis
 
+  ifcbapi:
+    build:
+      context: .
+      dockerfile: ./ifcbapi/Dockerfile
+    container_name: ifcbapi
+    command: python manage.py runserver 0.0.0.0:8001
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
+    volumes:
+      - ./ifcbapi:/app
+    networks:
+      - postgres_network
+      - ifcb_network
+      - nginx_network
+    depends_on:
+      - postgres
+    ports:
+      - "8001:8001"
+
+  ifcbcli:
+    build:
+      context: .
+      dockerfile: ./ifcbcli/Dockerfile
+    container_name: ifcbcli
+    command: tail -f /dev/null #python manage.py runserver 0.0.0.0:8001
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+    volumes:
+      - ./ifcbcli:/app
+    networks:
+      - ifcb_network
+      - nginx_network
+    ports:
+      - "8002:8002"
+
   celery:
     image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
     command: celery -A ifcbdb worker -l info
