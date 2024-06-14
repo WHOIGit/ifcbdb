@@ -928,7 +928,7 @@ function changeBin(binId, updateHistory) {
     updatePlotData();
     updateBinMetadata();
 
-    $.get(dataUrl, function(data){
+    $.post(dataUrl, { "csrfmiddlewaretoken": _csrf }, function(data){
         updateBinStats(data);
         updateBinDownloadLinks(data);
         updateBinDatasets(data);

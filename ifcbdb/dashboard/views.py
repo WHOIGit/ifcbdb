@@ -916,8 +916,14 @@ def bin_data(request, bin_id):
     bin = get_object_or_404(Bin, pid=bin_id)
     view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
     scale_factor = request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
-    preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
     include_coordinates = request.GET.get("include_coordinates", "false").lower() == "true"
+
+    # Allow the preload flag to be passed in, but it only applies if this is a POST request. This is to prevent someone
+    #   scraping the URLS and causing high CPU load with some of the inner mosaic methods
+    if request.POST:
+        preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
+    else:
+        preload_adjacent_bins = False
 
     details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates,
                            instrument_number=instrument_number, tags=tags, cruise=cruise, sample_type=sample_type)
