@@ -535,7 +535,7 @@ function loadMosaic(pageNumber) {
         "&include_coordinates=true" +
         "&" + buildFilterOptionsQueryString(true);
 
-    $.get(binDataUrl, function(data) {
+    $.post(binDataUrl, { "csrfmiddlewaretoken": _csrf }, function(data) {
 
         // Update the coordinates for the image
         _coordinates = JSON.parse(data["coordinates"]);
