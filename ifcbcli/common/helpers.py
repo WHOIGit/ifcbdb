@@ -1,10 +1,21 @@
+from django.core.management.base import BaseCommand
+
 
 def validate_query_parameter(value: str) -> bool:
     return _validate_value(value, ':')
 
 
-def validate_update_parameter():
-    return _validate_value('=')
+def validate_update_parameter(value: str) -> bool:
+    return _validate_value(value, '=')
+
+
+def write_error(cmd: BaseCommand, error: str) -> None:
+    cmd.stdout.write(
+        cmd.style.ERROR(error)
+    )
+
+
+# region " Helpers "
 
 
 def _is_none_or_empty(value: str) -> bool:
@@ -25,3 +36,6 @@ def _validate_value(value: str, separator: str) -> bool:
         return False
 
     return True
+
+
+# endregion

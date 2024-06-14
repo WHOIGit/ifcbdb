@@ -1,5 +1,8 @@
 import requests
+from typing import List
 from django.core.management.base import BaseCommand, CommandError
+from pydantic import BaseModel, parse_obj_as
+from core.schemas import DatasetSchema, TagSchema
 from common import helpers
 
 
@@ -28,10 +31,14 @@ class Command(BaseCommand):
         match options['entity']:
             case 'datasets':
                 datasets = ApiService.list_datasets()
-                response = '\n'.join([x['name'] for x in datasets])
+                datasets = parse_obj_as(List[DatasetSchema], datasets)
+
+                response = '\n'.join([x.name for x in datasets])
             case 'tags':
                 tags = ApiService.list_tags()
-                response = '\n'.join([x['name'] for x in tags])
+                tags = parse_obj_as(List[TagSchema], tags)
+
+                response = '\n'.join([x.name for x in tags])
             case _:
                 # TODO: Should not happen because argument parser limits the values that can be submitted
                 response = ''

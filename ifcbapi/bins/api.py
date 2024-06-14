@@ -52,7 +52,7 @@ def search(request: HttpRequest, criteria: BinCriteriaSchema = None):
     if criteria.dataset:
         dataset = Dataset.objects.filter(name=criteria.dataset).first()
         if not dataset:
-            raise HttpError(400, "Dataset not found")
+            raise HttpError(400, f'Dataset "{criteria.dataset}" not found')
 
         bins = bins.filter(datasets__id=dataset.id)
 

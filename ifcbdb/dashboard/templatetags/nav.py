@@ -1,9 +1,18 @@
 from django import template
 from django.shortcuts import reverse
+import requests
 
 from dashboard.models import Dataset, Instrument, Tag, bin_query
 
 register = template.Library()
+
+
+# TODO: Make into a common library/service?
+class ApiService:
+    @staticmethod
+    def list_datasets():
+        return requests.get('http://ifcbapi:8001/api/datasets/').json()
+
 
 
 @register.inclusion_tag('dashboard/_dataset_switcher.html')
@@ -17,10 +26,8 @@ def dataset_switcher():
 
 @register.inclusion_tag("dashboard/_dataset-nav.html")
 def dataset_nav():
-    datasets = Dataset.objects.filter(is_active=True)
-
     return {
-        "datasets": datasets,
+        'datasets': ApiService.list_datasets()
     }
 
 
