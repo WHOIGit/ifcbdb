@@ -52,6 +52,7 @@ services:
     command: tail -f /dev/null #python manage.py runserver 0.0.0.0:8001
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
+      - API_ENDPOINT=http://ifcbapi:8001/api
     volumes:
       - ./ifcbcli:/app
     networks:

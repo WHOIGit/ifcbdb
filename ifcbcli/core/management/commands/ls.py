@@ -1,21 +1,9 @@
-import requests
 from typing import List
 from pydantic import parse_obj_as
 from django.core.management.base import BaseCommand, CommandError
+from services import ApiService
 from core.schemas import BinCriteriaSchema, BinSchema
 from common import helpers
-
-
-# TODO: Make into a common library/service?
-class ApiService:
-    @staticmethod
-    def search_bins(dataset: str = None):
-        body = {}
-
-        if dataset:
-            body['dataset'] = dataset
-
-        return requests.get('http://ifcbapi:8001/api/bins/search', json=body).json()
 
 
 class Command(BaseCommand):

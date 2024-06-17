@@ -1,20 +1,9 @@
-import requests
 from typing import List
 from django.core.management.base import BaseCommand, CommandError
 from pydantic import BaseModel, parse_obj_as
+from services import ApiService
 from core.schemas import DatasetSchema, TagSchema
 from common import helpers
-
-
-# TODO: Make into a common library/service?
-class ApiService:
-    @staticmethod
-    def list_datasets():
-        return requests.get('http://ifcbapi:8001/api/datasets/').json()
-
-    @staticmethod
-    def list_tags():
-        return requests.get('http://ifcbapi:8001/api/tags/').json()
 
 
 # TODO: Is there a better term for this than "query"? This can handle other entities as well, and shouldn't be strictly
