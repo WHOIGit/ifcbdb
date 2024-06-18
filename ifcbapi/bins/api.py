@@ -3,7 +3,7 @@ from typing import List
 from django.http import HttpRequest, HttpResponseBadRequest, JsonResponse
 from ninja import Router
 from ninja.errors import HttpError
-from core.models import Bin, Dataset
+from core.models import Bin, Dataset, Instrument
 from .schemas import BinCriteriaSchema, BinSchema
 
 
@@ -52,8 +52,15 @@ def search(request: HttpRequest, criteria: BinCriteriaSchema = None):
     if criteria.dataset:
         dataset = Dataset.objects.filter(name=criteria.dataset).first()
         if not dataset:
-            raise HttpError(400, f'Dataset "{criteria.dataset}" not found')
+            raise HttpError(400, f"'Dataset '{criteria.dataset}' not found'")
 
         bins = bins.filter(datasets__id=dataset.id)
+
+    if criteria.instrument:
+        instrument = Instrument.objects.filter(number=criteria.instrument).first()
+        if not instrument:
+            raise HttpError(400, f"'Instrument '{criteria.instrument}' not found'")
+
+        bins = bins.filter(instrument__id=instrument.id)
 
     return bins

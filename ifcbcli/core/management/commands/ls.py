@@ -2,14 +2,15 @@ from typing import List
 from pydantic import parse_obj_as
 from django.core.management.base import BaseCommand, CommandError
 from services import ApiService
-from core.schemas import BinCriteriaSchema, BinSchema
+from core.schemas import BinSchema
 from common import helpers
 
 
 class Command(BaseCommand):
     help = "TODO: Add help message"
 
-    ALLOWED_PARAMETERS = ['dataset', 'instrument', 'bin', 'sample-type', 'cruise', ]
+    # TODO: Implement remaining criteria
+    ALLOWED_PARAMETERS = ['dataset', 'instrument'] #, 'bin', 'sample-type', 'cruise', ]
 
     def add_arguments(self, parser):
         parser.add_argument("criteria", nargs="+", type=str)
@@ -32,8 +33,7 @@ class Command(BaseCommand):
             )
             return
 
-        # TODO: All of this logic is just a proof of concept and needs a lot of cleanup
-        dataset = None
+        parameters = {}
 
         for criteria in options['criteria']:
             parameter, value = criteria.split(':')
@@ -41,15 +41,10 @@ class Command(BaseCommand):
                 helpers.write_error(self, f'Invalid parameter: {parameter}')
                 return
 
-            match parameter:
-                case 'dataset':
-                    dataset = value
-                case _:
-                    helpers.write_error(self, f'The "{parameter}" parameter has not been implemented yet')
-                    return
+            parameters[parameter] = value
 
         # TODO: Needs (much better) error handling using the HTTP code
-        api_response = ApiService.search_bins(dataset)
+        api_response = ApiService.search_bins(**parameters)
 
         if 'detail' in api_response:
             helpers.write_error(self, api_response['detail'])
