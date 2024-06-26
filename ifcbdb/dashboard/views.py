@@ -30,7 +30,6 @@ from dashboard.accession import Accession, export_metadata
 def index(request):
     if settings.DEFAULT_DATASET:
         return HttpResponseRedirect(reverse("timeline_page") + "?dataset=" + settings.DEFAULT_DATASET)
-
     return HttpResponseRedirect(reverse("datasets"))
 
 
@@ -109,7 +108,13 @@ def search_timeline_locations(request):
     result = {
         "locations": bin_locations + dataset_locations
     }
-    cache.set(cache_key, result)
+    try:
+        cache.set(cache_key, result)
+    except Exception as e: # value is probably too large
+        try:
+            cache.delete(cache_key)
+        except Exception as e:
+            pass
 
     return JsonResponse(result)
 
