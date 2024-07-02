@@ -53,6 +53,7 @@ services:
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
       - API_ENDPOINT=http://ifcbapi:8001/api
+      - API_TOKEN=${API_TOKEN:-}
     volumes:
       - ./ifcbcli:/app
     networks:

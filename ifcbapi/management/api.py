@@ -6,10 +6,11 @@ from common.auth import AuthBearer
 router = Router()
 
 
-@router.get("/update", auth=AuthBearer())
+@router.post("/update/", auth=AuthBearer())
 def update(request: HttpRequest):
     user = request.auth
 
     return JsonResponse({
-        'success': True
+        'success': True,
+        'username': user.username,
     })

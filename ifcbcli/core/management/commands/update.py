@@ -7,8 +7,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        x = ApiService.update()
+        response = ApiService.update()
+
+        print(response)
 
         self.stdout.write(
-            self.style.WARNING('The "update" command has not been implemented yet.')
+            self.style.WARNING('The "update" command has not been fully implemented yet.')
         )

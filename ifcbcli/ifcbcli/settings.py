@@ -125,3 +125,5 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 API_ENDPOINT = os.environ.get('API_ENDPOINT', '')
+API_TOKEN = os.environ.get('API_TOKEN', '')
+

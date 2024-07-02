@@ -27,7 +27,7 @@ class ApiService:
     @classmethod
     def update(cls):
         # TODO: Implement error handling (in _get and _post calls)
-        return cls._get('/management/update/')
+        return cls._post('/management/update/', use_auth=True)
         # try:
         #     return cls._get('/management/update/')
         # except requests.exceptions.HTTPError as http_error:
@@ -36,11 +36,19 @@ class ApiService:
     # region " Helpers "
 
     @classmethod
-    def _get(cls, path: str,  payload: dict = None) -> dict:
-        return requests.get(settings.API_ENDPOINT + path, json=payload).json()
+    def _get(cls, path: str,  payload: dict = None, use_auth: bool = False) -> dict:
+        headers = { 'Authorization': f'Bearer {settings.API_TOKEN}' } if use_auth else None
+
+        response = requests.get(settings.API_ENDPOINT + path, json=payload, headers=headers)
+
+        return response.json()
 
     @classmethod
-    def _post(cls, path: str, payload: dict = None) -> dict:
-        return requests.post(settings.API_ENDPOINT + path, json=payload).json()
+    def _post(cls, path: str, payload: dict = None, use_auth: bool = False) -> dict:
+        headers = {'Authorization': f'Bearer {settings.API_TOKEN}'} if use_auth else None
+
+        response = requests.post(settings.API_ENDPOINT + path, json=payload, headers=headers)
+
+        return response.json()
 
     # endregion
