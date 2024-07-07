@@ -128,5 +128,6 @@ urlpatterns = [
     path('api/list_images/<slug:pid>', views.list_images, name='list_images'),
     path('api/update_skip', views.update_skip, name='update_skip'),
     path('api/export_metadata/<slug:dataset_name>', views.export_metadata_view, name='export_metadata'),
+    path('api/export_metadata/', views.export_metadata_view, name='export_metadata'),
     path('api/sync_bin', views.sync_bin, name='sync_bin'),
  ]

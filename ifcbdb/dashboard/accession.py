@@ -464,9 +464,9 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     return progress
 
 def export_metadata(ds, bins):
-    name = ds.name
-    dataset_location = ds.location
-    dataset_depth = ds.depth
+    name = ds.name if ds else ''
+    dataset_location = ds.location if ds else None
+    dataset_depth = ds.depth if ds else None
     bqs = bins
     qs = bqs.values('id','pid','sample_time','location','ml_analyzed',
         'cruise','cast','niskin','depth', 'instrument__number', 'skip',
@@ -505,6 +505,7 @@ def export_metadata(ds, bins):
                 r[rename].append(item[field])
             else:
                 r[field].append(item[field])
+
         add('pid')
         add('sample_time')
         add('instrument__number', rename='ifcb')

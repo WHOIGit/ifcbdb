@@ -64,7 +64,8 @@ def dataframe_csv_response(df, **kw):
     csv_buf = BytesIO()
     df.to_csv(csv_buf, mode='wb', **kw)
     csv_buf.seek(0)
-    return StreamingHttpResponse(csv_buf, content_type='text/csv')
+    response = StreamingHttpResponse(csv_buf, content_type='text/csv')
+    return response
 
 @require_POST
 def search_timeline_locations(request):
@@ -1251,7 +1252,7 @@ def update_skip(request):
         "bins": bin_ids
     })
 
-def export_metadata_view(request, dataset_name):
+def export_metadata_view(request, dataset_name=None):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     cruise = request_get_cruise(request.GET.get("cruise"))
@@ -1280,9 +1281,14 @@ def export_metadata_view(request, dataset_name):
     if bin_qs.count() == 0:
         raise Http404('no bins match the given query')
 
-    ds = Dataset.objects.get(name=dataset_name)
+    ds = Dataset.objects.get(name=dataset_name) if dataset_name else None
     df = export_metadata(ds, bin_qs)
-    return dataframe_csv_response(df, index=None)
+
+    filename = (dataset_name or 'metadata') + '.csv'
+    response = dataframe_csv_response(df, index=None)
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+
+    return response
 
 def sync_bin(request):
     dataset_name = request.GET.get("dataset")
