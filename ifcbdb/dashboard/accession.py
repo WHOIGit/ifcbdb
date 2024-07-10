@@ -179,6 +179,7 @@ class Accession(object):
         prog = progress(most_recent_bin_id, bins_added, total_bins, bad_bins, errors)
         progress_callback(prog)
         return prog
+
     def add_bin(self, bin, b): # IFCB bin, Bin instance
         # qaqc checks
         qc_bad = check_bad(bin)
@@ -207,8 +208,9 @@ class Accession(object):
         b.metadata_json = json.dumps(headers)
         #
         # lat/lon/depth
-        latitude = headers.get('latitude')
-        longitude = headers.get('longitude')
+        latitude = headers.get('latitude') or headers.get('gpsLatitude')
+        longitude = headers.get('longitude') or headers.get('gpsLongitude')
+
         depth = headers.get('depth')
         if latitude is not None and longitude is not None:
             try:
