@@ -409,14 +409,21 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
 
             if tag_cols:
                 for c in tag_cols:
-                    tag = str(get_cell(row, c))
-                    if tag is not None:
-                        normalized = normalize_tag_name(tag)
-                        if not tag or not normalized:
-                            raise ValueError('blank tag name "{}"'.format(tag))
-                        if re.match(r'^[0-9]+$',normalized):
-                            raise ValueError('tag "{}" consists of digits'.format(tag))
-                        b.add_tag(normalized)
+                    cell = get_cell(row, c)
+                    if cell is None:
+                        print(f'skipping: {row} {c}')
+                        continue
+
+                    tag = str(get_cell(row, c)).strip()
+                    if tag == '':
+                        continue
+
+                    normalized = normalize_tag_name(tag)
+                    if not tag or not normalized:
+                        raise ValueError('blank tag name "{}"'.format(tag))
+                    if re.match(r'^[0-9]+$',normalized):
+                        raise ValueError('tag "{}" consists of digits'.format(tag))
+                    b.add_tag(normalized)
 
             if comments_col is not None:
                 body = get_cell(row, comments_col)
