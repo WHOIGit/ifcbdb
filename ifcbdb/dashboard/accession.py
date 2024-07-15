@@ -7,13 +7,13 @@ from collections import defaultdict
 from itertools import islice
 
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max
+from django.db.models import Count, Max, OuterRef, Subquery
 from django.contrib.postgres.aggregates.general import StringAgg
 
 import pandas as pd
 import numpy as np
 
-from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, normalize_tag_name
+from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, normalize_tag_name, BinDatasets
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
@@ -473,6 +473,7 @@ def export_metadata(ds, bins):
     dataset_location = ds.location if ds else None
     dataset_depth = ds.depth if ds else None
     bqs = bins
+
     qs = bqs.values('id','pid','sample_time','location','ml_analyzed',
         'cruise','cast','niskin','depth', 'instrument__number', 'skip',
         'sample_type', 'n_images', 'tags__name').order_by('pid','tags__name')
@@ -499,9 +500,21 @@ def export_metadata(ds, bins):
     trigger_selection_by_id = dict([(id, json.loads(md).get(trigger_selection_key)) for id, md in id2md])
     # now construct the dataframe
     r = defaultdict(list)
-    r.update({ 'dataset': name })
+    r.update({'dataset': name})
     # fast way to remove duplicates
     prev_pid = None
+
+    # If there is no dataset provided, add a subquery to pull the first matching dataset for a bin, since bins can be
+    #   associated with more than one dataset. The subquery just picks the "first" one, without any additional sorting
+    #   or conditional logic
+    if not name:
+        dataset_subquery = BinDatasets.objects.select_related('dataset').filter(bin=OuterRef("id"))
+
+        qs = qs.annotate(
+            dataset_name=Subquery(
+                dataset_subquery.values('dataset__name')[:1]
+            )
+        )
 
     # The "all()" is required to make sure there's a LIMIT statement added the query, rather than pulling back all
     #   records and then taking part of the list
@@ -511,6 +524,12 @@ def export_metadata(ds, bins):
         if item['pid'] == prev_pid:
             continue
         prev_pid = item['pid']
+
+        # Only set the dataset name from the query if no name was required (which means it needed to be included as a
+        #   subquery)
+        if not name:
+            r['dataset'] = item['dataset_name']
+
         def add(field, rename=None):
             if rename is not None:
                 r[rename].append(item[field])

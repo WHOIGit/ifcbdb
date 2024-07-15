@@ -899,3 +899,12 @@ class Comment(models.Model):
             return self.content[:max_length] + '...'
         else:
             return self.content
+
+
+class BinDatasets(models.Model):
+    bin = models.ForeignKey(Bin, on_delete=models.DO_NOTHING)
+    dataset = models.ForeignKey(Dataset, on_delete=models.DO_NOTHING)
+
+    class Meta:
+        db_table = 'dashboard_bin_datasets'
+        managed = False
