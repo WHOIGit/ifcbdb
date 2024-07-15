@@ -900,11 +900,3 @@ class Comment(models.Model):
         else:
             return self.content
 
-
-class BinDatasets(models.Model):
-    bin = models.ForeignKey(Bin, on_delete=models.DO_NOTHING)
-    dataset = models.ForeignKey(Dataset, on_delete=models.DO_NOTHING)
-
-    class Meta:
-        db_table = 'dashboard_bin_datasets'
-        managed = False

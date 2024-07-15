@@ -7,13 +7,13 @@ from collections import defaultdict
 from itertools import islice
 
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max, OuterRef, Subquery
+from django.db.models import Count, Max
 from django.contrib.postgres.aggregates.general import StringAgg
 
 import pandas as pd
 import numpy as np
 
-from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, normalize_tag_name, BinDatasets
+from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, normalize_tag_name
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
@@ -500,21 +500,13 @@ def export_metadata(ds, bins):
     trigger_selection_by_id = dict([(id, json.loads(md).get(trigger_selection_key)) for id, md in id2md])
     # now construct the dataframe
     r = defaultdict(list)
-    r.update({'dataset': name})
+
+    # Only add the name column if dataset criteria was provided
+    if name:
+        r.update({'dataset': name})
+
     # fast way to remove duplicates
     prev_pid = None
-
-    # If there is no dataset provided, add a subquery to pull the first matching dataset for a bin, since bins can be
-    #   associated with more than one dataset. The subquery just picks the "first" one, without any additional sorting
-    #   or conditional logic
-    if not name:
-        dataset_subquery = BinDatasets.objects.select_related('dataset').filter(bin=OuterRef("id"))
-
-        qs = qs.annotate(
-            dataset_name=Subquery(
-                dataset_subquery.values('dataset__name')[:1]
-            )
-        )
 
     # The "all()" is required to make sure there's a LIMIT statement added the query, rather than pulling back all
     #   records and then taking part of the list
@@ -524,11 +516,6 @@ def export_metadata(ds, bins):
         if item['pid'] == prev_pid:
             continue
         prev_pid = item['pid']
-
-        # Only set the dataset name from the query if no name was required (which means it needed to be included as a
-        #   subquery)
-        if not name:
-            r['dataset'] = item['dataset_name']
 
         def add(field, rename=None):
             if rename is not None:
