@@ -1284,7 +1284,7 @@ def export_metadata_view(request, dataset_name=None):
     ds = Dataset.objects.get(name=dataset_name) if dataset_name else None
     df = export_metadata(ds, bin_qs)
 
-    filename = (dataset_name or 'metadata') + '.csv'
+    filename = (dataset_name or 'ifcb-metadata') + '.csv'
     response = dataframe_csv_response(df, index=None)
     response['Content-Disposition'] = f'attachment; filename={filename}'
 
