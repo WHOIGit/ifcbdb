@@ -668,13 +668,24 @@ function resizeMap()
 }
 
 function changeMarker(index) {
-    // If there was a selected marker, put it back in the clustering list
+    // If there's a currently selected marker, duplicate it to create a "normal" marker that can be added back to the
+    //   main marker list. Previously, this logic would try to re-use the selected marker, but that did not work
+    //   properly. It caused the prior marker to disappear from the map entirely
     if (_selectedMarker) {
+        const latLng = _selectedMarker.getLatLng();
+        const replacementMarker = L.marker(
+            L.latLng(latLng.lat, latLng.lng),
+            {
+                title: _selectedMarker.options.title,
+                icon: _binIcon
+            });
+
         _selectedMarker.setIcon(_binIcon)
-        _markerList.push(_selectedMarker);
-        _markers.addLayers(_selectedMarker)
-        _selectedMarkers.clearLayers();
+        _markerList.push(replacementMarker);
+        _markers.addLayers(replacementMarker)
     }
+
+    _selectedMarkers.clearLayers();
 
     // If there is no target marker, nothing more needs to be done
     if (index == null) {
@@ -690,7 +701,7 @@ function changeMarker(index) {
     //   need the actual location of that bin to plot it correctly. If we use the stored value, the marker will be
     //   put at the edge of the spidering effect
     $.get("/api/bin_location?pid=" + _bin, function(resp){
-         if (resp.lat && resp.lng) {
+        if (resp.lat && resp.lng) {
             // Create a new marker based on the information on the matched marker from the main list
             let newMarker = L.marker(
                 L.latLng(resp.lat, resp.lng),
@@ -707,13 +718,12 @@ function changeMarker(index) {
                 newMarker.bindPopup("Bin: <a href='" + url + "'>" + _bin + "</a>");
             }
 
-            // Add the new marker to the map as it's own layer
+            // Add the new marker to the map as its own layer
             _selectedMarker = newMarker;
-            _selectedMarkers.clearLayers();
             _selectedMarkers.addLayer(_selectedMarker);
-         }
+        }
 
-         selectMapMarker(_selectedMarker);
+        selectMapMarker(_selectedMarker);
     });
 }
 
