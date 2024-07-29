@@ -411,7 +411,6 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
                 for c in tag_cols:
                     cell = get_cell(row, c)
                     if cell is None:
-                        print(f'skipping: {row} {c}')
                         continue
 
                     tag = str(get_cell(row, c)).strip()
