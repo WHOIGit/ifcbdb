@@ -21,6 +21,7 @@ from ifcb.data.files import time_filter
 from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 
+
 def progress(bin_id, added, total, bad, errors={}):
     error_list = [{ 'bin': k, 'message': v} for k,v in errors.items()]
     return {
@@ -470,13 +471,19 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     return progress
 
 def export_metadata(ds, bins):
-    name = ds.name
-    dataset_location = ds.location
-    dataset_depth = ds.depth
+    # Maximum number of bins this export can return. The limit is relatively arbitrary, and in place to prevent runaway
+    #   queries returning lots of data when no search parameters are defined
+    max_results = 500_000
+
+    name = ds.name if ds else ''
+    dataset_location = ds.location if ds else None
+    dataset_depth = ds.depth if ds else None
     bqs = bins
+
     qs = bqs.values('id','pid','sample_time','location','ml_analyzed',
         'cruise','cast','niskin','depth', 'instrument__number', 'skip',
         'sample_type', 'n_images', 'tags__name').order_by('pid','tags__name')
+
     # fetch all tags and compute number of tag columns
     tags_by_id = defaultdict(list)
     n_tag_cols = 0
@@ -499,18 +506,29 @@ def export_metadata(ds, bins):
     trigger_selection_by_id = dict([(id, json.loads(md).get(trigger_selection_key)) for id, md in id2md])
     # now construct the dataframe
     r = defaultdict(list)
-    r.update({ 'dataset': name })
+
+    # Only add the name column if dataset criteria was provided
+    if name:
+        r.update({'dataset': name})
+
     # fast way to remove duplicates
     prev_pid = None
+
+    # The "all()" is required to make sure there's a LIMIT statement added the query, rather than pulling back all
+    #   records and then taking part of the list
+    qs = qs.all()[:max_results]
+
     for item in qs:
         if item['pid'] == prev_pid:
             continue
         prev_pid = item['pid']
+
         def add(field, rename=None):
             if rename is not None:
                 r[rename].append(item[field])
             else:
                 r[field].append(item[field])
+
         add('pid')
         add('sample_time')
         add('instrument__number', rename='ifcb')
