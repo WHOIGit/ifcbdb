@@ -30,7 +30,6 @@ from dashboard.accession import Accession, export_metadata
 def index(request):
     if settings.DEFAULT_DATASET:
         return HttpResponseRedirect(reverse("timeline_page") + "?dataset=" + settings.DEFAULT_DATASET)
-
     return HttpResponseRedirect(reverse("datasets"))
 
 
@@ -65,7 +64,8 @@ def dataframe_csv_response(df, **kw):
     csv_buf = BytesIO()
     df.to_csv(csv_buf, mode='wb', **kw)
     csv_buf.seek(0)
-    return StreamingHttpResponse(csv_buf, content_type='text/csv')
+    response = StreamingHttpResponse(csv_buf, content_type='text/csv')
+    return response
 
 @require_POST
 def search_timeline_locations(request):
@@ -109,7 +109,13 @@ def search_timeline_locations(request):
     result = {
         "locations": bin_locations + dataset_locations
     }
-    cache.set(cache_key, result)
+    try:
+        cache.set(cache_key, result)
+    except Exception as e: # value is probably too large
+        try:
+            cache.delete(cache_key)
+        except Exception as e:
+            pass
 
     return JsonResponse(result)
 
@@ -916,8 +922,16 @@ def bin_data(request, bin_id):
     bin = get_object_or_404(Bin, pid=bin_id)
     view_size = request.GET.get("view_size", Bin.MOSAIC_DEFAULT_VIEW_SIZE)
     scale_factor = request.GET.get("scale_factor", Bin.MOSAIC_DEFAULT_SCALE_FACTOR)
-    preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
-    include_coordinates = request.GET.get("include_coordinates", "false").lower() == "true"
+
+    # Allow the preload flag to be passed in, but it only applies if this is a POST request. This is to prevent someone
+    #   scraping the URLS and causing high CPU load with some of the inner mosaic methods
+    # The same logic applies to including coordinates in the output
+    if request.POST:
+        include_coordinates = request.GET.get("include_coordinates", "false").lower() == "true"
+        preload_adjacent_bins = request.GET.get("preload_adjacent_bins", "false").lower() == "true"
+    else:
+        include_coordinates = False
+        preload_adjacent_bins = False
 
     details = _bin_details(bin, dataset, view_size, scale_factor, preload_adjacent_bins, include_coordinates,
                            instrument_number=instrument_number, tags=tags, cruise=cruise, sample_type=sample_type)
@@ -1243,7 +1257,7 @@ def update_skip(request):
         "bins": bin_ids
     })
 
-def export_metadata_view(request, dataset_name):
+def export_metadata_view(request, dataset_name=None):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     cruise = request_get_cruise(request.GET.get("cruise"))
@@ -1272,9 +1286,14 @@ def export_metadata_view(request, dataset_name):
     if bin_qs.count() == 0:
         raise Http404('no bins match the given query')
 
-    ds = Dataset.objects.get(name=dataset_name)
+    ds = Dataset.objects.get(name=dataset_name) if dataset_name else None
     df = export_metadata(ds, bin_qs)
-    return dataframe_csv_response(df, index=None)
+
+    filename = (dataset_name or 'ifcb-metadata') + '.csv'
+    response = dataframe_csv_response(df, index=None)
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+
+    return response
 
 def sync_bin(request):
     dataset_name = request.GET.get("dataset")

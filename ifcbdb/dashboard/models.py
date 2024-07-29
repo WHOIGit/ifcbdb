@@ -36,7 +36,6 @@ from ifcb.data.zip import bin2zip_stream
 from ifcb.data.transfer import RemoteIfcb
 from ifcb.data.files import Fileset, FilesetBin
 
-from .crypto import AESCipher
 from .tasks import mosaic_coordinates_task
 from .mosaic import Mosaic
 
@@ -159,7 +158,7 @@ class Timeline(object):
                 resolution = 'bin'
             elif time_range < pd.Timedelta('60d'):
                 resolution = 'hour'
-            elif time_range < pd.Timedelta('3y'):
+            elif time_range < pd.Timedelta('1095d'): # 3 years
                 resolution = 'day'
             else:
                 resolution = 'week'
@@ -794,20 +793,12 @@ class Instrument(models.Model):
     share_name = models.CharField(max_length=128, default='Data', blank=True)
     timeout = models.IntegerField(default=30)
 
-    @staticmethod
-    def _get_cipher():
-        return AESCipher(settings.IFCB_PASSWORD_KEY)
-
     def set_password(self, password):
-        cipher = self._get_cipher()
-        self._password = cipher.encrypt(password)
+        self._password = password
 
     def get_password(self):
-        cipher = self._get_cipher()
-        ciphertext = self._password
-        if not ciphertext:
-            return None
-        return cipher.decrypt(ciphertext)
+        plaintext = self._password
+        return plaintext
 
     password = property(get_password, set_password)
 
@@ -908,3 +899,4 @@ class Comment(models.Model):
             return self.content[:max_length] + '...'
         else:
             return self.content
+

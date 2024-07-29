@@ -178,7 +178,7 @@ function updateBinStats(data) {
     $("#stat-concentration").html(data["concentration"]);
     $("#stat-cruise").html(data["cruise"]);
     $("#stat-sample-type").html(data["sample_type"]);
-    $("#stat-size").html(filesize(data["size"]));
+    $("#stat-size").html(filesize.filesize(data["size"]));
     $("#stat-skip")
         .text(data["skip"] ? "Yes" : "No")
         .data("skipped", data["skip"]);
@@ -537,7 +537,7 @@ function loadMosaic(pageNumber) {
         "&include_coordinates=true" +
         "&" + buildFilterOptionsQueryString(true);
 
-    $.get(binDataUrl, function(data) {
+    $.post(binDataUrl, { "csrfmiddlewaretoken": _csrf }, function(data) {
 
         // Update the coordinates for the image
         _coordinates = JSON.parse(data["coordinates"]);

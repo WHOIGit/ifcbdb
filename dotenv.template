@@ -1,0 +1,22 @@
+PRIMARY_DATA_DIR=/my/data/dir
+
+POSTGIS_IMAGE=postgis/postgis
+# uncomment the following line for ARM architectures
+# POSTGIS_IMAGE=ghcr.io/giovannicandido/postgis
+
+POSTGIS_VOLUME=ifcbdb-postgis-data
+
+NGINX_TEMPLATE=./nginx-ssl.conf.template
+
+HOST=localhost
+HTTP_PORT=8000
+HTTPS_PORT=8443
+
+SSL_CERT=./ssl/cert.pem
+SSL_KEY=./ssl/key.pem
+
+DJANGO_SECRET_KEY=changeme
+
+POSTGRES_PASSWORD=changeme
+
+#LOCAL_SETTINGS=./local_settings.py
