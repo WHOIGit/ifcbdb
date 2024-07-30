@@ -180,6 +180,7 @@ class Accession(object):
         prog = progress(most_recent_bin_id, bins_added, total_bins, bad_bins, errors)
         progress_callback(prog)
         return prog
+
     def add_bin(self, bin, b): # IFCB bin, Bin instance
         # qaqc checks
         qc_bad = check_bad(bin)
@@ -208,8 +209,9 @@ class Accession(object):
         b.metadata_json = json.dumps(headers)
         #
         # lat/lon/depth
-        latitude = headers.get('latitude')
-        longitude = headers.get('longitude')
+        latitude = headers.get('latitude') or headers.get('gpsLatitude')
+        longitude = headers.get('longitude') or headers.get('gpsLongitude')
+
         depth = headers.get('depth')
         if latitude is not None and longitude is not None:
             try:
@@ -263,8 +265,8 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     df = metadata_dataframe.copy()
 
     BIN_ID_COLUMNS = ['id','pid','lid','bin','bin_id','sample','sample_id','filename']
-    LAT_COLUMNS = ['latitude','lat','y']
-    LON_COLUMNS = ['longitude','lon','lng','lg','x']
+    LAT_COLUMNS = ['latitude','lat','y','gpsLatitude']
+    LON_COLUMNS = ['longitude','lon','lng','lg','x','gpsLongitude']
     DEPTH_COLUMNS = ['depth','dep','z']
     TIMESTAMP_COLUMNS = ['date', 'timestamp', 'datetime']
     MA_COLUMNS = ['ml_analyzed']
