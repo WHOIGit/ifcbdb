@@ -566,12 +566,12 @@ function loadMosaic(pageNumber) {
         _isMosaicLoading = false;
     });
 
-    var mosaicUrl = "/api/mosaic/encoded_image/" + _bin +
+    const mosaicUrl = "/api/mosaic/encoded_image/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor +
         "&page=" + pageNumber;
 
-    $.get(mosaicUrl, function(data) {
+    $.post(mosaicUrl, { "csrfmiddlewaretoken": _csrf }, function(data) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
