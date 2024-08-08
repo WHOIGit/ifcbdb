@@ -502,6 +502,7 @@ def image_outline(request, bin_id, target):
 
 
 # TODO: Needs to change from width/height parameters to single widthXheight
+@require_POST
 def mosaic_coordinates(request, bin_id):
     width = int(request.GET.get("width", 800))
     height = int(request.GET.get("height", 600))
@@ -515,6 +516,7 @@ def mosaic_coordinates(request, bin_id):
 
 
 @cache_control(max_age=31557600) # client cache for 1y
+@require_POST
 def mosaic_page_image(request, bin_id):
     arr = _mosaic_page_image(request, bin_id)
     image_data = format_image(arr, 'image/png')
@@ -523,6 +525,7 @@ def mosaic_page_image(request, bin_id):
 
 
 @cache_control(max_age=31557600) # client cache for 1y
+@require_POST
 def mosaic_page_encoded_image(request, bin_id):
     arr = _mosaic_page_image(request, bin_id)
 
