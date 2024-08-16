@@ -1,4 +1,4 @@
-django==4.2.11
+django==4.2.15
 gunicorn==22.0.0
 psycopg2-binary==2.9.9
 numba==0.59.1
@@ -8,10 +8,10 @@ redis==5.0.3
 scipy==1.12.0
 pandas==2.2.1
 h5py==3.10.0
-requests==2.31.0
+requests==2.32.0
 Pillow==10.3.0
 rectpack==0.2.2
 scikit-image==0.22.0
 pysmb==1.2.9.1
 pyyaml==6.0.1
-git+https://github.com/joefutrelle/pyifcb@v1.1.0
+git+https://github.com/joefutrelle/pyifcb@v1.1.1

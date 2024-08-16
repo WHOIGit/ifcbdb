@@ -35,6 +35,8 @@ var _preventTimelineRelayout = false; // Used to prevent a relayout on the timel
 var _filterPopover; // Tracks the container created by the popover library for applying filters
 var _originalMapHeight = null; // Initial size of the map on first render
 
+var _autoCompleteJS;
+
 //************* Common Methods ***********************/
 
 // Generates a relative link to the current bin/dataset
@@ -316,19 +318,18 @@ function toggleTagInput(isAdding) {
     $("#tag-cancel").toggleClass("d-none", !isAdding)
 }
 
-function addTag() {
-    var tag = $("#tag-name").val();
-    if (tag.trim() === "")
-        return;
-
+function addTag(value) {
     var payload = {
         "csrfmiddlewaretoken": _csrf,
-        "tag_name": tag
+        "tag_name": value
     };
 
     $.post("/secure/api/add-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
-        $("#tag-name").val("");
+
+        $('#tag-name').val('');
+        initAutoComplete();
+        $("#tag-name").focus();
     });
 }
 
@@ -343,6 +344,7 @@ function removeTag(tag) {
 
     $.post("/secure/api/remove-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
+        initAutoComplete();
     });
 }
 
@@ -564,12 +566,12 @@ function loadMosaic(pageNumber) {
         _isMosaicLoading = false;
     });
 
-    var mosaicUrl = "/api/mosaic/encoded_image/" + _bin +
+    const mosaicUrl = "/api/mosaic/encoded_image/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor +
         "&page=" + pageNumber;
 
-    $.get(mosaicUrl, function(data) {
+    $.post(mosaicUrl, { "csrfmiddlewaretoken": _csrf }, function(data) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
@@ -668,13 +670,24 @@ function resizeMap()
 }
 
 function changeMarker(index) {
-    // If there was a selected marker, put it back in the clustering list
+    // If there's a currently selected marker, duplicate it to create a "normal" marker that can be added back to the
+    //   main marker list. Previously, this logic would try to re-use the selected marker, but that did not work
+    //   properly. It caused the prior marker to disappear from the map entirely
     if (_selectedMarker) {
+        const latLng = _selectedMarker.getLatLng();
+        const replacementMarker = L.marker(
+            L.latLng(latLng.lat, latLng.lng),
+            {
+                title: _selectedMarker.options.title,
+                icon: _binIcon
+            });
+
         _selectedMarker.setIcon(_binIcon)
-        _markerList.push(_selectedMarker);
-        _markers.addLayers(_selectedMarker)
-        _selectedMarkers.clearLayers();
+        _markerList.push(replacementMarker);
+        _markers.addLayers(replacementMarker)
     }
+
+    _selectedMarkers.clearLayers();
 
     // If there is no target marker, nothing more needs to be done
     if (index == null) {
@@ -690,7 +703,7 @@ function changeMarker(index) {
     //   need the actual location of that bin to plot it correctly. If we use the stored value, the marker will be
     //   put at the edge of the spidering effect
     $.get("/api/bin_location?pid=" + _bin, function(resp){
-         if (resp.lat && resp.lng) {
+        if (resp.lat && resp.lng) {
             // Create a new marker based on the information on the matched marker from the main list
             let newMarker = L.marker(
                 L.latLng(resp.lat, resp.lng),
@@ -707,13 +720,12 @@ function changeMarker(index) {
                 newMarker.bindPopup("Bin: <a href='" + url + "'>" + _bin + "</a>");
             }
 
-            // Add the new marker to the map as it's own layer
+            // Add the new marker to the map as its own layer
             _selectedMarker = newMarker;
-            _selectedMarkers.clearLayers();
             _selectedMarkers.addLayer(_selectedMarker);
-         }
+        }
 
-         selectMapMarker(_selectedMarker);
+        selectMapMarker(_selectedMarker);
     });
 }
 
@@ -1093,13 +1105,7 @@ function initEvents() {
     });
 
     $("#tag-confirm").click(function(e) {
-        addTag();
-    });
-
-    $("#tag-name").on("keyup", function(e) {
-        if (e.keyCode == 13) {
-            addTag();
-        }
+        addTag($('#tag-name').val());
     });
 
     // Remove a tag from a bin
@@ -1163,6 +1169,53 @@ function initEvents() {
                 .data("skipped", resp["skipped"]);
         });
     });
+
+    $('#tag-name').keyup(function(e) {
+        if (e.keyCode != 13)
+            return;
+
+        let value = $('#tag-name').val();
+        if (value.trim() == '')
+            return;
+
+        addTag(value);
+    });
+}
+
+function initAutoComplete() {
+    if (_autoCompleteJS) {
+        _autoCompleteJS.unInit();
+    }
+
+    _autoCompleteJS = new autoComplete({
+        selector: '#tag-name',
+        placeHolder: "tag name",
+        data: {
+            src: async function() {
+                let tags = await fetch('/api/tag_list')
+                    .then(function(response) { return response.json() })
+                    .then(function(data) { return data.tags; })
+
+                return tags;
+            },
+            cache: true,
+        },
+        resultItem: {
+            highlight: true,
+        },
+        resultsList: {
+            tabSelect: true,
+        },
+        submit: true,
+        events: {
+            input: {
+                selection: function(e) {
+                    e.preventDefault();
+                    addTag(e.detail.selection.value);
+                }
+            },
+        }
+    });
 }
 
 //************* Initialization methods and page hooks ***********************/
@@ -1170,6 +1223,8 @@ $(function() {
 
     // Misc UI elements based on constants
     $("#max-images").text(MAX_SELECTABLE_IMAGES);
+
+    initAutoComplete();
 
     initEvents();
     //initPlotData();

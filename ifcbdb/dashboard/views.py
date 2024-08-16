@@ -64,7 +64,8 @@ def dataframe_csv_response(df, **kw):
     csv_buf = BytesIO()
     df.to_csv(csv_buf, mode='wb', **kw)
     csv_buf.seek(0)
-    return StreamingHttpResponse(csv_buf, content_type='text/csv')
+    response = StreamingHttpResponse(csv_buf, content_type='text/csv')
+    return response
 
 @require_POST
 def search_timeline_locations(request):
@@ -501,6 +502,7 @@ def image_outline(request, bin_id, target):
 
 
 # TODO: Needs to change from width/height parameters to single widthXheight
+@require_POST
 def mosaic_coordinates(request, bin_id):
     width = int(request.GET.get("width", 800))
     height = int(request.GET.get("height", 600))
@@ -514,6 +516,7 @@ def mosaic_coordinates(request, bin_id):
 
 
 @cache_control(max_age=31557600) # client cache for 1y
+@require_POST
 def mosaic_page_image(request, bin_id):
     arr = _mosaic_page_image(request, bin_id)
     image_data = format_image(arr, 'image/png')
@@ -522,6 +525,7 @@ def mosaic_page_image(request, bin_id):
 
 
 @cache_control(max_age=31557600) # client cache for 1y
+@require_POST
 def mosaic_page_encoded_image(request, bin_id):
     arr = _mosaic_page_image(request, bin_id)
 
@@ -1158,6 +1162,11 @@ def feed_legacy(request, ds_plus_tags, metric, start, end):
     # set "safe" to False because we're returning a list, not a dict
     return JsonResponse(records, safe=False)
 
+def tag_list(request):
+    tags = Tag.list()
+
+    return JsonResponse({'tags': list(tags)})
+
 def tags(request):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
@@ -1251,7 +1260,7 @@ def update_skip(request):
         "bins": bin_ids
     })
 
-def export_metadata_view(request, dataset_name):
+def export_metadata_view(request, dataset_name=None):
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     cruise = request_get_cruise(request.GET.get("cruise"))
@@ -1280,9 +1289,14 @@ def export_metadata_view(request, dataset_name):
     if bin_qs.count() == 0:
         raise Http404('no bins match the given query')
 
-    ds = Dataset.objects.get(name=dataset_name)
+    ds = Dataset.objects.get(name=dataset_name) if dataset_name else None
     df = export_metadata(ds, bin_qs)
-    return dataframe_csv_response(df, index=None)
+
+    filename = (dataset_name or 'ifcb-metadata') + '.csv'
+    response = dataframe_csv_response(df, index=None)
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+
+    return response
 
 def sync_bin(request):
     dataset_name = request.GET.get("dataset")

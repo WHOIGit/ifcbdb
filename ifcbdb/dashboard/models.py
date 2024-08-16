@@ -899,3 +899,4 @@ class Comment(models.Model):
             return self.content[:max_length] + '...'
         else:
             return self.content
+

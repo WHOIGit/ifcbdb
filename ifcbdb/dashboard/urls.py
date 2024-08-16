@@ -123,10 +123,12 @@ urlpatterns = [
     path('api/search_timeline_locations', views.search_timeline_locations, name='search_timeline_locations'),
     path('api/search_comments', views.search_comments, name='search_comments'),
     path('api/tags', views.tags, name='tags'),
+    path('api/tag_list', views.tag_list, name='tag_list'),
     path('api/timeline_info', views.timeline_info, name='timeline_info'),
     path('api/list_bins', views.list_bins, name='list_bins'),
     path('api/list_images/<slug:pid>', views.list_images, name='list_images'),
     path('api/update_skip', views.update_skip, name='update_skip'),
     path('api/export_metadata/<slug:dataset_name>', views.export_metadata_view, name='export_metadata'),
+    path('api/export_metadata/', views.export_metadata_view, name='export_metadata'),
     path('api/sync_bin', views.sync_bin, name='sync_bin'),
  ]
