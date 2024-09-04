@@ -30,6 +30,13 @@ class Command(BaseCommand):
         except Dataset.DoesNotExist:
             self.stderr.write('No such dataset "{}"'.format(dataset_name))
             return
+
+        # make sure the directory path is not already in the database
+        existing_path = DataDirectory.objects.filter(path=path).first()
+        if existing_path:
+            self.stderr.write('Path "{}" is already in use by dataset "{}"'.format(path, existing_path.dataset.name))
+            return
+
         # create the directory
         dd = DataDirectory(path=path, kind=kind)
         dd.dataset = d

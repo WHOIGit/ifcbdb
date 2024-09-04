@@ -393,6 +393,11 @@ class DataDirectory(models.Model):
     def __str__(self):
         return '{} ({})'.format(self.path, self.kind)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['path'], name='unique path')
+        ]
+
 class Bin(models.Model):
     # bin's permanent identifier (e.g., D20190102T1234_IFCB927)
     pid = models.CharField(max_length=64, unique=True)
