@@ -67,6 +67,11 @@ class DatasetForm(forms.ModelForm):
 
 class DirectoryForm(forms.ModelForm):
 
+    def __init__(self, *args, **kwargs):
+        self.dataset_id = kwargs.pop("dataset_id", None)
+
+        super().__init__(*args, **kwargs)
+
     def clean_path(self):
         path = self.cleaned_data["path"]
 
@@ -90,6 +95,19 @@ class DirectoryForm(forms.ModelForm):
             raise forms.ValidationError("Blacklist must be a comma separated list of names (not full paths)")
 
         return ",".join([name.strip() for name in blacklist.split(",")])
+
+    def clean(self):
+        data = self.cleaned_data
+        path = self.cleaned_data.get("path")
+
+        # make sure the directory path is not already in the database
+        existing_path = DataDirectory.objects.filter(dataset_id=self.dataset_id, path=path).first()
+        if existing_path:
+            raise forms.ValidationError({
+                'path': 'Path "{}" is already in use'.format(path)
+            })
+
+        return data
 
     def _match_folder_names(self, value):
         return re.match(r'^[A-Za-z0-9,\s]*$', value)

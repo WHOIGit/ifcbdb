@@ -32,7 +32,7 @@ class Command(BaseCommand):
             return
 
         # make sure the directory path is not already in the database
-        existing_path = DataDirectory.objects.filter(path=path).first()
+        existing_path = DataDirectory.objects.filter(dataset=d, path=path).first()
         if existing_path:
             self.stderr.write('Path "{}" is already in use by dataset "{}"'.format(path, existing_path.dataset.name))
             return
