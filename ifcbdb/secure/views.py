@@ -96,7 +96,7 @@ def edit_directory(request, dataset_id, id):
         directory.version = DataDirectory.DEFAULT_VERSION
 
     if request.POST:
-        form = DirectoryForm(request.POST, instance=directory)
+        form = DirectoryForm(request.POST, instance=directory, dataset_id=dataset_id)
         if form.is_valid():
             instance = form.save(commit=False)
             if instance.kind == "raw":
