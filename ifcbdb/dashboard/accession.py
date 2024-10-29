@@ -217,7 +217,7 @@ class Accession(object):
             try:
                 latitude = float(latitude)
                 longitude = float(longitude)
-            except TypeError:
+            except (TypeError, ValueError):
                 latitude = None
                 longitude = None
             try:
