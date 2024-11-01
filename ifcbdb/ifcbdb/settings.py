@@ -159,7 +159,11 @@ _HTTP_PORT = os.getenv('NGINX_HTTP_PORT', '80')
 
 ALLOWED_HOSTS = [_HOST]
 
-CSRF_TRUSTED_ORIGINS = [f'https://{_HOST}:{_HTTPS_PORT}', f'http://{_HOST}:{_HTTP_PORT}']
+# Only include the port if it's a non-standard one
+https_origin = f'https://{_HOST}' + (f':{_HTTPS_PORT}' if _HTTPS_PORT != '443' else '')
+http_origin = f'http://{_HOST}' + (f':{_HTTP_PORT}' if _HTTP_PORT != '80' else '')
+
+CSRF_TRUSTED_ORIGINS = [https_origin, http_origin]
 
 DEFAULT_DATASET = os.getenv('DEFAULT_DATASET', '')
 
