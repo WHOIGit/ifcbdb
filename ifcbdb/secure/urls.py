@@ -15,6 +15,7 @@ urlpatterns = [
     path('upload-metadata', views.upload_metadata, name='upload-metadata'),
     path('directory-management/<int:dataset_id>', views.directory_management, name='directory-management'),
     path('edit-directory/<int:dataset_id>/<int:id>', views.edit_directory, name='edit-directory'),
+    path('app-settings', views.app_settings, name='app-settings'),
 
     # Paths used for AJAX requests specifically for returning data formatted for DataTables
     path('api/dt/datasets', views.dt_datasets, name='datasets_dt'),

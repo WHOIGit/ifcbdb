@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">App Settings</span>
+    </div>
+</div>
+<hr class="my-2">
+
+{% if form.non_field_errors %}
+  <div class="non-field-errors">
+    {% for err in form.non_field_errors %}
+      <p class="alert alert-danger">{{ err }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if confirm %}
+<div class="alert alert-success">App Settings Saved Successfully!</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.id }}
+
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_default_latitude">Default Latitude</label>
+            {{ form.default_latitude }}
+            {% if form.default_latitude.errors %}<span class="text-danger">{{ form.default_latitude.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_default_longitude">Default Longitude</label>
+            {{ form.default_longitude }}
+            {% if form.default_longitude.errors %}<span class="text-danger">{{ form.default_longitude.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_default_zoom_level">Default Zoom Level</label>
+            {{ form.default_zoom_level }}
+            {% if form.default_zoom_level.errors %}<span class="text-danger">{{ form.default_zoom_level.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
+    </div>
+</form>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+</div>
+
+{% endblock %}

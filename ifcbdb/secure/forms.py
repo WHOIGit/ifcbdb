@@ -1,7 +1,20 @@
 import re, os
 from django import forms
 
-from dashboard.models import Dataset, Instrument, DataDirectory
+from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, \
+    DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+
+
+MIN_LATITUDE = -90
+MAX_LATITUDE = 90
+MIN_LONGITUDE = -180
+MAX_LONGITUDE = 180
+
+# Leaflet does not limit the zoom level, but appears to start having issues with very large numbers. Here, it's limited
+#   to 13 because that appears to be the limit of the basemap that's being used. Any higher than that, and it produces
+#   "map not available" errors
+MIN_ZOOM_LEVEL = 0
+MAX_ZOOM_LEVEL = 13
 
 
 class DatasetForm(forms.ModelForm):
@@ -168,3 +181,46 @@ class InstrumentForm(forms.ModelForm):
 
 class MetadataUploadForm(forms.Form):
     file = forms.FileField(label="Choose file", widget=forms.ClearableFileInput(attrs={"class": "custom-file-input"}))
+
+
+class AppSettingsForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["default_latitude"].required = True
+        self.fields["default_longitude"].required = True
+        self.fields["default_zoom_level"].required = True
+
+    def clean_default_latitude(self):
+        data = self.cleaned_data.get("default_latitude")
+
+        if data < MIN_LATITUDE or data > MAX_LATITUDE:
+            raise forms.ValidationError(f"Default Latitude must be between {MIN_LATITUDE} and {MAX_LATITUDE}")
+
+        return data
+
+    def clean_default_longitude(self):
+        data = self.cleaned_data.get("default_longitude")
+
+        if data < MIN_LONGITUDE or data > MAX_LONGITUDE:
+            raise forms.ValidationError(f"Default Longitude must be between {MIN_LONGITUDE} and {MAX_LONGITUDE}")
+
+        return data
+
+    def clean_default_zoom_level(self):
+        data = self.cleaned_data.get("default_zoom_level")
+
+        if data < MIN_ZOOM_LEVEL or data > MAX_ZOOM_LEVEL:
+            raise forms.ValidationError(f"Default Zoom Level must be between {MIN_ZOOM_LEVEL} and {MAX_ZOOM_LEVEL}")
+
+        return data
+
+    class Meta:
+        model = AppSettings
+        fields = ["default_latitude", "default_longitude", "default_zoom_level", ]
+        widgets = {
+            "default_latitude": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "default_longitude": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "default_zoom_level": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+        }

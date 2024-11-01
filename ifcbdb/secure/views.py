@@ -1,18 +1,16 @@
 from django.contrib.auth.decorators import login_required
 from django import forms
 from django.views.decorators.http import require_POST, require_GET
-from django.http import JsonResponse, Http404, HttpResponseForbidden
+from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 
 import pandas as pd
 
-from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment
-from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm
+from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm
 
 from django.core.cache import cache
 from celery.result import AsyncResult
-
-# TODO: All of these methods need to be locked down properly
 
 
 @login_required
@@ -22,6 +20,7 @@ def index(request):
     })
 
 
+@login_required
 def dataset_management(request):
     form = DatasetForm()
 
@@ -30,6 +29,7 @@ def dataset_management(request):
     })
 
 
+@login_required
 def directory_management(request, dataset_id):
     dataset = get_object_or_404(Dataset, pk=dataset_id)
 
@@ -38,6 +38,7 @@ def directory_management(request, dataset_id):
     })
 
 
+@login_required
 def instrument_management(request):
     form = InstrumentForm()
 
@@ -46,6 +47,7 @@ def instrument_management(request):
     })
 
 
+@login_required
 def dt_datasets(request):
     datasets = list(Dataset.objects.all().values_list("name", "title", "is_active", "id"))
 
@@ -54,6 +56,7 @@ def dt_datasets(request):
     })
 
 
+@login_required
 def dt_directories(request, dataset_id):
     directories = list(DataDirectory.objects.filter(dataset__id=dataset_id)
                        .values_list("path", "kind", "priority", "whitelist", "blacklist", "id"))
@@ -63,6 +66,7 @@ def dt_directories(request, dataset_id):
     })
 
 
+@login_required
 def edit_dataset(request, id):
     status = request.GET.get("status")
 
@@ -88,6 +92,7 @@ def edit_dataset(request, id):
     })
 
 
+@login_required
 def edit_directory(request, dataset_id, id):
     if int(id) > 0:
         directory = get_object_or_404(DataDirectory, pk=id)
@@ -116,6 +121,9 @@ def edit_directory(request, dataset_id, id):
 
 @require_POST
 def delete_directory(request, dataset_id, id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     directory = get_object_or_404(DataDirectory, pk=id)
 
     if directory.dataset_id != dataset_id:
@@ -125,8 +133,10 @@ def delete_directory(request, dataset_id, id):
     return JsonResponse({})
 
 
-
 def dt_instruments(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     instruments = list(Instrument.objects.all().values_list("number", "nickname", "id"))
 
     return JsonResponse({
@@ -134,6 +144,7 @@ def dt_instruments(request):
     })
 
 
+@login_required
 def edit_instrument(request, id):
     if int(id) > 0:
         instrument = get_object_or_404(Instrument, pk=id)
@@ -161,10 +172,31 @@ def edit_instrument(request, id):
         "form": form,
     })
 
-# TODO: Handle login_required decorator better; currently returns HTML instead of JSON
-@require_POST
+
 @login_required
+def app_settings(request):
+    instance = AppSettings.objects.first() or AppSettings()
+    confirm = False
+
+    if request.POST:
+        form = AppSettingsForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            confirm = True
+    else:
+        form = AppSettingsForm(instance=instance)
+
+    return render(request, "secure/app-settings.html", {
+        "form": form,
+        "confirm": confirm,
+    })
+
+
+@require_POST
 def add_tag(request, bin_id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     tag_name = request.POST.get("tag_name", "")
     bin = get_object_or_404(Bin, pid=bin_id)
     bin.add_tag(tag_name, user=request.user)
@@ -175,8 +207,10 @@ def add_tag(request, bin_id):
 
 
 @require_POST
-@login_required
 def remove_tag(request, bin_id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     tag_name = request.POST.get("tag_name", "")
     bin = get_object_or_404(Bin, pid=bin_id)
     bin.delete_tag(tag_name)
@@ -187,8 +221,10 @@ def remove_tag(request, bin_id):
 
 
 @require_POST
-@login_required
 def add_comment(request, bin_id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     text = request.POST.get("comment")
     bin = get_object_or_404(Bin, pid=bin_id)
     bin.add_comment(text, request.user)
@@ -198,12 +234,12 @@ def add_comment(request, bin_id):
     })
 
 @require_GET
-@login_required
 def edit_comment(request, bin_id):
-    comment_id = request.GET.get("id")
-    comment = get_object_or_404(Comment, pk=comment_id)
     if not request.user.is_staff:
         return HttpResponseForbidden()
+
+    comment_id = request.GET.get("id")
+    comment = get_object_or_404(Comment, pk=comment_id)
 
     return JsonResponse({
         "id": comment.id,
@@ -212,16 +248,15 @@ def edit_comment(request, bin_id):
 
 
 @require_POST
-@login_required
 def update_comment(request, bin_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden()
+
     bin = get_object_or_404(Bin, pid=bin_id)
 
     comment_id = request.POST.get("id")
     content = request.POST.get("content")
     comment = get_object_or_404(Comment, pk=comment_id)
-
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
 
     comment.content = content
     comment.save()
@@ -233,13 +268,12 @@ def update_comment(request, bin_id):
 
 
 @require_POST
-@login_required
 def delete_comment(request, bin_id):
-    comment_id = request.POST.get("id")
-    comment = get_object_or_404(Comment, pk=comment_id)
-
     if not request.user.is_staff:
         return HttpResponseForbidden()
+
+    comment_id = request.POST.get("id")
+    _ = get_object_or_404(Comment, pk=comment_id)
 
     bin = get_object_or_404(Bin, pid=bin_id)
     bin.delete_comment(comment_id, request.user)
@@ -263,8 +297,10 @@ def get_dataset_sync_task_id(dataset_id):
     # if there's no task ID the task is just about to start
 
 @require_POST
-@login_required
 def sync_dataset(request, dataset_id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     from dashboard.tasks import sync_dataset
     # params
     newest_only = request.POST.get('newest_only') == 'true'
@@ -283,8 +319,10 @@ def sync_dataset(request, dataset_id):
     result = AsyncResult(r.task_id)
     return JsonResponse({ 'state': result.state })
 
-@login_required
 def sync_dataset_status(request, dataset_id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     task_id = get_dataset_sync_task_id(dataset_id)
     if task_id is None:
         # there's no result, which means either
@@ -299,10 +337,12 @@ def sync_dataset_status(request, dataset_id):
         })
 
 @require_POST
-@login_required
 def sync_cancel(request, dataset_id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     cancel_key = dataset_sync_cancel_key(dataset_id)
-    added = cache.add(cancel_key,"cancel");
+    added = cache.add(cancel_key,"cancel")
     if not added:
         return JsonResponse({ 'status': 'already_canceled'})
     else:
@@ -356,21 +396,25 @@ def upload_metadata(request):
         'in_progress': in_progress,
     })
 
-@login_required
 def metadata_upload_status(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     task_id = cache.get(METADATA_UPLOAD_TASKID_KEY)
     if task_id is None:
         return JsonResponse({ 'state': 'PENDING' })
     result = AsyncResult(task_id)
-    info = getattr(result, 'info', '');
+    info = getattr(result, 'info', '')
     return JsonResponse({
         'state': result.state,
         'info': info,
         })
 
 @require_POST
-@login_required
 def metadata_upload_cancel(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel");
     if not added:
         return JsonResponse({ 'status': 'already_canceled'})
@@ -378,8 +422,10 @@ def metadata_upload_cancel(request):
         return JsonResponse({ 'status': 'cancelling' })
 
 @require_POST
-@login_required
 def toggle_skip(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
     bin_id = request.POST.get("bin_id")
     skipped = request.POST.get("skipped") == "true"
 
