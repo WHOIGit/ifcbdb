@@ -2,7 +2,7 @@ version: '3'
 
 services:
   ifcbdb:
-    image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:4.2.1}
+    image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:4.3.0}
     environment:
       - NGINX_HOST=${HOST:-localhost}
       - NGINX_HTTP_PORT=${HTTP_PORT:-80}
@@ -25,7 +25,7 @@ services:
       - redis
 
   celery:
-    image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:latest}
+    image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:4.3.0}
     command: celery -A ifcbdb worker -l info
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
