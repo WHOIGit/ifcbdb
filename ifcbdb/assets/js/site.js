@@ -1,26 +1,49 @@
-// TODO: Move default location to settings
-var defaultLat = 41.5507768;
-var defaultLng = -70.6593102;
-var minLatitude = -180;
-var minLongitude = -180;
-var zoomLevel = 6;
-var GPS_PRECISION = 4;
-var DEPTH_PRECISION = 1;
-var PLOT_X_DEFAULT = "roi_x";
-var PLOT_Y_DEFAULT = "roi_y";
-var MAX_SELECTABLE_IMAGES = 25;
-var _binFilterMode = "timeline";
+// These values are populated from app settings
+let defaultLat = undefined;
+let defaultLng = undefined;
+let zoomLevel = undefined;
 
-$(function(){
-    $("#dataset-switcher").change(function(){
+// Constants
+const minLatitude = -180;
+const minLongitude = -180;
+const GPS_PRECISION = 4;
+const DEPTH_PRECISION = 1;
+const PLOT_X_DEFAULT = "roi_x";
+const PLOT_Y_DEFAULT = "roi_y";
+const MAX_SELECTABLE_IMAGES = 25;
+
+let _binFilterMode = "timeline";
+
+function initDashboard(appSettings) {
+    defaultLat = appSettings.default_latitude;
+    defaultLng = appSettings.default_longitude;
+    zoomLevel = appSettings.default_zoom_level;
+
+    $('[data-toggle="tooltip"]').tooltip();
+
+    $('.navbar-toggler').on('click', function () {
+        $('.animated-burger').toggleClass('open');
+    });
+
+    // hide navbar after a bit of scrolling
+    $(window).scroll(function (e) {
+        var scroll = $(window).scrollTop();
+        if (scroll >= 150) {
+            $('.navbar').addClass("navbar-hide");
+        } else {
+            $('.navbar').removeClass("navbar-hide");
+        }
+    });
+
+    $("#dataset-switcher").change(function () {
         location.href = "/timeline?dataset=" + $(this).val();
     });
 
-    $("#go-to-bin").click(function(){
+    $("#go-to-bin").click(function () {
         goToBin($("#go-to-bid-pid").val());
     });
 
-    $("#go-to-bid-pid").keypress(function(e){
+    $("#go-to-bid-pid").keypress(function (e) {
         if (e.which == 13 /* Enter */) {
             goToBin($(this).val());
         }
@@ -33,7 +56,7 @@ $(function(){
             $('[data-toggle="popover"]').popover('hide');
         }
     });
-})
+}
 
 function isKnownLocation(lat, lng) {
     return parseFloat(lat) >= minLatitude && parseFloat(lng) >= minLongitude;
@@ -339,17 +362,6 @@ function changeImage(img, src, blobImg, outlineImg){
     });
 }
 
-/* Deprecated */
-/*
-function buildColorArray(dataPoints, index) {
-    var colors = $.map(dataPoints, function(){ return "#1f77b4"; });
-    if (index >= 0 && index < dataPoints.length)
-        colors[index] = "#bb0000";
-
-    return colors;
-}
-*/
-
 function highlightSelectedBinByDate() {
     if (_binTimestamp == null)
         return;
@@ -566,6 +578,7 @@ function isFilteringUsed() {
     if (_sampleType != "" && _sampleType != "null")
         return true;
 }
+
 $(function () {
     $('#dataset-popover').popover({
         container: 'body',

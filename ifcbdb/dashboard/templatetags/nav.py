@@ -1,10 +1,24 @@
+import json
 from django import template
 from django.shortcuts import reverse
+from django.utils.html import mark_safe
 
-from dashboard.models import Dataset, Instrument, Tag, bin_query
+from dashboard.models import Dataset, Instrument, Tag, bin_query, AppSettings, \
+    DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
 
 register = template.Library()
 
+@register.simple_tag(takes_context=False)
+def app_settings():
+    app_settings = AppSettings.objects.first()
+
+    settings = json.dumps({
+        "default_latitude": app_settings.default_latitude if app_settings else DEFAULT_LATITUDE,
+        "default_longitude": app_settings.default_longitude if app_settings else DEFAULT_LONGITUDE,
+        "default_zoom_level": app_settings.default_zoom_level if app_settings else DEFAULT_ZOOM_LEVEL,
+    })
+
+    return mark_safe(settings)
 
 @register.inclusion_tag('dashboard/_dataset_switcher.html')
 def dataset_switcher():

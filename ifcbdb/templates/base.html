@@ -136,29 +136,12 @@
     <script type="text/javascript" src="{% static 'js/site.js' %}"></script>
 
     <script>
-        // hide navbar after a bit of scrolling
-        $(window).scroll(function(e) {
-            var scroll = $(window).scrollTop();
-            if (scroll >= 150) {
-                $('.navbar').addClass("navbar-hide");
-            } else {
-                $('.navbar').removeClass("navbar-hide");
-            }
+        document.addEventListener("DOMContentLoaded", function(e) {
+            const appSettings = JSON.parse('{% app_settings %}');
 
+            initDashboard(appSettings);
         });
     </script>
-    <script>
-            $(function () {
-              $('[data-toggle="tooltip"]').tooltip()
-            })
-            </script>
-<script>
-$(document).ready(function () {
-    $('.navbar-toggler').on('click', function () {
-      $('.animated-burger').toggleClass('open');
-    });
-  });
-</script>            
     {% block scripts %}{% endblock %}
 </body>
 

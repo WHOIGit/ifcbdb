@@ -44,6 +44,12 @@ logger = logging.getLogger(__name__)
 FILL_VALUE = -9999999
 SRID = 4326
 
+# The default latitude and longitude reference original values that were set prior to the ability to customize the
+#   default values. The location is, roughly, Woods Hole Oceanographic Institution
+DEFAULT_LATITUDE = 41.5507768
+DEFAULT_LONGITUDE = -70.6593102
+DEFAULT_ZOOM_LEVEL = 6
+
 def do_nothing(*args, **kw):
     pass
 
@@ -905,3 +911,9 @@ class Comment(models.Model):
         else:
             return self.content
 
+# settings
+
+class AppSettings(models.Model):
+    default_latitude = models.FloatField(blank=False, null=False, default=DEFAULT_LATITUDE)
+    default_longitude = models.FloatField(blank=False, null=False, default=DEFAULT_LONGITUDE)
+    default_zoom_level = models.IntegerField(blank=False, null=False, default=DEFAULT_ZOOM_LEVEL)
