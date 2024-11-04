@@ -1,10 +1,10 @@
 PRIMARY_DATA_DIR=/my/data/dir
 
 POSTGIS_IMAGE=postgis/postgis
-# uncomment the following line for ARM architectures
-# POSTGIS_IMAGE=ghcr.io/giovannicandido/postgis
-
-POSTGIS_VOLUME=ifcbdb-postgis-data
+# the official postgis release on Docker Hub does not support ARM-64 architectures (e.g., Apple Silicon)
+# an interim solution is described here: https://hub.docker.com/r/imresamu/postgis
+# to use one of these images, set POSTGIS_IMAGE to the image tag (example below)
+# POSTGIS_IMAGE=imresamu/postgis:17-3.5-bookworm
 
 NGINX_TEMPLATE=./nginx-ssl.conf.template
 
