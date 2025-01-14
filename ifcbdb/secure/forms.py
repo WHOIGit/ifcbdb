@@ -1,7 +1,7 @@
 import re, os
 from django import forms
 
-from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, \
+from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, ApiAccount, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
 
 
@@ -176,6 +176,18 @@ class InstrumentForm(forms.ModelForm):
             "username": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Username"}),
             "share_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Share Name"}),
             "timeout": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Timeout"}),
+        }
+
+class ApiAccountForm(forms.ModelForm):
+
+    class Meta:
+        model = ApiAccount
+        fields = ["id", "name", "api_key", "is_active"]
+
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
+            "api_key": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Api Key"}),
+            "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
         }
 
 

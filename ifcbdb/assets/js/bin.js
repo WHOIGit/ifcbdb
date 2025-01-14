@@ -242,7 +242,12 @@ function updateBinDownloadLinks(data) {
     $("#download-adc").attr("href", infix + _bin + ".adc");
     $("#download-hdr").attr("href", infix + _bin + ".hdr");
     $("#download-roi").attr("href", infix + _bin + ".roi");
-    $("#download-zip").attr("href", infix + _bin + ".zip");
+    $("#download-zip-form").attr("action", infix + _bin + ".zip");
+    $("#download-zip").click(function(e) {
+        e.preventDefault();
+        $("#download-zip-form").submit();
+    });
+
     $("#download-blobs").attr("href", infix + _bin + "_blob.zip");
     $("#download-features").attr("href", infix + _bin + "_features.csv");
     $("#download-class-scores").attr("href", infix + _bin + "_class_scores.csv");

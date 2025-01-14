@@ -6,8 +6,8 @@ from django.shortcuts import render, get_object_or_404, redirect, reverse
 
 import pandas as pd
 
-from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings
-from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm
+from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, ApiAccount
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, ApiAccountForm
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -132,7 +132,6 @@ def delete_directory(request, dataset_id, id):
     directory.delete()
     return JsonResponse({})
 
-
 def dt_instruments(request):
     if not request.user.is_authenticated:
         return HttpResponseForbidden()
@@ -172,6 +171,59 @@ def edit_instrument(request, id):
         "form": form,
     })
 
+@login_required
+def api_account_management(request):
+    return render(request, 'secure/api-account-management.html', {
+
+    })
+
+def dt_api_accounts(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
+    api_accounts = ApiAccount.objects.all()
+
+    return JsonResponse({
+        "data": [
+            {
+                "id": item.id,
+                "name": item.name,
+                "is_active": item.is_active,
+            }
+            for item in api_accounts
+        ]
+    })
+
+@login_required
+def edit_api_account(request, id):
+    if int(id) > 0:
+        api_account = get_object_or_404(ApiAccount, pk=id)
+    else:
+        api_account = ApiAccount()
+
+    if request.POST:
+        form = ApiAccountForm(request.POST, instance=api_account)
+        if form.is_valid():
+            form.save()
+
+            return redirect(reverse("secure:api-account-management"))
+    else:
+        form = ApiAccountForm(instance=api_account)
+
+    return render(request, "secure/edit-api-account.html", {
+        "api_account": api_account,
+        "form": form,
+    })
+
+@require_POST
+def delete_api_account(request, id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
+    api_account = get_object_or_404(ApiAccount, pk=id)
+    api_account.delete()
+
+    return JsonResponse({})
 
 @login_required
 def app_settings(request):

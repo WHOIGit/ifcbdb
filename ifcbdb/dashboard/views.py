@@ -11,9 +11,9 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
-    HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse
+    HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse, HttpResponseForbidden
 from django.views.decorators.cache import cache_control
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -21,7 +21,7 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, ApiAccount
 from .forms import DatasetSearchForm
 from common.utilities import *
 
@@ -717,15 +717,35 @@ def class_scores_csv(request, dataset_name, bin_id):
     resp['Content-Disposition'] = 'attachment; filename={}'.format(filename)
     return resp
 
-def zip(request, bin_id, **kw):
+from django.views.decorators.csrf import csrf_protect
+
+@require_POST
+def zip(request, bin_id, **kwargs):
+    return _build_zip(request, bin_id, **kwargs)
+
+@require_GET
+def download_zip(request, bin_id, **kwargs):
+    api_key = request.headers.get("ApiKey")
+
+    api_account = ApiAccount.objects.filter(api_key=api_key).first()
+    if not api_account:
+        return HttpResponseForbidden()
+
+    return _build_zip(request, bin_id, **kwargs)
+
+def _build_zip(request, bin_id, **kwargs):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset_name' in kw:
-        bin_in_dataset_or_404(b, kw['dataset_name'])
+
+    if 'dataset_name' in kwargs:
+        bin_in_dataset_or_404(b, kwargs['dataset_name'])
+
     try:
         zip_buf = b.zip()
     except KeyError:
         raise Http404("raw data not found")
+
     filename = '{}.zip'.format(bin_id)
+
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
 

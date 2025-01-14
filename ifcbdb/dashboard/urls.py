@@ -58,6 +58,9 @@ urlpatterns = [
     path('data/<slug:bin_id>_<int:target>.png', views.image_png, name='image_png'),
     path('data/<slug:bin_id>_<int:target>.jpg', views.image_jpg, name='image_jpg'),
 
+    # zip access (requires API key)
+    path('download/<slug:bin_id>.zip', views.download_zip, name='download_zip'),
+
     ##################################################################
     # Legacy URLs
     #   Urls below must remain in this specific order (by granularity)
