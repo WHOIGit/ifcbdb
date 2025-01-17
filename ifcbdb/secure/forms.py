@@ -1,4 +1,4 @@
-import re, os
+import re, os, uuid
 from django import forms
 
 from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, ApiAccount, \
@@ -179,6 +179,12 @@ class InstrumentForm(forms.ModelForm):
         }
 
 class ApiAccountForm(forms.ModelForm):
+    replace_api_key = forms.BooleanField(widget=forms.HiddenInput(), required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["api_key"].required = False
 
     class Meta:
         model = ApiAccount
@@ -187,7 +193,7 @@ class ApiAccountForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "api_key": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Api Key"}),
-            "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
+            "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"}),
         }
 
 

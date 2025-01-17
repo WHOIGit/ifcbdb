@@ -1,3 +1,4 @@
+import uuid, hashlib
 from django.contrib.auth.decorators import login_required
 from django import forms
 from django.views.decorators.http import require_POST, require_GET
@@ -199,15 +200,31 @@ def edit_api_account(request, id):
     if int(id) > 0:
         api_account = get_object_or_404(ApiAccount, pk=id)
     else:
-        api_account = ApiAccount()
+        api_account = ApiAccount(api_key=str(uuid.uuid4()).lower())
 
     if request.POST:
+        existing_api_key = api_account.api_key
+
         form = ApiAccountForm(request.POST, instance=api_account)
         if form.is_valid():
-            form.save()
+            replace_api_key = form.cleaned_data.get("replace_api_key")
+
+            instance = form.save(commit=False)
+
+            if int(id) == 0 or replace_api_key:
+                api_key = form.cleaned_data.get("api_key").encode("utf8")
+                instance.api_key = hashlib.sha512(api_key).hexdigest()
+            else:
+                instance.api_key = existing_api_key
+
+            instance.save()
 
             return redirect(reverse("secure:api-account-management"))
     else:
+        # Clear out the api key so it doesn't render back on the form
+        if int(id) > 0:
+            api_account.api_key = ""
+
         form = ApiAccountForm(instance=api_account)
 
     return render(request, "secure/edit-api-account.html", {

@@ -1,5 +1,6 @@
 import json
 import re
+import hashlib
 from io import BytesIO
 
 import numpy as np
@@ -725,9 +726,15 @@ def zip(request, bin_id, **kwargs):
 
 @require_GET
 def download_zip(request, bin_id, **kwargs):
-    api_key = request.headers.get("ApiKey")
+    # Check the header first for an api key, and inot present, check the query string
+    api_key = request.headers.get("ApiKey") or request.GET.get("ApiKey")
+    if not api_key:
+        return HttpResponseForbidden()
 
-    api_account = ApiAccount.objects.filter(api_key=api_key).first()
+
+    hash = hashlib.sha512(api_key.encode("utf8")).hexdigest()
+
+    api_account = ApiAccount.objects.filter(api_key=hash, is_active=True).first()
     if not api_account:
         return HttpResponseForbidden()
 
