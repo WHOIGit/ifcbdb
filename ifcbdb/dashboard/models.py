@@ -401,7 +401,7 @@ class DataDirectory(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['dataset', 'path'], name='unique path')
+            models.UniqueConstraint(fields=['dataset', 'path', 'kind'], name='unique path')
         ]
 
 class Bin(models.Model):
