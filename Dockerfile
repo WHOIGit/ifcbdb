@@ -1,5 +1,7 @@
 FROM python:3.11-slim
 
+ENV PYTHONUNBUFFERED=1
+
 # geospatial libraries
 RUN apt-get update && \
     apt-get install -y binutils git libproj-dev libgdal-dev libpoppler-dev && \
