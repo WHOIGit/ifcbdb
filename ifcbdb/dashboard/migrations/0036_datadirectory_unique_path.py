@@ -10,8 +10,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddConstraint(
-            model_name='datadirectory',
-            constraint=models.UniqueConstraint(fields=('dataset', 'path'), name='unique path'),
-        ),
+        # This constraint has been intentionally commented out because it was too restrictive and prevented users with
+        #   existing data from running migrations. A follow-up migration (0038) has been made to create this constraint
+        #   with an additional field, kind, so this one is no longer necessary
+        # migrations.AddConstraint(
+        #     model_name='datadirectory',
+        #     constraint=models.UniqueConstraint(fields=('dataset', 'path'), name='unique path'),
+        # ),
     ]
