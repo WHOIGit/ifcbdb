@@ -1,5 +1,6 @@
 import re, os
 from django import forms
+from django.contrib.auth.models import User, Group
 
 from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
@@ -177,6 +178,63 @@ class InstrumentForm(forms.ModelForm):
             "username": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Username"}),
             "share_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Share Name"}),
             "timeout": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Timeout"}),
+        }
+
+
+class UserForm(forms.ModelForm):
+    password = forms.CharField(max_length=50, required=False,
+                               widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
+    confirm_password = forms.CharField(max_length=50, required=False,
+                                       widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
+    role = forms.ChoiceField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["email"].required = True
+
+        role_choices = [("", "")] + [
+            (group.id, group.name)
+            for group in Group.objects.all()
+        ]
+
+        group_id = self.instance.groups.first().id if self.instance.pk else None
+
+        self.fields["role"] = forms.ChoiceField(
+            required=True,
+            choices=role_choices,
+            widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
+            initial=group_id)
+
+
+    def clean(self):
+        password = self.cleaned_data.get("password")
+        confirm_password = self.cleaned_data.get("confirm_password")
+
+        if password != confirm_password:
+            raise forms.ValidationError(
+                "The password fields do not match"
+            )
+
+        return self.cleaned_data
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+
+        users = User.objects.filter(email=email).exclude(id=self.instance.id)
+        if users.exists():
+            raise forms.ValidationError("This email address is already in use.")
+
+        return email
+
+    class Meta:
+        model = User
+        fields = ["id", "first_name", "last_name", "email", ]
+
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "First Name"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Last Name"}),
+            "email": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Email"}),
         }
 
 

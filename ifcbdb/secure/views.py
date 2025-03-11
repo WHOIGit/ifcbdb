@@ -3,11 +3,14 @@ from django import forms
 from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
+from django.contrib.auth.models import User, Group
 
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings
-from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm
+from common import helpers
+from common.constants import Features
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -44,6 +47,12 @@ def instrument_management(request):
 
     return render(request, 'secure/instrument-management.html', {
         "form": form,
+    })
+
+
+@login_required
+def user_management(request):
+    return render(request, 'secure/user-management.html', {
     })
 
 
@@ -144,6 +153,21 @@ def dt_instruments(request):
     })
 
 
+def dt_users(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
+    # The user list excludes super admins
+    users = User.objects.all() \
+        .exclude(is_superuser=True) \
+        .filter(is_active=True) \
+        .values_list("first_name", "last_name", "email", "id")
+
+    return JsonResponse({
+        "data": list(users)
+    })
+
+
 @login_required
 def edit_instrument(request, id):
     if int(id) > 0:
@@ -171,6 +195,50 @@ def edit_instrument(request, id):
         "instrument": instrument,
         "form": form,
     })
+
+
+@login_required
+def edit_user(request, id):
+    user = get_object_or_404(User, pk=id) if int(id) > 0 else User()
+
+    if request.POST:
+        form = UserForm(request.POST, instance=user)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.username = form.cleaned_data["email"]
+
+            password = form.cleaned_data["password"]
+            if password:
+                instance.set_password(password)
+
+            instance.save()
+
+            print(form.cleaned_data["role"])
+            group = Group.objects.get(pk=form.cleaned_data["role"])
+
+            user.groups.clear()
+            group.user_set.add(user)
+
+            return redirect(reverse("secure:user-management"))
+    else:
+        form = UserForm(instance=user)
+
+    return render(request, "secure/edit-user.html", {
+        "user": user,
+        "form": form,
+    })
+
+
+@require_POST
+def delete_user(request, id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
+    user = get_object_or_404(User, pk=id)
+    user.is_active = False
+    user.save()
+
+    return JsonResponse({})
 
 
 @login_required
