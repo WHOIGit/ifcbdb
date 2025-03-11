@@ -248,6 +248,8 @@ class Dataset(models.Model):
     attribution = models.CharField(max_length=512, blank=True)
     funding = models.CharField(max_length=512, blank=True)
 
+    is_private = models.BooleanField(blank=False, null=False, default=False)
+
     def __len__(self):
         # number of bins
         return self.bins.count()

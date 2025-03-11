@@ -27,7 +27,7 @@ class DatasetForm(forms.ModelForm):
 
     class Meta:
         model = Dataset
-        fields = ["id", "name", "title", "doi", "attribution", "funding", "is_active", "depth", ]
+        fields = ["id", "name", "title", "doi", "attribution", "funding", "is_active", "depth", "is_private", ]
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
@@ -36,7 +36,8 @@ class DatasetForm(forms.ModelForm):
             "attribution": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
             "funding": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
             "depth": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Depth"}),
-            "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
+            "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"}),
+            "is_private": forms.CheckboxInput(attrs={"class": "custom-control-input"})
         }
 
     def clean_doi(self):
