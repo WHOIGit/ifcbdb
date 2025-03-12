@@ -78,7 +78,10 @@ def search_timeline_locations(request):
     start_date = request.POST.get("start_date")
     end_date = request.POST.get("end_date")
 
-    cache_key = 'tloc_b={};d={};t={};i={};c={};st={}'.format(bin_id, dataset_name, tags, instrument_number, cruise, sample_type)
+    # Replace spaces with underscores in the dataset name or the cache key will not be valid
+    clean_dataset_name = dataset_name.replace(" ", "")
+
+    cache_key = 'tloc_b={};d={};t={};i={};c={};st={}'.format(bin_id, clean_dataset_name, tags, instrument_number, cruise, sample_type)
     cached = cache.get(cache_key)
     if cached is not None:
         return JsonResponse(cached)
