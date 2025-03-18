@@ -20,6 +20,8 @@ x-ifcb-common: &ifcb-common
 services:
   ifcbdb:
     <<: *ifcb-common
+    env_file:
+      - .env
     environment:
       - NGINX_HOST=${HOST:-localhost}
       - NGINX_HTTP_PORT=${HTTP_PORT:-80}
