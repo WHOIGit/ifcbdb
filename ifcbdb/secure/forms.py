@@ -4,6 +4,9 @@ from django import forms
 from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
 
+from common import helpers
+from common.constants import Features
+
 
 MIN_LATITUDE = -90
 MAX_LATITUDE = 90
@@ -61,6 +64,9 @@ class DatasetForm(forms.ModelForm):
             if instance.location:
                 self.fields["latitude"].initial = instance.location.y
                 self.fields["longitude"].initial = instance.location.x
+
+        if not helpers.is_feature_enabled(Features.PRIVATE_DATASETS):
+            self.fields["is_private"].widget = forms.HiddenInput()
 
     def save(self, commit=True):
         instance = super(DatasetForm, self).save(commit=False)

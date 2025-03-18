@@ -42,12 +42,16 @@
                         <label class="custom-control-label" for="id_is_active">Active</label>
                     </div>
                 </div>
-                <div class="form-group col col-2">
-                    <div class="col custom-switch">
-                        {{ form.is_private }}
-                        <label class="custom-control-label" for="id_is_private">Private</label>
+                {% if is_private_datasets_feature_enabled %}
+                    <div class="form-group col col-2">
+                        <div class="col custom-switch">
+                            {{ form.is_private }}
+                            <label class="custom-control-label" for="id_is_private">Private</label>
+                        </div>
                     </div>
-                </div>
+                {% else %}
+                    {{ form.is_private }}
+                {% endif %}
             </div>
             <div class="form-row">
                 <div class="form-group col">
