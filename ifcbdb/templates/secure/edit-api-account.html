@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">{% if api_account.id > 0 %}Edit{% else %}Add New{% endif %} Api Account</span>
+    </div>
+</div>
+<hr class="my-2">
+
+{% if form.non_field_errors %}
+  <div class="non-field-errors">
+    {% for err in form.non_field_errors %}
+      <p class="alert alert-danger">{{ err }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.id }}
+
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_name">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_api_key">Api Key</label>
+            <div id="copy-warning" class="alert alert-warning {% if form.instance.id %}d-none{% endif %}">
+                This will be the only time this API key can be viewed. Be sure to copy the value before saving.
+            </div>
+            <div class="pb-1 {% if form.instance.id %}d-none{% endif %}">
+                {{ form.api_key }}
+                {{ form.replace_api_key }}
+                {% if form.api_key.errors %}<span class="text-danger">{{ form.api_key.errors.as_text }}</span>{% endif %}
+            </div>
+            <div>
+                {% if form.instance.id %}
+                <button type="button" class="btn btn-sm btn-mdb-color" id="generate-api-key">Generate New Api Key</button>
+                {% endif %}
+                <button type="button" class="btn btn-sm btn-mdb-color {% if form.instance.id %}d-none{% endif %}" id="copy-api-key">Copy</button>
+                <span id="copy-success-message" class="alert alert-success alert-sm py-2 px-4" style="display:none">Copied!</span>
+            </div>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <div class="col custom-switch">
+                {{ form.is_active }}
+                <label class="custom-control-label" for="id_is_active">Active</label>
+            </div>
+        </div>
+    </div>
+    <div class="form-row">
+        <a href="{% url 'secure:api-account-management' %}" class="btn btn-sm">Cancel</a>
+        <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function generateApiKey() {
+        const apiKey = crypto.randomUUID();
+
+        $("#id_api_key").val(apiKey);
+        $("#id_replace_api_key").val("true");
+        $("#id_replace_api_key").closest("div").toggleClass("d-none", false);
+        $("#copy-api-key").toggleClass("d-none", false);
+        $("#copy-warning").toggleClass("d-none", false);
+    }
+
+    function copyApiKey() {
+        const apiKey = $("#id_api_key").val();
+
+        navigator.clipboard.writeText(apiKey).then(function() {
+            const message = $("#copy-success-message");
+
+            message.show();
+            setTimeout(function() {
+                message.fadeOut(1000);
+            }, 2000);
+        });
+    }
+
+    $(function(){
+        $("#generate-api-key").click(generateApiKey);
+        $("#copy-api-key").click(copyApiKey);
+    });
+</script>
+{% endblock %}
