@@ -8,6 +8,8 @@ import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm
+from common import helpers
+from common.constants import Features
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -69,11 +71,7 @@ def dt_directories(request, dataset_id):
 @login_required
 def edit_dataset(request, id):
     status = request.GET.get("status")
-
-    if int(id) > 0:
-        dataset = get_object_or_404(Dataset, pk=id)
-    else:
-        dataset = Dataset()
+    dataset = get_object_or_404(Dataset, pk=id) if int(id) > 0 else Dataset()
 
     if request.POST:
         form = DatasetForm(request.POST, instance=dataset)
@@ -89,6 +87,7 @@ def edit_dataset(request, id):
         "status": status,
         "form": form,
         "dataset": dataset,
+        "is_private_datasets_feature_enabled": helpers.is_feature_enabled(Features.PRIVATE_DATASETS),
     })
 
 
