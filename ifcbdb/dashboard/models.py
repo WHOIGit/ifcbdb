@@ -368,6 +368,7 @@ class DataDirectory(models.Model):
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
     # for product directories, the product version
     version = models.IntegerField(null=True, blank=True)
+    require_roi_files = models.BooleanField(default=True)
 
     def get_raw_directory(self):
         if self.kind != self.RAW:
@@ -375,7 +376,7 @@ class DataDirectory(models.Model):
         # return the underlying ifcb.DataDirectory
         whitelist = re.split(',', self.whitelist)
         blacklist = re.split(',', self.blacklist)
-        return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist)
+        return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist, require_roi_files=require_roi_files)
 
     def raw_destination(self, bin_id):
         # where to put an incoming bin with the given id

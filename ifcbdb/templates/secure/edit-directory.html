@@ -65,6 +65,15 @@
         </div>
     </div>
     <div class="form-row">
+        <div class="form-group col">
+            <label for="id_require_roi_files">Require ROI Files</label>
+            <div class="col custom-switch">
+                {{ form.require_roi_files }}
+                <label class="custom-control-label" for="id_require_roi_files"></label>
+            </div>
+        </div>
+    </div>
+    <div class="form-row">
         <a href="{% url 'secure:directory-management' dataset_id %}" class="btn btn-sm">Cancel</a>
         <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
     </div>
