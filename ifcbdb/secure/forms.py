@@ -128,7 +128,7 @@ class DirectoryForm(forms.ModelForm):
 
     class Meta:
         model = DataDirectory
-        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", ]
+        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", "require_roi_files", ]
 
         widgets = {
             "path": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Path"}),
@@ -144,6 +144,7 @@ class DirectoryForm(forms.ModelForm):
             "blacklist": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Blacklist"}),
             "version": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Version"}),
             "priority": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Priority"}),
+            "require_roi_files": forms.CheckboxInput(attrs={"class": "custom-control-input"})
         }
 
 

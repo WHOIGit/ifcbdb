@@ -59,7 +59,7 @@ def dt_datasets(request):
 @login_required
 def dt_directories(request, dataset_id):
     directories = list(DataDirectory.objects.filter(dataset__id=dataset_id)
-                       .values_list("path", "kind", "priority", "whitelist", "blacklist", "id"))
+                       .values_list("path", "kind", "priority", "whitelist", "blacklist", "require_roi_files", "id"))
 
     return JsonResponse({
         "data": directories,

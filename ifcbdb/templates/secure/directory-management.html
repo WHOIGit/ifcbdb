@@ -22,6 +22,7 @@
                     <th>Priority</th>
                     <th>Whitelist</th>
                     <th>Blacklist</th>
+                    <th>Require ROI Files</th>
                     <th></th>
                 </tr>
             </thead>
@@ -75,6 +76,9 @@
                 {}, // Priority
                 {}, // Whitelist
                 {}, // Blacklist
+                {
+                    render: function(data) { return data ? "Yes" : "No" }
+                }, // Require ROI Files
                 { // Edit
                     targets: -1,
                     render: function ( data, type, row ) {
