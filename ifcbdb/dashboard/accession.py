@@ -1,3 +1,4 @@
+from pprint import pprint
 import os
 import json
 import time
@@ -59,7 +60,8 @@ class Accession(object):
         for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             if not os.path.exists(dd.path):
                 continue # skip and continue searching
-            directory = ifcb.DataDirectory(dd.path)
+
+            directory = ifcb.DataDirectory(dd.path, require_roi_files=dd.require_roi_files)
             for b in directory:
                 yield b
     def sync_one(self, pid):
@@ -67,7 +69,7 @@ class Accession(object):
         for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             if not os.path.exists(dd.path):
                 continue # skip and continue searching
-            directory = ifcb.DataDirectory(dd.path)
+            directory = ifcb.DataDirectory(dd.path, require_roi_files=dd.require_roi_files)
             try:
                 bin = directory[pid]
             except KeyError:
