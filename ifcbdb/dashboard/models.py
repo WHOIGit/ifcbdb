@@ -376,7 +376,7 @@ class DataDirectory(models.Model):
         # return the underlying ifcb.DataDirectory
         whitelist = re.split(',', self.whitelist)
         blacklist = re.split(',', self.blacklist)
-        return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist, require_roi_files=require_roi_files)
+        return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist, require_roi_files=self.require_roi_files)
 
     def raw_destination(self, bin_id):
         # where to put an incoming bin with the given id

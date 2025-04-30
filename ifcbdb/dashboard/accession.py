@@ -63,9 +63,13 @@ class Accession(object):
 
             directory = ifcb.DataDirectory(dd.path, require_roi_files=dd.require_roi_files)
             for b in directory:
+                # Bins do not have a require_roi_files property, but we're adding it here anyway to pass
+                #   along the associated directory's setting through to the next call
+                b.require_roi_files = dd.require_roi_files
                 yield b
     def sync_one(self, pid):
         bin = None
+        directory = None
         for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             if not os.path.exists(dd.path):
                 continue # skip and continue searching
@@ -76,6 +80,7 @@ class Accession(object):
                 continue
         if bin is None:
             return 'bin {} not found'.format(pid)
+
         # create instrument if necessary
         i = bin.pid.instrument
         version = bin.pid.schema_version
@@ -163,6 +168,7 @@ class Accession(object):
                     bad_bins += 1
                 else:
                     log_callback('{} not adding bin'.format(b.pid))
+
             with transaction.atomic():
                 for b in bins2save:
                     b.skip = False # unskip because we're ready to save
@@ -183,13 +189,13 @@ class Accession(object):
         progress_callback(prog)
         return prog
 
-    def add_bin(self, bin, b): # IFCB bin, Bin instance
+    def add_bin(self, bin, b, require_roi_files=True): # IFCB bin, Bin instance
         # qaqc checks
         qc_bad = check_bad(bin)
         if qc_bad:
             b.qc_bad = True
             return b, 'malformed raw data'
-        no_rois = check_no_rois(bin)
+        no_rois = require_roi_files and check_no_rois(bin)
         if no_rois:
             b.qc_bad = True
             return b, 'zero ROIs'
@@ -229,7 +235,7 @@ class Accession(object):
             if latitude is not None and longitude is not None:
                 b.set_location(longitude, latitude, depth)
         #
-        b.qc_no_rois = check_no_rois(bin)
+        b.qc_no_rois = require_roi_files and check_no_rois(bin)
         # metrics
         try:
             b.temperature = bin.temperature
