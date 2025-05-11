@@ -12,16 +12,24 @@
 
 <div class="row py-2 px-3">
     <div class="col">
+        {% if is_manager_or_admin %}
         <ul class="list-group">
             <li class="list-group-item"><a href="{% url 'secure:dataset-management' %}">Dataset Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
+            {% if is_admin %}
             <li class="list-group-item"><a href="{% url 'secure:user-management' %}">User Management</a></li>
+            {% endif %}
             <li class="list-group-item"><a href="{% url 'secure:upload-metadata' %}">Upload Metadata</a></li>
             <li class="list-group-item"><a href="{% url 'secure:app-settings' %}">App Settings</a></li>
             {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'admin:index' %}">Administrative Settings</a></li>
             {% endif %}
         </ul>
+        {% else %}
+        <div class="alert alert-info">
+            Your account does not currently have access to modify any settings.
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
