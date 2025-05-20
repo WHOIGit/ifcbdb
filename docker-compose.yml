@@ -1,4 +1,3 @@
-version: '3'
 
 x-ifcb-common: &ifcb-common
   image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:4.3.0}
