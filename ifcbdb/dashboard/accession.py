@@ -88,7 +88,7 @@ class Accession(object):
             'instrument': instrument,
             'skip': True, # in case accession is interrupted
         })
-        if not created and not dataset in b.datasets:
+        if not created and not self.dataset in b.datasets:
             self.dataset.bins.add(b)
             return 
         b2s, error = self.add_bin(bin, b)
