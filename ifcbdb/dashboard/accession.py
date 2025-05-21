@@ -227,6 +227,10 @@ class Accession(object):
             if latitude is not None and longitude is not None:
                 b.set_location(longitude, latitude, depth)
         #
+        sample_type = headers.get('sampleType')
+        if sample_type is not None:
+            b.sample_type = sample_type
+    
         b.qc_no_rois = check_no_rois(bin)
         # metrics
         try:
