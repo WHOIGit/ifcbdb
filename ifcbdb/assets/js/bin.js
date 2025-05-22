@@ -675,12 +675,15 @@ function changeMarker(index) {
     //   properly. It caused the prior marker to disappear from the map entirely
     if (_selectedMarker) {
         const latLng = _selectedMarker.getLatLng();
+        const popupContent = _selectedMarker.getPopup().getContent();
+
         const replacementMarker = L.marker(
             L.latLng(latLng.lat, latLng.lng),
             {
                 title: _selectedMarker.options.title,
                 icon: _binIcon
             });
+        replacementMarker.bindPopup(popupContent);
 
         _selectedMarker.setIcon(_binIcon)
         _markerList.push(replacementMarker);
