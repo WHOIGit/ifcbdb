@@ -1313,3 +1313,17 @@ def sync_bin(request):
 
 def about_page(request):
     return render(request, 'dashboard/about.html')
+
+def legacy_single_roi_features(request, dataset_name, bin_id, target):
+    b = get_object_or_404(Bin, pid=bin_id)
+    bin_in_dataset_or_404(b, dataset_name)
+    try:
+        features = b.features()
+    except KeyError:
+        raise Http404('no features found')
+    if target not in features.index:
+        raise Http404('target {} not found in features data'.format(target))
+    return JsonResponse({
+        'names': features.columns.tolist(),
+        'values': features.loc[target].tolist(),
+    })
