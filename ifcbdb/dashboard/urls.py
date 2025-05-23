@@ -97,6 +97,9 @@ urlpatterns = [
     path('<slug:dataset_name>', views.legacy_dataset_redirect, name='dataset_legacy'),
     path('<slug:dataset_name>/', views.legacy_dataset_redirect, name='dataset_legacy'),    
 
+    # legacy single roi features endpoint
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>_features.json', views.legacy_single_roi_features, name='single_roi_features_legacy'),
+
     ##################################
     # Paths used for API/Ajax requests
     ##################################
