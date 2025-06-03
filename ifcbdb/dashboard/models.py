@@ -917,3 +917,27 @@ class AppSettings(models.Model):
     default_latitude = models.FloatField(blank=False, null=False, default=DEFAULT_LATITUDE)
     default_longitude = models.FloatField(blank=False, null=False, default=DEFAULT_LONGITUDE)
     default_zoom_level = models.IntegerField(blank=False, null=False, default=DEFAULT_ZOOM_LEVEL)
+
+
+# teams
+
+class Team(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=50, blank=False, null=False)
+
+    users = models.ManyToManyField(User, through='TeamUser', related_name='teams')
+    datasets = models.ManyToManyField(Dataset, through='TeamDataset', related_name='teams')
+
+class TeamUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'team')
+
+class TeamDataset(models.Model):
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('dataset', 'team')

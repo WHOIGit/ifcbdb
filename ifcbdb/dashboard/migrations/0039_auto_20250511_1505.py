@@ -18,7 +18,7 @@ def revert_migration(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0039_dataset_is_private'),
+        ('dashboard', '0038_remove_datadirectory_unique_path_and_more'),
     ]
 
     operations = [
