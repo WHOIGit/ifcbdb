@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">{% if team.id > 0 %}Edit{% else %}Add New{% endif %} Team</span>
+    </div>
+</div>
+<hr class="my-2">
+
+{% if form.non_field_errors %}
+  <div class="non-field-errors">
+    {% for err in form.non_field_errors %}
+      <p class="alert alert-danger">{{ err }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.id }}
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_name">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group col">
+                <label for="id_assigned_users">Assigned Users</label>
+                {{ form.assigned_users }}
+                {% if form.assigned_users.errors %}<span class="text-danger">{{ form.assigned_users.errors.as_text }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="col-md-1 d-flex flex-column align-items-center justify-content-center">
+            <div>
+                <button id="unassign-user" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&laquo;</button>
+            </div>
+            <div>
+                <button id="assign-user" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&raquo;</button>
+            </div>
+
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="form-group col">
+                <label for="id_available_users">Available Users</label>
+                {{ form.available_users }}
+                {% if form.available_users.errors %}<span class="text-danger">{{ form.available_users.errors.as_text }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="col-md-5">
+            &nbsp;
+        </div>
+
+
+    </div>
+    <div class="form-row">
+        <a href="{% url 'secure:team-management' %}" class="btn btn-sm">Cancel</a>
+        <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function assignUser() {
+        console.log("A")
+    }
+
+    function unassignUser() {
+        console.log("U")
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        $("#assign-user").click(function(e) {
+            e.preventDefault();
+            assignUser();
+        });
+
+        $("#unassign-user").click(function(e) {
+            e.preventDefault();
+            unassignUser();
+        });
+    });
+</script>
+{% endblock %}

@@ -2,7 +2,7 @@ import re, os
 from django import forms
 from django.contrib.auth.models import User, Group
 
-from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, \
+from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
 
 
@@ -282,4 +282,51 @@ class AppSettingsForm(forms.ModelForm):
             "default_latitude": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "default_longitude": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "default_zoom_level": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+        }
+
+
+class TeamForm(forms.ModelForm):
+    assigned_users = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=User.objects.none(),
+        widget=forms.SelectMultiple(attrs={"class": "form-control form-control-sm", "size": "10"})
+    )
+    available_users = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=User.objects.none(),
+        widget=forms.SelectMultiple(attrs={"class": "form-control form-control-sm", "size": "10"})
+    )
+
+    assigned_datasets = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Dataset.objects.none(),
+        widget=forms.SelectMultiple(attrs={"class": "form-control form-control-sm", "size": "10"})
+    )
+    available_datasets = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Dataset.objects.none(),
+        widget=forms.SelectMultiple(attrs={"class": "form-control form-control-sm", "size": "10"})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        users = User.objects.filter(is_active=True)
+
+        if self.instance.pk:
+            assigned_user_ids = list(TeamUser.objects.filter(team=self.instance).values_list("user_id", flat=True))
+
+            self.fields["assigned_users"].queryset = users.filter(id__in=assigned_user_ids)
+            self.fields["available_users"].queryset = users.exclude(id__in=assigned_user_ids)
+        else:
+            self.fields["available_users"].queryset = users
+
+    # TODO: Make sure team name is unique
+
+    class Meta:
+        model = Team
+        fields = ["id", "name", ]
+
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
         }

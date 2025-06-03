@@ -7,8 +7,8 @@ from django.contrib.auth.models import User, Group
 
 import pandas as pd
 
-from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings
-from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm
+from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, TeamForm
 from common import auth, helpers
 from common.constants import Features
 
@@ -71,6 +71,14 @@ def user_management(request):
 
     return render(request, 'secure/user-management.html')
 
+@login_required
+def team_management(request):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
+    return render(request, 'secure/team-management.html')
+
+
 
 @login_required
 def dt_datasets(request):
@@ -82,6 +90,18 @@ def dt_datasets(request):
     return JsonResponse({
         "data": datasets
     })
+
+def dt_teams(request):
+    if not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
+    teams = Team.objects.all() \
+        .values_list("name", "id")
+
+    return JsonResponse({
+        "data": list(teams)
+    })
+
 
 
 @login_required
@@ -247,7 +267,6 @@ def edit_user(request, id):
 
             instance.save()
 
-            print(form.cleaned_data["role"])
             group = Group.objects.get(pk=form.cleaned_data["role"])
 
             user.groups.clear()
@@ -262,6 +281,29 @@ def edit_user(request, id):
         "form": form,
     })
 
+@login_required
+def edit_team(request, id):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
+    team = get_object_or_404(Team, pk=id) if int(id) > 0 else Team()
+
+    if request.POST:
+        form = TeamForm(request.POST, instance=team)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+
+            return redirect(reverse("secure:team-management"))
+    else:
+        form = TeamForm(instance=team)
+
+    return render(request, "secure/edit-team.html", {
+        "team": team,
+        "form": form,
+    })
+
+
 
 @require_POST
 def delete_user(request, id):
@@ -273,6 +315,20 @@ def delete_user(request, id):
     user.save()
 
     return JsonResponse({})
+
+@require_POST
+def delete_team(request, id):
+    if not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
+    # TODO: Make sure associated users get deleted (the relationship records)
+    # TODO: Does this need to be a soft delete?
+
+    team = get_object_or_404(Team, pk=id)
+    team.delete()
+
+    return JsonResponse({})
+
 
 
 @login_required

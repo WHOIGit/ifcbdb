@@ -18,6 +18,7 @@
             <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
             {% if is_admin %}
             <li class="list-group-item"><a href="{% url 'secure:user-management' %}">User Management</a></li>
+            <li class="list-group-item"><a href="{% url 'secure:team-management' %}">Team Management</a></li>
             {% endif %}
             <li class="list-group-item"><a href="{% url 'secure:upload-metadata' %}">Upload Metadata</a></li>
             <li class="list-group-item"><a href="{% url 'secure:app-settings' %}">App Settings</a></li>
