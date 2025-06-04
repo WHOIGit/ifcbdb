@@ -21,7 +21,7 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, Team
 from .forms import DatasetSearchForm
 from common.utilities import *
 
@@ -1248,6 +1248,19 @@ def list_images(request, pid):
     return JsonResponse({
         'images': b.list_images()
         })
+
+def list_datasets(request, team_name=''):
+    if not team_name:
+        datasets = Dataset.objects.all()
+    else:
+        _ = get_object_or_404(Team, name=team_name)
+        datasets = Dataset.objects.filter(teams__name=team_name)
+
+    dataset_names = datasets.order_by("name").values_list("name", flat=True)
+
+    return JsonResponse({
+        "datasets": list(dataset_names)
+    })
 
 
 @login_required
