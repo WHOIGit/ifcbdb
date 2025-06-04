@@ -74,12 +74,12 @@ def user_management(request):
 
 @login_required
 def team_management(request):
-    if not auth.is_admin(request.user):
+    if not auth.is_manager_or_admin(request.user):
         return redirect(reverse("secure:index"))
 
-    return render(request, 'secure/team-management.html')
-
-
+    return render(request, 'secure/team-management.html', {
+        "is_admin": auth.is_admin(request.user),
+    })
 
 @login_required
 def dt_datasets(request):
@@ -93,7 +93,7 @@ def dt_datasets(request):
     })
 
 def dt_teams(request):
-    if not auth.is_admin(request.user):
+    if not auth.is_manager_or_admin(request.user):
         return HttpResponseForbidden()
 
     teams = Team.objects.all() \
@@ -284,8 +284,12 @@ def edit_user(request, id):
 
 @login_required
 def edit_team(request, id):
-    if not auth.is_admin(request.user):
+    if not auth.is_manager_or_admin(request.user):
         return redirect(reverse("secure:index"))
+
+    # Only admins can create new teams
+    if id == 0 and not auth.is_admin(request.user):
+        return redirect(reverse("secure:team-management"))
 
     team = get_object_or_404(Team, pk=id) if int(id) > 0 else Team()
 
@@ -355,6 +359,7 @@ def edit_team(request, id):
         "available_users": available_users,
         "assigned_datasets": assigned_datasets,
         "available_datasets": available_datasets,
+        "is_admin": auth.is_admin(request.user),
     })
 
 
@@ -374,9 +379,6 @@ def delete_user(request, id):
 def delete_team(request, id):
     if not auth.is_admin(request.user):
         return HttpResponseForbidden()
-
-    # TODO: Make sure associated users get deleted (the relationship records)
-    # TODO: Does this need to be a soft delete?
 
     team = get_object_or_404(Team, pk=id)
     team.delete()
