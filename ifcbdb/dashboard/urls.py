@@ -130,6 +130,10 @@ urlpatterns = [
     path('api/timeline_info', views.timeline_info, name='timeline_info'),
     path('api/list_bins', views.list_bins, name='list_bins'),
     path('api/list_images/<slug:pid>', views.list_images, name='list_images'),
+
+    path('api/list_datasets', views.list_datasets, name='list_datasets'),
+    path('api/list_datasets/<str:team_name>', views.list_datasets, name='list_datasets_by_team'),
+
     path('api/update_skip', views.update_skip, name='update_skip'),
     path('api/export_metadata/<slug:dataset_name>', views.export_metadata_view, name='export_metadata'),
     path('api/export_metadata/', views.export_metadata_view, name='export_metadata'),
