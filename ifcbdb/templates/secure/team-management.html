@@ -4,7 +4,9 @@
         <span class="h3-responsive">Team Management</span>
     </div>
     <div class="flex-column">
+        {% if is_admin %}
         <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:edit-team' 0 %}"><i class="fas fa-plus magic mr-1"></i> Add New Team</a>
+        {% endif %}
     </div>
 </div>
 <hr class="my-2">
@@ -55,6 +57,7 @@
 {% endblock %} {% block scripts %}
 <script>
     let teamsTable;
+    const isAdmin = "{{ is_admin }}".toLowerCase() === "true";
 
     $(function(){
         teamsTable = $('#teams').DataTable({
@@ -68,14 +71,19 @@
                 { // Edit/Delete
                     targets: -1,
                     render: function ( data, type, row ) {
-                        return (
+                        let buttons =
                             "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/edit-team/" + data + "'>" +
                             "<i class='fas fa-edit magic mr-1'></i>Edit" +
-                            "</a>" +
-                            "<a class='btn btn-sm btn-mdb-color mr-2 delete-team' href='#' data-id='" + data + "'>" +
-                            "<i class='fas fa-edit magic mr-1'></i>Remove" +
-                            "</a>"
-                        );
+                            "</a>";
+
+                        if (isAdmin) {
+                            buttons +=
+                                "<a class='btn btn-sm btn-mdb-color mr-2 delete-team' href='#' data-id='" + data + "'>" +
+                                "<i class='fas fa-edit magic mr-1'></i>Remove" +
+                                "</a>";
+                        }
+
+                        return buttons;
                     }
                 },
             ]
