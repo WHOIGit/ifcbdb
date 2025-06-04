@@ -7,7 +7,8 @@ from django.contrib.auth.models import User, Group
 
 import pandas as pd
 
-from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team
+from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
+    TeamUser, TeamDataset
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, TeamForm
 from common import auth, helpers
 from common.constants import Features
@@ -294,13 +295,66 @@ def edit_team(request, id):
             instance = form.save(commit=False)
             instance.save()
 
+            # Update assigned users
+            assigned_user_ids = request.POST.get("assigned_user_ids")
+            assigned_user_ids = list(map(int, assigned_user_ids.split(","))) if assigned_user_ids else []
+
+            # Remove any user relationships that have been unassigned
+            TeamUser.objects.filter(team=instance).exclude(user_id__in=assigned_user_ids).delete()
+
+            # Add any new user relationships
+            existing_ids = list(TeamUser.objects.filter(team=instance).values_list("user_id", flat=True))
+            ids_to_add = set(assigned_user_ids) - set(existing_ids)
+            for id in ids_to_add:
+                team_user = TeamUser()
+                team_user.team = instance
+                team_user.user_id = id
+                team_user.save()
+
+            # Update assigned datasets
+            assigned_dataset_ids = request.POST.get("assigned_dataset_ids")
+            assigned_dataset_ids = list(map(int, assigned_dataset_ids.split(","))) if assigned_dataset_ids else []
+
+            # Remove any dataset relationships that have been unassigned
+            TeamDataset.objects.filter(team=instance).exclude(dataset_id__in=assigned_dataset_ids).delete()
+
+            # Add any new dataset relationships
+            existing_ids = list(TeamDataset.objects.filter(team=instance).values_list("dataset_id", flat=True))
+            ids_to_add = set(assigned_dataset_ids) - set(existing_ids)
+            for id in ids_to_add:
+                team_dataset = TeamDataset()
+                team_dataset.team = instance
+                team_dataset.dataset_id = id
+                team_dataset.save()
+
             return redirect(reverse("secure:team-management"))
     else:
         form = TeamForm(instance=team)
 
+    users = User.objects.filter(is_active=True)
+    datasets = Dataset.objects.all().order_by("name")
+
+    if team.pk:
+        assigned_user_ids = list(TeamUser.objects.filter(team=team).values_list("user_id", flat=True))
+        assigned_dataset_ids = list(TeamDataset.objects.filter(team=team).values_list("dataset_id", flat=True))
+
+        assigned_users = users.filter(id__in=assigned_user_ids)
+        available_users = users.exclude(id__in=assigned_user_ids)
+        assigned_datasets = datasets.filter(id__in=assigned_dataset_ids)
+        available_datasets = datasets.exclude(id__in=assigned_dataset_ids)
+    else:
+        assigned_users = []
+        available_users = users
+        assigned_datasets = []
+        available_datasets = datasets
+
     return render(request, "secure/edit-team.html", {
         "team": team,
         "form": form,
+        "assigned_users": assigned_users,
+        "available_users": available_users,
+        "assigned_datasets": assigned_datasets,
+        "available_datasets": available_datasets,
     })
 
 

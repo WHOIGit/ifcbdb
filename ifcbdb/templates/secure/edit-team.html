@@ -17,9 +17,11 @@
   </div>
 {% endif %}
 
-<form method="post">
+<form method="post" id="team-form">
     {% csrf_token %}
     {{ form.id }}
+    {{ form.assigned_user_ids }}
+    {{ form.assigned_dataset_ids }}
 
     <div class="row">
         <div class="col-md-12">
@@ -31,27 +33,67 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+
+        <div class="col-md-3 pr-0">
             <div class="form-group col">
                 <label for="id_assigned_users">Assigned Users</label>
-                {{ form.assigned_users }}
-                {% if form.assigned_users.errors %}<span class="text-danger">{{ form.assigned_users.errors.as_text }}</span>{% endif %}
+                <select multiple id="id_assigned_users" name="assigned_users" class="form-control form-control-sm" size="10">
+                    {% for user in assigned_users %}
+                    <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
-        <div class="col-md-1 d-flex flex-column align-items-center justify-content-center">
+        <div class="col-auto m-0 p-0 d-flex flex-column align-items-center justify-content-center">
             <div>
-                <button id="unassign-user" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&laquo;</button>
+                <button id="assign-user" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&laquo;</button>
             </div>
             <div>
-                <button id="assign-user" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&raquo;</button>
+                <button id="unassign-user" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&raquo;</button>
             </div>
 
         </div>
-        <div class="col-md-3 text-center">
+        <div class="col-md-3 pl-0 text-center">
             <div class="form-group col">
                 <label for="id_available_users">Available Users</label>
-                {{ form.available_users }}
-                {% if form.available_users.errors %}<span class="text-danger">{{ form.available_users.errors.as_text }}</span>{% endif %}
+                <select multiple id="id_available_users" name="available_users" class="form-control form-control-sm" size="10">
+                    {% for user in available_users %}
+                    <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="col-md-5">
+            &nbsp;
+        </div>
+
+        <div class="col-md-3 pr-0">
+            <div class="form-group col">
+                <label for="id_assigned_datasets">Assigned Datasets</label>
+                <select multiple id="id_assigned_datasets" name="assigned_datasets" class="form-control form-control-sm" size="10">
+                    {% for dataset in assigned_datasets %}
+                    <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="col-0 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
+            <div>
+                <button id="assign-dataset" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&laquo;</button>
+            </div>
+            <div>
+                <button id="unassign-dataset" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&raquo;</button>
+            </div>
+
+        </div>
+        <div class="col-md-3 pl-0 text-center">
+            <div class="form-group col">
+                <label for="id_available_datasets">Available Datasets</label>
+                <select multiple id="id_available_datasets" name="available_datasets" class="form-control form-control-sm" size="10">
+                    {% for dataset in available_datasets %}
+                    <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
         <div class="col-md-5">
@@ -70,23 +112,74 @@
 
 {% block scripts %}
 <script>
-    function assignUser() {
-        console.log("A")
+    function moveSelectedOptions(fromName, toName) {
+        const fromList = document.querySelector(`[name=${fromName}]`);
+        const toList = document.querySelector(`[name=${toName}]`);
+
+        const options = Array.from(fromList.options).filter(option => option.selected);
+
+        options.forEach((option) => {
+            toList.appendChild(option);
+        })
     }
 
-    function unassignUser() {
-        console.log("U")
+    function updateAssignedValues() {
+        const assignedUserIds = $("[name=assigned_users] option").map(function() {
+            return $(this).val();
+        }).get().join(",");
+
+        $("[name=assigned_user_ids]").val(assignedUserIds);
+
+        const assignedDatasetIds = $("[name=assigned_datasets] option").map(function() {
+            return $(this).val();
+        }).get().join(",");
+
+        $("[name=assigned_dataset_ids]").val(assignedDatasetIds);
     }
 
     document.addEventListener("DOMContentLoaded", function() {
+        // Assign user
         $("#assign-user").click(function(e) {
             e.preventDefault();
-            assignUser();
+            moveSelectedOptions("available_users", "assigned_users");
         });
 
+        $("[name=available_users]").on("dblclick", "option", function() {
+            moveSelectedOptions("available_users", "assigned_users");
+        });
+
+        // Unassign user
         $("#unassign-user").click(function(e) {
             e.preventDefault();
-            unassignUser();
+            moveSelectedOptions("assigned_users", "available_users");
+        });
+
+        $("[name=assigned_users]").on("dblclick", "option", function() {
+            moveSelectedOptions("assigned_users", "available_users");
+        });
+
+        // Assign dataset
+        $("#assign-dataset").click(function(e) {
+            e.preventDefault();
+            moveSelectedOptions("available_datasets", "assigned_datasets");
+        });
+
+        $("[name=available_datasets]").on("dblclick", "option", function() {
+            moveSelectedOptions("available_datasets", "assigned_datasets");
+        });
+
+        // Unassign dataset
+        $("#unassign-dataset").click(function(e) {
+            e.preventDefault();
+            moveSelectedOptions("assigned_datasets", "available_datasets");
+        });
+
+        $("[name=assigned_datasets]").on("dblclick", "option", function() {
+            moveSelectedOptions("assigned_datasets", "available_datasets");
+        });
+
+        $("#team-form").submit(function(e) {
+            updateAssignedValues();
         });
     });
 </script>
