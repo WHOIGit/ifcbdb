@@ -2,7 +2,7 @@ import re, os
 from django import forms
 from django.contrib.auth.models import User, Group
 
-from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, \
+from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
 
 
@@ -286,42 +286,20 @@ class AppSettingsForm(forms.ModelForm):
 
 
 class TeamForm(forms.ModelForm):
-    assigned_users = forms.ModelMultipleChoiceField(
-        required=False,
-        queryset=User.objects.none(),
-        widget=forms.SelectMultiple(attrs={"class": "form-control form-control-sm", "size": "10"})
-    )
-    available_users = forms.ModelMultipleChoiceField(
-        required=False,
-        queryset=User.objects.none(),
-        widget=forms.SelectMultiple(attrs={"class": "form-control form-control-sm", "size": "10"})
-    )
-
-    assigned_datasets = forms.ModelMultipleChoiceField(
-        required=False,
-        queryset=Dataset.objects.none(),
-        widget=forms.SelectMultiple(attrs={"class": "form-control form-control-sm", "size": "10"})
-    )
-    available_datasets = forms.ModelMultipleChoiceField(
-        required=False,
-        queryset=Dataset.objects.none(),
-        widget=forms.SelectMultiple(attrs={"class": "form-control form-control-sm", "size": "10"})
-    )
+    assigned_user_ids = forms.CharField(required=False, max_length=1000, widget=forms.HiddenInput())
+    assigned_dataset_ids = forms.CharField(required=False, max_length=1000, widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        users = User.objects.filter(is_active=True)
+    def clean_name(self):
+        name = self.cleaned_data.get("name")
 
-        if self.instance.pk:
-            assigned_user_ids = list(TeamUser.objects.filter(team=self.instance).values_list("user_id", flat=True))
+        team = Team.objects.filter(name__iexact=name).exclude(id=self.instance.id)
+        if team.exists():
+            raise forms.ValidationError("This name is already in use.")
 
-            self.fields["assigned_users"].queryset = users.filter(id__in=assigned_user_ids)
-            self.fields["available_users"].queryset = users.exclude(id__in=assigned_user_ids)
-        else:
-            self.fields["available_users"].queryset = users
-
-    # TODO: Make sure team name is unique
+        return name
 
     class Meta:
         model = Team
