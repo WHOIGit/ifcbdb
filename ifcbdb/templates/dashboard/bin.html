@@ -552,6 +552,9 @@
                             <li><a id="download-hdr" href="#">HDR</a></li>
                             <li><a id="download-roi" href="#">ROI</a></li>
                             <li><a id="download-zip" href="#">ZIP</a></li>
+                              <form id="download-zip-form" method="post" target="_blank">
+                                  {% csrf_token %}
+                              </form>
                           </ul>
                         </div>
                         <div class="flex-column flex-fill">
