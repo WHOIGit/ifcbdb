@@ -44,7 +44,7 @@
                 <label for="id_assigned_users">Assigned Users</label>
                 <select multiple id="id_assigned_users" name="assigned_users" class="form-control form-control-sm" size="10">
                     {% for user in assigned_users %}
-                    <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                    <option value="{{ user.id }}">{% if user.first_name or user.last_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -63,7 +63,7 @@
                 <label for="id_available_users">Available Users</label>
                 <select multiple id="id_available_users" name="available_users" class="form-control form-control-sm" size="10">
                     {% for user in available_users %}
-                    <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                    <option value="{{ user.id }}">{% if user.first_name or user.last_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}</option>
                     {% endfor %}
                 </select>
             </div>
