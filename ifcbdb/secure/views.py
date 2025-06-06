@@ -214,12 +214,20 @@ def dt_users(request):
     if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
-    users = User.objects.all() \
-        .filter(is_active=True) \
-        .values_list("first_name", "last_name", "email", "id")
+    users = User.objects.filter(is_active=True)
 
     return JsonResponse({
-        "data": list(users)
+        "data": [
+            {
+                "id": user.id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+
+            }
+            for user in users
+        ]
     })
 
 

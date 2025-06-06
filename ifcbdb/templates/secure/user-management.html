@@ -15,6 +15,7 @@
                 <tr>
                     <th>First Name</th>
                     <th>Last Name</th>
+                    <th>Username</th>
                     <th>Email</th>
                     <th></th>
                 </tr>
@@ -66,12 +67,22 @@
                 url: "{% url 'secure:users_dt' %}"
             },
             columns: [
-                {}, // First Name
-                {}, // Last Name
-                {}, // Email
-                { // Edit/Delete
-                    targets: -1,
-                    render: function ( data, type, row ) {
+                {
+                    data: "first_name"
+                }, // First Name
+                {
+                    data: "last_name"
+                }, // Last Name
+                {
+                    data: "username"
+                }, // Email
+                {
+                    data: "email"
+                },
+                {
+                    orderable: false,
+                    data: "id",
+                    render: function(data) {
                         return (
                             "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/edit-user/" + data + "'>" +
                             "<i class='fas fa-edit magic mr-1'></i>Edit" +
@@ -81,7 +92,7 @@
                             "</a>"
                         );
                     }
-                },
+                }
             ]
         });
 
