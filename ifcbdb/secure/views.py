@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django import forms
 from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse
@@ -97,13 +98,20 @@ def dt_teams(request):
         return HttpResponseForbidden()
 
     teams = Team.objects.all() \
-        .values_list("name", "id")
+        .annotate(user_count=Count("users", distinct=True)) \
+        .annotate(dataset_count=Count("datasets", distinct=True)) #\
 
     return JsonResponse({
-        "data": list(teams)
+        "data": [
+            {
+                "id": team.id,
+                "name": team.name,
+                "user_count": team.user_count,
+                "dataset_count": team.dataset_count,
+            }
+            for team in teams
+        ]
     })
-
-
 
 @login_required
 def dt_directories(request, dataset_id):
@@ -206,9 +214,7 @@ def dt_users(request):
     if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
-    # The user list excludes super admins
     users = User.objects.all() \
-        .exclude(is_superuser=True) \
         .filter(is_active=True) \
         .values_list("first_name", "last_name", "email", "id")
 
@@ -335,7 +341,7 @@ def edit_team(request, id):
     else:
         form = TeamForm(instance=team)
 
-    users = User.objects.filter(is_active=True)
+    users = User.objects.filter(is_active=True).order_by('last_name', 'first_name', 'username')
     datasets = Dataset.objects.all().order_by("name")
 
     if team.pk:
