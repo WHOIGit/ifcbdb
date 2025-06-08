@@ -553,6 +553,9 @@
                             <li><a id="download-roi" href="#">ROI</a></li>
                             <li><a id="download-zip" href="#">ZIP</a></li>
                           </ul>
+                            <form id="download-zip-form" method="post" target="_blank">
+                                {% csrf_token %}
+                            </form>
                         </div>
                         <div class="flex-column flex-fill">
                           <ul class="list-unstyled">
