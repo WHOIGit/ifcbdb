@@ -931,6 +931,17 @@ class Team(models.Model):
 class TeamUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    is_manager = models.BooleanField(default=False)
+
+    @property
+    def display_name (self):
+        if not self.user:
+            return ""
+
+        if self.user.first_name or self.user.last_name:
+            return f"{self.user.first_name} {self.user.last_name}"
+
+        return self.user.username
 
     class Meta:
         unique_together = ('user', 'team')

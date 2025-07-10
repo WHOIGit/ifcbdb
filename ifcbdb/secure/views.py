@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django import forms
@@ -313,21 +314,31 @@ def edit_team(request, id):
             instance = form.save(commit=False)
             instance.save()
 
-            # Update assigned users
-            assigned_user_ids = request.POST.get("assigned_user_ids")
-            assigned_user_ids = list(map(int, assigned_user_ids.split(","))) if assigned_user_ids else []
+            assigned_users_json = form.cleaned_data.get("assigned_users_json")
+            assigned_users = json.loads(assigned_users_json)
+
+            # Go through the list of assigned users, updating those that already exist or adding new records for
+            #   any additions
+            for assigned_user in assigned_users:
+                user_id = assigned_user.get("id")
+                is_manager = assigned_user.get("is_manager")
+
+                existing_user = TeamUser.objects.filter(team=instance, user_id=user_id).first()
+                if existing_user:
+                    existing_user.is_manager = is_manager
+                    existing_user.save()
+                    continue
+
+                new_user = TeamUser()
+                new_user.team = instance
+                new_user.user_id = user_id
+                new_user.is_manager = is_manager
+                new_user.save()
+
+            assigned_user_ids = [assigned_user.get("id") for assigned_user in assigned_users]
 
             # Remove any user relationships that have been unassigned
             TeamUser.objects.filter(team=instance).exclude(user_id__in=assigned_user_ids).delete()
-
-            # Add any new user relationships
-            existing_ids = list(TeamUser.objects.filter(team=instance).values_list("user_id", flat=True))
-            ids_to_add = set(assigned_user_ids) - set(existing_ids)
-            for id in ids_to_add:
-                team_user = TeamUser()
-                team_user.team = instance
-                team_user.user_id = id
-                team_user.save()
 
             # Update assigned datasets
             assigned_dataset_ids = request.POST.get("assigned_dataset_ids")
@@ -349,33 +360,41 @@ def edit_team(request, id):
     else:
         form = TeamForm(instance=team)
 
-    users = User.objects.filter(is_active=True).order_by('last_name', 'first_name', 'username')
     datasets = Dataset.objects.all().order_by("name")
 
     if team.pk:
-        assigned_user_ids = list(TeamUser.objects.filter(team=team).values_list("user_id", flat=True))
         assigned_dataset_ids = list(TeamDataset.objects.filter(team=team).values_list("dataset_id", flat=True))
 
-        assigned_users = users.filter(id__in=assigned_user_ids)
-        available_users = users.exclude(id__in=assigned_user_ids)
         assigned_datasets = datasets.filter(id__in=assigned_dataset_ids)
         available_datasets = datasets.exclude(id__in=assigned_dataset_ids)
     else:
-        assigned_users = []
-        available_users = users
         assigned_datasets = []
         available_datasets = datasets
+
+    team_users = TeamUser.objects \
+        .filter(team=team) \
+        .select_related("user") \
+        .order_by("user__last_name", "user__first_name", "user__username")
+
+    all_users = User.objects.filter(is_active=True).order_by('last_name', 'first_name', 'username')
+    assigned_users_json = json.dumps([
+        {
+            "id": user.user.id,
+            "name": user.display_name,
+            "is_manager": user.is_manager,
+        }
+        for user in team_users
+    ])
 
     return render(request, "secure/edit-team.html", {
         "team": team,
         "form": form,
-        "assigned_users": assigned_users,
-        "available_users": available_users,
         "assigned_datasets": assigned_datasets,
         "available_datasets": available_datasets,
         "is_admin": auth.is_admin(request.user),
+        "all_users": all_users,
+        "assigned_users_json": assigned_users_json,
     })
-
 
 
 @require_POST
