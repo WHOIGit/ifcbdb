@@ -784,7 +784,7 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         previous_bin = Timeline(bin_qs).previous_bin(bin)
         next_bin = Timeline(bin_qs).next_bin(bin)
 
-    if preload_adjacent_bins:
+    if preload_adjacent_bins and include_coordinates:
         if previous_bin is not None:
             previous_bin.mosaic_coordinates(shape=mosaic_shape, scale=mosaic_scale, block=False)
         if next_bin is not None:
