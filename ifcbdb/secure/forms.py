@@ -286,8 +286,8 @@ class AppSettingsForm(forms.ModelForm):
 
 
 class TeamForm(forms.ModelForm):
-    assigned_user_ids = forms.CharField(required=False, max_length=1000, widget=forms.HiddenInput())
     assigned_dataset_ids = forms.CharField(required=False, max_length=1000, widget=forms.HiddenInput())
+    assigned_users_json = forms.CharField(required=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

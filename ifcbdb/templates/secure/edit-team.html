@@ -20,92 +20,81 @@
 <form method="post" id="team-form">
     {% csrf_token %}
     {{ form.id }}
-    {{ form.assigned_user_ids }}
     {{ form.assigned_dataset_ids }}
+    {{ form.assigned_users_json }}
 
     <div class="row">
-        <div class="col-md-12">
-            <div class="form-row">
-                <div class="form-group col">
-                    <label for="id_name">Name</label>
-                    {% if is_admin %}
-                        {{ form.name }}
-                        {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
-                    {% else %}
-                        <input type="hidden" name="name" value="{{ team.name }}" />
-                        <input type="text" class="form-control form-control-sm" value="{{ team.name }}" disabled />
-                    {% endif %}
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col">
+                    <div class="form-row">
+                        <div class="form-group col">
+                            <label for="id_name">Name</label>
+                            {% if is_admin %}
+                                {{ form.name }}
+                                {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
+                            {% else %}
+                                <input type="hidden" name="name" value="{{ team.name }}" />
+                                <input type="text" class="form-control form-control-sm" value="{{ team.name }}" disabled />
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col p-0">
+                    <div class="form-group col">
+                        <label for="id_assigned_datasets">Assigned Datasets</label>
+                        <select multiple id="id_assigned_datasets" name="assigned_datasets" class="form-control form-control-sm" size="10">
+                            {% for dataset in assigned_datasets %}
+                            <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-0 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
+                    <div>
+                        <button id="assign-dataset" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&laquo;</button>
+                    </div>
+                    <div>
+                        <button id="unassign-dataset" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&raquo;</button>
+                    </div>
+                </div>
+                <div class="col pl-0 text-center">
+                    <div class="form-group col">
+                        <label for="id_available_datasets">Available Datasets</label>
+                        <select multiple id="id_available_datasets" name="available_datasets" class="form-control form-control-sm" size="10">
+                            {% for dataset in available_datasets %}
+                            <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3 p-0">
-            <div class="form-group col">
-                <label for="id_assigned_users">Assigned Users</label>
-                <select multiple id="id_assigned_users" name="assigned_users" class="form-control form-control-sm" size="10">
-                    {% for user in assigned_users %}
-                    <option value="{{ user.id }}">{% if user.first_name or user.last_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}</option>
-                    {% endfor %}
-                </select>
+        <div class="col-md-6">
+            <div class="row d-flex align-items-end" style="height:3rem">
+                <div class="col" style="vertical-align:bottom">
+                    <label>Assigned Users</label>
+                </div>
+                <div class="col text-right">
+                    <a class='btn btn-sm btn-mdb-color mr-2' href='#' id="add-assigned-user">Assign User</a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <table id="assigned-users" class="table table-sm table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <td>Name</td>
+                                <td>Manager?</td>
+                                <th></th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
         </div>
-        <div class="col-auto m-0 p-0 d-flex flex-column align-items-center justify-content-center">
-            <div>
-                <button id="assign-user" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&laquo;</button>
-            </div>
-            <div>
-                <button id="unassign-user" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&raquo;</button>
-            </div>
-
-        </div>
-        <div class="col-md-3 pl-0 text-center">
-            <div class="form-group col">
-                <label for="id_available_users">Available Users</label>
-                <select multiple id="id_available_users" name="available_users" class="form-control form-control-sm" size="10">
-                    {% for user in available_users %}
-                    <option value="{{ user.id }}">{% if user.first_name or user.last_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-        <div class="col-md-5">
-            &nbsp;
-        </div>
-
-        <div class="col-md-3 p-0">
-            <div class="form-group col">
-                <label for="id_assigned_datasets">Assigned Datasets</label>
-                <select multiple id="id_assigned_datasets" name="assigned_datasets" class="form-control form-control-sm" size="10">
-                    {% for dataset in assigned_datasets %}
-                    <option value="{{ dataset.id }}">{{ dataset.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-        <div class="col-0 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
-            <div>
-                <button id="assign-dataset" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&laquo;</button>
-            </div>
-            <div>
-                <button id="unassign-dataset" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&raquo;</button>
-            </div>
-
-        </div>
-        <div class="col-md-3 pl-0 text-center">
-            <div class="form-group col">
-                <label for="id_available_datasets">Available Datasets</label>
-                <select multiple id="id_available_datasets" name="available_datasets" class="form-control form-control-sm" size="10">
-                    {% for dataset in available_datasets %}
-                    <option value="{{ dataset.id }}">{{ dataset.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-        <div class="col-md-5">
-            &nbsp;
-        </div>
-
-
     </div>
     <div class="form-row">
         <a href="{% url 'secure:team-management' %}" class="btn btn-sm">Cancel</a>
@@ -113,10 +102,55 @@
     </div>
 </form>
 
+<div class="modal" id="assigned-user-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="add-assigned-user-header"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <input type="hidden" name="user_id" />
+                    <div class="row">
+                        <div class="col">
+                            <label for="id_user_option">User</label>
+                            <select id="id_user_option" name="assigned_user" class="form-control form-control-sm">
+                                <option value=""></option>
+                                {% for user in all_users %}
+                                <option value="{{ user.id }}">{% if user.first_name or user.last_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <span id="user-error-message" class="text-danger" style="display:none" >Please select a user</span>
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col">
+                            <label>Manager?</label>
+                            <div>
+                                <label><input type="radio" name="assigned_user_is_manager" data-option="exclude" value="yes" /> Yes</label>
+                                <label><input type="radio" name="assigned_user_is_manager" data-option="include" value="no" checked /> No</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-mdb-color" id="save-assigned-user">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+    let assignedUsers = JSON.parse(`{{ assigned_users_json|safe }}`);
+
     function moveSelectedOptions(fromName, toName) {
         const fromList = document.querySelector(`[name=${fromName}]`);
         const toList = document.querySelector(`[name=${toName}]`);
@@ -129,39 +163,139 @@
     }
 
     function updateAssignedValues() {
-        const assignedUserIds = $("[name=assigned_users] option").map(function() {
-            return $(this).val();
-        }).get().join(",");
-
-        $("[name=assigned_user_ids]").val(assignedUserIds);
-
         const assignedDatasetIds = $("[name=assigned_datasets] option").map(function() {
             return $(this).val();
         }).get().join(",");
 
         $("[name=assigned_dataset_ids]").val(assignedDatasetIds);
+
+        $("[name=assigned_users_json]").val(JSON.stringify(assignedUsers));
+    }
+
+    function setupAssignedUsersTable() {
+        assignedUsersTable = $('#assigned-users').DataTable({
+            searching: false,
+            lengthChange: false,
+            data: assignedUsers,
+            columns: [
+                {
+                    data: "name"
+                },
+                {
+                    data: "is_manager",
+                    render: (data) => data ? "Yes" : "No"
+                },
+                {
+                    data: "id",
+                    orderable: false,
+                    render: function(data, type, row) {
+                        const isManager = row.is_manager ? "yes" : "no";
+                        let buttons =
+                            "<a class='btn btn-sm btn-mdb-color mr-2 edit-assigned-user' href='#' data-id='" + data + "' data-ismanager='" + isManager + "'>" +
+                            "<i class='fas fa-edit magic mr-1'></i>Edit" +
+                            "</a>";
+
+                        if (true) {
+                            buttons +=
+                                "<a class='btn btn-sm btn-mdb-color mr-2 remove-assigned-user' href='#' data-id='" + data + "'>" +
+                                "<i class='fas fa-edit magic mr-1'></i>Remove" +
+                                "</a>";
+                        }
+
+                        return buttons;
+                    }
+                }
+            ]
+        });
+    }
+
+    function refreshAssignedUsers() {
+        assignedUsersTable.clear();
+        assignedUsersTable.rows.add(assignedUsers);
+        assignedUsersTable.draw();
+        assignedUsersTable.columns.adjust();
+    }
+
+    function resetForm() {
+        const assignedUserDropdown = $("[name=assigned_user]");
+        assignedUserDropdown.prop("disabled", false);
+        assignedUserDropdown.val("");
+
+        $("[name=user_id]").val("");
+        $("[name=assigned_user_is_manager][value=no]").prop("checked", true);
+
+        $("#user-error-message").toggle(false);
+    }
+
+    function addAssignedUser() {
+        $("#add-assigned-user-header").text("Assign User");
+        resetForm();
+        $("#assigned-user-modal").modal();
+    }
+
+    function editAssignedUser(userId, isManager) {
+        resetForm();
+
+        $("#add-assigned-user-header").text("Edit Assigned User");
+
+        const user = assignedUsers.find(user => user.id === +userId);
+        const assignedUserDropdown = $("[name=assigned_user]");
+        assignedUserDropdown.val(user.id);
+        assignedUserDropdown.prop("disabled", true);
+
+        $("[name=user_id]").val(user.id);
+        $("[name=assigned_user_is_manager][value=" + isManager + "]").prop("checked", true);
+
+        $("#assigned-user-modal").modal();
+    }
+
+    function removeAssignedUser(userId) {
+        if (!confirm("Are you sure you want to remove this user from the team?")) {
+            return;
+        }
+
+        assignedUsers = assignedUsers.filter(user => user.id !== +userId);
+        refreshAssignedUsers();
+    }
+
+    function saveAssignedUser() {
+        // Reset validation
+        $("#user-error-message").toggle(false);
+
+        const selectedUser = $("[name=assigned_user] option:selected");
+        const isManager = $("[name=assigned_user_is_manager]:checked").val() == "yes";
+        const isNew = !$("[name=user_id]").val();
+
+        // For new assignments, make sure a user is selected
+        if (isNew && !selectedUser.val()) {
+            $("#user-error-message").text("Please select a user").toggle(true);
+            return;
+        }
+
+        // For new assignments, also make sure the selected user isn't already assigned
+        const assignedUser = assignedUsers.find(user => user.id === +selectedUser.val());
+        if (isNew && assignedUser) {
+            $("#user-error-message").text("The selected user is already assigned").toggle(true);
+            return;
+        }
+
+        if (isNew) {
+            assignedUsers.push({
+                id:  +selectedUser.val(),
+                name: selectedUser.text(),
+                is_manager: isManager,
+            });
+        } else {
+            assignedUser.is_manager = isManager;
+        }
+
+        refreshAssignedUsers();
+
+        $("#assigned-user-modal").modal("hide");
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-        // Assign user
-        $("#assign-user").click(function(e) {
-            e.preventDefault();
-            moveSelectedOptions("available_users", "assigned_users");
-        });
-
-        $("[name=available_users]").on("dblclick", "option", function() {
-            moveSelectedOptions("available_users", "assigned_users");
-        });
-
-        // Unassign user
-        $("#unassign-user").click(function(e) {
-            e.preventDefault();
-            moveSelectedOptions("assigned_users", "available_users");
-        });
-
-        $("[name=assigned_users]").on("dblclick", "option", function() {
-            moveSelectedOptions("assigned_users", "available_users");
-        });
+        setupAssignedUsersTable();
 
         // Assign dataset
         $("#assign-dataset").click(function(e) {
@@ -185,6 +319,31 @@
 
         $("#team-form").submit(function(e) {
             updateAssignedValues();
+        });
+
+        $("#add-assigned-user").click(function(e) {
+            e.preventDefault();
+            addAssignedUser();
+        });
+
+        $("#save-assigned-user").click(function(e) {
+            e.preventDefault();
+            saveAssignedUser();
+        })
+
+        document.querySelector("#assigned-users").addEventListener("click", function(e) {
+            if (e.target.matches(".edit-assigned-user, .edit-assigned-user i")) {
+                e.preventDefault();
+
+                const id = e.target.dataset.id || e.target.parentElement.dataset.id;
+                const isManager = e.target.dataset.ismanager || e.target.parentElement.dataset.ismanager
+                editAssignedUser(id, isManager);
+            }
+
+            if (e.target.matches(".remove-assigned-user, .remove-assigned-user i")) {
+                e.preventDefault();
+                removeAssignedUser(e.target.dataset.id || e.target.parentElement.dataset.id);
+            }
         });
     });
 </script>
