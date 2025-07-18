@@ -12,11 +12,13 @@ import pandas as pd
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
     TeamUser, TeamDataset
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, TeamForm
-from common import auth, helpers
+from common import auth
 from common.constants import Features
 
 from django.core.cache import cache
 from celery.result import AsyncResult
+from waffle.decorators import waffle_switch
+
 
 
 @login_required
@@ -75,6 +77,7 @@ def user_management(request):
     return render(request, 'secure/user-management.html')
 
 @login_required
+@waffle_switch('Teams')
 def team_management(request):
     if not auth.is_manager_or_admin(request.user):
         return redirect(reverse("secure:index"))
@@ -94,6 +97,7 @@ def dt_datasets(request):
         "data": datasets
     })
 
+@waffle_switch('Teams')
 def dt_teams(request):
     if not auth.is_manager_or_admin(request.user):
         return HttpResponseForbidden()

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load waffle_tags %}
 {% block extra_head %}
 <title>Settings</title>
 {% endblock %}
@@ -19,7 +20,9 @@
             {% if is_admin %}
             <li class="list-group-item"><a href="{% url 'secure:user-management' %}">User Management</a></li>
             {% endif %}
+            {% switch 'Teams' %}
             <li class="list-group-item"><a href="{% url 'secure:team-management' %}">Team Management</a></li>
+            {% endswitch %}
             <li class="list-group-item"><a href="{% url 'secure:upload-metadata' %}">Upload Metadata</a></li>
             <li class="list-group-item"><a href="{% url 'secure:app-settings' %}">App Settings</a></li>
             {% if request.user.is_superuser %}
