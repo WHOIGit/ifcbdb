@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0042_add_initial_groups_20250606_1921'),
+        ('dashboard', '0039_team_teamuser_teamdataset_team_datasets_team_users'),
     ]
 
     operations = [

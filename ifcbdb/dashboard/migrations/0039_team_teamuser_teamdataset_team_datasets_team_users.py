@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('dashboard', '0039_auto_20250511_1505'),
+        ('dashboard', '0038_remove_datadirectory_unique_path_and_more'),
     ]
 
     operations = [

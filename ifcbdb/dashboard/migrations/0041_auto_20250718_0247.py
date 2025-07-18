@@ -26,7 +26,7 @@ def revert_migration(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0043_teamuser_is_manager'),
+        ('dashboard', '0040_teamuser_is_manager'),
         ('waffle', '0001_initial'),
     ]
 

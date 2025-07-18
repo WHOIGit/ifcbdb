@@ -186,26 +186,11 @@ class UserForm(forms.ModelForm):
                                widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
     confirm_password = forms.CharField(max_length=50, required=False,
                                        widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
-    role = forms.ChoiceField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.fields["email"].required = True
-
-        role_choices = [("", "")] + [
-            (group.id, group.name)
-            for group in Group.objects.all()
-        ]
-
-        group_id = self.instance.groups.first().id if self.instance.pk else None
-
-        self.fields["role"] = forms.ChoiceField(
-            required=True,
-            choices=role_choices,
-            widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
-            initial=group_id)
-
 
     def clean(self):
         password = self.cleaned_data.get("password")
@@ -229,7 +214,7 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["id", "first_name", "last_name", "email", ]
+        fields = ["id", "first_name", "last_name", "email", "is_superuser",]
 
         widgets = {
             "first_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "First Name"}),
