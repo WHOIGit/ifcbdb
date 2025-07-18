@@ -10,7 +10,7 @@ from django.contrib.auth.models import User, Group
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
-    TeamUser, TeamDataset
+    TeamUser, TeamDataset, TeamRole
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, TeamForm
 from common import auth
 from common.constants import Features
@@ -308,18 +308,18 @@ def edit_team(request, id):
             #   any additions
             for assigned_user in assigned_users:
                 user_id = assigned_user.get("id")
-                is_manager = assigned_user.get("is_manager")
+                role_id = assigned_user.get("role_id")
 
                 existing_user = TeamUser.objects.filter(team=instance, user_id=user_id).first()
                 if existing_user:
-                    existing_user.is_manager = is_manager
+                    existing_user.role_id = role_id
                     existing_user.save()
                     continue
 
                 new_user = TeamUser()
                 new_user.team = instance
                 new_user.user_id = user_id
-                new_user.is_manager = is_manager
+                new_user.role_id = role_id
                 new_user.save()
 
             assigned_user_ids = [assigned_user.get("id") for assigned_user in assigned_users]
@@ -363,15 +363,20 @@ def edit_team(request, id):
         .select_related("user") \
         .order_by("user__last_name", "user__first_name", "user__username")
 
-    all_users = User.objects.filter(is_active=True).order_by('last_name', 'first_name', 'username')
+    all_users = User.objects \
+        .filter(is_active=True) \
+        .order_by('last_name', 'first_name', 'username')
     assigned_users_json = json.dumps([
         {
             "id": user.user.id,
             "name": user.display_name,
-            "is_manager": user.is_manager,
+            "role_id": user.role.id,
+            "role": user.role.name,
         }
         for user in team_users
     ])
+
+    role_options = TeamRole.objects.all()
 
     return render(request, "secure/edit-team.html", {
         "team": team,
@@ -381,6 +386,7 @@ def edit_team(request, id):
         "is_admin": auth.is_admin(request.user),
         "all_users": all_users,
         "assigned_users_json": assigned_users_json,
+        "role_options": role_options,
     })
 
 

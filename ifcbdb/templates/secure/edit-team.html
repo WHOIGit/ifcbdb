@@ -24,7 +24,7 @@
     {{ form.assigned_users_json }}
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-7">
             <div class="row">
                 <div class="col">
                     <div class="form-row">
@@ -72,7 +72,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-5">
             <div class="row d-flex align-items-end" style="height:3rem">
                 <div class="col" style="vertical-align:bottom">
                     <label>Assigned Users</label>
@@ -87,7 +87,7 @@
                         <thead>
                             <tr>
                                 <td>Name</td>
-                                <td>Manager?</td>
+                                <td>Role</td>
                                 <th></th>
                             </tr>
                         </thead>
@@ -128,11 +128,14 @@
                     </div>
                     <div class="row mt-1">
                         <div class="col">
-                            <label>Manager?</label>
-                            <div>
-                                <label><input type="radio" name="assigned_user_is_manager" data-option="exclude" value="yes" /> Yes</label>
-                                <label><input type="radio" name="assigned_user_is_manager" data-option="include" value="no" checked /> No</label>
-                            </div>
+                            <label for="id_role_option">Role</label>
+                            <select id="id_role_option" name="assigned_role" class="form-control form-control-sm">
+                                <option value=""></option>
+                                {% for option in role_options %}
+                                <option value="{{ option.id }}">{{ option.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <span id="role-error-message" class="text-danger" style="display:none" >Please select a user</span>
                         </div>
                     </div>
                 </form>
@@ -179,22 +182,22 @@
             data: assignedUsers,
             columns: [
                 {
-                    data: "name"
+                    data: "name",
                 },
                 {
-                    data: "is_manager",
-                    render: (data) => data ? "Yes" : "No"
+                    data: "role",
                 },
                 {
                     data: "id",
                     orderable: false,
                     render: function(data, type, row) {
-                        const isManager = row.is_manager ? "yes" : "no";
                         let buttons =
-                            "<a class='btn btn-sm btn-mdb-color mr-2 edit-assigned-user' href='#' data-id='" + data + "' data-ismanager='" + isManager + "'>" +
+                            "<a class='btn btn-sm btn-mdb-color mr-2 edit-assigned-user' href='#' data-id='" + data + "' data-role='" + row.role_id + "'>" +
                             "<i class='fas fa-edit magic mr-1'></i>Edit" +
                             "</a>";
 
+                        // This is temporarily always true until per-team role permissions are updated to allow
+                        //   non-superadmins to manage team users
                         if (true) {
                             buttons +=
                                 "<a class='btn btn-sm btn-mdb-color mr-2 remove-assigned-user' href='#' data-id='" + data + "'>" +
@@ -222,9 +225,10 @@
         assignedUserDropdown.val("");
 
         $("[name=user_id]").val("");
-        $("[name=assigned_user_is_manager][value=no]").prop("checked", true);
+        $("[name=assigned_role]").val("");
 
         $("#user-error-message").toggle(false);
+        $("#role-error-message").toggle(false);
     }
 
     function addAssignedUser() {
@@ -233,7 +237,7 @@
         $("#assigned-user-modal").modal();
     }
 
-    function editAssignedUser(userId, isManager) {
+    function editAssignedUser(userId, roleId) {
         resetForm();
 
         $("#add-assigned-user-header").text("Edit Assigned User");
@@ -244,7 +248,7 @@
         assignedUserDropdown.prop("disabled", true);
 
         $("[name=user_id]").val(user.id);
-        $("[name=assigned_user_is_manager][value=" + isManager + "]").prop("checked", true);
+        $("[name=assigned_role]").val(roleId);
 
         $("#assigned-user-modal").modal();
     }
@@ -263,12 +267,18 @@
         $("#user-error-message").toggle(false);
 
         const selectedUser = $("[name=assigned_user] option:selected");
-        const isManager = $("[name=assigned_user_is_manager]:checked").val() == "yes";
+        const selectedRole = $("[name=assigned_role] option:selected");
         const isNew = !$("[name=user_id]").val();
 
         // For new assignments, make sure a user is selected
         if (isNew && !selectedUser.val()) {
             $("#user-error-message").text("Please select a user").toggle(true);
+            return;
+        }
+
+        // Make sure a role is selected
+        if (!selectedRole.val()) {
+            $("#role-error-message").text("Please select a role").toggle(true);
             return;
         }
 
@@ -281,12 +291,14 @@
 
         if (isNew) {
             assignedUsers.push({
-                id:  +selectedUser.val(),
+                id: +selectedUser.val(),
                 name: selectedUser.text(),
-                is_manager: isManager,
+                role_id: selectedRole.val(),
+                role: selectedRole.text(),
             });
         } else {
-            assignedUser.is_manager = isManager;
+            assignedUser.role_id = selectedRole.val();
+            assignedUser.role = selectedRole.text();
         }
 
         refreshAssignedUsers();
@@ -336,8 +348,8 @@
                 e.preventDefault();
 
                 const id = e.target.dataset.id || e.target.parentElement.dataset.id;
-                const isManager = e.target.dataset.ismanager || e.target.parentElement.dataset.ismanager
-                editAssignedUser(id, isManager);
+                const roleId = e.target.dataset.role || e.target.parentElement.dataset.role
+                editAssignedUser(id, roleId);
             }
 
             if (e.target.matches(".remove-assigned-user, .remove-assigned-user i")) {
