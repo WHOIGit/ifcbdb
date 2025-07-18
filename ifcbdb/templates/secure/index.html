@@ -13,13 +13,11 @@
 
 <div class="row py-2 px-3">
     <div class="col">
-        {% if is_manager_or_admin %}
+        {% if user.is_superuser %}
         <ul class="list-group">
             <li class="list-group-item"><a href="{% url 'secure:dataset-management' %}">Dataset Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
-            {% if is_admin %}
             <li class="list-group-item"><a href="{% url 'secure:user-management' %}">User Management</a></li>
-            {% endif %}
             {% switch 'Teams' %}
             <li class="list-group-item"><a href="{% url 'secure:team-management' %}">Team Management</a></li>
             {% endswitch %}

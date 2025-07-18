@@ -44,9 +44,9 @@
     </div>
     <div class="form-row">
         <div class="form-group col">
-            <label for="id_role">Role</label>
-            {{ form.role }}
-            {% if form.role.errors %}<span class="text-danger">{{ form.role.errors.as_text }}</span>{% endif %}
+            <label for="id_is_superuser">Superuser?</label>
+            {{ form.is_superuser }}
+            {% if form.is_superuser.errors %}<span class="text-danger">{{ form.is_superuser.errors.as_text }}</span>{% endif %}
         </div>
     </div>
     <div class="form-row">

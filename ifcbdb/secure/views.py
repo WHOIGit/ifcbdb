@@ -23,19 +23,12 @@ from waffle.decorators import waffle_switch
 
 @login_required
 def index(request):
-    is_admin = auth.is_admin(request.user)
-    is_manager_or_admin = auth.is_manager_or_admin(request.user)
-
-    # TODO: Add templatetag?
-    return render(request, 'secure/index.html', {
-        "is_admin": is_admin,
-        "is_manager_or_admin": is_manager_or_admin,
-    })
+    return render(request, 'secure/index.html')
 
 
 @login_required
 def dataset_management(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     form = DatasetForm()
@@ -47,7 +40,7 @@ def dataset_management(request):
 
 @login_required
 def directory_management(request, dataset_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     dataset = get_object_or_404(Dataset, pk=dataset_id)
@@ -59,7 +52,7 @@ def directory_management(request, dataset_id):
 
 @login_required
 def instrument_management(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     form = InstrumentForm()
@@ -79,7 +72,7 @@ def user_management(request):
 @login_required
 @waffle_switch('Teams')
 def team_management(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     return render(request, 'secure/team-management.html', {
@@ -88,7 +81,7 @@ def team_management(request):
 
 @login_required
 def dt_datasets(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     datasets = list(Dataset.objects.all().values_list("name", "title", "is_active", "id"))
@@ -99,7 +92,7 @@ def dt_datasets(request):
 
 @waffle_switch('Teams')
 def dt_teams(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     teams = Team.objects.all() \
@@ -120,7 +113,7 @@ def dt_teams(request):
 
 @login_required
 def dt_directories(request, dataset_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     directories = list(DataDirectory.objects.filter(dataset__id=dataset_id)
@@ -133,7 +126,7 @@ def dt_directories(request, dataset_id):
 
 @login_required
 def edit_dataset(request, id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     status = request.GET.get("status")
@@ -162,7 +155,7 @@ def edit_dataset(request, id):
 
 @login_required
 def edit_directory(request, dataset_id, id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     if int(id) > 0:
@@ -192,7 +185,7 @@ def edit_directory(request, dataset_id, id):
 
 @require_POST
 def delete_directory(request, dataset_id, id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     directory = get_object_or_404(DataDirectory, pk=id)
@@ -205,7 +198,7 @@ def delete_directory(request, dataset_id, id):
 
 
 def dt_instruments(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     instruments = list(Instrument.objects.all().values_list("number", "nickname", "id"))
@@ -229,7 +222,6 @@ def dt_users(request):
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "email": user.email,
-
             }
             for user in users
         ]
@@ -238,7 +230,7 @@ def dt_users(request):
 
 @login_required
 def edit_instrument(request, id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     if int(id) > 0:
@@ -287,11 +279,6 @@ def edit_user(request, id):
 
             instance.save()
 
-            group = Group.objects.get(pk=form.cleaned_data["role"])
-
-            user.groups.clear()
-            group.user_set.add(user)
-
             return redirect(reverse("secure:user-management"))
     else:
         form = UserForm(instance=user)
@@ -303,12 +290,8 @@ def edit_user(request, id):
 
 @login_required
 def edit_team(request, id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
-
-    # Only admins can create new teams
-    if id == 0 and not auth.is_admin(request.user):
-        return redirect(reverse("secure:team-management"))
 
     team = get_object_or_404(Team, pk=id) if int(id) > 0 else Team()
 
@@ -426,7 +409,7 @@ def delete_team(request, id):
 
 @login_required
 def app_settings(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     instance = AppSettings.objects.first() or AppSettings()
@@ -448,7 +431,7 @@ def app_settings(request):
 
 @require_POST
 def add_tag(request, bin_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     tag_name = request.POST.get("tag_name", "")
@@ -462,7 +445,7 @@ def add_tag(request, bin_id):
 
 @require_POST
 def remove_tag(request, bin_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     tag_name = request.POST.get("tag_name", "")
@@ -476,7 +459,7 @@ def remove_tag(request, bin_id):
 
 @require_POST
 def add_comment(request, bin_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     # TODO: Unlike editing a comment, this was allow for authenticated users, not just staff?
@@ -491,7 +474,7 @@ def add_comment(request, bin_id):
 
 @require_GET
 def edit_comment(request, bin_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     # TODO: Prior logic used the staff flag to determine if this was editable - do we need a different level than admin?
@@ -510,7 +493,7 @@ def edit_comment(request, bin_id):
 
 @require_POST
 def update_comment(request, bin_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     # TODO: Prior logic used the staff flag to determine if this was editable - do we need a different level than admin?
@@ -534,7 +517,7 @@ def update_comment(request, bin_id):
 
 @require_POST
 def delete_comment(request, bin_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     # TODO: Prior logic used the staff flag to determine if this was editable - do we need a different level than admin?
@@ -567,7 +550,7 @@ def get_dataset_sync_task_id(dataset_id):
 
 @require_POST
 def sync_dataset(request, dataset_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     from dashboard.tasks import sync_dataset
@@ -589,7 +572,7 @@ def sync_dataset(request, dataset_id):
     return JsonResponse({ 'state': result.state })
 
 def sync_dataset_status(request, dataset_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     task_id = get_dataset_sync_task_id(dataset_id)
@@ -607,7 +590,7 @@ def sync_dataset_status(request, dataset_id):
 
 @require_POST
 def sync_cancel(request, dataset_id):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     cancel_key = dataset_sync_cancel_key(dataset_id)
@@ -623,7 +606,7 @@ METADATA_UPLOAD_TASKID_KEY = 'metadata_upload_task_id'
 
 @login_required
 def upload_metadata(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
     from dashboard.tasks import import_metadata
@@ -669,7 +652,7 @@ def upload_metadata(request):
     })
 
 def metadata_upload_status(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     task_id = cache.get(METADATA_UPLOAD_TASKID_KEY)
@@ -684,7 +667,7 @@ def metadata_upload_status(request):
 
 @require_POST
 def metadata_upload_cancel(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel");
@@ -695,7 +678,7 @@ def metadata_upload_cancel(request):
 
 @require_POST
 def toggle_skip(request):
-    if not auth.is_manager_or_admin(request.user):
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     bin_id = request.POST.get("bin_id")
