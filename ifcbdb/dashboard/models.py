@@ -39,6 +39,8 @@ from ifcb.data.files import Fileset, FilesetBin
 from .tasks import mosaic_coordinates_task
 from .mosaic import Mosaic
 
+from common.constants import TeamRoles
+
 logger = logging.getLogger(__name__)
 
 FILL_VALUE = -9999999
@@ -928,10 +930,13 @@ class Team(models.Model):
     users = models.ManyToManyField(User, through='TeamUser', related_name='teams')
     datasets = models.ManyToManyField(Dataset, through='TeamDataset', related_name='teams')
 
+class TeamRole(models.Model):
+    name = models.CharField(max_length=50, blank=False, null=False)
+
 class TeamUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    is_manager = models.BooleanField(default=False)
+    role = models.ForeignKey(TeamRole, on_delete=models.CASCADE, default=TeamRoles.USER.value)
 
     @property
     def display_name (self):
