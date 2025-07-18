@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.gis',
+    'waffle',
 ]
 
 MIDDLEWARE = [
@@ -48,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'waffle.middleware.WaffleMiddleware',
 ]
 
 ROOT_URLCONF = 'ifcbdb.urls'
@@ -166,10 +168,6 @@ http_origin = f'http://{_HOST}' + (f':{_HTTP_PORT}' if _HTTP_PORT != '80' else '
 CSRF_TRUSTED_ORIGINS = [https_origin, http_origin]
 
 DEFAULT_DATASET = os.getenv('DEFAULT_DATASET', '')
-
-# Load feature settings from environment variables
-FEATURE_PRIVATE_DATASETS = os.getenv('FEATURE_PRIVATE_DATASETS', 'false').lower() == 'true'
-FEATURE_USER_ROLES = os.getenv('FEATURE_USER_ROLES', 'false').lower() == 'true'
 
 try:
     from .local_settings import *

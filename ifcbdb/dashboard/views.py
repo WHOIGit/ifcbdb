@@ -26,6 +26,7 @@ from .forms import DatasetSearchForm
 from common.utilities import *
 
 from dashboard.accession import Accession, export_metadata
+import waffle
 
 def index(request):
     if settings.DEFAULT_DATASET:
@@ -1250,6 +1251,9 @@ def list_images(request, pid):
         })
 
 def list_datasets(request, team_name=''):
+    if team_name and not waffle.switch_is_active('Teams'):
+        return HttpResponseNotFound()
+
     if not team_name:
         datasets = Dataset.objects.all()
     else:

@@ -21,6 +21,3 @@ POSTGRES_PASSWORD=changeme
 
 #LOCAL_SETTINGS=./local_settings.py
 
-# Feature Settings
-FEATURE_PRIVATE_DATASETS=False
-FEATURE_USER_ROLES=False
