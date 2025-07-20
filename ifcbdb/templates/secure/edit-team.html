@@ -171,7 +171,6 @@
         }).get().join(",");
 
         $("[name=assigned_dataset_ids]").val(assignedDatasetIds);
-
         $("[name=assigned_users_json]").val(JSON.stringify(assignedUsers));
     }
 
@@ -197,7 +196,7 @@
                             "</a>";
 
                         // This is temporarily always true until per-team role permissions are updated to allow
-                        //   non-superadmins to manage team users
+                        //   non-superadmins to manage team users. Currently, only super admins can manage users
                         if (true) {
                             buttons +=
                                 "<a class='btn btn-sm btn-mdb-color mr-2 remove-assigned-user' href='#' data-id='" + data + "'>" +

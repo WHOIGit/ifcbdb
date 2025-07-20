@@ -23,6 +23,11 @@ from waffle.decorators import waffle_switch
 
 @login_required
 def index(request):
+    # The settings page is restricted to super admins and staff, the latter of which is what will be used to determine
+    #   if the given user has access to something they can manage (based on their associated teams and roles)
+    if not auth.is_admin(request.user) and not auth.is_staff(request.user):
+        return redirect(reverse("secure:index"))
+
     return render(request, 'secure/index.html')
 
 

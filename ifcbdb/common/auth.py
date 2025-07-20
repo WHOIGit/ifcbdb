@@ -8,3 +8,11 @@ def is_admin(user):
         return False
 
     return user.is_superuser
+
+# This one is also just a wrapper around the staff flag. This is likely what will be used to determine if a user
+#   has access to things "quickly" without having to check through associated teams and roles on those records
+def is_staff(user):
+    if not user.is_staff:
+        return False
+
+    return user.is_staff
