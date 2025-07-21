@@ -1,6 +1,8 @@
 import re, os
 from django import forms
 from django.contrib.auth.models import User, Group
+import waffle
+from common.constants import Features
 
 from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
@@ -62,6 +64,9 @@ class DatasetForm(forms.ModelForm):
             if instance.location:
                 self.fields["latitude"].initial = instance.location.y
                 self.fields["longitude"].initial = instance.location.x
+
+        if waffle.switch_is_active(Features.PRIVATE_DATASETS):
+            self.fields["is_private"].widget = forms.HiddenInput()
 
     def save(self, commit=True):
         instance = super(DatasetForm, self).save(commit=False)

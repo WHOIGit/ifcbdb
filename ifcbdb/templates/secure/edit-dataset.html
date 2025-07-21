@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load waffle_tags %}
 
 {% block extra_head %}
 <title>{{ dataset.title }} » Manage</title>
@@ -42,12 +43,14 @@
                         <label class="custom-control-label" for="id_is_active">Active</label>
                     </div>
                 </div>
+                {% switch 'PrivateDatasets' %}
                 <div class="form-group col col-2">
                     <div class="col custom-switch">
                         {{ form.is_private }}
                         <label class="custom-control-label" for="id_is_private">Private</label>
                     </div>
                 </div>
+                {% endswitch %}
             </div>
             <div class="form-row">
                 <div class="form-group col">
