@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0038_remove_datadirectory_unique_path_and_more'),
+        ('dashboard', '0044_teamuser_role'),
     ]
 
     operations = [
