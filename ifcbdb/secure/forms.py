@@ -1,7 +1,8 @@
 import re, os
 from django import forms
+from django.contrib.auth.models import User, Group
 
-from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, \
+from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
 
 
@@ -180,6 +181,48 @@ class InstrumentForm(forms.ModelForm):
         }
 
 
+class UserForm(forms.ModelForm):
+    password = forms.CharField(max_length=50, required=False,
+                               widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
+    confirm_password = forms.CharField(max_length=50, required=False,
+                                       widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["email"].required = True
+
+    def clean(self):
+        password = self.cleaned_data.get("password")
+        confirm_password = self.cleaned_data.get("confirm_password")
+
+        if password != confirm_password:
+            raise forms.ValidationError(
+                "The password fields do not match"
+            )
+
+        return self.cleaned_data
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+
+        users = User.objects.filter(email=email).exclude(id=self.instance.id)
+        if users.exists():
+            raise forms.ValidationError("This email address is already in use.")
+
+        return email
+
+    class Meta:
+        model = User
+        fields = ["id", "first_name", "last_name", "email", "is_superuser",]
+
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "First Name"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Last Name"}),
+            "email": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Email"}),
+        }
+
+
 class MetadataUploadForm(forms.Form):
     file = forms.FileField(label="Choose file", widget=forms.ClearableFileInput(attrs={"class": "custom-file-input"}))
 
@@ -224,4 +267,29 @@ class AppSettingsForm(forms.ModelForm):
             "default_latitude": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "default_longitude": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "default_zoom_level": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+        }
+
+
+class TeamForm(forms.ModelForm):
+    assigned_dataset_ids = forms.CharField(required=False, max_length=1000, widget=forms.HiddenInput())
+    assigned_users_json = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data.get("name")
+
+        team = Team.objects.filter(name__iexact=name).exclude(id=self.instance.id)
+        if team.exists():
+            raise forms.ValidationError("This name is already in use.")
+
+        return name
+
+    class Meta:
+        model = Team
+        fields = ["id", "name", ]
+
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
         }
