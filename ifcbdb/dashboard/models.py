@@ -932,6 +932,9 @@ class Team(models.Model):
     users = models.ManyToManyField(User, through='TeamUser', related_name='teams')
     datasets = models.ManyToManyField(Dataset, through='TeamDataset', related_name='teams')
 
+    def __str__(self):
+        return self.name
+
 class TeamRole(models.Model):
     name = models.CharField(max_length=50, blank=False, null=False)
 
