@@ -45,7 +45,8 @@
                 <!-- Left -->
                 <nav class="nav flex-column flex-lg-row">
                     {% dataset_nav %}
-                    {% if user.is_superadmin or user.is_staff %}
+                    {% can_access_settings user as can_access_settings %}
+                    {% if can_access_settings %}
                         <a class="white-text nav-link" href="/secure/" title="Settings" data-toggle="tooltip" data-placement="bottom"><span class="h5-responsive fa fa-cog"></span> Settings</a>
                     {% endif %}
                     <div class="custom-control-inline">

@@ -5,6 +5,7 @@ from django.utils.html import mark_safe
 
 from dashboard.models import Dataset, Instrument, Tag, bin_query, AppSettings, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+from common import auth
 
 register = template.Library()
 
@@ -19,6 +20,10 @@ def app_settings():
     })
 
     return mark_safe(settings)
+
+@register.simple_tag(takes_context=False)
+def can_access_settings(user):
+    return auth.can_access_settings(user)
 
 @register.inclusion_tag('dashboard/_dataset_switcher.html')
 def dataset_switcher():
@@ -41,7 +46,7 @@ def dataset_nav():
 @register.inclusion_tag("dashboard/_timeline-filters.html", takes_context=True)
 def timeline_filters(context):
     return {
-    }
+}
 
 
 @register.inclusion_tag("dashboard/_comments-nav.html", takes_context=True)
