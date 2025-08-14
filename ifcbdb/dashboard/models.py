@@ -417,6 +417,9 @@ class Bin(models.Model):
     instrument = models.ForeignKey('Instrument', related_name='bins', null=True, on_delete=models.SET_NULL)
     # many-to-many relationship with datasets
     datasets = models.ManyToManyField('Dataset', related_name='bins')
+    # most recently located path of dataset, and which data directory it came from
+    path = models.CharField(max_length=1024, blank=True)
+    data_directory = models.ForeignKey('DataDirectory', null=True, blank=True, on_delete=models.SET_NULL)
     # accession
     added = models.DateTimeField(auto_now_add=True, null=True)
     # qaqc flags
@@ -523,17 +526,19 @@ class Bin(models.Model):
                 yield directory
 
     def _get_bin(self):
-        cache_key = '{}_path'.format(self.pid)
-        cached_path = cache.get(cache_key)
-        if cached_path is not None and os.path.exists(cached_path+'.adc'):
-            return FilesetBin(Fileset(cached_path))
         # return the underlying ifcb.Bin object backed by the raw filesets
-        for directory in self._directories(kind=DataDirectory.RAW):
+        if self.path and os.path.exists(self.path+'.adc'):
+            return FilesetBin(Fileset(self.path))
+        to_search = [] if not self.data_directory else [self.data_directory]
+        to_search.extend(self._directories(kind=DataDirectory.RAW))
+        for directory in to_search:
             dd = directory.get_raw_directory()
             try:
                 b = dd[self.pid]
-                basepath, _  = os.path.splitext(b.fileset.adc_path)
-                cache.set(cache_key, basepath)
+                if not self.path: # cache path of first found fileset
+                    self.path, _  = os.path.splitext(b.fileset.adc_path)
+                    self.data_directory = directory
+                    self.save()
                 return b
             except KeyError:
                 pass # keep searching
