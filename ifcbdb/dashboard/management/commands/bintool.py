@@ -16,6 +16,7 @@ class Command(BaseCommand):
         parser.add_argument('--sample-type', type=str, help='Sample type')
         parser.add_argument('--remove-dataset', type=str, help='Dataset name to remove filtered bins from')
         parser.add_argument('--add-dataset', type=str, help='Dataset name to add filtered bins to')
+        parser.add_argument('--cache-paths', action='store_true', help='Cache paths for filtered bins')
 
     def handle(self, *args, **options):
         dataset_name = options['dataset']
@@ -57,6 +58,10 @@ class Command(BaseCommand):
                 self.stdout.write(f"Added filtered bins to dataset: {add_dataset_name}")
             except Dataset.DoesNotExist:
                 self.stderr.write(f"Dataset '{add_dataset_name}' does not exist.")
+
+        if options['cache_paths']:
+            for b in bins:
+                b._get_bin() # this will cache the path if it isn't already
 
         for bin_id in bin_ids:
             self.stdout.write(bin_id)
