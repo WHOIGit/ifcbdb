@@ -282,6 +282,15 @@ class TeamForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # New teams, which can only be created by a superadmin, can use any dataset that is not already associated with
+        #   another team. On edits, the only allowed values are those already assigned to this team
+        if self.instance.pk:
+            dataset_choices = Dataset.objects.filter(teamdataset__team=self.instance)
+        else:
+            dataset_choices = Dataset.objects.filter(teamdataset__isnull=True)
+
+        self.fields["default_dataset"].queryset = dataset_choices
+
     def clean_name(self):
         name = self.cleaned_data.get("name")
 
@@ -293,8 +302,9 @@ class TeamForm(forms.ModelForm):
 
     class Meta:
         model = Team
-        fields = ["id", "name", ]
+        fields = ["id", "name", "default_dataset", ]
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
+            "default_dataset": forms.Select(attrs={"class": "form-control form-control-sm"}),
         }
