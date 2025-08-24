@@ -41,6 +41,17 @@
                     </div>
                 </div>
             </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-row">
+                        <div class="form-group col">
+                            <label for="id_default_dataset">Default Dataset</label>
+                            {{ form.default_dataset }}
+                            {% if form.default_dataset.errors %}<span class="text-danger">{{ form.default_dataset.errors.as_text }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="row d-flex align-items-end" style="height:3rem">
                 <div class="col" style="vertical-align:bottom">
                     <label>Assigned Users</label>
@@ -64,6 +75,7 @@
             </div>
         </div>
         <div class="col-md-5">
+            {% if form.instance.pk %}
             <div class="row d-flex align-items-end" style="height:3rem">
                 <div class="col" style="vertical-align:bottom">
                     <label>Assigned Datasets</label>
@@ -80,6 +92,7 @@
                     </table>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
     <div class="form-row" style="margin-top:2rem">

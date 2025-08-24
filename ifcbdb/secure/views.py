@@ -160,19 +160,29 @@ def edit_dataset(request, id):
         if form.is_valid():
             instance = form.save()
 
-            team = form.cleaned_data.get("team")
             existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
+            team = form.cleaned_data.get("team")
+            original_team = existing.team if existing else None
+            is_team_removed = False
 
             # Save the associated team, if any
             if team is None and existing is not None:
+                is_team_removed = True
                 existing.delete()
 
             if team is not None and existing is None:
                 TeamDataset.objects.create(team=team, dataset=instance)
 
             if team is not None and existing is not None and existing.team != team:
+                is_team_removed = True
                 existing.team = team
                 existing.save()
+
+            # If a team was removed (or changed to something else) but it was the default dataset for that team,
+            #   clear the value
+            if is_team_removed and original_team is not None and original_team.default_dataset == instance:
+                original_team.default_dataset = None
+                original_team.save()
 
             status = "created" if id == 0 else "updated"
             return redirect(reverse("secure:edit-dataset", kwargs={"id": instance.id}) + "?status=" + status)
@@ -327,6 +337,7 @@ def edit_team(request, id):
         return redirect(reverse("secure:index"))
 
     team = get_object_or_404(Team, pk=id) if int(id) > 0 else Team()
+    is_new = team.pk is None
 
     # Non-superadmins (essentially team captains) can only manage their own teams
     if not auth.is_admin(request.user):
@@ -341,8 +352,17 @@ def edit_team(request, id):
     if request.POST:
         form = TeamForm(request.POST, instance=team)
         if form.is_valid():
-            instance = form.save(commit=False)
-            instance.save()
+            instance = form.save()
+
+            # If this is a new team, and a default dataset is selected, make sure to associate it with
+            #  the team. The only allowed values for team should already be datasets not already associated
+            #  with any other team
+            if is_new and instance.default_dataset is not None:
+                # Datasets can only be associated with a single dataset right now, even though it's a many-to-many
+                #   relationship that could support more. Because of this, make sure that the dataset selected is
+                #   not already associated with another team
+                if not TeamDataset.objects.filter(dataset=instance.default_dataset).exists():
+                    TeamDataset.objects.create(team=instance, dataset=instance.default_dataset)
 
             assigned_users_json = form.cleaned_data.get("assigned_users_json")
             assigned_users = json.loads(assigned_users_json)
