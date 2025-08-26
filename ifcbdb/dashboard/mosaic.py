@@ -68,7 +68,7 @@ def join(x, y, w, h, xx, yy, ww, hh):
         # second rectangle contains the first one, return the second one
         return True, xx, yy, ww, hh
 
-    if not intersects(x, y, h, w, xx, yy, ww, hh):
+    if not intersects(x, y, w, h, xx, yy, ww, hh):
         # cannot join--not intersecting
         return False, x, y, w, h
 
@@ -192,6 +192,7 @@ class Packer(object):
             if fitness == DOESNT_FIT:
                 continue
             if min_fitness == DOESNT_FIT or fitness < min_fitness:
+                min_fitness = fitness
                 fittest_section = i
 
         return fittest_section
