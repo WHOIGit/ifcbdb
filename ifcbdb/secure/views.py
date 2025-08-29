@@ -13,7 +13,7 @@ from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, 
     TeamUser, TeamDataset, TeamRole
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, TeamForm
 from common import auth
-from common.constants import Features
+from common.constants import Features, TeamRoles
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -23,12 +23,16 @@ from waffle.decorators import waffle_switch
 
 @login_required
 def index(request):
-    # The settings page is restricted to super admins and staff, the latter of which is what will be used to determine
-    #   if the given user has access to something they can manage (based on their associated teams and roles)
-    if not auth.is_admin(request.user) and not auth.is_staff(request.user):
-        return redirect(reverse("secure:index"))
+    if not auth.can_access_settings(request.user):
+        return redirect("/")
 
-    return render(request, 'secure/index.html')
+    can_manage_teams = auth.can_manage_teams(request.user)
+    has_settings_to_manage = request.user.is_superuser or can_manage_teams
+
+    return render(request, 'secure/index.html', {
+        "has_settings_to_manage": has_settings_to_manage,
+        "can_manage_teams": can_manage_teams,
+    })
 
 
 @login_required
@@ -77,7 +81,7 @@ def user_management(request):
 @login_required
 @waffle_switch('Teams')
 def team_management(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_teams(request.user):
         return redirect(reverse("secure:index"))
 
     return render(request, 'secure/team-management.html', {
@@ -97,12 +101,22 @@ def dt_datasets(request):
 
 @waffle_switch('Teams')
 def dt_teams(request):
-    if not auth.is_admin(request.user):
-        return HttpResponseForbidden()
+    if not auth.can_manage_teams(request.user):
+        return redirect(reverse("secure:index"))
 
     teams = Team.objects.all() \
         .annotate(user_count=Count("users", distinct=True)) \
-        .annotate(dataset_count=Count("datasets", distinct=True)) #\
+        .annotate(dataset_count=Count("datasets", distinct=True))
+
+    # Limit teams list if not a super user
+    if not auth.is_admin(request.user):
+        allowed_team_ids = TeamUser.objects \
+            .filter(user=request.user) \
+            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .values_list("team_id", flat=True)
+        print(allowed_team_ids)
+
+        teams = teams.filter(id__in=allowed_team_ids)
 
     return JsonResponse({
         "data": [
@@ -145,6 +159,30 @@ def edit_dataset(request, id):
         form = DatasetForm(request.POST, instance=dataset)
         if form.is_valid():
             instance = form.save()
+
+            existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
+            team = form.cleaned_data.get("team")
+            original_team = existing.team if existing else None
+            is_team_removed = False
+
+            # Save the associated team, if any
+            if team is None and existing is not None:
+                is_team_removed = True
+                existing.delete()
+
+            if team is not None and existing is None:
+                TeamDataset.objects.create(team=team, dataset=instance)
+
+            if team is not None and existing is not None and existing.team != team:
+                is_team_removed = True
+                existing.team = team
+                existing.save()
+
+            # If a team was removed (or changed to something else) but it was the default dataset for that team,
+            #   clear the value
+            if is_team_removed and original_team is not None and original_team.default_dataset == instance:
+                original_team.default_dataset = None
+                original_team.save()
 
             status = "created" if id == 0 else "updated"
             return redirect(reverse("secure:edit-dataset", kwargs={"id": instance.id}) + "?status=" + status)
@@ -295,16 +333,36 @@ def edit_user(request, id):
 
 @login_required
 def edit_team(request, id):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_teams(request.user):
         return redirect(reverse("secure:index"))
 
     team = get_object_or_404(Team, pk=id) if int(id) > 0 else Team()
+    is_new = team.pk is None
+
+    # Non-superadmins (essentially team captains) can only manage their own teams
+    if not auth.is_admin(request.user):
+        is_team_captain = TeamUser.objects \
+            .filter(team=team) \
+            .filter(user=request.user) \
+            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .exists()
+        if not is_team_captain:
+            return redirect(reverse("secure:team-management"))
 
     if request.POST:
         form = TeamForm(request.POST, instance=team)
         if form.is_valid():
-            instance = form.save(commit=False)
-            instance.save()
+            instance = form.save()
+
+            # If this is a new team, and a default dataset is selected, make sure to associate it with
+            #  the team. The only allowed values for team should already be datasets not already associated
+            #  with any other team
+            if is_new and instance.default_dataset is not None:
+                # Datasets can only be associated with a single dataset right now, even though it's a many-to-many
+                #   relationship that could support more. Because of this, make sure that the dataset selected is
+                #   not already associated with another team
+                if not TeamDataset.objects.filter(dataset=instance.default_dataset).exists():
+                    TeamDataset.objects.create(team=instance, dataset=instance.default_dataset)
 
             assigned_users_json = form.cleaned_data.get("assigned_users_json")
             assigned_users = json.loads(assigned_users_json)
@@ -332,36 +390,9 @@ def edit_team(request, id):
             # Remove any user relationships that have been unassigned
             TeamUser.objects.filter(team=instance).exclude(user_id__in=assigned_user_ids).delete()
 
-            # Update assigned datasets
-            assigned_dataset_ids = request.POST.get("assigned_dataset_ids")
-            assigned_dataset_ids = list(map(int, assigned_dataset_ids.split(","))) if assigned_dataset_ids else []
-
-            # Remove any dataset relationships that have been unassigned
-            TeamDataset.objects.filter(team=instance).exclude(dataset_id__in=assigned_dataset_ids).delete()
-
-            # Add any new dataset relationships
-            existing_ids = list(TeamDataset.objects.filter(team=instance).values_list("dataset_id", flat=True))
-            ids_to_add = set(assigned_dataset_ids) - set(existing_ids)
-            for id in ids_to_add:
-                team_dataset = TeamDataset()
-                team_dataset.team = instance
-                team_dataset.dataset_id = id
-                team_dataset.save()
-
             return redirect(reverse("secure:team-management"))
     else:
         form = TeamForm(instance=team)
-
-    datasets = Dataset.objects.all().order_by("name")
-
-    if team.pk:
-        assigned_dataset_ids = list(TeamDataset.objects.filter(team=team).values_list("dataset_id", flat=True))
-
-        assigned_datasets = datasets.filter(id__in=assigned_dataset_ids)
-        available_datasets = datasets.exclude(id__in=assigned_dataset_ids)
-    else:
-        assigned_datasets = []
-        available_datasets = datasets
 
     team_users = TeamUser.objects \
         .filter(team=team) \
@@ -383,15 +414,25 @@ def edit_team(request, id):
 
     role_options = TeamRole.objects.all()
 
+    assigned_team_datasets = TeamDataset.objects \
+        .select_related("dataset") \
+        .filter(team=team).order_by("dataset__name") \
+        .order_by("dataset__name")
+    assigned_datasets_json = json.dumps([
+        {
+            "name": team_dataset.dataset.name
+        }
+        for team_dataset in assigned_team_datasets
+    ])
+
     return render(request, "secure/edit-team.html", {
         "team": team,
         "form": form,
-        "assigned_datasets": assigned_datasets,
-        "available_datasets": available_datasets,
         "is_admin": auth.is_admin(request.user),
         "all_users": all_users,
         "assigned_users_json": assigned_users_json,
         "role_options": role_options,
+        "assigned_datasets_json": assigned_datasets_json,
     })
 
 

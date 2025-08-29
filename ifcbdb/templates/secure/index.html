@@ -13,17 +13,21 @@
 
 <div class="row py-2 px-3">
     <div class="col">
-        {% if user.is_superuser %}
+        {% if has_settings_to_manage %}
         <ul class="list-group">
+            {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'secure:dataset-management' %}">Dataset Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:user-management' %}">User Management</a></li>
+            {% endif %}
             {% switch 'Teams' %}
+            {% if can_manage_teams %}
             <li class="list-group-item"><a href="{% url 'secure:team-management' %}">Team Management</a></li>
+            {% endif %}
             {% endswitch %}
+            {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'secure:upload-metadata' %}">Upload Metadata</a></li>
             <li class="list-group-item"><a href="{% url 'secure:app-settings' %}">App Settings</a></li>
-            {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'admin:index' %}">Administrative Settings</a></li>
             {% endif %}
         </ul>
