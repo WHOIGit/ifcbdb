@@ -1,27 +1,45 @@
+import json
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django import forms
 from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
+from django.contrib.auth.models import User, Group
 
 import pandas as pd
 
-from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings
-from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm
+from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
+    TeamUser, TeamDataset, TeamRole
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, TeamForm
+from common import auth
+from common.constants import Features, TeamRoles
 
 from django.core.cache import cache
 from celery.result import AsyncResult
+from waffle.decorators import waffle_switch
+
 
 
 @login_required
 def index(request):
-    return render(request, 'secure/index.html', {
+    if not auth.can_access_settings(request.user):
+        return redirect("/")
 
+    can_manage_teams = auth.can_manage_teams(request.user)
+    has_settings_to_manage = request.user.is_superuser or can_manage_teams
+
+    return render(request, 'secure/index.html', {
+        "has_settings_to_manage": has_settings_to_manage,
+        "can_manage_teams": can_manage_teams,
     })
 
 
 @login_required
 def dataset_management(request):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
     form = DatasetForm()
 
     return render(request, 'secure/dataset-management.html', {
@@ -31,6 +49,9 @@ def dataset_management(request):
 
 @login_required
 def directory_management(request, dataset_id):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
     dataset = get_object_or_404(Dataset, pk=dataset_id)
 
     return render(request, "secure/directory-management.html", {
@@ -40,6 +61,9 @@ def directory_management(request, dataset_id):
 
 @login_required
 def instrument_management(request):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
     form = InstrumentForm()
 
     return render(request, 'secure/instrument-management.html', {
@@ -48,16 +72,69 @@ def instrument_management(request):
 
 
 @login_required
+def user_management(request):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
+    return render(request, 'secure/user-management.html')
+
+@login_required
+@waffle_switch('Teams')
+def team_management(request):
+    if not auth.can_manage_teams(request.user):
+        return redirect(reverse("secure:index"))
+
+    return render(request, 'secure/team-management.html', {
+        "is_admin": auth.is_admin(request.user),
+    })
+
+@login_required
 def dt_datasets(request):
+    if not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
     datasets = list(Dataset.objects.all().values_list("name", "title", "is_active", "id"))
 
     return JsonResponse({
         "data": datasets
     })
 
+@waffle_switch('Teams')
+def dt_teams(request):
+    if not auth.can_manage_teams(request.user):
+        return redirect(reverse("secure:index"))
+
+    teams = Team.objects.all() \
+        .annotate(user_count=Count("users", distinct=True)) \
+        .annotate(dataset_count=Count("datasets", distinct=True))
+
+    # Limit teams list if not a super user
+    if not auth.is_admin(request.user):
+        allowed_team_ids = TeamUser.objects \
+            .filter(user=request.user) \
+            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .values_list("team_id", flat=True)
+        print(allowed_team_ids)
+
+        teams = teams.filter(id__in=allowed_team_ids)
+
+    return JsonResponse({
+        "data": [
+            {
+                "id": team.id,
+                "name": team.name,
+                "user_count": team.user_count,
+                "dataset_count": team.dataset_count,
+            }
+            for team in teams
+        ]
+    })
 
 @login_required
 def dt_directories(request, dataset_id):
+    if not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
     directories = list(DataDirectory.objects.filter(dataset__id=dataset_id)
                        .values_list("path", "kind", "priority", "whitelist", "blacklist", "id"))
 
@@ -68,6 +145,9 @@ def dt_directories(request, dataset_id):
 
 @login_required
 def edit_dataset(request, id):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
     status = request.GET.get("status")
 
     if int(id) > 0:
@@ -79,6 +159,30 @@ def edit_dataset(request, id):
         form = DatasetForm(request.POST, instance=dataset)
         if form.is_valid():
             instance = form.save()
+
+            existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
+            team = form.cleaned_data.get("team")
+            original_team = existing.team if existing else None
+            is_team_removed = False
+
+            # Save the associated team, if any
+            if team is None and existing is not None:
+                is_team_removed = True
+                existing.delete()
+
+            if team is not None and existing is None:
+                TeamDataset.objects.create(team=team, dataset=instance)
+
+            if team is not None and existing is not None and existing.team != team:
+                is_team_removed = True
+                existing.team = team
+                existing.save()
+
+            # If a team was removed (or changed to something else) but it was the default dataset for that team,
+            #   clear the value
+            if is_team_removed and original_team is not None and original_team.default_dataset == instance:
+                original_team.default_dataset = None
+                original_team.save()
 
             status = "created" if id == 0 else "updated"
             return redirect(reverse("secure:edit-dataset", kwargs={"id": instance.id}) + "?status=" + status)
@@ -94,6 +198,9 @@ def edit_dataset(request, id):
 
 @login_required
 def edit_directory(request, dataset_id, id):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
     if int(id) > 0:
         directory = get_object_or_404(DataDirectory, pk=id)
     else:
@@ -121,7 +228,7 @@ def edit_directory(request, dataset_id, id):
 
 @require_POST
 def delete_directory(request, dataset_id, id):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     directory = get_object_or_404(DataDirectory, pk=id)
@@ -134,7 +241,7 @@ def delete_directory(request, dataset_id, id):
 
 
 def dt_instruments(request):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     instruments = list(Instrument.objects.all().values_list("number", "nickname", "id"))
@@ -144,8 +251,31 @@ def dt_instruments(request):
     })
 
 
+def dt_users(request):
+    if not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
+    users = User.objects.filter(is_active=True)
+
+    return JsonResponse({
+        "data": [
+            {
+                "id": user.id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+            }
+            for user in users
+        ]
+    })
+
+
 @login_required
 def edit_instrument(request, id):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
     if int(id) > 0:
         instrument = get_object_or_404(Instrument, pk=id)
     else:
@@ -174,7 +304,166 @@ def edit_instrument(request, id):
 
 
 @login_required
+def edit_user(request, id):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
+    user = get_object_or_404(User, pk=id) if int(id) > 0 else User()
+
+    if request.POST:
+        form = UserForm(request.POST, instance=user)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.username = form.cleaned_data["email"]
+
+            password = form.cleaned_data["password"]
+            if password:
+                instance.set_password(password)
+
+            instance.save()
+
+            return redirect(reverse("secure:user-management"))
+    else:
+        form = UserForm(instance=user)
+
+    return render(request, "secure/edit-user.html", {
+        "user": user,
+        "form": form,
+    })
+
+@login_required
+def edit_team(request, id):
+    if not auth.can_manage_teams(request.user):
+        return redirect(reverse("secure:index"))
+
+    team = get_object_or_404(Team, pk=id) if int(id) > 0 else Team()
+    is_new = team.pk is None
+
+    # Non-superadmins (essentially team captains) can only manage their own teams
+    if not auth.is_admin(request.user):
+        is_team_captain = TeamUser.objects \
+            .filter(team=team) \
+            .filter(user=request.user) \
+            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .exists()
+        if not is_team_captain:
+            return redirect(reverse("secure:team-management"))
+
+    if request.POST:
+        form = TeamForm(request.POST, instance=team)
+        if form.is_valid():
+            instance = form.save()
+
+            # If this is a new team, and a default dataset is selected, make sure to associate it with
+            #  the team. The only allowed values for team should already be datasets not already associated
+            #  with any other team
+            if is_new and instance.default_dataset is not None:
+                # Datasets can only be associated with a single dataset right now, even though it's a many-to-many
+                #   relationship that could support more. Because of this, make sure that the dataset selected is
+                #   not already associated with another team
+                if not TeamDataset.objects.filter(dataset=instance.default_dataset).exists():
+                    TeamDataset.objects.create(team=instance, dataset=instance.default_dataset)
+
+            assigned_users_json = form.cleaned_data.get("assigned_users_json")
+            assigned_users = json.loads(assigned_users_json)
+
+            # Go through the list of assigned users, updating those that already exist or adding new records for
+            #   any additions
+            for assigned_user in assigned_users:
+                user_id = assigned_user.get("id")
+                role_id = assigned_user.get("role_id")
+
+                existing_user = TeamUser.objects.filter(team=instance, user_id=user_id).first()
+                if existing_user:
+                    existing_user.role_id = role_id
+                    existing_user.save()
+                    continue
+
+                new_user = TeamUser()
+                new_user.team = instance
+                new_user.user_id = user_id
+                new_user.role_id = role_id
+                new_user.save()
+
+            assigned_user_ids = [assigned_user.get("id") for assigned_user in assigned_users]
+
+            # Remove any user relationships that have been unassigned
+            TeamUser.objects.filter(team=instance).exclude(user_id__in=assigned_user_ids).delete()
+
+            return redirect(reverse("secure:team-management"))
+    else:
+        form = TeamForm(instance=team)
+
+    team_users = TeamUser.objects \
+        .filter(team=team) \
+        .select_related("user") \
+        .order_by("user__last_name", "user__first_name", "user__username")
+
+    all_users = User.objects \
+        .filter(is_active=True) \
+        .order_by('last_name', 'first_name', 'username')
+    assigned_users_json = json.dumps([
+        {
+            "id": user.user.id,
+            "name": user.display_name,
+            "role_id": user.role.id,
+            "role": user.role.name,
+        }
+        for user in team_users
+    ])
+
+    role_options = TeamRole.objects.all()
+
+    assigned_team_datasets = TeamDataset.objects \
+        .select_related("dataset") \
+        .filter(team=team).order_by("dataset__name") \
+        .order_by("dataset__name")
+    assigned_datasets_json = json.dumps([
+        {
+            "name": team_dataset.dataset.name
+        }
+        for team_dataset in assigned_team_datasets
+    ])
+
+    return render(request, "secure/edit-team.html", {
+        "team": team,
+        "form": form,
+        "is_admin": auth.is_admin(request.user),
+        "all_users": all_users,
+        "assigned_users_json": assigned_users_json,
+        "role_options": role_options,
+        "assigned_datasets_json": assigned_datasets_json,
+    })
+
+
+@require_POST
+def delete_user(request, id):
+    if not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
+    user = get_object_or_404(User, pk=id)
+    user.is_active = False
+    user.save()
+
+    return JsonResponse({})
+
+@require_POST
+def delete_team(request, id):
+    if not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
+    team = get_object_or_404(Team, pk=id)
+    team.delete()
+
+    return JsonResponse({})
+
+
+
+@login_required
 def app_settings(request):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
     instance = AppSettings.objects.first() or AppSettings()
     confirm = False
 
@@ -194,7 +483,7 @@ def app_settings(request):
 
 @require_POST
 def add_tag(request, bin_id):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     tag_name = request.POST.get("tag_name", "")
@@ -208,7 +497,7 @@ def add_tag(request, bin_id):
 
 @require_POST
 def remove_tag(request, bin_id):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     tag_name = request.POST.get("tag_name", "")
@@ -222,8 +511,10 @@ def remove_tag(request, bin_id):
 
 @require_POST
 def add_comment(request, bin_id):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
+
+    # TODO: Unlike editing a comment, this was allow for authenticated users, not just staff?
 
     text = request.POST.get("comment")
     bin = get_object_or_404(Bin, pid=bin_id)
@@ -235,8 +526,13 @@ def add_comment(request, bin_id):
 
 @require_GET
 def edit_comment(request, bin_id):
-    if not request.user.is_staff:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
+
+    # TODO: Prior logic used the staff flag to determine if this was editable - do we need a different level than admin?
+    # TODO: Editing tags was open to non-staff. Is that still accurate?
+    # if not request.user.is_staff:
+    #     return HttpResponseForbidden()
 
     comment_id = request.GET.get("id")
     comment = get_object_or_404(Comment, pk=comment_id)
@@ -249,8 +545,12 @@ def edit_comment(request, bin_id):
 
 @require_POST
 def update_comment(request, bin_id):
-    if not request.user.is_staff:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
+
+    # TODO: Prior logic used the staff flag to determine if this was editable - do we need a different level than admin?
+    # if not request.user.is_staff:
+    #     return HttpResponseForbidden()
 
     bin = get_object_or_404(Bin, pid=bin_id)
 
@@ -269,8 +569,12 @@ def update_comment(request, bin_id):
 
 @require_POST
 def delete_comment(request, bin_id):
-    if not request.user.is_staff:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
+
+    # TODO: Prior logic used the staff flag to determine if this was editable - do we need a different level than admin?
+    # if not request.user.is_staff:
+    #     return HttpResponseForbidden()
 
     comment_id = request.POST.get("id")
     _ = get_object_or_404(Comment, pk=comment_id)
@@ -298,7 +602,7 @@ def get_dataset_sync_task_id(dataset_id):
 
 @require_POST
 def sync_dataset(request, dataset_id):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     from dashboard.tasks import sync_dataset
@@ -320,7 +624,7 @@ def sync_dataset(request, dataset_id):
     return JsonResponse({ 'state': result.state })
 
 def sync_dataset_status(request, dataset_id):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     task_id = get_dataset_sync_task_id(dataset_id)
@@ -338,7 +642,7 @@ def sync_dataset_status(request, dataset_id):
 
 @require_POST
 def sync_cancel(request, dataset_id):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     cancel_key = dataset_sync_cancel_key(dataset_id)
@@ -354,6 +658,9 @@ METADATA_UPLOAD_TASKID_KEY = 'metadata_upload_task_id'
 
 @login_required
 def upload_metadata(request):
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
     from dashboard.tasks import import_metadata
 
     in_progress = ''
@@ -397,7 +704,7 @@ def upload_metadata(request):
     })
 
 def metadata_upload_status(request):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     task_id = cache.get(METADATA_UPLOAD_TASKID_KEY)
@@ -412,7 +719,7 @@ def metadata_upload_status(request):
 
 @require_POST
 def metadata_upload_cancel(request):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel");
@@ -423,7 +730,7 @@ def metadata_upload_cancel(request):
 
 @require_POST
 def toggle_skip(request):
-    if not request.user.is_authenticated:
+    if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
     bin_id = request.POST.get("bin_id")

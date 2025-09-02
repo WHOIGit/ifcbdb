@@ -1,7 +1,8 @@
 import re, os
 from django import forms
+from django.contrib.auth.models import User, Group
 
-from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, \
+from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
 
 
@@ -24,6 +25,8 @@ class DatasetForm(forms.ModelForm):
     longitude = forms.FloatField(required=False, widget=forms.TextInput(
         attrs={"class": "form-control form-control-sm", "placeholder": "Longitude"}
     ))
+    team = forms.ModelChoiceField(queryset=Team.objects.all(), required=False,
+                                  widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
 
     class Meta:
         model = Dataset
@@ -60,6 +63,10 @@ class DatasetForm(forms.ModelForm):
             if instance.location:
                 self.fields["latitude"].initial = instance.location.y
                 self.fields["longitude"].initial = instance.location.x
+
+            team_dataset = TeamDataset.objects.filter(dataset=instance).first()
+            if team_dataset is not None:
+                self.fields["team"].initial = team_dataset.team
 
     def save(self, commit=True):
         instance = super(DatasetForm, self).save(commit=False)
@@ -180,6 +187,48 @@ class InstrumentForm(forms.ModelForm):
         }
 
 
+class UserForm(forms.ModelForm):
+    password = forms.CharField(max_length=50, required=False,
+                               widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
+    confirm_password = forms.CharField(max_length=50, required=False,
+                                       widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["email"].required = True
+
+    def clean(self):
+        password = self.cleaned_data.get("password")
+        confirm_password = self.cleaned_data.get("confirm_password")
+
+        if password != confirm_password:
+            raise forms.ValidationError(
+                "The password fields do not match"
+            )
+
+        return self.cleaned_data
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+
+        users = User.objects.filter(email=email).exclude(id=self.instance.id)
+        if users.exists():
+            raise forms.ValidationError("This email address is already in use.")
+
+        return email
+
+    class Meta:
+        model = User
+        fields = ["id", "first_name", "last_name", "email", "is_superuser",]
+
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "First Name"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Last Name"}),
+            "email": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Email"}),
+        }
+
+
 class MetadataUploadForm(forms.Form):
     file = forms.FileField(label="Choose file", widget=forms.ClearableFileInput(attrs={"class": "custom-file-input"}))
 
@@ -224,4 +273,38 @@ class AppSettingsForm(forms.ModelForm):
             "default_latitude": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "default_longitude": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "default_zoom_level": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+        }
+
+
+class TeamForm(forms.ModelForm):
+    assigned_users_json = forms.CharField(required=False, widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # New teams, which can only be created by a superadmin, can use any dataset that is not already associated with
+        #   another team. On edits, the only allowed values are those already assigned to this team
+        if self.instance.pk:
+            dataset_choices = Dataset.objects.filter(teamdataset__team=self.instance)
+        else:
+            dataset_choices = Dataset.objects.filter(teamdataset__isnull=True)
+
+        self.fields["default_dataset"].queryset = dataset_choices
+
+    def clean_name(self):
+        name = self.cleaned_data.get("name")
+
+        team = Team.objects.filter(name__iexact=name).exclude(id=self.instance.id)
+        if team.exists():
+            raise forms.ValidationError("This name is already in use.")
+
+        return name
+
+    class Meta:
+        model = Team
+        fields = ["id", "name", "default_dataset", ]
+
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
+            "default_dataset": forms.Select(attrs={"class": "form-control form-control-sm"}),
         }

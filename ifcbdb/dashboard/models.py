@@ -39,6 +39,8 @@ from ifcb.data.files import Fileset, FilesetBin
 from .tasks import mosaic_coordinates_task
 from .mosaic import Mosaic
 
+from common.constants import TeamRoles
+
 logger = logging.getLogger(__name__)
 
 FILL_VALUE = -9999999
@@ -417,6 +419,9 @@ class Bin(models.Model):
     instrument = models.ForeignKey('Instrument', related_name='bins', null=True, on_delete=models.SET_NULL)
     # many-to-many relationship with datasets
     datasets = models.ManyToManyField('Dataset', related_name='bins')
+    # most recently located path of dataset, and which data directory it came from
+    path = models.CharField(max_length=1024, blank=True)
+    data_directory = models.ForeignKey('DataDirectory', null=True, blank=True, on_delete=models.SET_NULL)
     # accession
     added = models.DateTimeField(auto_now_add=True, null=True)
     # qaqc flags
@@ -523,17 +528,19 @@ class Bin(models.Model):
                 yield directory
 
     def _get_bin(self):
-        cache_key = '{}_path'.format(self.pid)
-        cached_path = cache.get(cache_key)
-        if cached_path is not None and os.path.exists(cached_path+'.adc'):
-            return FilesetBin(Fileset(cached_path))
         # return the underlying ifcb.Bin object backed by the raw filesets
-        for directory in self._directories(kind=DataDirectory.RAW):
+        if self.path and os.path.exists(self.path+'.adc'):
+            return FilesetBin(Fileset(self.path))
+        to_search = [] if not self.data_directory else [self.data_directory]
+        to_search.extend(self._directories(kind=DataDirectory.RAW))
+        for directory in to_search:
             dd = directory.get_raw_directory()
             try:
                 b = dd[self.pid]
-                basepath, _  = os.path.splitext(b.fileset.adc_path)
-                cache.set(cache_key, basepath)
+                if not self.path: # cache path of first found fileset
+                    self.path, _  = os.path.splitext(b.fileset.adc_path)
+                    self.data_directory = directory
+                    self.save()
                 return b
             except KeyError:
                 pass # keep searching
@@ -917,3 +924,45 @@ class AppSettings(models.Model):
     default_latitude = models.FloatField(blank=False, null=False, default=DEFAULT_LATITUDE)
     default_longitude = models.FloatField(blank=False, null=False, default=DEFAULT_LONGITUDE)
     default_zoom_level = models.IntegerField(blank=False, null=False, default=DEFAULT_ZOOM_LEVEL)
+
+
+# teams
+
+class Team(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=50, blank=False, null=False)
+    default_dataset = models.ForeignKey(Dataset, null=True, blank=True, on_delete=models.SET_NULL)
+
+    users = models.ManyToManyField(User, through='TeamUser', related_name='teams')
+    datasets = models.ManyToManyField(Dataset, through='TeamDataset', related_name='teams')
+
+    def __str__(self):
+        return self.name
+
+class TeamRole(models.Model):
+    name = models.CharField(max_length=50, blank=False, null=False)
+
+class TeamUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    role = models.ForeignKey(TeamRole, on_delete=models.CASCADE, default=TeamRoles.USER.value)
+
+    @property
+    def display_name (self):
+        if not self.user:
+            return ""
+
+        if self.user.first_name or self.user.last_name:
+            return f"{self.user.first_name} {self.user.last_name}"
+
+        return self.user.username
+
+    class Meta:
+        unique_together = ('user', 'team')
+
+class TeamDataset(models.Model):
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('dataset', 'team')
