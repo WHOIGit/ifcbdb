@@ -41,38 +41,6 @@
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col p-0">
-                    <div class="form-group col">
-                        <label for="id_assigned_datasets">Assigned Datasets</label>
-                        <select multiple id="id_assigned_datasets" name="assigned_datasets" class="form-control form-control-sm" size="10">
-                            {% for dataset in assigned_datasets %}
-                            <option value="{{ dataset.id }}">{{ dataset.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-0 m-0 p-0 d-flex flex-column align-items-center justify-content-center">
-                    <div>
-                        <button id="assign-dataset" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&laquo;</button>
-                    </div>
-                    <div>
-                        <button id="unassign-dataset" type="button" class="btn btn-sm btn-mdb-color" style="font-size: 1.5rem; padding: 0.5rem">&raquo;</button>
-                    </div>
-                </div>
-                <div class="col pl-0 text-center">
-                    <div class="form-group col">
-                        <label for="id_available_datasets">Available Datasets</label>
-                        <select multiple id="id_available_datasets" name="available_datasets" class="form-control form-control-sm" size="10">
-                            {% for dataset in available_datasets %}
-                            <option value="{{ dataset.id }}">{{ dataset.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-5">
             <div class="row d-flex align-items-end" style="height:3rem">
                 <div class="col" style="vertical-align:bottom">
                     <label>Assigned Users</label>
@@ -95,8 +63,26 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-5">
+            <div class="row d-flex align-items-end" style="height:3rem">
+                <div class="col" style="vertical-align:bottom">
+                    <label>Assigned Datasets</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <table id="assigned-datasets" class="table table-sm table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <td>Name</td>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="form-row">
+    <div class="form-row" style="margin-top:2rem">
         <a href="{% url 'secure:team-management' %}" class="btn btn-sm">Cancel</a>
         <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
     </div>
@@ -153,24 +139,12 @@
 {% block scripts %}
 <script>
     let assignedUsers = JSON.parse(`{{ assigned_users_json|safe }}`);
+    let assignedUsersTable = null;
 
-    function moveSelectedOptions(fromName, toName) {
-        const fromList = document.querySelector(`[name=${fromName}]`);
-        const toList = document.querySelector(`[name=${toName}]`);
-
-        const options = Array.from(fromList.options).filter(option => option.selected);
-
-        options.forEach((option) => {
-            toList.appendChild(option);
-        })
-    }
+    const assignedDatasets = JSON.parse(`{{ assigned_datasets_json|safe }}`);
+    let assignedDatasetsTable = null;
 
     function updateAssignedValues() {
-        const assignedDatasetIds = $("[name=assigned_datasets] option").map(function() {
-            return $(this).val();
-        }).get().join(",");
-
-        $("[name=assigned_dataset_ids]").val(assignedDatasetIds);
         $("[name=assigned_users_json]").val(JSON.stringify(assignedUsers));
     }
 
@@ -189,7 +163,7 @@
                 {
                     data: "id",
                     orderable: false,
-                    render: function(data, type, row) {
+                    render: function (data, type, row) {
                         let buttons =
                             "<a class='btn btn-sm btn-mdb-color mr-2 edit-assigned-user' href='#' data-id='" + data + "' data-role='" + row.role_id + "'>" +
                             "<i class='fas fa-edit magic mr-1'></i>Edit" +
@@ -207,6 +181,19 @@
                         return buttons;
                     }
                 }
+            ]
+        });
+    }
+
+    function setupAssignedDatasetsTable() {
+        assignedDatasetsTable = $('#assigned-datasets').DataTable({
+            searching: false,
+            lengthChange: false,
+            data: assignedDatasets,
+            columns: [
+                {
+                    data: "name",
+                },
             ]
         });
     }
@@ -307,26 +294,7 @@
 
     document.addEventListener("DOMContentLoaded", function() {
         setupAssignedUsersTable();
-
-        // Assign dataset
-        $("#assign-dataset").click(function(e) {
-            e.preventDefault();
-            moveSelectedOptions("available_datasets", "assigned_datasets");
-        });
-
-        $("[name=available_datasets]").on("dblclick", "option", function() {
-            moveSelectedOptions("available_datasets", "assigned_datasets");
-        });
-
-        // Unassign dataset
-        $("#unassign-dataset").click(function(e) {
-            e.preventDefault();
-            moveSelectedOptions("assigned_datasets", "available_datasets");
-        });
-
-        $("[name=assigned_datasets]").on("dblclick", "option", function() {
-            moveSelectedOptions("assigned_datasets", "available_datasets");
-        });
+        setupAssignedDatasetsTable();
 
         $("#team-form").submit(function(e) {
             updateAssignedValues();

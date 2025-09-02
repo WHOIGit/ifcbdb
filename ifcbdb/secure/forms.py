@@ -25,6 +25,8 @@ class DatasetForm(forms.ModelForm):
     longitude = forms.FloatField(required=False, widget=forms.TextInput(
         attrs={"class": "form-control form-control-sm", "placeholder": "Longitude"}
     ))
+    team = forms.ModelChoiceField(queryset=Team.objects.all(), required=False,
+                                  widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
 
     class Meta:
         model = Dataset
@@ -61,6 +63,10 @@ class DatasetForm(forms.ModelForm):
             if instance.location:
                 self.fields["latitude"].initial = instance.location.y
                 self.fields["longitude"].initial = instance.location.x
+
+            team_dataset = TeamDataset.objects.filter(dataset=instance).first()
+            if team_dataset is not None:
+                self.fields["team"].initial = team_dataset.team
 
     def save(self, commit=True):
         instance = super(DatasetForm, self).save(commit=False)
@@ -271,7 +277,6 @@ class AppSettingsForm(forms.ModelForm):
 
 
 class TeamForm(forms.ModelForm):
-    assigned_dataset_ids = forms.CharField(required=False, max_length=1000, widget=forms.HiddenInput())
     assigned_users_json = forms.CharField(required=False, widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
