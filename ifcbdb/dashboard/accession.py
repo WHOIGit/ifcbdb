@@ -61,17 +61,21 @@ class Accession(object):
                 continue # skip and continue searching
             directory = ifcb.DataDirectory(dd.path)
             for b in directory:
-                yield b
+                yield (b, dd)
     def sync_one(self, pid):
         bin = None
+        dd_found = None
         for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             if not os.path.exists(dd.path):
                 continue # skip and continue searching
             directory = ifcb.DataDirectory(dd.path)
             try:
                 bin = directory[pid]
+                dd_found = dd
             except KeyError:
                 continue
+            if bin is not None:
+                break
         if bin is None:
             return 'bin {} not found'.format(pid)
         # create instrument if necessary
@@ -86,11 +90,12 @@ class Accession(object):
             'timestamp': timestamp,
             'sample_time': timestamp,
             'instrument': instrument,
+            'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
+            'data_directory': dd_found,
             'skip': True, # in case accession is interrupted
         })
-        if not created and not self.dataset in b.datasets:
-            self.dataset.bins.add(b)
-            return 
+        if not created:
+            return
         b2s, error = self.add_bin(bin, b)
         if error is not None:
             # there was an error. if we created a bin, delete it
@@ -115,13 +120,14 @@ class Accession(object):
         start_time = self.start_time()
         errors = {}
         while True:
-            bins = list(islice(scanner, self.batch_size))
-            if not bins:
+            bin_dds = list(islice(scanner, self.batch_size))
+            if not bin_dds:
                 break
-            total_bins += len(bins)
+            total_bins += len(bin_dds)
             # create instrument(s)
             instruments = {} # keyed by instrument number
-            for bin in bins:
+            for bin_dd in bin_dds:
+                bin, dd = bin_dd
                 i = bin.pid.instrument
                 if not i in instruments:
                     version = bin.pid.schema_version
@@ -132,7 +138,8 @@ class Accession(object):
             # create bins
             then = time.time()
             bins2save = []
-            for bin in bins:
+            for bin_dd in bin_dds:
+                bin, dd = bin_dd
                 pid = bin.lid
                 most_recent_bin_id = pid
                 log_callback('{} found'.format(pid))
@@ -144,10 +151,11 @@ class Accession(object):
                     'timestamp': timestamp,
                     'sample_time': timestamp,
                     'instrument': instrument,
+                    'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
+                    'data_directory': dd,
                     'skip': True, # in case accession is interrupted
                 })
                 if not created:
-                    self.dataset.bins.add(b)
                     continue
                 b2s, error = self.add_bin(bin, b)
                 if error is not None:
@@ -200,6 +208,9 @@ class Accession(object):
         except Exception as e:
             b.qc_bad = True
             return b, 'ml_analyzed: {}'.format(str(e))
+        # paths
+        if b.path is None:
+            b.path, _ = os.path.splitext(bin.fileset.adc_path)
         # metadata
         try:
             headers = bin.hdr_attributes
