@@ -39,6 +39,8 @@ from ifcb.data.files import Fileset, FilesetBin
 from .tasks import mosaic_coordinates_task
 from .mosaic import Mosaic
 
+from common.constants import TeamRoles
+
 logger = logging.getLogger(__name__)
 
 FILL_VALUE = -9999999
@@ -917,3 +919,41 @@ class AppSettings(models.Model):
     default_latitude = models.FloatField(blank=False, null=False, default=DEFAULT_LATITUDE)
     default_longitude = models.FloatField(blank=False, null=False, default=DEFAULT_LONGITUDE)
     default_zoom_level = models.IntegerField(blank=False, null=False, default=DEFAULT_ZOOM_LEVEL)
+
+
+# teams
+
+class Team(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=50, blank=False, null=False)
+
+    users = models.ManyToManyField(User, through='TeamUser', related_name='teams')
+    datasets = models.ManyToManyField(Dataset, through='TeamDataset', related_name='teams')
+
+class TeamRole(models.Model):
+    name = models.CharField(max_length=50, blank=False, null=False)
+
+class TeamUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    role = models.ForeignKey(TeamRole, on_delete=models.CASCADE, default=TeamRoles.USER.value)
+
+    @property
+    def display_name (self):
+        if not self.user:
+            return ""
+
+        if self.user.first_name or self.user.last_name:
+            return f"{self.user.first_name} {self.user.last_name}"
+
+        return self.user.username
+
+    class Meta:
+        unique_together = ('user', 'team')
+
+class TeamDataset(models.Model):
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('dataset', 'team')

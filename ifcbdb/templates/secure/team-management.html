@@ -1,0 +1,121 @@
+{% extends 'base.html' %} {% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Team Management</span>
+    </div>
+    <div class="flex-column">
+        {% if is_admin %}
+        <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:edit-team' 0 %}"><i class="fas fa-plus magic mr-1"></i> Add New Team</a>
+        {% endif %}
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <div class="col">
+        <table id="teams" class="table table-sm table-striped table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <td># of Users</td>
+                    <td># of Datasets</td>
+                    <th></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+</div>
+
+<!-- End Add/Edit Modal -->
+<!-- Delete Confirm Modal -->
+<div class="modal" id="confirm-delete-modal" tabindex="-1" role="dialog" aria-labelledby="add-team-header" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="add-team-header">Confirm Deletion</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+                <p class="h3">Are you certain you wish to delete this team?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-mdb-color" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-sm btn-danger">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Delete Modal -->
+
+{% endblock %} {% block scripts %}
+<script>
+    let teamsTable;
+    const isAdmin = "{{ is_admin }}".toLowerCase() === "true";
+
+    $(function(){
+        teamsTable = $('#teams').DataTable({
+            searching: false,
+            lengthChange: false,
+            ajax: {
+                url: "{% url 'secure:teams_dt' %}"
+            },
+            columns: [
+                {
+                    data: "name"
+                },
+                {
+                    data: "user_count"
+                },
+                {
+                    data: "dataset_count"
+                },
+                {
+                    data: "id",
+                    orderable: false,
+                    render: function(data) {
+                        let buttons =
+                            "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/edit-team/" + data + "'>" +
+                            "<i class='fas fa-edit magic mr-1'></i>Edit" +
+                            "</a>";
+
+                        if (isAdmin) {
+                            buttons +=
+                                "<a class='btn btn-sm btn-mdb-color mr-2 delete-team' href='#' data-id='" + data + "'>" +
+                                "<i class='fas fa-edit magic mr-1'></i>Remove" +
+                                "</a>";
+                        }
+
+                        return buttons;
+                    }
+                }
+            ]
+        });
+
+        $("#teams").on("click", ".delete-team", function(e) {
+            e.preventDefault();
+
+            if (!confirm("Are you sure you want to remove this team?")) {
+                return;
+            }
+
+            const teamId = $(this).data("id");
+            const payload = {
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+            }
+
+            $.post("/secure/api/delete-team/" + teamId, payload, function(data){
+                teamsTable.ajax.reload();
+            });
+        });
+    });
+</script>
+{% endblock %}
