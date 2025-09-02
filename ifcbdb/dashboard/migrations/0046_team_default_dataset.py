@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0046_auto_20250721_2039'),
+        ('dashboard', '0045_bin_data_directory_bin_path'),
     ]
 
     operations = [
