@@ -62,6 +62,13 @@
             </div>
             <div class="form-row">
                 <div class="form-group col">
+                    <label for="id_team">Team</label>
+                    {{ form.team }}
+                    {% if form.team.errors %}<span class="text-danger">{{ form.team.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
                     <label for="id_doi">DOI (optional)</label>
                     {{ form.doi }}
                     {% if form.doi.errors %}<span class="text-danger">{{ form.doi.errors.as_text}}</span>{% endif %}
