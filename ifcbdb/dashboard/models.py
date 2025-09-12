@@ -250,6 +250,10 @@ class Dataset(models.Model):
     attribution = models.CharField(max_length=512, blank=True)
     funding = models.CharField(max_length=512, blank=True)
 
+    contact_name = models.CharField(max_length=256, blank=True, null=True)
+    contact_email = models.EmailField(max_length=256, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+
     def __len__(self):
         # number of bins
         return self.bins.count()
