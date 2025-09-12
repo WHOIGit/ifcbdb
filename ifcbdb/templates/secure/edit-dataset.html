@@ -67,6 +67,29 @@
                     {% if form.team.errors %}<span class="text-danger">{{ form.team.errors.as_text }}</span>{% endif %}
                 </div>
             </div>
+
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_doi">Contact Name (optional)</label>
+                    {{ form.contact_name }}
+                    {% if form.contact_name.errors %}<span class="text-danger">{{ form.contact_name.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_doi">Contact Email (optional)</label>
+                    {{ form.contact_email }}
+                    {% if form.contact_email.errors %}<span class="text-danger">{{ form.contact_email.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_doi">Description (optional)</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}<span class="text-danger">{{ form.description.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+
             <div class="form-row">
                 <div class="form-group col">
                     <label for="id_doi">DOI (optional)</label>
