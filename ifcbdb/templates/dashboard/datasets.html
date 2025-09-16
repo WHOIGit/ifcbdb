@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static waffle_tags %}
+{% block extra_head %}
+<title>IFCB dashboard</title>
+{% endblock %}
+{% block content %}
+
+<style>
+    .dataset-item label {
+        display: block;
+        font-weight: bold;
+        margin-bottom:.1rem
+    }
+    .dataset-item span:before {
+        display:inline-block;
+        content: "\200B";
+        margin-bottom:.5rem
+
+    }
+</style>
+<div class="row">
+    <div class="col-md-6">
+        <span class="h3-responsive">Datasets{% if team_name %}: {{ team_name }}{% endif %}</span>
+    </div>
+    <div class="col-md-6 text-right">
+        {% switch 'Teams' %}
+        Team:
+        <select name="team" class="form-control w-auto d-inline-block">
+            <option value="">All</option>
+            {% for team in teams %}
+                <option value="{{ team.name }}" {% if team_name == team.name %}selected{% endif %}>{{ team.name }}</option>
+            {% endfor %}
+        </select>
+        {% endswitch %}
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <!-- acc -->
+
+    <div id="team-accordion" role="tablist" aria-multiselectable="true" class="w-100">
+        {% for team in team_panels %}
+
+        <div class="card mb-3 w-100">
+            <div class="card-header p-0" role="tab" id="heading{{ forloop.counter }}">
+                <h5 class="mb-0">
+                    <button class="btn btn-link btn-block text-left {% if team_name != team.name %}collapsed{% endif %}"
+                            data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
+                            aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                        {{ team.name }}
+                    </button>
+                </h5>
+            </div>
+            <div id="collapse{{ forloop.counter }}" class="{% if team_name != team.name %}collapse{% endif %}"
+                 role="tabpanel" aria-labelledby="heading{{ forloop.counter }}"
+                 data-parent="#team-accordion">
+                <div class="card-body">
+
+                    <!-- content -->
+                    <div class="row">
+                        {% for dataset in datasets %}
+                            {% if dataset.team_id == team.id %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h5><strong>
+                                                <a href="{% url 'timeline_page' %}?dataset={{ dataset.name }}">{{ dataset.title }} @ INSIDE</a>
+                                            </strong></h5>
+                                            <hr style="margin: .5rem 0" />
+                                            <div class="row dataset-item">
+                                                <div class="col-md-6">
+                                                    <div>
+                                                        <label>DOI</label>
+                                                        <span>{{ dataset.doi }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <label>Attribution</label>
+                                                        <span>{{ dataset.attribution }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <label>Funding</label>
+                                                        <span>{{ dataset.funding }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div>
+                                                        <label>Contact</label>
+                                                        {{contact_email}}
+                                                        {% if dataset.contact_email %}
+                                                        <span><a href="mailto:{{ dataset.contact_email }}">{{ dataset.contact_name }}</a></span>
+                                                        {% else %}
+                                                        <span>{{ dataset.contact_name }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div>
+                                                        <label>Description</label>
+                                                        <span>{{ dataset.description }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <!-- end content -->
+
+                </div>
+            </div>
+        </div>
+
+        {% endfor %}
+    </div>
+
+    <!-- end acc -->
+</div>
+{% endblock %} {% block scripts %}
+<script>
+    $(function() {
+        $("[name=team]").on("change", function() {
+            const team = $(this).val();
+            const team_path = team ? "/" + team : team;
+
+            location.href = "/datasets" + team_path;
+        })
+    });
+</script>
+{% endblock %}

@@ -14,37 +14,41 @@
         <div class="col-sm-auto">
         <div class="pl-3 d-flex flex-row flex-sm-col">
             <span class="h3-responsive">
+                {% if team %}
+                    <a href="{% url 'datasets' team.name %}">{{ team.name }}</a> »
+                {% endif %}
+
                 {% if dataset %}
-                    <a href="/timeline?dataset={{ dataset.name }}">
+                    <a href="timeline?dataset={{ dataset.name }}">
                       {{ dataset.title }}
                     </a>
                     {% if instrument or tags or cruise or sample_type %}» {% endif %}
                 {% endif %}
 
                 {% if cruise %}
-                    <a href="/timeline?cruise={{ cruise }}">{{ cruise }}</a>
+                    <a href="timeline?cruise={{ cruise }}">{{ cruise }}</a>
                     {% if instrument or tags or sample_type %}» {% endif %}
                 {% endif %}
 
                 {% if sample_type %}
-                    <a href="/timeline?sample_type={{ sample_type }}">
+                    <a href="timeline?sample_type={{ sample_type }}">
                         {{ sample_type }}
                     </a>
                    {% if instrument or tags %}» {% endif %}
                 {% endif %}
 
                 {% if instrument %}
-                    <a href="/timeline?instrument={{ instrument.number }}">
+                    <a href="timeline?instrument={{ instrument.number }}">
                       IFCB{{ instrument.number }}
                     </a>
                     {% if tags %}» {% endif %}
                 {% endif %}
 
                 {% if tags %}
-                    <a href="/timeline?tags={{ tags }}">{{ tags }}</a>
+                    <a href="timeline?tags={{ tags }}">{{ tags }}</a>
                 {% endif %}
             </span>
-            {% if user.is_authenticated %}<a id="view-list" class="pl-3 my-auto" href="#"title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
+            {% if user.is_authenticated %}<a id="view-list" class="pl-3 my-auto" href="#" title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
             <a class="d-sm-none d-inline tstabcollapser ml-auto" data-toggle="collapse" data-target="#ts-tabs" aria-expanded="false"></a>
             <span class="d-none">
                 <button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data">
@@ -112,31 +116,31 @@
       <div class="pl-3">
         <span class="h3-responsive">
             {% if dataset %}
-              <a href="/timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
+              <a href="timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
                 {{ dataset.title }}
               </a>
             {% elif bin.primary_dataset %}
-              <a href="/timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
+              <a href="timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
                 {{ bin.primary_dataset.title }}
               </a>
             {% endif %}
             {% if cruise %}»
-                <a href="/timeline?cruise={{ cruise }}&bin={{ bin.pid }}">
+                <a href="timeline?cruise={{ cruise }}&bin={{ bin.pid }}">
                     {{ cruise }}
                 </a>
             {% endif %}
             {% if sample_type %}»
-                <a href="/timeline?sample_type={{ sample_type }}&bin={{ bin.pid }}">
+                <a href="timeline?sample_type={{ sample_type }}&bin={{ bin.pid }}">
                 {{ sample_type }}
               </a>
             {% endif %}
             {% if instrument %}»
-              <a href="/timeline?instrument={{ instrument.number }}&bin={{ bin.pid }}">
+              <a href="timeline?instrument={{ instrument.number }}&bin={{ bin.pid }}">
                 IFCB{{ instrument.number }}
               </a>
             {% endif %}
             {% if tags %}»
-              <a href="/timeline?tags={{ tags }}&bin={{ bin.pid }}">
+              <a href="timeline?tags={{ tags }}&bin={{ bin.pid }}">
                 {{ tags }}
               </a>
             {% endif %}
@@ -1094,6 +1098,8 @@ $("#share-image").click(function (e) {
 
   var rootUrl = "{{ request.scheme }}://{{ request.get_host }}";
   var url = $("#detailed-image-link-id").attr("href");
+
+  // TODO: The share image link needs to include the team route/prefix
 
   $("#share-link").val(rootUrl + url);
 
