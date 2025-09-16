@@ -1,10 +1,29 @@
 
-    <a tabindex="0" class="white-text nav-link" id="dataset-popover" style="outline:none;" role="button"
+<a tabindex="0" class="white-text nav-link" id="datasets-popover" style="outline:none;" role="button"
+    title="{% if team %}Datasets for {{ team.name }}{% else %}Datasets{% endif %}"
     data-toggle="popover"
-    data-content="<ul class='list-unstyled' id='dataset-nav-menu'>
-        {% for dataset in datasets %}
-        <li><a class='dropdown-item' title='{{ dataset.title }}' href='{% url 'timeline_page' %}?dataset={{ dataset.name }}'>{{ dataset.title }}</a></li>        
-        {% endfor %}                                     
-    </ul>"><i class="fa fa-database mr-2"></i>Datasets</a>
+    data-content="
+        <ul class='list-unstyled' id='dataset-nav-menu'>
+            {% for dataset in datasets %}
+            <li><a class='dropdown-item' title='{{ dataset.title }}' href='{% url 'timeline_page' %}?dataset={{ dataset.name }}'>{{ dataset.title }}</a></li>
+            {% endfor %}
+        </ul>
+        <hr />
+        <a href='/datasets'>View All Datasets</a>
+    "><i class="fa fa-database mr-1"></i>Datasets</a>
 
-
+<a tabindex="0" class="white-text nav-link" id="teams-popover" style="outline:none;" role="button"
+    data-toggle="popover"
+    data-content="
+        <ul class='list-unstyled' id='team-nav-menu'>
+            {% for team in teams %}
+            <li>
+            {% if team.default_dataset %}
+                <a class='dropdown-item' href='{% url 'timeline_page' %}?dataset={{ team.default_dataset }}' title='{{ team.name }}'>{{ team.name }}</a>
+            {% else %}
+                <a class='dropdown-item' href='{% url 'datasets' team.name %}' title='{{ team.name }}'>{{ team.name }}</a>
+            {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    "><i class="fa fa-database mr-1"></i>Team</a>

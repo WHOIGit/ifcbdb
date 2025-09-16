@@ -21,7 +21,7 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, Team
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, Team, TeamDataset
 from .forms import DatasetSearchForm
 from common.utilities import *
 
@@ -34,14 +34,40 @@ def index(request):
     return HttpResponseRedirect(reverse("datasets"))
 
 
-def datasets(request):
+def dashboard(request):
     if request.POST:
         form = DatasetSearchForm(request.POST)
     else:
         form = DatasetSearchForm()
 
-    return render(request, 'dashboard/datasets.html', {
+    return render(request, 'dashboard/dashboard.html', {
         "form": form,
+    })
+
+def datasets(request, team_name=None):
+    teams = list(Team.objects.all().order_by("name"))
+
+    # Duplicate the teams list and add a dummy record at the end to make sure that in the template, dataset that
+    #   are not assigned to a team are accounted for
+    team_panels = [team for team in teams]
+    team_panels.append(Team(pk=0, name="Unassigned"))
+
+    datasets = Dataset.objects.all().prefetch_related("teamdataset_set__team")
+
+    # Add in the team ID for each dataset, which is needed for grouping them within the correct accordion panel
+    for dataset in datasets:
+        team_dataset = dataset.teamdataset_set.first()
+        dataset.team_id = team_dataset.team.id if team_dataset else 0
+
+    # TODO: Confirm dropdown does not appear if teams is disabled
+    # TODO: Improve layout when there is not a lot of data
+    # TODO: Handle teams that have no datasets - maybe a message of some sort?
+
+    return render(request, 'dashboard/datasets.html', {
+        "datasets": datasets,
+        "teams": teams,
+        "team_name": team_name,
+        "team_panels": team_panels,
     })
 
 def bin_in_dataset_or_404(bin, dataset):
@@ -201,7 +227,7 @@ def filter_parameters_bin_query(method):
 
     return bin_qs
 
-def timeline_page(request):
+def timeline_page(request, team_name=None):
     bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
@@ -231,7 +257,7 @@ def timeline_page(request):
 
 
 @login_required
-def list_page(request):
+def list_page(request, team_name=None):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
@@ -262,7 +288,7 @@ def list_page(request):
     })
 
 
-def bin_page(request):
+def bin_page(request, team_name=None):
     dataset_name = request.GET.get("dataset",None)
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
@@ -282,7 +308,7 @@ def bin_page(request):
     )
 
 
-def image_page(request):
+def image_page(request, team_name=None):
     bin_id = request.GET.get("bin")
     image_id = request.GET.get("image")
 
@@ -448,6 +474,9 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
     if bin is None:
         return render(request, "dashboard/no-bins.html", {})
 
+    team_dataset = TeamDataset.objects.filter(dataset=dataset).select_related("team").first()
+    team = team_dataset.team if team_dataset else None
+
     return render(request, "dashboard/bin.html", {
         "route": route,
         "can_share_page": True,
@@ -469,6 +498,7 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         "default_end_date": default_end_date,
         "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False,
                                 instrument_number=instrument_number, tags=tags),
+        "team": team,
     })
 
 
@@ -1348,3 +1378,19 @@ def legacy_single_roi_features(request, dataset_name, bin_id, target):
         'names': features.columns.tolist(),
         'values': features.loc[target].tolist(),
     })
+
+
+# Despite the name, there is no actual team page. If the team has a default dataset, the user will get
+#   redirected to its timeline page. If not, the user gets sent to the datasets page with this team
+#   set as the filter
+def team_page(request, team_name):
+    team = get_object_or_404(Team, name=team_name)
+
+    if team.default_dataset:
+        page_route = reverse("timeline_page")
+
+        url = f"/t/{team.name}{page_route}?dataset={team.default_dataset.name}"
+    else:
+        url = reverse("datasets", args=[team.name])
+
+    return HttpResponseRedirect(url)

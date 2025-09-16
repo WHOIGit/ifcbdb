@@ -37,12 +37,24 @@ urlpatterns = [
     # TODO: The slugs for the images need to be left padded with zeros
     path('', views.index),
     path('index.html', views.index),    
-    path('dashboard', views.datasets, name='datasets'),
+    path('dashboard', views.dashboard, name='dashboard'),
+    path('datasets', views.datasets, name='datasets'),
+    path('datasets/<str:team_name>', views.datasets, name='datasets'),
+    path('t/<str:team_name>', views.team_page, name='team_page'),
+
     path('timeline', views.timeline_page, name='timeline_page'),
+    path('t/<str:team_name>/timeline', views.timeline_page, name='timeline_page'),
+
     path('bin', views.bin_page, name='bin_page'),
+    path('t/<str:team_name>/bin', views.bin_page, name='bin_page'),
+
     path('image', views.image_page, name='image_page'),
-    path('comments', views.comments_page, name='comment_page'),
+    path('t/<str:team_name>/image', views.image_page, name='image_page'),
+
     path('list', views.list_page, name='list_page'),
+    path('t/<str:team_name>/list', views.list_page, name='list_page'),
+
+    path('comments', views.comments_page, name='comment_page'),
     path('about', views.about_page, name='about_page'),
 
     # raw data access
