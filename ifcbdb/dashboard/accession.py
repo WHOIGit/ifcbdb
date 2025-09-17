@@ -13,7 +13,7 @@ from django.contrib.postgres.aggregates.general import StringAgg
 import pandas as pd
 import numpy as np
 
-from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, normalize_tag_name
+from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, normalize_tag_name, Team, TeamDataset
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
@@ -84,6 +84,11 @@ class Accession(object):
         instrument, created = Instrument.objects.get_or_create(number=i, defaults={
             'version': version
         })
+
+        # TODO: Handle team feature not enabled
+        team_dataset = TeamDataset.objects.filter(dataset=self.dataset).first()
+        team_id = team_dataset.team_id if team_dataset else None
+
         # create model object
         timestamp = bin.pid.timestamp
         b, created = Bin.objects.get_or_create(pid=pid, defaults={
@@ -93,6 +98,7 @@ class Accession(object):
             'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
             'data_directory': dd_found,
             'skip': True, # in case accession is interrupted
+            'team_id': team_id,
         })
         if not created:
             return
@@ -138,6 +144,11 @@ class Accession(object):
             # create bins
             then = time.time()
             bins2save = []
+
+            # TODO: Handle team feature not enabled
+            team_dataset = TeamDataset.objects.filter(dataset=self.dataset).first()
+            team_id = team_dataset.team_id if team_dataset else None
+
             for bin_dd in bin_dds:
                 bin, dd = bin_dd
                 pid = bin.lid
@@ -154,6 +165,7 @@ class Accession(object):
                     'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
                     'data_directory': dd,
                     'skip': True, # in case accession is interrupted
+                    'team_id': team_id,
                 })
                 if not created:
                     continue
