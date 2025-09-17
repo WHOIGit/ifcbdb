@@ -457,6 +457,8 @@ class Bin(models.Model):
     # tags
     tags = models.ManyToManyField('Tag', through='TagEvent')
 
+    team = models.ForeignKey('Team', blank=True, null=True, on_delete=models.SET_NULL)
+
     MOSAIC_SCALE_FACTORS = [25, 33, 66, 100]
     MOSAIC_VIEW_SIZES = ["640x480", "800x600", "800x1280", "1080x1920"]
     MOSAIC_DEFAULT_SCALE_FACTOR = 33
