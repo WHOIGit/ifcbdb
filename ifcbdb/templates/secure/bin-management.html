@@ -1,0 +1,185 @@
+{% extends 'base.html' %} {% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Bin Management</span>
+    </div>
+    <div class="flex-column">
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <div class="col-md-4">
+        <form id="search-form" method="post">
+            {% csrf_token %}
+            <div id="filter-content" class="filter-options">
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Team</div>
+                    <div class="col-md-8">
+                        {{ form.team }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Dataset</div>
+                    <div class="col-md-8">
+                        {{ form.dataset }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Instrument</div>
+                    <div class="col-md-8">
+                        {{ form.instrument }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Start Date</div>
+                    <div class="col-md-8">
+                        <input type="text" class="form-control form-control-sm filter-option" name="start_date_filter" disabled />
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">End Date</div>
+                    <div class="col-md-8">
+                        <input type="text" class="form-control form-control-sm filter-option" name="end_date_filter" disabled />
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Tags</div>
+                    <div class="col-md-8">
+                        {{ form.tag }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Cruise</div>
+                    <div class="col-md-8">
+                        {{ form.cruise }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4" style="white-space: nowrap;">Sample Type</div>
+                    <div class="col-md-8">
+                        {{ form.sample_type }}
+                    </div>
+                </div>
+              <div class="form-row">
+                  <button class="btn btn-sm btn-mdb-color" type="button" id="search-button">
+                    <i class="fas fa-magnifying-glass"></i> Search
+                  </button>
+              </div>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4">
+        <div id="results-panel" class="d-none alert alert-info">
+            <h5>Search Results</h5>
+            <hr />
+
+
+            <p>Total Bins Found: <strong><span id="total"></span></strong></p>
+
+            <div>
+                <strong>Breakdown by Team (not yet implemented)</strong>
+                <div><label>Team A</label>: 0</div>
+                <div><label>Team B</label>: 1</div>
+            </div>
+
+            <div>
+                <strong>Breakdown by Dataset (not yet implemented)</strong>
+                <div><label>Dataset A</label>: 0</div>
+                <div><label>Dataset B</label>: 0</div>
+            </div>
+
+            <button class="btn btn-sm btn-mdb-color" type="button" id="export-button">
+                <i class="fas fa-file-export"></i> Export
+            </button>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div id="actions-panel" class="d-none">
+            <strong>Actions</strong><br />
+
+            <button class="btn btn-sm btn-mdb-color" type="button" id="action-skip">Skip Bins</button>
+            <button class="btn btn-sm btn-mdb-color" type="button" id="action-unskip">Unskip Bins</button>
+        </div>
+    </div>
+</div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+    $(function(){
+        $("#search-button").on("click", function(e) {
+            e.preventDefault();
+            search();
+        });
+
+        $("#export-button").on("click", function(e) {
+            e.preventDefault();
+            export_bins();
+        });
+
+        $("#action-skip").on("click", function(e) {
+            e.preventDefault();
+            skipBins();
+        });
+
+        $("#action-unskip").on("click", function(e) {
+            e.preventDefault();
+            unskipBins();
+        });
+
+        function search() {
+            $.post("/secure/bin-management/search", $("#search-form").serialize(), function(data) {
+                console.log(data);
+
+                // TODO: This can be cleaned up
+                // for (let i = 0; i < data.teams.length; i++) {
+                //     const team = data.teams[i];
+                //     console.log(`Team: ${team.name} has ${team.total} results`);
+                // }
+                // for (let i = 0; i < data.datasets.length; i++) {
+                //     const dataset = data.datasets[i];
+                //
+                //     console.log(`Dataset: ${dataset.name} has ${dataset.total} results`)
+                // }
+
+                $("#total").text(data.total);
+
+                $("#results-panel").toggleClass("d-none", false);
+                $("#actions-panel").toggleClass("d-none", false);
+            });
+        }
+
+        function export_bins() {
+            const form = $("#search-form").get(0);
+            form.setAttribute("target", "_blank");
+            form.setAttribute("method", "get");
+            form.setAttribute("action", "/secure/bin-management/export");
+            form.submit();
+        }
+
+        function skipBins() {
+            if (!confirm("Are you sure you want to skip all matching bins?")) {
+                return;
+            }
+
+            console.error("skip not yet implemented")
+        }
+
+        function unskipBins() {
+            if (!confirm("Are you sure you want to unskip all matching bins?")) {
+                return;
+            }
+
+            console.error("unskip not yet implemented")
+        }
+
+    });
+</script>
+{% endblock %}

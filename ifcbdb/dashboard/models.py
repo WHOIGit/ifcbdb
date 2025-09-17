@@ -216,7 +216,7 @@ def normalize_tag_name(tag_name):
     return normalized
 
 def bin_query(dataset_name=None, start=None, end=None, tags=[],
-        instrument_number=None, cruise=None, filter_skip=True, sample_type=None):
+        instrument_number=None, cruise=None, filter_skip=True, sample_type=None, team_name=None):
     qs = Bin.objects
     if filter_skip:
         qs = qs.filter(skip=False)
@@ -233,6 +233,12 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
         qs = qs.filter(cruise__iexact=cruise)
     if sample_type is not None and sample_type != "":
         qs = qs.filter(sample_type__iexact=sample_type)
+
+    if team_name is not None and team_name != "":
+        team = Team.objects.filter(name=team_name).first()
+        if team:
+            qs = qs.filter(team=team)
+
     return qs
 
 class Dataset(models.Model):

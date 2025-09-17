@@ -2,7 +2,7 @@ import re, os
 from django import forms
 from django.contrib.auth.models import User, Group
 
-from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, \
+from dashboard.models import Bin, Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, Tag, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
 
 
@@ -314,3 +314,43 @@ class TeamForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "default_dataset": forms.Select(attrs={"class": "form-control form-control-sm"}),
         }
+
+
+class SearchForm(forms.Form):
+    class_list = "form-control form-control-sm filter-option"
+
+    # TODO: Move these to a service call so they are not all inline in the class?
+    # TODO: The bin related queries are rather heavy - maybe cache the values rather than looking through all bins?
+    # TODO: Putting it here means its called once - needs to be called on page load
+    team_options = Team.objects.all().order_by("name")
+    dataset_options = Dataset.objects.filter(is_active=True).order_by("name")
+    tag_options = Tag.objects.all().order_by("name")
+
+    # TODO: These can likely be refactored
+    bins = Bin.objects.all()
+
+    instruments = list(bins.values_list("instrument__number", flat=True).order_by("instrument__number").distinct())
+    instruments = [""] + [f"IFCB{instrument_number}" for instrument_number in instruments]
+    instrument_options = list(zip(instruments, instruments))
+
+    cruises = list(bins.exclude(cruise="").values_list("cruise", flat=True).order_by("cruise").distinct())
+    cruises = [""] + cruises
+    cruise_options = list(zip(cruises, cruises))
+
+    sample_types = list(bins.exclude(sample_type="").values_list("sample_type", flat=True).order_by("sample_type").distinct())
+    sample_types = [""] + sample_types
+    sample_type_options = list(zip(sample_types, sample_types))
+
+    team = forms.ModelChoiceField(queryset=team_options, empty_label=" ", widget=forms.Select(attrs={"class": class_list}))
+    dataset = forms.ModelChoiceField(queryset=dataset_options, empty_label=" ", widget=forms.Select(attrs={"class": class_list}))
+    tag = forms.ModelChoiceField(queryset=tag_options, empty_label=" ", widget=forms.Select(attrs={"class": class_list}))
+
+    instrument = forms.ChoiceField(choices=instrument_options, widget=forms.Select(attrs={"class": class_list}))
+    cruise = forms.ChoiceField(choices=cruise_options, widget=forms.Select(attrs={"class": class_list}))
+    sample_type = forms.ChoiceField(choices=sample_type_options, widget=forms.Select(attrs={"class": class_list}))
+
+    # TODO: Fields and UI are needed to allow users to add a list of excluded date ranges
+    # TODO: Dropdowns currently only allow for one selection - this may need to be improved to select more than one
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

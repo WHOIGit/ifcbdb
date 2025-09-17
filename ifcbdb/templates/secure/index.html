@@ -17,6 +17,7 @@
         <ul class="list-group">
             {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'secure:dataset-management' %}">Dataset Management</a></li>
+            <li class="list-group-item"><a href="{% url 'secure:bin-management' %}">Bin Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:user-management' %}">User Management</a></li>
             {% endif %}
