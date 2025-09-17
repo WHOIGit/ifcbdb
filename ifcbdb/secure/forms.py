@@ -314,3 +314,20 @@ class TeamForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "default_dataset": forms.Select(attrs={"class": "form-control form-control-sm"}),
         }
+
+
+class SearchForm(forms.Form):
+    class_list = "form-control form-control-sm filter-option"
+    team_options = Team.objects.all().order_by("name")
+    dataset_options = Dataset.objects.filter(is_active=True).order_by("name")
+
+    team = forms.ModelChoiceField(queryset=team_options, empty_label=" ",
+                                  widget=forms.Select(attrs={"class": class_list}))
+    dataset = forms.ModelChoiceField(queryset=dataset_options, empty_label=" ",
+                                  widget=forms.Select(attrs={"class": class_list}))
+
+    # TODO: Fill in other dropdowns
+    # TODO: Dropdowns currently only allow for one selection - this may need to be improved to select more than one
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

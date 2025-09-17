@@ -233,6 +233,7 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
         qs = qs.filter(cruise__iexact=cruise)
     if sample_type is not None and sample_type != "":
         qs = qs.filter(sample_type__iexact=sample_type)
+
     return qs
 
 class Dataset(models.Model):

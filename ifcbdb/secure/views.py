@@ -10,8 +10,9 @@ from django.contrib.auth.models import User, Group
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
-    TeamUser, TeamDataset, TeamRole
-from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, TeamForm
+    TeamUser, TeamDataset, TeamRole, bin_query
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, \
+    TeamForm, SearchForm
 from common import auth
 from common.constants import Features, TeamRoles
 
@@ -743,4 +744,99 @@ def toggle_skip(request):
     return JsonResponse({
         "bin_id": bin_id,
         "skipped": not skipped,
+    })
+
+@login_required
+def bin_management(request):
+    # TODO: Allow support for captains and managers to view/manage bins
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
+    datasets = Dataset.objects.filter(is_active=True).order_by("name")
+    teams = Team.objects.all().order_by("name")
+
+    form = SearchForm()
+
+    # TODO: Below is copied from the filter modal on the timeline page. Only to be used as a reference for the
+    #     :   parameters that have not yet been implemented
+    #     dataset_name = request.GET.get("dataset")
+    #     tags = request_get_tags(request.GET.get("tags"))
+    #     instrument_number = request_get_instrument(request.GET.get("instrument"))
+    #     cruise = request_get_cruise(request.GET.get("cruise"))
+    #     sample_type = request_get_sample_type(request.GET.get('sample_type'))
+    #
+    #     if dataset_name:
+    #         ds = Dataset.objects.get(name=dataset_name)
+    #     else:
+    #         ds = None
+    #     if instrument_number:
+    #         instr = Instrument.objects.get(number=instrument_number)
+    #     else:
+    #         instr = None
+    #         instrument_number = 0
+    #
+    #     tag_options = Tag.list(ds, instr)
+    #
+    #     bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise, sample_type=sample_type)
+    #     qs = bq.values('instrument__number').order_by('instrument__number').distinct()
+    #     instruments_options = [i['instrument__number'] for i in qs]
+    #
+    #     datasets_options = [ds.name for ds in Dataset.objects.filter(is_active=True).order_by('name')]
+    #
+    #     bq = bin_query(dataset_name=dataset_name, tags=tags, instrument_number=instrument_number, sample_type=sample_type)
+    #     cruise_options = [c['cruise'] for c in bq.exclude(cruise='').values('cruise').order_by('cruise').distinct()]
+    #
+    #     bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise, instrument_number=instrument_number)
+    #     sample_type_options = [c['sample_type'] for c in bq.exclude(sample_type='').values('sample_type').order_by('sample_type').distinct()]
+    #
+    #     return JsonResponse({
+    #         "instrument_options": instruments_options,
+    #         "dataset_options": datasets_options,
+    #         "tag_options": tag_options,
+    #         "cruise_options": cruise_options,
+    #         'sample_type_options': sample_type_options,
+    #         })
+
+    return render(request, 'secure/bin-management.html', {
+        "form": form,
+        "teams": teams,
+        "datasets": datasets,
+    })
+
+
+@login_required
+def bin_management_search(request):
+    # TODO: Allow support for captains and managers to view/manage bins
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
+    # TODO: Ensure this is a post
+    form = SearchForm(request.POST)
+    if not form.is_valid():
+        # TODO: DO something? is_valid must be called or cleaned_data never gets populated
+        pass
+
+
+    dataset = form.cleaned_data.get("dataset")
+    dataset_name = dataset.name if dataset else None
+
+    # TODO: Implement other filters (team, instrument, start/end date, tags, cruise, sample type)
+
+    bin_qs = bin_query(dataset_name=dataset_name, instrument_number=None,
+                       tags=None, cruise=None, sample_type=None)
+
+    total = bin_qs.count()
+
+    # TODO: Process grouping results (by team, by dataset, etc)
+
+    return JsonResponse({
+        "total": total,
+        "teams": [
+            {"name": "team1", "total": 20},
+            {"name": "team2", "total": 25}
+        ],
+        "datasets": [
+            {"name": "ds1", "total": 5},
+            {"name": "ds2", "total": 10}
+        ],
     })
