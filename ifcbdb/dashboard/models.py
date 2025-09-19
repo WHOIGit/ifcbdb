@@ -944,6 +944,7 @@ class Team(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=50, blank=False, null=False)
     default_dataset = models.ForeignKey(Dataset, null=True, blank=True, on_delete=models.SET_NULL)
+    description = models.TextField(blank=True, null=True)
 
     users = models.ManyToManyField(User, through='TeamUser', related_name='teams')
     datasets = models.ManyToManyField(Dataset, through='TeamDataset', related_name='teams')

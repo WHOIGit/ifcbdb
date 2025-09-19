@@ -45,6 +45,22 @@
                 <div class="col">
                     <div class="form-row">
                         <div class="form-group col">
+                            <label for="id_description">Description</label>
+                            {% if is_admin %}
+                                {{ form.description }}
+                                {% if form.description.errors %}<span class="text-danger">{{ form.description.errors.as_text }}</span>{% endif %}
+                            {% else %}
+                                <input type="hidden" name="description" value="{{ team.description }}" />
+                                <textarea type="text" class="form-control form-control-sm" disabled>{{ team.name }}</textarea>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-row">
+                        <div class="form-group col">
                             <label for="id_default_dataset">Default Dataset</label>
                             {{ form.default_dataset }}
                             {% if form.default_dataset.errors %}<span class="text-danger">{{ form.default_dataset.errors.as_text }}</span>{% endif %}
