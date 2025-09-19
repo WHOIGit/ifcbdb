@@ -17,6 +17,23 @@
         margin-bottom:.5rem
 
     }
+    .accordion-header {
+        text-transform: none;
+        padding: .8rem;
+        font-size:1rem;
+    }
+
+    .accordion-header .team-name {
+        font-weight:bold;
+        color: #212529;
+    }
+
+    .accordion-header .team-description {
+        font-style: italic;
+        color: #212529;
+        font-size: .9rem;
+        font-weight:300;
+    }
 </style>
 <div class="row">
     <div class="col-md-6">
@@ -36,20 +53,17 @@
 </div>
 <hr class="my-2">
 <div class="row py-2 px-3">
-    <!-- acc -->
-
     <div id="team-accordion" role="tablist" aria-multiselectable="true" class="w-100">
         {% for team in team_panels %}
 
         <div class="card mb-3 w-100">
             <div class="card-header p-0" role="tab" id="heading{{ forloop.counter }}">
-                <h5 class="mb-0">
-                    <button class="btn btn-link btn-block text-left {% if team_name != team.name %}collapsed{% endif %}"
-                            data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
-                            aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
-                        {{ team.name }}
-                    </button>
-                </h5>
+                <button class="btn btn-link btn-block text-left accordion-header {% if team_name != team.name %}collapsed{% endif %}"
+                        data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
+                        aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                    <span class="team-name">{{ team.name }}</span>
+                    {% if team.description %}<span class="team-description"> | {{ team.description }}</span>{% endif %}
+                </button>
             </div>
             <div id="collapse{{ forloop.counter }}" class="{% if team_name != team.name %}collapse{% endif %}"
                  role="tabpanel" aria-labelledby="heading{{ forloop.counter }}"
@@ -64,38 +78,46 @@
                                     <div class="card h-100">
                                         <div class="card-body">
                                             <h5><strong>
-                                                <a href="{% url 'timeline_page' %}?dataset={{ dataset.name }}">{{ dataset.title }} @ INSIDE</a>
+                                                <a href="{% url 'timeline_page' %}?dataset={{ dataset.name }}">{{ dataset.title }}</a>
                                             </strong></h5>
                                             <hr style="margin: .5rem 0" />
                                             <div class="row dataset-item">
-                                                <div class="col-md-6">
+                                                <div class="col">
+                                                    {% if dataset.contact_name %}
                                                     <div>
-                                                        <label>DOI</label>
-                                                        <span>{{ dataset.doi }}</span>
-                                                    </div>
-                                                    <div>
-                                                        <label>Attribution</label>
-                                                        <span>{{ dataset.attribution }}</span>
-                                                    </div>
-                                                    <div>
-                                                        <label>Funding</label>
-                                                        <span>{{ dataset.funding }}</span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div>
-                                                        <label>Contact</label>
-                                                        {{contact_email}}
+                                                        <label class="d-inline-block">Contact:</label>
+                                                        {{ contact_email }}
                                                         {% if dataset.contact_email %}
                                                         <span><a href="mailto:{{ dataset.contact_email }}">{{ dataset.contact_name }}</a></span>
                                                         {% else %}
                                                         <span>{{ dataset.contact_name }}</span>
                                                         {% endif %}
                                                     </div>
+                                                    {% endif %}
+                                                    {% if dataset.doi %}
+                                                    <div>
+                                                        <label class="d-inline-block">DOI:</label>
+                                                        <span>{{ dataset.doi }}</span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if dataset.attribution %}
+                                                    <div>
+                                                        <label>Investigators</label>
+                                                        <span>{{ dataset.attribution }}</span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if dataset.funding %}
+                                                    <div>
+                                                        <label>Funding</label>
+                                                        <span>{{ dataset.funding }}</span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if dataset.description %}
                                                     <div>
                                                         <label>Description</label>
                                                         <span>{{ dataset.description }}</span>
                                                     </div>
+                                                    {% endif %}
                                                 </div>
                                             </div>
                                         </div>
@@ -112,8 +134,6 @@
 
         {% endfor %}
     </div>
-
-    <!-- end acc -->
 </div>
 {% endblock %} {% block scripts %}
 <script>
