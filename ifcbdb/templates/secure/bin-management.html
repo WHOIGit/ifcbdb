@@ -27,8 +27,7 @@
                 <div class="form-row mb-2">
                     <div class="col-md-4">Instrument</div>
                     <div class="col-md-8">
-                        <select class="form-control form-control-sm filter-option" name="instrument_filter" disabled>
-                        </select>
+                        {{ form.instrument }}
                     </div>
                 </div>
                 <div class="form-row mb-2">
@@ -46,22 +45,19 @@
                 <div class="form-row mb-2">
                     <div class="col-md-4">Tags</div>
                     <div class="col-md-8">
-                        <select class="form-control form-control-sm filter-option" name="tag_filter" multiple disabled>
-                        </select>
+                        {{ form.tag }}
                     </div>
                 </div>
                 <div class="form-row mb-2">
                     <div class="col-md-4">Cruise</div>
                     <div class="col-md-8">
-                        <select class="form-control form-control-sm filter-option" name="cruise_filter" disabled>
-                        </select>
+                        {{ form.cruise }}
                     </div>
                 </div>
                 <div class="form-row mb-2">
                     <div class="col-md-4" style="white-space: nowrap;">Sample Type</div>
                     <div class="col-md-8">
-                        <select class="form-control form-control-sm filter-option" name="sample_type_filter" disabled>
-                        </select>
+                        {{ form.sample_type }}
                     </div>
                 </div>
               <div class="form-row">
@@ -73,7 +69,7 @@
         </form>
     </div>
     <div class="col-md-4">
-        <div id="results-panel" class="d-none">
+        <div id="results-panel" class="d-none alert alert-info">
             <h5>Search Results</h5>
             <hr />
 
@@ -123,6 +119,11 @@
             search();
         });
 
+        $("#export-button").on("click", function(e) {
+            e.preventDefault();
+            export_bins();
+        });
+
         $("#action-skip").on("click", function(e) {
             e.preventDefault();
             skipBins();
@@ -153,6 +154,14 @@
                 $("#results-panel").toggleClass("d-none", false);
                 $("#actions-panel").toggleClass("d-none", false);
             });
+        }
+
+        function export_bins() {
+            const form = $("#search-form").get(0);
+            form.setAttribute("target", "_blank");
+            form.setAttribute("method", "get");
+            form.setAttribute("action", "/secure/bin-management/export");
+            form.submit();
         }
 
         function skipBins() {

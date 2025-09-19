@@ -1,9 +1,12 @@
 import json
+from io import BytesIO
+from itertools import groupby
+from operator import attrgetter
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django import forms
 from django.views.decorators.http import require_POST, require_GET
-from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse
+from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse, StreamingHttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.contrib.auth.models import User, Group
 
@@ -11,6 +14,7 @@ import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
     TeamUser, TeamDataset, TeamRole, bin_query
+from dashboard.accession import export_metadata
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, \
     TeamForm, SearchForm
 from common import auth
@@ -820,14 +824,28 @@ def bin_management_search(request):
     dataset = form.cleaned_data.get("dataset")
     dataset_name = dataset.name if dataset else None
 
+    team = form.cleaned_data.get("team")
+    team_name = team.name if team else None
+
     # TODO: Implement other filters (team, instrument, start/end date, tags, cruise, sample type)
 
     bin_qs = bin_query(dataset_name=dataset_name, instrument_number=None,
-                       tags=None, cruise=None, sample_type=None)
+                       tags=None, cruise=None, sample_type=None, team_name=team_name)
 
     total = bin_qs.count()
 
     # TODO: Process grouping results (by team, by dataset, etc)
+
+    # items = list(bin_qs)
+    # sort_by_team = sorted(items, key=lambda x: x.team_id if x.team_id else 0)
+
+    # TODO: This is some initial logic for grouping but it needs to work to use team name not ID
+    # TODO: Does it make sense for other fields?
+    # TODO: Datasets is tricky as a bin can be in more than one dataset - how do we expand that properly to do
+    #     :   proper counts?
+    # for c, g in groupby(sort_by_team, key=attrgetter("team_id")):
+    #     count = sum(1 for _ in g)
+    #     print(c, count)
 
     return JsonResponse({
         "total": total,
@@ -840,3 +858,76 @@ def bin_management_search(request):
             {"name": "ds2", "total": 10}
         ],
     })
+
+@login_required
+def bin_management_export(request, dataset_name=None):
+    # TODO: Allow support for captains and managers to view/manage bins
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
+
+    form = SearchForm(request.GET)
+    if not form.is_valid():
+        # TODO: DO something? is_valid must be called or cleaned_data never gets populated
+        pass
+
+    dataset = form.cleaned_data.get("dataset")
+    dataset_name = dataset.name if dataset else None
+
+    team = form.cleaned_data.get("team")
+    team_name = team.name if team else None
+    print(team_name)
+
+    # TODO: Implement other filters (team, instrument, start/end date, tags, cruise, sample type)
+    # TODO: Should use same form/logic as the main search
+    # TODO: Export button uses the form data...technically the user could change those values between the search and the update
+    # TODO: Disable fields and a search again option maybe?
+    bin_qs = bin_query(dataset_name=dataset_name, instrument_number=None,
+                       tags=None, cruise=None, sample_type=None, team_name=team_name)
+
+    # tags = request_get_tags(request.GET.get("tags"))
+    # instrument_number = request_get_instrument(request.GET.get("instrument"))
+    # cruise = request_get_cruise(request.GET.get("cruise"))
+    # sample_type = request.GET.get('sample_type')
+    # start_date = request.GET.get("start_date")
+    # end_date = request.GET.get("end_date")
+    # include_skip = request.GET.get('include_skip', 'true')
+    #
+    # filter_skip = not include_skip.lower() == 'true'
+    #
+    # bin_qs = bin_query(dataset_name=dataset_name,
+    #                    tags=tags,
+    #                    instrument_number=instrument_number,
+    #                    cruise=cruise,
+    #                    sample_type=sample_type,
+    #                    filter_skip=filter_skip)
+
+    # if start_date:
+    #     start_date = pd.to_datetime(start_date, utc=True)
+    #     bin_qs = bin_qs.filter(sample_time__gte=start_date)
+    #
+    # if end_date:
+    #     end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+    #     bin_qs = bin_qs.filter(sample_time__lte=end_date)
+    #
+    # if bin_qs.count() == 0:
+    #     raise Http404('no bins match the given query')
+    # TODO: Add filtering
+    #bin_qs = Bin.objects.all()
+
+    ds = None #Dataset.objects.get(name=dataset_name) if dataset_name else None
+    df = export_metadata(ds, bin_qs)
+
+    filename = (dataset_name or 'ifcb-metadata') + '.csv'
+    response = dataframe_csv_response(df, index=None)
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+
+    return response
+
+
+# TODO: This is duplicated from dashboard/views.py - create common method if needed
+def dataframe_csv_response(df, **kw):
+    csv_buf = BytesIO()
+    df.to_csv(csv_buf, mode='wb', **kw)
+    csv_buf.seek(0)
+    response = StreamingHttpResponse(csv_buf, content_type='text/csv')
+    return response
