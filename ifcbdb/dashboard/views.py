@@ -52,7 +52,9 @@ def datasets(request, team_name=None):
     team_panels = [team for team in teams]
     team_panels.append(Team(pk=0, name="Unassigned"))
 
-    datasets = Dataset.objects.all().prefetch_related("teamdataset_set__team")
+    # TODO: Initially, make sure only active datasets appear. In the future, this may be changes to allow for users
+    #     :   that "own" those datasets (captains/managers) to see the inactive datasets
+    datasets = Dataset.objects.filter(is_active=True).prefetch_related("teamdataset_set__team")
 
     # Add in the team ID for each dataset, which is needed for grouping them within the correct accordion panel
     for dataset in datasets:
@@ -60,8 +62,6 @@ def datasets(request, team_name=None):
         dataset.team_id = team_dataset.team.id if team_dataset else 0
 
     # TODO: Confirm dropdown does not appear if teams is disabled
-    # TODO: Improve layout when there is not a lot of data
-    # TODO: Handle teams that have no datasets - maybe a message of some sort?
 
     return render(request, 'dashboard/datasets.html', {
         "datasets": datasets,
