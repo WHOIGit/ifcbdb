@@ -1,4 +1,6 @@
 {% extends 'base.html' %} {% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css">
+
 <div class="flex-row d-flex justify-content-between">
     <div class="flex-column">
         <span class="h3-responsive">Bin Management</span>
@@ -9,6 +11,7 @@
 <hr class="my-2">
 <div class="row py-2 px-3">
     <div class="col-md-4">
+        <div id="search-errors" class="d-none alert alert-danger"></div>
         <form id="search-form" method="post">
             {% csrf_token %}
             <div id="filter-content" class="filter-options">
@@ -33,13 +36,13 @@
                 <div class="form-row mb-2">
                     <div class="col-md-4">Start Date</div>
                     <div class="col-md-8">
-                        <input type="text" class="form-control form-control-sm filter-option" name="start_date_filter" disabled />
+                        {{ form.start_date }}
                     </div>
                 </div>
                 <div class="form-row mb-2">
                     <div class="col-md-4">End Date</div>
                     <div class="col-md-8">
-                        <input type="text" class="form-control form-control-sm filter-option" name="end_date_filter" disabled />
+                        {{ form.end_date }}
                     </div>
                 </div>
                 <div class="form-row mb-2">
@@ -76,16 +79,18 @@
 
             <p>Total Bins Found: <strong><span id="total"></span></strong></p>
 
-            <div>
-                <strong>Breakdown by Team (not yet implemented)</strong>
-                <div><label>Team A</label>: 0</div>
-                <div><label>Team B</label>: 1</div>
-            </div>
+            <div class="d-none">
+                <div>
+                    <strong>Breakdown by Team (not yet implemented)</strong>
+                    <div><label>Team A</label>: 0</div>
+                    <div><label>Team B</label>: 1</div>
+                </div>
 
-            <div>
-                <strong>Breakdown by Dataset (not yet implemented)</strong>
-                <div><label>Dataset A</label>: 0</div>
-                <div><label>Dataset B</label>: 0</div>
+                <div>
+                    <strong>Breakdown by Dataset (not yet implemented)</strong>
+                    <div><label>Dataset A</label>: 0</div>
+                    <div><label>Dataset B</label>: 0</div>
+                </div>
             </div>
 
             <button class="btn btn-sm btn-mdb-color" type="button" id="export-button">
@@ -95,10 +100,52 @@
     </div>
     <div class="col-md-4">
         <div id="actions-panel" class="d-none">
-            <strong>Actions</strong><br />
+            <form id="execute-form" method="post">
+                {% csrf_token %}
+                <fieldset class="border rounded p-3 mb-3">
+                    <legend class="float-none w-auto px-2 fw-semibold">Actions</legend>
 
-            <button class="btn btn-sm btn-mdb-color" type="button" id="action-skip">Skip Bins</button>
-            <button class="btn btn-sm btn-mdb-color" type="button" id="action-unskip">Unskip Bins</button>
+                    <div id="execute-errors" class="d-none alert alert-danger"></div>
+                    <div id="execute-message" class="alert alert-success d-none"></div>
+
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="skip-bins" />
+                            Skip Bins
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="unskip-bins" />
+                            Unskip Bins
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="assign-dataset" />
+                            Assign Dataset
+                        </label>
+                    </div>
+                    <div class="form-row pl-5">
+                        <label>Dataset:</label>
+                        {{ action_form.assigned_dataset }}
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="unassign-dataset" />
+                            Unassign Dataset
+                        </label>
+                    </div>
+                    <div class="form-row pl-5">
+                        <label>Dataset:</label>
+                        {{ action_form.unassigned_dataset }}
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-mdb-color" type="button" id="execute-button">Execute</button>
+                    </div>
+                </fieldset>
+
+            </form>
         </div>
     </div>
 </div>
@@ -112,8 +159,15 @@
 </div>
 
 {% endblock %} {% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js" integrity="sha512-LsnSViqQyaXpD4mBBdRYeP6sRwJiJveh2ZIbW41EBrNmKxgr/LFZIiWT6yr+nycvhvauz8c2nYMhrP80YhG7Cw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     $(function(){
+
+        $('.date-picker').datepicker({
+            "orientation": "bottom",
+            "autoclose": true,
+        });
+
         $("#search-button").on("click", function(e) {
             e.preventDefault();
             search();
@@ -121,42 +175,45 @@
 
         $("#export-button").on("click", function(e) {
             e.preventDefault();
-            export_bins();
+            exportBins();
         });
 
-        $("#action-skip").on("click", function(e) {
+        $("#execute-button").on("click", function(e) {
             e.preventDefault();
-            skipBins();
+            executeAction();
         });
 
-        $("#action-unskip").on("click", function(e) {
-            e.preventDefault();
-            unskipBins();
+        $("input[name=action]").on("change", function(e) {
+            changeAction();
         });
 
         function search() {
-            $.post("/secure/bin-management/search", $("#search-form").serialize(), function(data) {
-                console.log(data);
+            const searchErrors = document.querySelector("#search-errors");
+            searchErrors.classList.toggle("d-none", true);
 
-                // TODO: This can be cleaned up
-                // for (let i = 0; i < data.teams.length; i++) {
-                //     const team = data.teams[i];
-                //     console.log(`Team: ${team.name} has ${team.total} results`);
-                // }
-                // for (let i = 0; i < data.datasets.length; i++) {
-                //     const dataset = data.datasets[i];
-                //
-                //     console.log(`Dataset: ${dataset.name} has ${dataset.total} results`)
-                // }
+            $.post("/secure/bin-management/search", $("#search-form").serialize(), function(data) {
+
+                if (!data.success) {
+                    const validationErrors = formatValidationErrors(data.errors);
+
+                    const searchErrors = document.querySelector("#search-errors");
+                    searchErrors.classList.toggle("d-none", false);
+                    searchErrors.innerHTML = validationErrors;
+                    return;
+                }
 
                 $("#total").text(data.total);
-
                 $("#results-panel").toggleClass("d-none", false);
                 $("#actions-panel").toggleClass("d-none", false);
+
+                resetActionForm();
+
+                // TODO: Could be cleaner, but we need to be able to reset the form independently of the validation
+                $("#execute-message").toggleClass("d-none", true);
             });
         }
 
-        function export_bins() {
+        function exportBins() {
             const form = $("#search-form").get(0);
             form.setAttribute("target", "_blank");
             form.setAttribute("method", "get");
@@ -164,20 +221,78 @@
             form.submit();
         }
 
-        function skipBins() {
-            if (!confirm("Are you sure you want to skip all matching bins?")) {
-                return;
-            }
+        function resetActionForm() {
+            const actionInputs = document.querySelectorAll("[name=action]");
 
-            console.error("skip not yet implemented")
+            for (let i = 0; i < actionInputs.length; i++) {
+                actionInputs[i].checked = false;
+            }
         }
 
-        function unskipBins() {
-            if (!confirm("Are you sure you want to unskip all matching bins?")) {
+        function executeAction() {
+            // TODO: Prevent running actions when no bins were found by the search
+            if (!confirm("Are you sure you want to execute this action?")) {
                 return;
             }
 
-            console.error("unskip not yet implemented")
+            const executeErrors = document.querySelector("#execute-errors");
+            executeErrors.classList.toggle("d-none", true);
+
+            const messagePanel = document.querySelector("#execute-message");
+            messagePanel.classList.toggle("d-none", true);
+
+            const searchFormData = $("#search-form").serializeArray();
+            const executeFormData = $("#execute-form").serializeArray()
+            const formData = $.param(searchFormData.concat(executeFormData));
+
+            $.post("/secure/bin-management/execute", formData, function(data) {
+
+                if (!data.success) {
+                    const validationErrors = formatValidationErrors(data.errors);
+
+                    const executeErrors = document.querySelector("#execute-errors");
+                    executeErrors.classList.toggle("d-none", false);
+                    executeErrors.innerHTML = validationErrors;
+                    return;
+                }
+
+                messagePanel.innerHTML = data.message;
+                messagePanel.classList.toggle("alert-success", data.success);
+                messagePanel.classList.toggle("alert-danger", !data.success);
+                messagePanel.classList.toggle("d-none", false);
+
+                resetActionForm();
+            });
+        }
+
+        function changeAction() {
+            const action = $("[name=action]:checked").val();
+
+            // TODO: Replace with constants
+            $("[name=assigned_dataset]").prop("disabled", action !== "assign-dataset");
+            $("[name=unassigned_dataset]").prop("disabled", action !== "unassign-dataset");
+        }
+
+        // TODO: Move this to a common location so it can be used elsewhere
+        // TODO: Clean up (list join)
+        function formatValidationErrors(errors) {
+            let errorHtml = '<ul class="error-list mb-0">';
+
+            for (const [field, messages] of Object.entries(errors)) {
+
+                // Capitalize and format field name (e.g., "email_address" -> "Email Address")
+                const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+                console.log(field)
+                messages.forEach(message => {
+                    const prefix = field === "__all__" ? "" : `<strong>${fieldName}:</strong> `;
+
+                    errorHtml += `<li>${prefix}${message}</li>`;
+                });
+            }
+
+            errorHtml += '</ul>';
+            return errorHtml;
         }
 
     });

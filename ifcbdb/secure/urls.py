@@ -23,6 +23,7 @@ urlpatterns = [
     path('bin-management', views.bin_management, name='bin-management'),
     path('bin-management/search', views.bin_management_search, name='bin-management-search'),
     path('bin-management/export', views.bin_management_export, name='bin-management-export'),
+    path('bin-management/execute', views.bin_management_execute, name='bin-management-execute'),
 
     # Paths used for AJAX requests specifically for returning data formatted for DataTables
     path('api/dt/datasets', views.dt_datasets, name='datasets_dt'),

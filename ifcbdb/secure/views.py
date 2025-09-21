@@ -16,9 +16,9 @@ from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, 
     TeamUser, TeamDataset, TeamRole, bin_query
 from dashboard.accession import export_metadata
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, \
-    TeamForm, SearchForm
+    TeamForm, BinSearchForm, BinActionForm
 from common import auth
-from common.constants import Features, TeamRoles
+from common.constants import Features, TeamRoles, BinManagementActions
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -727,7 +727,7 @@ def metadata_upload_cancel(request):
     if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
-    added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel");
+    added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel")
     if not added:
         return JsonResponse({ 'status': 'already_canceled'})
     else:
@@ -756,55 +756,15 @@ def bin_management(request):
     if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
-    datasets = Dataset.objects.filter(is_active=True).order_by("name")
-    teams = Team.objects.all().order_by("name")
+    form = BinSearchForm()
 
-    form = SearchForm()
-
-    # TODO: Below is copied from the filter modal on the timeline page. Only to be used as a reference for the
-    #     :   parameters that have not yet been implemented
-    #     dataset_name = request.GET.get("dataset")
-    #     tags = request_get_tags(request.GET.get("tags"))
-    #     instrument_number = request_get_instrument(request.GET.get("instrument"))
-    #     cruise = request_get_cruise(request.GET.get("cruise"))
-    #     sample_type = request_get_sample_type(request.GET.get('sample_type'))
-    #
-    #     if dataset_name:
-    #         ds = Dataset.objects.get(name=dataset_name)
-    #     else:
-    #         ds = None
-    #     if instrument_number:
-    #         instr = Instrument.objects.get(number=instrument_number)
-    #     else:
-    #         instr = None
-    #         instrument_number = 0
-    #
-    #     tag_options = Tag.list(ds, instr)
-    #
-    #     bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise, sample_type=sample_type)
-    #     qs = bq.values('instrument__number').order_by('instrument__number').distinct()
-    #     instruments_options = [i['instrument__number'] for i in qs]
-    #
-    #     datasets_options = [ds.name for ds in Dataset.objects.filter(is_active=True).order_by('name')]
-    #
-    #     bq = bin_query(dataset_name=dataset_name, tags=tags, instrument_number=instrument_number, sample_type=sample_type)
-    #     cruise_options = [c['cruise'] for c in bq.exclude(cruise='').values('cruise').order_by('cruise').distinct()]
-    #
-    #     bq = bin_query(dataset_name=dataset_name, tags=tags, cruise=cruise, instrument_number=instrument_number)
-    #     sample_type_options = [c['sample_type'] for c in bq.exclude(sample_type='').values('sample_type').order_by('sample_type').distinct()]
-    #
-    #     return JsonResponse({
-    #         "instrument_options": instruments_options,
-    #         "dataset_options": datasets_options,
-    #         "tag_options": tag_options,
-    #         "cruise_options": cruise_options,
-    #         'sample_type_options': sample_type_options,
-    #         })
+    # TODO: This is not ideal, but loading the action form initially means we can use the assigned/unassigned datasets
+    #     :   elements and pre-render them before a search is run
+    action_form = BinActionForm()
 
     return render(request, 'secure/bin-management.html', {
         "form": form,
-        "teams": teams,
-        "datasets": datasets,
+        "action_form": action_form,
     })
 
 
@@ -815,22 +775,14 @@ def bin_management_search(request):
         return redirect(reverse("secure:index"))
 
     # TODO: Ensure this is a post
-    form = SearchForm(request.POST)
+    form = BinSearchForm(request.POST)
     if not form.is_valid():
-        # TODO: DO something? is_valid must be called or cleaned_data never gets populated
-        pass
+        return JsonResponse({
+            "success": False,
+            "errors": form.errors,
+        })
 
-
-    dataset = form.cleaned_data.get("dataset")
-    dataset_name = dataset.name if dataset else None
-
-    team = form.cleaned_data.get("team")
-    team_name = team.name if team else None
-
-    # TODO: Implement other filters (team, instrument, start/end date, tags, cruise, sample type)
-
-    bin_qs = bin_query(dataset_name=dataset_name, instrument_number=None,
-                       tags=None, cruise=None, sample_type=None, team_name=team_name)
+    bin_qs = build_bin_query_from_form_data(form)
 
     total = bin_qs.count()
 
@@ -848,6 +800,7 @@ def bin_management_search(request):
     #     print(c, count)
 
     return JsonResponse({
+        "success": True,
         "total": total,
         "teams": [
             {"name": "team1", "total": 20},
@@ -865,69 +818,177 @@ def bin_management_export(request, dataset_name=None):
     if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
-    form = SearchForm(request.GET)
+    form = BinSearchForm(request.GET)
     if not form.is_valid():
         # TODO: DO something? is_valid must be called or cleaned_data never gets populated
         pass
 
-    dataset = form.cleaned_data.get("dataset")
-    dataset_name = dataset.name if dataset else None
-
-    team = form.cleaned_data.get("team")
-    team_name = team.name if team else None
-    print(team_name)
-
-    # TODO: Implement other filters (team, instrument, start/end date, tags, cruise, sample type)
-    # TODO: Should use same form/logic as the main search
     # TODO: Export button uses the form data...technically the user could change those values between the search and the update
     # TODO: Disable fields and a search again option maybe?
-    bin_qs = bin_query(dataset_name=dataset_name, instrument_number=None,
-                       tags=None, cruise=None, sample_type=None, team_name=team_name)
 
-    # tags = request_get_tags(request.GET.get("tags"))
-    # instrument_number = request_get_instrument(request.GET.get("instrument"))
-    # cruise = request_get_cruise(request.GET.get("cruise"))
-    # sample_type = request.GET.get('sample_type')
-    # start_date = request.GET.get("start_date")
-    # end_date = request.GET.get("end_date")
-    # include_skip = request.GET.get('include_skip', 'true')
-    #
-    # filter_skip = not include_skip.lower() == 'true'
-    #
-    # bin_qs = bin_query(dataset_name=dataset_name,
-    #                    tags=tags,
-    #                    instrument_number=instrument_number,
-    #                    cruise=cruise,
-    #                    sample_type=sample_type,
-    #                    filter_skip=filter_skip)
+    bin_qs = build_bin_query_from_form_data(form)
 
-    # if start_date:
-    #     start_date = pd.to_datetime(start_date, utc=True)
-    #     bin_qs = bin_qs.filter(sample_time__gte=start_date)
-    #
-    # if end_date:
-    #     end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
-    #     bin_qs = bin_qs.filter(sample_time__lte=end_date)
-    #
-    # if bin_qs.count() == 0:
-    #     raise Http404('no bins match the given query')
-    # TODO: Add filtering
-    #bin_qs = Bin.objects.all()
+    # TODO: We're not supplying a dataset name. The benefit of that would be defaulting the location and depth values
+    #   in the export. Not sure if that is good here since the goal of this export is partially to re-import?
+    df = export_metadata(None, bin_qs)
 
-    ds = None #Dataset.objects.get(name=dataset_name) if dataset_name else None
-    df = export_metadata(ds, bin_qs)
+    # TODO: The normal export bases the file name on the dataset name but that doesn't really work here. Is there a
+    #     :   better filename we should be using?
+    filename = 'bins.csv'
 
-    filename = (dataset_name or 'ifcb-metadata') + '.csv'
-    response = dataframe_csv_response(df, index=None)
+    csv_buf = BytesIO()
+    df.to_csv(csv_buf, mode='wb', index=None)
+    csv_buf.seek(0)
+
+    response = StreamingHttpResponse(csv_buf, content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename={filename}'
 
     return response
 
+@login_required
+def bin_management_execute(request):
+    # TODO: Allow support for captains and managers to view/manage bins
+    if not auth.is_admin(request.user):
+        return redirect(reverse("secure:index"))
 
-# TODO: This is duplicated from dashboard/views.py - create common method if needed
-def dataframe_csv_response(df, **kw):
-    csv_buf = BytesIO()
-    df.to_csv(csv_buf, mode='wb', **kw)
-    csv_buf.seek(0)
-    response = StreamingHttpResponse(csv_buf, content_type='text/csv')
-    return response
+    form = BinSearchForm(request.POST)
+    if not form.is_valid():
+        # TODO: For now, this should always since there aren't any actual form validators on the search. Later, this
+        #     :   form will likely go away for the execute action to ensure that the user cannot change search criteria
+        #     :   prior to clicking execute (without being intentional about it. But is_valid() must be called for the
+        #     :   values to appear in cleaned_data
+        pass
+
+    action_form = BinActionForm(request.POST)
+    if not action_form.is_valid():
+        return JsonResponse({
+            "success": False,
+            "errors": action_form.errors,
+        })
+
+    action = action_form.cleaned_data.get("action")
+
+    # TODO: Export button uses the form data...technically the user could change those values between the search and the update
+    #     : Disable fields and a search again option maybe?
+
+    bin_qs = build_bin_query_from_form_data(form)
+
+    if action == BinManagementActions.SKIP_BINS.value:
+        return update_skip(bin_qs, True)
+
+    if action == BinManagementActions.UNSKIP_BINS.value:
+        return update_skip(bin_qs, False)
+
+    if action == BinManagementActions.ASSIGN_DATASET.value:
+        return assign_dataset(bin_qs, action_form.cleaned_data.get("assigned_dataset"))
+
+    if action == BinManagementActions.UNASSIGN_DATASET.value:
+        return unassign_dataset(bin_qs, action_form.cleaned_data.get("unassigned_dataset"))
+
+    return JsonResponse({
+        "success": False,
+        "message": f"Please choose an action to perform",
+    })
+
+def build_bin_query_from_form_data(form):
+    dataset = form.cleaned_data.get("dataset")
+    team = form.cleaned_data.get("team")
+    start_date = form.cleaned_data.get("start_date")
+    end_date = form.cleaned_data.get("end_date")
+    instrument = form.cleaned_data.get("instrument")
+    cruise = form.cleaned_data.get("cruise")
+    sample_type = form.cleaned_data.get("sample_type")
+
+    # TODO: Tags should allow for more than one option to be selected
+    tag = form.cleaned_data.get("tag")
+    tags = [tag.name] if tag else []
+
+    # TODO: Add a skip search? And the filter_skip parameter
+    # include_skip = request.GET.get('include_skip', 'true')
+
+    bin_qs = bin_query(
+        filter_skip=False,
+        dataset_name=dataset.name if dataset else None,
+        instrument_number=request_get_instrument(instrument),
+        tags=tags,
+        cruise=cruise,
+        sample_type=sample_type,
+        team_name=team.name if team else None)
+
+    # TODO: This logic is borrowed from the nav filtering logic. There are parameters in bin_query that allow for a
+    #     :   start and end date, but it does not work the same. The code below adds a day to the end date and that
+    #     :   means a search fora single date will work, whereas it won't with the bin_query parameters. We should
+    #     :   check to make sure this isn't actually a bug with one of the methods
+    if start_date:
+        start_date = pd.to_datetime(start_date, utc=True)
+        bin_qs = bin_qs.filter(sample_time__gte=start_date)
+
+    if end_date:
+        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+        bin_qs = bin_qs.filter(sample_time__lte=end_date)
+
+    return bin_qs
+
+def update_skip(bin_qs, is_skipped):
+    total = 0
+
+    for bin in bin_qs.all():
+        bin.skip = is_skipped
+        bin.save()
+
+        total += 1
+
+    return JsonResponse({
+        "success": True,
+        "message": f"{total} bin(s) have been updated successfully",
+    })
+
+def assign_dataset(bin_qs, dataset):
+    # This logic requires bin_qs to be a queryset, so at least one search option must have been specified
+    num_already_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
+
+    dataset.bins.add(*bin_qs)
+
+    total = bin_qs.count()
+    num_assigned = total - num_already_assigned
+    label_assigned = "bins" if num_assigned != 1 else "bin"
+    label_already_assigned = "bins" if num_already_assigned != 1 else "bin"
+    msg = f"{num_assigned} {label_assigned} assigned to dataset {dataset}"
+
+    if num_already_assigned == 0:
+        return JsonResponse({
+            "success": True,
+            "message": msg,
+        })
+
+    return JsonResponse({
+        "success": True,
+        "message": msg + f" ({num_already_assigned} {label_already_assigned} already assigned)",
+    })
+
+def unassign_dataset(bin_qs, dataset):
+    # This logic requires bin_qs to be a queryset, so at least one search option must have been specified
+    num_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
+
+    if num_assigned == 0:
+        return JsonResponse({
+            "success": True,
+            "message": f"No bins were unassigned because there weren't any assigned to dataset {dataset}",
+        })
+
+    dataset.bins.remove(*bin_qs)
+
+    label = "bins" if num_assigned != 1 else "bin"
+    return JsonResponse({
+        "success": True,
+        "message": f"{num_assigned} {label} unassigned from dataset {dataset}",
+    })
+
+
+# TODO: This is duplicated in dashboard/views - make a common helper method
+def request_get_instrument(instrument_string):
+    i = instrument_string
+    if i is not None and i:
+        if i.lower().startswith('ifcb'):
+            i = i[4:]
+        return int(i)
