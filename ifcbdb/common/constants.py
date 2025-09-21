@@ -9,3 +9,9 @@ class TeamRoles(Enum):
 class Features(Enum):
     TEAMS = "Teams"
 
+
+class BinManagementActions(Enum):
+    SKIP_BINS = "skip-bins"
+    UNSKIP_BINS = "unskip-bins"
+    ASSIGN_DATASET = "assign-dataset"
+    UNASSIGN_DATASET = "unassign-dataset"

@@ -1,4 +1,6 @@
 {% extends 'base.html' %} {% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css">
+
 <div class="flex-row d-flex justify-content-between">
     <div class="flex-column">
         <span class="h3-responsive">Bin Management</span>
@@ -33,13 +35,13 @@
                 <div class="form-row mb-2">
                     <div class="col-md-4">Start Date</div>
                     <div class="col-md-8">
-                        <input type="text" class="form-control form-control-sm filter-option" name="start_date_filter" disabled />
+                        {{ form.start_date }}
                     </div>
                 </div>
                 <div class="form-row mb-2">
                     <div class="col-md-4">End Date</div>
                     <div class="col-md-8">
-                        <input type="text" class="form-control form-control-sm filter-option" name="end_date_filter" disabled />
+                        {{ form.end_date }}
                     </div>
                 </div>
                 <div class="form-row mb-2">
@@ -76,16 +78,18 @@
 
             <p>Total Bins Found: <strong><span id="total"></span></strong></p>
 
-            <div>
-                <strong>Breakdown by Team (not yet implemented)</strong>
-                <div><label>Team A</label>: 0</div>
-                <div><label>Team B</label>: 1</div>
-            </div>
+            <div class="d-none">
+                <div>
+                    <strong>Breakdown by Team (not yet implemented)</strong>
+                    <div><label>Team A</label>: 0</div>
+                    <div><label>Team B</label>: 1</div>
+                </div>
 
-            <div>
-                <strong>Breakdown by Dataset (not yet implemented)</strong>
-                <div><label>Dataset A</label>: 0</div>
-                <div><label>Dataset B</label>: 0</div>
+                <div>
+                    <strong>Breakdown by Dataset (not yet implemented)</strong>
+                    <div><label>Dataset A</label>: 0</div>
+                    <div><label>Dataset B</label>: 0</div>
+                </div>
             </div>
 
             <button class="btn btn-sm btn-mdb-color" type="button" id="export-button">
@@ -95,10 +99,43 @@
     </div>
     <div class="col-md-4">
         <div id="actions-panel" class="d-none">
-            <strong>Actions</strong><br />
+            <form id="execute-form" method="post">
+            {% csrf_token %}
+                <h5>Actions</h5>
+                <hr />
 
-            <button class="btn btn-sm btn-mdb-color" type="button" id="action-skip">Skip Bins</button>
-            <button class="btn btn-sm btn-mdb-color" type="button" id="action-unskip">Unskip Bins</button>
+                <div id="execute-message" class="alert alert-success d-none"></div>
+
+                <div class="form-row">
+                    <label>
+                        <input type="radio" name="action" value="skip-bins" />
+                        Skip Bins
+                    </label>
+                </div>
+                <div class="form-row">
+                    <label>
+                        <input type="radio" name="action" value="unskip-bins" />
+                        Unskip Bins
+                    </label>
+                </div>
+                {% comment TODO: Implement assign/unassign datasets %}
+                <div class="form-row">
+                    <label>
+                        <input type="radio" name="action" value="assign-dataset" />
+                        Assign Dataset
+                    </label>
+                </div>
+                <div class="form-row">
+                    <label>
+                        <input type="radio" name="action" value="unassign-dataset" />
+                        Unassign Dataset
+                    </label>
+                </div>
+                {% endcomment %}
+                <div>
+                    <button class="btn btn-sm btn-mdb-color" type="button" id="execute-button">Execute</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -112,8 +149,15 @@
 </div>
 
 {% endblock %} {% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js" integrity="sha512-LsnSViqQyaXpD4mBBdRYeP6sRwJiJveh2ZIbW41EBrNmKxgr/LFZIiWT6yr+nycvhvauz8c2nYMhrP80YhG7Cw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     $(function(){
+
+        $('.date-picker').datepicker({
+            "orientation": "bottom",
+            "autoclose": true,
+        });
+
         $("#search-button").on("click", function(e) {
             e.preventDefault();
             search();
@@ -121,24 +165,17 @@
 
         $("#export-button").on("click", function(e) {
             e.preventDefault();
-            export_bins();
+            exportBins();
         });
 
-        $("#action-skip").on("click", function(e) {
+        $("#execute-button").on("click", function(e) {
             e.preventDefault();
-            skipBins();
-        });
-
-        $("#action-unskip").on("click", function(e) {
-            e.preventDefault();
-            unskipBins();
+            executeAction();
         });
 
         function search() {
             $.post("/secure/bin-management/search", $("#search-form").serialize(), function(data) {
-                console.log(data);
-
-                // TODO: This can be cleaned up
+                // TODO: Finish the grouping summaries
                 // for (let i = 0; i < data.teams.length; i++) {
                 //     const team = data.teams[i];
                 //     console.log(`Team: ${team.name} has ${team.total} results`);
@@ -153,10 +190,15 @@
 
                 $("#results-panel").toggleClass("d-none", false);
                 $("#actions-panel").toggleClass("d-none", false);
+
+                resetActionForm();
+
+                // TODO: Could be cleaner, but we need to be able to reset the form independantly of the validation
+                $("#execute-message").toggleClass("d-none", true);
             });
         }
 
-        function export_bins() {
+        function exportBins() {
             const form = $("#search-form").get(0);
             form.setAttribute("target", "_blank");
             form.setAttribute("method", "get");
@@ -164,20 +206,37 @@
             form.submit();
         }
 
-        function skipBins() {
-            if (!confirm("Are you sure you want to skip all matching bins?")) {
-                return;
-            }
+        function resetActionForm() {
+            const actionInputs = document.querySelectorAll("[name=action]");
 
-            console.error("skip not yet implemented")
+            for (let i = 0; i < actionInputs.length; i++) {
+                actionInputs[i].checked = false;
+            }
         }
 
-        function unskipBins() {
-            if (!confirm("Are you sure you want to unskip all matching bins?")) {
+        function executeAction() {
+
+            // TODO: Validate any other required fields (dataset for associate/unassociate)
+            // TODO: Prevent running actions when no bins were found by the search
+
+            if (!confirm("Are you sure you want to execute this action?")) {
                 return;
             }
 
-            console.error("unskip not yet implemented")
+            const searchFormData = $("#search-form").serializeArray();
+            const executeFormData = $("#execute-form").serializeArray()
+            const formData = $.param(searchFormData.concat(executeFormData));
+
+            $.post("/secure/bin-management/execute", formData, function(data) {
+                const messagePanel = $("#execute-message");
+                messagePanel.html(data.message);
+                messagePanel.toggleClass("alert-success", data.success);
+                messagePanel.toggleClass("alert-danger", !data.success);
+                messagePanel.toggleClass("d-none", false);
+
+                resetActionForm();
+            });
+
         }
 
     });

@@ -4,6 +4,7 @@ from django.contrib.auth.models import User, Group
 
 from dashboard.models import Bin, Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, Tag, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+from common.constants import BinManagementActions
 
 
 MIN_LATITUDE = -90
@@ -318,40 +319,93 @@ class TeamForm(forms.ModelForm):
 
 
 class SearchForm(forms.Form):
-    class_list = "form-control form-control-sm filter-option"
-
-    # TODO: Move these to a service call so they are not all inline in the class?
-    # TODO: The bin related queries are rather heavy - maybe cache the values rather than looking through all bins?
-    # TODO: Putting it here means its called once - needs to be called on page load
-    team_options = Team.objects.all().order_by("name")
-    dataset_options = Dataset.objects.filter(is_active=True).order_by("name")
-    tag_options = Tag.objects.all().order_by("name")
-
-    # TODO: These can likely be refactored
-    bins = Bin.objects.all()
-
-    instruments = list(bins.values_list("instrument__number", flat=True).order_by("instrument__number").distinct())
-    instruments = [""] + [f"IFCB{instrument_number}" for instrument_number in instruments]
-    instrument_options = list(zip(instruments, instruments))
-
-    cruises = list(bins.exclude(cruise="").values_list("cruise", flat=True).order_by("cruise").distinct())
-    cruises = [""] + cruises
-    cruise_options = list(zip(cruises, cruises))
-
-    sample_types = list(bins.exclude(sample_type="").values_list("sample_type", flat=True).order_by("sample_type").distinct())
-    sample_types = [""] + sample_types
-    sample_type_options = list(zip(sample_types, sample_types))
-
-    team = forms.ModelChoiceField(queryset=team_options, empty_label=" ", widget=forms.Select(attrs={"class": class_list}))
-    dataset = forms.ModelChoiceField(queryset=dataset_options, empty_label=" ", widget=forms.Select(attrs={"class": class_list}))
-    tag = forms.ModelChoiceField(queryset=tag_options, empty_label=" ", widget=forms.Select(attrs={"class": class_list}))
-
-    instrument = forms.ChoiceField(choices=instrument_options, widget=forms.Select(attrs={"class": class_list}))
-    cruise = forms.ChoiceField(choices=cruise_options, widget=forms.Select(attrs={"class": class_list}))
-    sample_type = forms.ChoiceField(choices=sample_type_options, widget=forms.Select(attrs={"class": class_list}))
-
     # TODO: Fields and UI are needed to allow users to add a list of excluded date ranges
     # TODO: Dropdowns currently only allow for one selection - this may need to be improved to select more than one
 
+    input_classes = "form-control form-control-sm"
+
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}"}))
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}"}))
+    team = forms.ModelChoiceField(
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes}))
+    dataset = forms.ModelChoiceField(
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes}))
+    tag = forms.ModelChoiceField(
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes}))
+    cruise = forms.ChoiceField(
+        widget=forms.Select(attrs={"class": input_classes}))
+    instrument = forms.ChoiceField(
+        widget=forms.Select(attrs={"class": input_classes}))
+    sample_type = forms.ChoiceField(
+        widget=forms.Select(attrs={"class": input_classes}))
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # TODO: The bin related queries are rather heavy - maybe cache the values rather than looking through all bins?
+        # TODO: Allow support for progressive filtering. E.g, changing dataset limits values for cruises
+        bins = Bin.objects.all()
+
+        self.fields["team"].queryset = Team.objects.all().order_by("name")
+        self.fields["dataset"].queryset = Dataset.objects.filter(is_active=True).order_by("name")
+        self.fields["instrument"].choices = self.build_instrument_choices(bins)
+        self.fields["tag"].queryset = Tag.objects.all().order_by("name")
+        self.fields["cruise"].choices = self.build_cruise_choices(bins)
+        self.fields["sample_type"].choices = self.build_sample_type_choices(bins)
+
+    def build_cruise_choices(self, bins):
+        cruises = bins \
+            .exclude(cruise="") \
+            .values_list("cruise", flat=True) \
+            .order_by("cruise") \
+            .distinct()
+        cruises = [""] + list(cruises)
+
+        return list(zip(cruises, cruises))
+
+    def build_instrument_choices(self, bins):
+        instruments = bins \
+            .values_list("instrument__number", flat=True) \
+            .order_by("instrument__number") \
+            .distinct()
+        instruments = [""] + [f"IFCB{instrument_number}" for instrument_number in instruments]
+
+        return list(zip(instruments, instruments))
+
+    def build_sample_type_choices(self, bins):
+        sample_types = bins \
+            .exclude(sample_type="") \
+            .values_list("sample_type", flat=True) \
+            .order_by("sample_type") \
+            .distinct()
+        sample_types = [""] + list(sample_types)
+
+        return list(zip(sample_types, sample_types))
+
+
+class ExecuteForm(forms.Form):
+    action = forms.ChoiceField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        actions = [
+            BinManagementActions.SKIP_BINS.value,
+            BinManagementActions.UNSKIP_BINS.value,
+            # TODO: Implement assign/unassign dataset actions
+            # BinManagementActions.ASSIGN_DATASET.value,
+            # BinManagementActions.UNASSIGN_DATASET.value,
+        ]
+        action_options = zip(actions, actions)
+
+        self.fields["action"] = forms.ChoiceField(choices=action_options)
