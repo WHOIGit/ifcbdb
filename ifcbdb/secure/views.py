@@ -727,7 +727,7 @@ def metadata_upload_cancel(request):
     if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
-    added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel");
+    added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel")
     if not added:
         return JsonResponse({ 'status': 'already_canceled'})
     else:
