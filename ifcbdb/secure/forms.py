@@ -1,6 +1,7 @@
 import re, os
 from django import forms
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import ValidationError
 
 from dashboard.models import Bin, Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, Tag, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
@@ -318,7 +319,7 @@ class TeamForm(forms.ModelForm):
         }
 
 
-class SearchForm(forms.Form):
+class BinSearchForm(forms.Form):
     # TODO: Fields and UI are needed to allow users to add a list of excluded date ranges
     # TODO: Dropdowns currently only allow for one selection - this may need to be improved to select more than one
 
@@ -331,23 +332,30 @@ class SearchForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}"}))
     team = forms.ModelChoiceField(
+        required=False,
         queryset=None,
         empty_label=" ",
         widget=forms.Select(attrs={"class": input_classes}))
     dataset = forms.ModelChoiceField(
+        required=False,
         queryset=None,
         empty_label=" ",
         widget=forms.Select(attrs={"class": input_classes}))
     tag = forms.ModelChoiceField(
+        required=False,
         queryset=None,
         empty_label=" ",
         widget=forms.Select(attrs={"class": input_classes}))
     cruise = forms.ChoiceField(
+        required=False,
         widget=forms.Select(attrs={"class": input_classes}))
     instrument = forms.ChoiceField(
+        required=False,
         widget=forms.Select(attrs={"class": input_classes}))
     sample_type = forms.ChoiceField(
+        required=False,
         widget=forms.Select(attrs={"class": input_classes}))
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -356,12 +364,19 @@ class SearchForm(forms.Form):
         # TODO: Allow support for progressive filtering. E.g, changing dataset limits values for cruises
         bins = Bin.objects.all()
 
+        # TODO: This will need to be filtered by datasets the user has access to
+        datasets = Dataset.objects.filter(is_active=True).order_by("name")
+
         self.fields["team"].queryset = Team.objects.all().order_by("name")
-        self.fields["dataset"].queryset = Dataset.objects.filter(is_active=True).order_by("name")
+        self.fields["dataset"].queryset = datasets
         self.fields["instrument"].choices = self.build_instrument_choices(bins)
         self.fields["tag"].queryset = Tag.objects.all().order_by("name")
         self.fields["cruise"].choices = self.build_cruise_choices(bins)
         self.fields["sample_type"].choices = self.build_sample_type_choices(bins)
+
+    def clean(self):
+        if not any(value not in [None, ""] for value in self.cleaned_data.values()):
+            raise ValidationError("Please select at least one thing to search for")
 
     def build_cruise_choices(self, bins):
         cruises = bins \
@@ -393,8 +408,20 @@ class SearchForm(forms.Form):
         return list(zip(sample_types, sample_types))
 
 
-class ExecuteForm(forms.Form):
+class BinActionForm(forms.Form):
+    input_classes = "form-control form-control-sm"
+
     action = forms.ChoiceField()
+    assigned_dataset = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes + " w-50 ml-2", "disabled": True}))
+    unassigned_dataset = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes + " w-50 ml-2", "disabled": True}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -402,10 +429,26 @@ class ExecuteForm(forms.Form):
         actions = [
             BinManagementActions.SKIP_BINS.value,
             BinManagementActions.UNSKIP_BINS.value,
-            # TODO: Implement assign/unassign dataset actions
-            # BinManagementActions.ASSIGN_DATASET.value,
-            # BinManagementActions.UNASSIGN_DATASET.value,
+            BinManagementActions.ASSIGN_DATASET.value,
+            BinManagementActions.UNASSIGN_DATASET.value,
         ]
         action_options = zip(actions, actions)
 
         self.fields["action"] = forms.ChoiceField(choices=action_options)
+
+        # TODO: This will need to be filtered by datasets the user has access to
+        datasets = Dataset.objects.filter(is_active=True).order_by("name")
+
+        self.fields["assigned_dataset"].queryset = datasets
+        self.fields["unassigned_dataset"].queryset = datasets
+
+    def clean(self):
+        action = self.cleaned_data.get("action")
+        assigned_dataset = self.cleaned_data.get("assigned_dataset")
+        unassigned_dataset = self.cleaned_data.get("unassigned_dataset")
+
+        if action == BinManagementActions.ASSIGN_DATASET.value and not assigned_dataset:
+            raise ValidationError("Please choose a dataset to assign")
+
+        if action == BinManagementActions.UNASSIGN_DATASET.value and not unassigned_dataset:
+            raise ValidationError("Please choose a dataset to unassign")

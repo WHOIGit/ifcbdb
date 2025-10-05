@@ -227,14 +227,13 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
     if tags is not None:
         for tag in tags:
             qs = qs.filter(tags__name__iexact=tag)
-    if instrument_number is not None and instrument_number != 0:
+    if instrument_number not in [None, "", 0]:
         qs = qs.filter(instrument__number=instrument_number)
-    if cruise is not None:
+    if cruise not in [None, ""]:
         qs = qs.filter(cruise__iexact=cruise)
-    if sample_type is not None and sample_type != "":
+    if sample_type not in [None, ""]:
         qs = qs.filter(sample_type__iexact=sample_type)
-
-    if team_name is not None and team_name != "":
+    if team_name not in [None, ""]:
         team = Team.objects.filter(name=team_name).first()
         if team:
             qs = qs.filter(team=team)

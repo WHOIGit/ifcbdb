@@ -11,6 +11,7 @@
 <hr class="my-2">
 <div class="row py-2 px-3">
     <div class="col-md-4">
+        <div id="search-errors" class="d-none alert alert-danger"></div>
         <form id="search-form" method="post">
             {% csrf_token %}
             <div id="filter-content" class="filter-options">
@@ -100,41 +101,50 @@
     <div class="col-md-4">
         <div id="actions-panel" class="d-none">
             <form id="execute-form" method="post">
-            {% csrf_token %}
-                <h5>Actions</h5>
-                <hr />
+                {% csrf_token %}
+                <fieldset class="border rounded p-3 mb-3">
+                    <legend class="float-none w-auto px-2 fw-semibold">Actions</legend>
 
-                <div id="execute-message" class="alert alert-success d-none"></div>
+                    <div id="execute-errors" class="d-none alert alert-danger"></div>
+                    <div id="execute-message" class="alert alert-success d-none"></div>
 
-                <div class="form-row">
-                    <label>
-                        <input type="radio" name="action" value="skip-bins" />
-                        Skip Bins
-                    </label>
-                </div>
-                <div class="form-row">
-                    <label>
-                        <input type="radio" name="action" value="unskip-bins" />
-                        Unskip Bins
-                    </label>
-                </div>
-                {% comment TODO: Implement assign/unassign datasets %}
-                <div class="form-row">
-                    <label>
-                        <input type="radio" name="action" value="assign-dataset" />
-                        Assign Dataset
-                    </label>
-                </div>
-                <div class="form-row">
-                    <label>
-                        <input type="radio" name="action" value="unassign-dataset" />
-                        Unassign Dataset
-                    </label>
-                </div>
-                {% endcomment %}
-                <div>
-                    <button class="btn btn-sm btn-mdb-color" type="button" id="execute-button">Execute</button>
-                </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="skip-bins" />
+                            Skip Bins
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="unskip-bins" />
+                            Unskip Bins
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="assign-dataset" />
+                            Assign Dataset
+                        </label>
+                    </div>
+                    <div class="form-row pl-5">
+                        <label>Dataset:</label>
+                        {{ action_form.assigned_dataset }}
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="unassign-dataset" />
+                            Unassign Dataset
+                        </label>
+                    </div>
+                    <div class="form-row pl-5">
+                        <label>Dataset:</label>
+                        {{ action_form.unassigned_dataset }}
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-mdb-color" type="button" id="execute-button">Execute</button>
+                    </div>
+                </fieldset>
+
             </form>
         </div>
     </div>
@@ -173,27 +183,32 @@
             executeAction();
         });
 
+        $("input[name=action]").on("change", function(e) {
+            changeAction();
+        });
+
         function search() {
+            const searchErrors = document.querySelector("#search-errors");
+            searchErrors.classList.toggle("d-none", true);
+
             $.post("/secure/bin-management/search", $("#search-form").serialize(), function(data) {
-                // TODO: Finish the grouping summaries
-                // for (let i = 0; i < data.teams.length; i++) {
-                //     const team = data.teams[i];
-                //     console.log(`Team: ${team.name} has ${team.total} results`);
-                // }
-                // for (let i = 0; i < data.datasets.length; i++) {
-                //     const dataset = data.datasets[i];
-                //
-                //     console.log(`Dataset: ${dataset.name} has ${dataset.total} results`)
-                // }
+
+                if (!data.success) {
+                    const validationErrors = formatValidationErrors(data.errors);
+
+                    const searchErrors = document.querySelector("#search-errors");
+                    searchErrors.classList.toggle("d-none", false);
+                    searchErrors.innerHTML = validationErrors;
+                    return;
+                }
 
                 $("#total").text(data.total);
-
                 $("#results-panel").toggleClass("d-none", false);
                 $("#actions-panel").toggleClass("d-none", false);
 
                 resetActionForm();
 
-                // TODO: Could be cleaner, but we need to be able to reset the form independantly of the validation
+                // TODO: Could be cleaner, but we need to be able to reset the form independently of the validation
                 $("#execute-message").toggleClass("d-none", true);
             });
         }
@@ -215,28 +230,69 @@
         }
 
         function executeAction() {
-
-            // TODO: Validate any other required fields (dataset for associate/unassociate)
             // TODO: Prevent running actions when no bins were found by the search
-
             if (!confirm("Are you sure you want to execute this action?")) {
                 return;
             }
+
+            const executeErrors = document.querySelector("#execute-errors");
+            executeErrors.classList.toggle("d-none", true);
+
+            const messagePanel = document.querySelector("#execute-message");
+            messagePanel.classList.toggle("d-none", true);
 
             const searchFormData = $("#search-form").serializeArray();
             const executeFormData = $("#execute-form").serializeArray()
             const formData = $.param(searchFormData.concat(executeFormData));
 
             $.post("/secure/bin-management/execute", formData, function(data) {
-                const messagePanel = $("#execute-message");
-                messagePanel.html(data.message);
-                messagePanel.toggleClass("alert-success", data.success);
-                messagePanel.toggleClass("alert-danger", !data.success);
-                messagePanel.toggleClass("d-none", false);
+
+                if (!data.success) {
+                    const validationErrors = formatValidationErrors(data.errors);
+
+                    const executeErrors = document.querySelector("#execute-errors");
+                    executeErrors.classList.toggle("d-none", false);
+                    executeErrors.innerHTML = validationErrors;
+                    return;
+                }
+
+                messagePanel.innerHTML = data.message;
+                messagePanel.classList.toggle("alert-success", data.success);
+                messagePanel.classList.toggle("alert-danger", !data.success);
+                messagePanel.classList.toggle("d-none", false);
 
                 resetActionForm();
             });
+        }
 
+        function changeAction() {
+            const action = $("[name=action]:checked").val();
+
+            // TODO: Replace with constants
+            $("[name=assigned_dataset]").prop("disabled", action !== "assign-dataset");
+            $("[name=unassigned_dataset]").prop("disabled", action !== "unassign-dataset");
+        }
+
+        // TODO: Move this to a common location so it can be used elsewhere
+        // TODO: Clean up (list join)
+        function formatValidationErrors(errors) {
+            let errorHtml = '<ul class="error-list mb-0">';
+
+            for (const [field, messages] of Object.entries(errors)) {
+
+                // Capitalize and format field name (e.g., "email_address" -> "Email Address")
+                const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+                console.log(field)
+                messages.forEach(message => {
+                    const prefix = field === "__all__" ? "" : `<strong>${fieldName}:</strong> `;
+
+                    errorHtml += `<li>${prefix}${message}</li>`;
+                });
+            }
+
+            errorHtml += '</ul>';
+            return errorHtml;
         }
 
     });

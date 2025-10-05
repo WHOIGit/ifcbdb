@@ -16,7 +16,7 @@ from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, 
     TeamUser, TeamDataset, TeamRole, bin_query
 from dashboard.accession import export_metadata
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, \
-    TeamForm, SearchForm, ExecuteForm
+    TeamForm, BinSearchForm, BinActionForm
 from common import auth
 from common.constants import Features, TeamRoles, BinManagementActions
 
@@ -756,10 +756,15 @@ def bin_management(request):
     if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
-    form = SearchForm()
+    form = BinSearchForm()
+
+    # TODO: This is not ideal, but loading the action form initially means we can use the assigned/unassigned datasets
+    #     :   elements and pre-render them before a search is run
+    action_form = BinActionForm()
 
     return render(request, 'secure/bin-management.html', {
         "form": form,
+        "action_form": action_form,
     })
 
 
@@ -770,11 +775,12 @@ def bin_management_search(request):
         return redirect(reverse("secure:index"))
 
     # TODO: Ensure this is a post
-    form = SearchForm(request.POST)
+    form = BinSearchForm(request.POST)
     if not form.is_valid():
-        # TODO: DO something? is_valid must be called or cleaned_data never gets populated
-        pass
-
+        return JsonResponse({
+            "success": False,
+            "errors": form.errors,
+        })
 
     bin_qs = build_bin_query_from_form_data(form)
 
@@ -794,6 +800,7 @@ def bin_management_search(request):
     #     print(c, count)
 
     return JsonResponse({
+        "success": True,
         "total": total,
         "teams": [
             {"name": "team1", "total": 20},
@@ -811,12 +818,10 @@ def bin_management_export(request, dataset_name=None):
     if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
-    form = SearchForm(request.GET)
+    form = BinSearchForm(request.GET)
     if not form.is_valid():
         # TODO: DO something? is_valid must be called or cleaned_data never gets populated
         pass
-
-    # TODO: Ensure that at least one filter is selected to prevent accidental mass updates
 
     # TODO: Export button uses the form data...technically the user could change those values between the search and the update
     # TODO: Disable fields and a search again option maybe?
@@ -846,7 +851,7 @@ def bin_management_execute(request):
     if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
-    form = SearchForm(request.POST)
+    form = BinSearchForm(request.POST)
     if not form.is_valid():
         # TODO: For now, this should always since there aren't any actual form validators on the search. Later, this
         #     :   form will likely go away for the execute action to ensure that the user cannot change search criteria
@@ -854,17 +859,14 @@ def bin_management_execute(request):
         #     :   values to appear in cleaned_data
         pass
 
-    execute_form = ExecuteForm(request.POST)
-    if not execute_form.is_valid():
-        # TODO: This is hard coded - need to use real validation, or improve, to know that dataset was not selected
+    action_form = BinActionForm(request.POST)
+    if not action_form.is_valid():
         return JsonResponse({
             "success": False,
-            "message": "Please select an action"
+            "errors": action_form.errors,
         })
 
-    action = execute_form.cleaned_data.get("action")
-
-    # TODO: Ensure search and execute forms use different parameters (dataset in particular)
+    action = action_form.cleaned_data.get("action")
 
     # TODO: Export button uses the form data...technically the user could change those values between the search and the update
     #     : Disable fields and a search again option maybe?
@@ -877,11 +879,11 @@ def bin_management_execute(request):
     if action == BinManagementActions.UNSKIP_BINS.value:
         return update_skip(bin_qs, False)
 
-    # TODO: Implement assign/unassign dataset options
-    # if action == BinManagementActions.ASSIGN_DATASET.value:
-    #     return assign_dataset(bin_qs, None, True)
-    # if action == BinManagementActions.UNASSIGN_DATASET.value:
-    #     return assign_dataset(bin_qs, None, False)
+    if action == BinManagementActions.ASSIGN_DATASET.value:
+        return assign_dataset(bin_qs, action_form.cleaned_data.get("assigned_dataset"))
+
+    if action == BinManagementActions.UNASSIGN_DATASET.value:
+        return unassign_dataset(bin_qs, action_form.cleaned_data.get("unassigned_dataset"))
 
     return JsonResponse({
         "success": False,
@@ -897,7 +899,7 @@ def build_bin_query_from_form_data(form):
     cruise = form.cleaned_data.get("cruise")
     sample_type = form.cleaned_data.get("sample_type")
 
-    # TODO: Tags are ment to allow for more than one option
+    # TODO: Tags should allow for more than one option to be selected
     tag = form.cleaned_data.get("tag")
     tags = [tag.name] if tag else []
 
@@ -938,18 +940,50 @@ def update_skip(bin_qs, is_skipped):
 
     return JsonResponse({
         "success": True,
-        "message": f"{total} bins have been updated successfully",
+        "message": f"{total} bin(s) have been updated successfully",
     })
 
+def assign_dataset(bin_qs, dataset):
+    # This logic requires bin_qs to be a queryset, so at least one search option must have been specified
+    num_already_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
 
-# def assign_dataset(bin_qs, dataset, is_assigned):
-#     # TODO: Implement
-#     print(f"dataset: {dataset}, is_assigned: {is_assigned}")
-#
-#     return JsonResponse({
-#         "success": False,
-#         "message": "Not yet implemented"
-#     })
+    dataset.bins.add(*bin_qs)
+
+    total = bin_qs.count()
+    num_assigned = total - num_already_assigned
+    label_assigned = "bins" if num_assigned != 1 else "bin"
+    label_already_assigned = "bins" if num_already_assigned != 1 else "bin"
+    msg = f"{num_assigned} {label_assigned} assigned to dataset {dataset}"
+
+    if num_already_assigned == 0:
+        return JsonResponse({
+            "success": True,
+            "message": msg,
+        })
+
+    return JsonResponse({
+        "success": True,
+        "message": msg + f" ({num_already_assigned} {label_already_assigned} already assigned)",
+    })
+
+def unassign_dataset(bin_qs, dataset):
+    # This logic requires bin_qs to be a queryset, so at least one search option must have been specified
+    num_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
+
+    if num_assigned == 0:
+        return JsonResponse({
+            "success": True,
+            "message": f"No bins were unassigned because there weren't any assigned to dataset {dataset}",
+        })
+
+    dataset.bins.remove(*bin_qs)
+
+    label = "bins" if num_assigned != 1 else "bin"
+    return JsonResponse({
+        "success": True,
+        "message": f"{num_assigned} {label} unassigned from dataset {dataset}",
+    })
+
 
 # TODO: This is duplicated in dashboard/views - make a common helper method
 def request_get_instrument(instrument_string):
