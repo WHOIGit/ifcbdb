@@ -32,20 +32,22 @@ def index(request):
         return redirect("/")
 
     can_manage_teams = auth.can_manage_teams(request.user)
-    has_settings_to_manage = request.user.is_superuser or can_manage_teams
+    can_manage_datasets = auth.can_manage_datasets(request.user)
+    has_settings_to_manage = request.user.is_superuser or can_manage_teams or can_manage_datasets
 
     return render(request, 'secure/index.html', {
         "has_settings_to_manage": has_settings_to_manage,
         "can_manage_teams": can_manage_teams,
+        "can_manage_datasets": can_manage_datasets,
     })
 
 
 @login_required
 def dataset_management(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_datasets(request.user):
         return redirect(reverse("secure:index"))
 
-    form = DatasetForm()
+    form = DatasetForm(user=request.user)
 
     return render(request, 'secure/dataset-management.html', {
         "form": form,
@@ -95,13 +97,27 @@ def team_management(request):
 
 @login_required
 def dt_datasets(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_datasets(request.user):
         return HttpResponseForbidden()
 
-    datasets = list(Dataset.objects.all().values_list("name", "title", "is_active", "id"))
+    datasets = Dataset.objects.all()
+
+    if not request.user.is_superuser:
+        # TODO: This could be reused elsewhere
+        allowed_team_ids = TeamUser.objects \
+            .filter(user=request.user) \
+            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .values_list("team_id", flat=True)
+
+        # TODO: Check this, but there should always be at least one, or the user wouldn't have been allowed here already
+        team_datasets_ids = TeamDataset.objects \
+            .filter(team_id__in=allowed_team_ids) \
+            .values_list("dataset_id", flat=True)
+
+        datasets = datasets.filter(id__in=team_datasets_ids)
 
     return JsonResponse({
-        "data": datasets
+        "data": list(datasets.values_list("name", "title", "is_active", "id"))
     })
 
 @waffle_switch('Teams')
@@ -119,7 +135,6 @@ def dt_teams(request):
             .filter(user=request.user) \
             .filter(role_id=TeamRoles.CAPTAIN.value) \
             .values_list("team_id", flat=True)
-        print(allowed_team_ids)
 
         teams = teams.filter(id__in=allowed_team_ids)
 
@@ -150,23 +165,36 @@ def dt_directories(request, dataset_id):
 
 @login_required
 def edit_dataset(request, id):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_datasets(request.user):
         return redirect(reverse("secure:index"))
 
     status = request.GET.get("status")
+    dataset = get_object_or_404(Dataset, pk=id) if int(id) > 0 else Dataset()
+    is_new = dataset.pk is None
 
-    if int(id) > 0:
-        dataset = get_object_or_404(Dataset, pk=id)
-    else:
-        dataset = Dataset()
+    # Non-superadmins (essentially team captains) can only manage their own teams' datasets. They can create new
+    #   datasets, so this check is only needed for existing datasets
+    if not auth.is_admin(request.user) and not is_new:
+        team_dataset = TeamDataset.objects.filter(dataset=dataset).first()
+        if not team_dataset:
+            return redirect(reverse("secure:dataset-management"))
+
+        is_team_captain = TeamUser.objects \
+            .filter(team=team_dataset.team) \
+            .filter(user=request.user) \
+            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .exists()
+        if not is_team_captain:
+            return redirect(reverse("secure:dataset-management"))
 
     if request.POST:
-        form = DatasetForm(request.POST, instance=dataset)
+        form = DatasetForm(request.POST, instance=dataset, user=request.user)
         if form.is_valid():
             instance = form.save()
 
             existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
             team = form.cleaned_data.get("team")
+
             original_team = existing.team if existing else None
             is_team_removed = False
 
@@ -192,7 +220,7 @@ def edit_dataset(request, id):
             status = "created" if id == 0 else "updated"
             return redirect(reverse("secure:edit-dataset", kwargs={"id": instance.id}) + "?status=" + status)
     else:
-        form = DatasetForm(instance=dataset)
+        form = DatasetForm(instance=dataset, user=request.user)
 
     return render(request, "secure/edit-dataset.html", {
         "status": status,
@@ -758,8 +786,8 @@ def bin_management(request):
 
     form = BinSearchForm()
 
-    # TODO: This is not ideal, but loading the action form initially means we can use the assigned/unassigned datasets
-    #     :   elements and pre-render them before a search is run
+    # This is not ideal, but loading the action form initially means we can use the assigned/unassigned datasets
+    #  elements and pre-render them before a search is run
     action_form = BinActionForm()
 
     return render(request, 'secure/bin-management.html', {
@@ -769,12 +797,12 @@ def bin_management(request):
 
 
 @login_required
+@require_POST
 def bin_management_search(request):
     # TODO: Allow support for captains and managers to view/manage bins
     if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
 
-    # TODO: Ensure this is a post
     form = BinSearchForm(request.POST)
     if not form.is_valid():
         return JsonResponse({
@@ -783,33 +811,11 @@ def bin_management_search(request):
         })
 
     bin_qs = build_bin_query_from_form_data(form)
-
     total = bin_qs.count()
-
-    # TODO: Process grouping results (by team, by dataset, etc)
-
-    # items = list(bin_qs)
-    # sort_by_team = sorted(items, key=lambda x: x.team_id if x.team_id else 0)
-
-    # TODO: This is some initial logic for grouping but it needs to work to use team name not ID
-    # TODO: Does it make sense for other fields?
-    # TODO: Datasets is tricky as a bin can be in more than one dataset - how do we expand that properly to do
-    #     :   proper counts?
-    # for c, g in groupby(sort_by_team, key=attrgetter("team_id")):
-    #     count = sum(1 for _ in g)
-    #     print(c, count)
 
     return JsonResponse({
         "success": True,
         "total": total,
-        "teams": [
-            {"name": "team1", "total": 20},
-            {"name": "team2", "total": 25}
-        ],
-        "datasets": [
-            {"name": "ds1", "total": 5},
-            {"name": "ds2", "total": 10}
-        ],
     })
 
 @login_required
@@ -832,8 +838,6 @@ def bin_management_export(request, dataset_name=None):
     #   in the export. Not sure if that is good here since the goal of this export is partially to re-import?
     df = export_metadata(None, bin_qs)
 
-    # TODO: The normal export bases the file name on the dataset name but that doesn't really work here. Is there a
-    #     :   better filename we should be using?
     filename = 'bins.csv'
 
     csv_buf = BytesIO()
@@ -846,6 +850,7 @@ def bin_management_export(request, dataset_name=None):
     return response
 
 @login_required
+@require_POST
 def bin_management_execute(request):
     # TODO: Allow support for captains and managers to view/manage bins
     if not auth.is_admin(request.user):
@@ -898,22 +903,17 @@ def build_bin_query_from_form_data(form):
     instrument = form.cleaned_data.get("instrument")
     cruise = form.cleaned_data.get("cruise")
     sample_type = form.cleaned_data.get("sample_type")
-
-    # TODO: Tags should allow for more than one option to be selected
     tag = form.cleaned_data.get("tag")
     tags = [tag.name] if tag else []
 
-    # TODO: Add a skip search? And the filter_skip parameter
-    # include_skip = request.GET.get('include_skip', 'true')
-
     bin_qs = bin_query(
         filter_skip=False,
-        dataset_name=dataset.name if dataset else None,
+        dataset_name=dataset.name if dataset is not None else None,
         instrument_number=request_get_instrument(instrument),
         tags=tags,
         cruise=cruise,
         sample_type=sample_type,
-        team_name=team.name if team else None)
+        team_name=team.name if team is not None else None)
 
     # TODO: This logic is borrowed from the nav filtering logic. There are parameters in bin_query that allow for a
     #     :   start and end date, but it does not work the same. The code below adds a day to the end date and that
@@ -932,7 +932,7 @@ def build_bin_query_from_form_data(form):
 def update_skip(bin_qs, is_skipped):
     total = 0
 
-    for bin in bin_qs.all():
+    for bin in bin_qs:
         bin.skip = is_skipped
         bin.save()
 

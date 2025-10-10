@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 
 from dashboard.models import Bin, Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, Tag, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+from common import auth
 from common.constants import BinManagementActions
 
 
@@ -64,7 +65,22 @@ class DatasetForm(forms.ModelForm):
         return doi
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+
         super(DatasetForm, self).__init__(*args, **kwargs)
+
+        # Restrict non-superadmins to just the teams they are associated with
+        # TODO: Clean up logic
+        teams = Team.objects.all()
+        is_team_required = False
+        if not self.user.is_superuser:
+            team_ids = TeamUser.objects.filter(user=self.user).values_list("team_id", flat=True)
+            teams = teams.filter(id__in=team_ids)
+            is_team_required = True
+
+        self.fields["team"] = forms.ModelChoiceField(
+            queryset=teams, required=is_team_required,
+            widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
 
         if "instance" in kwargs:
             instance = kwargs["instance"]
@@ -320,8 +336,9 @@ class TeamForm(forms.ModelForm):
 
 
 class BinSearchForm(forms.Form):
-    # TODO: Fields and UI are needed to allow users to add a list of excluded date ranges
-    # TODO: Dropdowns currently only allow for one selection - this may need to be improved to select more than one
+    # FUTURE: Add fields and UI to allow users to add a list of excluded date ranges
+    # FUTURE: Allow user's to select more than one value for some dropdowns (e.g., tags)
+    # FUTURE: Allow support for progressive filtering. E.g, changing dataset limits values for cruises
 
     input_classes = "form-control form-control-sm"
 
@@ -361,7 +378,6 @@ class BinSearchForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         # TODO: The bin related queries are rather heavy - maybe cache the values rather than looking through all bins?
-        # TODO: Allow support for progressive filtering. E.g, changing dataset limits values for cruises
         bins = Bin.objects.all()
 
         # TODO: This will need to be filtered by datasets the user has access to
@@ -447,8 +463,8 @@ class BinActionForm(forms.Form):
         assigned_dataset = self.cleaned_data.get("assigned_dataset")
         unassigned_dataset = self.cleaned_data.get("unassigned_dataset")
 
-        if action == BinManagementActions.ASSIGN_DATASET.value and not assigned_dataset:
+        if action == BinManagementActions.ASSIGN_DATASET.value and assigned_dataset is None:
             raise ValidationError("Please choose a dataset to assign")
 
-        if action == BinManagementActions.UNASSIGN_DATASET.value and not unassigned_dataset:
+        if action == BinManagementActions.UNASSIGN_DATASET.value and unassigned_dataset is None:
             raise ValidationError("Please choose a dataset to unassign")

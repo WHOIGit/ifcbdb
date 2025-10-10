@@ -15,7 +15,7 @@
         <span class="h3-responsive">{% if dataset.id > 0 %}Edit Dataset {{ dataset.title }}{% else %}Add New Dataset{% endif %}</span>
     </div>
     <div class="flex-column">
-        {% if dataset.id > 0 %}
+        {% if dataset.id > 0 and request.user.is_superuser %}
         <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:directory-management' dataset.id %}">Manage directories</a>
         {% endif %}
     </div>
@@ -67,7 +67,6 @@
                     {% if form.team.errors %}<span class="text-danger">{{ form.team.errors.as_text }}</span>{% endif %}
                 </div>
             </div>
-
             <div class="form-row">
                 <div class="form-group col">
                     <label for="id_doi">Contact Name (optional)</label>
@@ -140,7 +139,7 @@
         </form>
     </div>
     <div class="col-md-6">
-        {% if dataset.id > 0 %}
+        {% if dataset.id > 0 and request.user.is_superuser %}
         <div class="card card-body">
             <span>
                 <button id="sync-button" class="btn btn-sm btn-mdb-color disabled">Sync</button>
@@ -177,7 +176,7 @@
 <script>
     var _csrf = "{{ csrf_token }}";
 
-    {% if dataset.id > 0 %}
+    {% if dataset.id > 0 and request.user.is_superuser %}
     function dataset_sync_status() {
         $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'LOCKED') { // job hasn't started yet
