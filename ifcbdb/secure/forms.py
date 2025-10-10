@@ -320,8 +320,9 @@ class TeamForm(forms.ModelForm):
 
 
 class BinSearchForm(forms.Form):
-    # TODO: Fields and UI are needed to allow users to add a list of excluded date ranges
-    # TODO: Dropdowns currently only allow for one selection - this may need to be improved to select more than one
+    # FUTURE: Add fields and UI to allow users to add a list of excluded date ranges
+    # FUTURE: Allow user's to select more than one value for some dropdowns (e.g., tags)
+    # FUTURE: Allow support for progressive filtering. E.g, changing dataset limits values for cruises
 
     input_classes = "form-control form-control-sm"
 
@@ -361,7 +362,6 @@ class BinSearchForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         # TODO: The bin related queries are rather heavy - maybe cache the values rather than looking through all bins?
-        # TODO: Allow support for progressive filtering. E.g, changing dataset limits values for cruises
         bins = Bin.objects.all()
 
         # TODO: This will need to be filtered by datasets the user has access to
@@ -447,8 +447,8 @@ class BinActionForm(forms.Form):
         assigned_dataset = self.cleaned_data.get("assigned_dataset")
         unassigned_dataset = self.cleaned_data.get("unassigned_dataset")
 
-        if action == BinManagementActions.ASSIGN_DATASET.value and not assigned_dataset:
+        if action == BinManagementActions.ASSIGN_DATASET.value and assigned_dataset is None:
             raise ValidationError("Please choose a dataset to assign")
 
-        if action == BinManagementActions.UNASSIGN_DATASET.value and not unassigned_dataset:
+        if action == BinManagementActions.UNASSIGN_DATASET.value and unassigned_dataset is None:
             raise ValidationError("Please choose a dataset to unassign")
