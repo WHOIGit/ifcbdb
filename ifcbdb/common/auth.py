@@ -23,6 +23,7 @@ def is_staff(user):
     return user.is_staff
 
 
+# TODO: The can_* methods are all fairly similar and should be made more generic
 def can_manage_teams(user):
     if not user.is_authenticated:
         return False
@@ -41,6 +42,40 @@ def can_manage_teams(user):
     return False
 
 def can_manage_datasets(user):
+    if not user.is_authenticated:
+        return False
+
+    if user.is_superuser or user.is_staff:
+        return True
+
+    # Team captains have limited access to the admin to manage their own teams
+    is_team_captain = TeamUser.objects \
+        .filter(user=user) \
+        .filter(role_id=TeamRoles.CAPTAIN.value) \
+        .exists()
+    if is_team_captain:
+        return True
+
+    return False
+
+def can_manage_metadata(user):
+    if not user.is_authenticated:
+        return False
+
+    if user.is_superuser or user.is_staff:
+        return True
+
+    # Team captains have limited access to the admin to manage their own teams
+    is_team_captain = TeamUser.objects \
+        .filter(user=user) \
+        .filter(role_id=TeamRoles.CAPTAIN.value) \
+        .exists()
+    if is_team_captain:
+        return True
+
+    return False
+
+def can_manage_bins(user):
     if not user.is_authenticated:
         return False
 

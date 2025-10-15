@@ -18,8 +18,10 @@
             {% if can_manage_datasets %}
             <li class="list-group-item"><a href="{% url 'secure:dataset-management' %}">Dataset Management</a></li>
             {% endif %}
-            {% if request.user.is_superuser %}
+            {% if can_manage_bins %}
             <li class="list-group-item"><a href="{% url 'secure:bin-management' %}">Bin Management</a></li>
+            {% endif %}
+            {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:user-management' %}">User Management</a></li>
             {% endif %}
@@ -28,8 +30,10 @@
             <li class="list-group-item"><a href="{% url 'secure:team-management' %}">Team Management</a></li>
             {% endif %}
             {% endswitch %}
-            {% if request.user.is_superuser %}
+            {% if can_manage_metadata %}
             <li class="list-group-item"><a href="{% url 'secure:upload-metadata' %}">Upload Metadata</a></li>
+            {% endif %}
+            {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'secure:app-settings' %}">App Settings</a></li>
             <li class="list-group-item"><a href="{% url 'admin:index' %}">Administrative Settings</a></li>
             {% endif %}
