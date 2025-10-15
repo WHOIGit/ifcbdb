@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 
 from dashboard.models import Bin, Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, Tag, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+from common import auth
 from common.constants import BinManagementActions
 
 
@@ -64,7 +65,22 @@ class DatasetForm(forms.ModelForm):
         return doi
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+
         super(DatasetForm, self).__init__(*args, **kwargs)
+
+        # Restrict non-superadmins to just the teams they are associated with
+        # TODO: Clean up logic
+        teams = Team.objects.all()
+        is_team_required = False
+        if not self.user.is_superuser:
+            team_ids = TeamUser.objects.filter(user=self.user).values_list("team_id", flat=True)
+            teams = teams.filter(id__in=team_ids)
+            is_team_required = True
+
+        self.fields["team"] = forms.ModelChoiceField(
+            queryset=teams, required=is_team_required,
+            widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
 
         if "instance" in kwargs:
             instance = kwargs["instance"]

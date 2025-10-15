@@ -47,7 +47,7 @@ def dataset_management(request):
     if not auth.can_manage_datasets(request.user):
         return redirect(reverse("secure:index"))
 
-    form = DatasetForm()
+    form = DatasetForm(user=request.user)
 
     return render(request, 'secure/dataset-management.html', {
         "form": form,
@@ -188,49 +188,39 @@ def edit_dataset(request, id):
             return redirect(reverse("secure:dataset-management"))
 
     if request.POST:
-        form = DatasetForm(request.POST, instance=dataset)
+        form = DatasetForm(request.POST, instance=dataset, user=request.user)
         if form.is_valid():
             instance = form.save()
 
-            # Update the team, which can only be done by a super admin (unless its a new dataset)
-            # TODO: Confirm admins can still change this
-            if request.user.is_superuser:
-                existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
+            existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
+            team = form.cleaned_data.get("team")
 
-                # Team is either what was selected (for super admins) or the user's team
-                team = form.cleaned_data.get("team")
+            original_team = existing.team if existing else None
+            is_team_removed = False
 
+            # Save the associated team, if any
+            if team is None and existing is not None:
+                is_team_removed = True
+                existing.delete()
 
-                original_team = existing.team if existing else None
-                is_team_removed = False
+            if team is not None and existing is None:
+                TeamDataset.objects.create(team=team, dataset=instance)
 
-                # Save the associated team, if any
-                if team is None and existing is not None:
-                    is_team_removed = True
-                    existing.delete()
+            if team is not None and existing is not None and existing.team != team:
+                is_team_removed = True
+                existing.team = team
+                existing.save()
 
-                if team is not None and existing is None:
-                    TeamDataset.objects.create(team=team, dataset=instance)
-
-                if team is not None and existing is not None and existing.team != team:
-                    is_team_removed = True
-                    existing.team = team
-                    existing.save()
-
-                # If a team was removed (or changed to something else) but it was the default dataset for that team,
-                #   clear the value
-                if is_team_removed and original_team is not None and original_team.default_dataset == instance:
-                    original_team.default_dataset = None
-                    original_team.save()
+            # If a team was removed (or changed to something else) but it was the default dataset for that team,
+            #   clear the value
+            if is_team_removed and original_team is not None and original_team.default_dataset == instance:
+                original_team.default_dataset = None
+                original_team.save()
 
             status = "created" if id == 0 else "updated"
             return redirect(reverse("secure:edit-dataset", kwargs={"id": instance.id}) + "?status=" + status)
     else:
-        form = DatasetForm(instance=dataset)
-
-        # Restrict the team dropdown to just super admins
-        if not request.user.is_superuser:
-            form.fields["team"].disabled = True
+        form = DatasetForm(instance=dataset, user=request.user)
 
     return render(request, "secure/edit-dataset.html", {
         "status": status,

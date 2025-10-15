@@ -60,7 +60,6 @@
                     {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
                 </div>
             </div>
-            {% if request.user.is_superuser %}
             <div class="form-row">
                 <div class="form-group col">
                     <label for="id_team">Team</label>
@@ -68,7 +67,6 @@
                     {% if form.team.errors %}<span class="text-danger">{{ form.team.errors.as_text }}</span>{% endif %}
                 </div>
             </div>
-            {% endif %}
             <div class="form-row">
                 <div class="form-group col">
                     <label for="id_doi">Contact Name (optional)</label>
@@ -178,7 +176,7 @@
 <script>
     var _csrf = "{{ csrf_token }}";
 
-    {% if dataset.id > 0 %}
+    {% if dataset.id > 0 and request.user.is_superuser %}
     function dataset_sync_status() {
         $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'LOCKED') { // job hasn't started yet
