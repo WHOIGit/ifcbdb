@@ -18,7 +18,7 @@ from dashboard.accession import export_metadata
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, \
     TeamForm, BinSearchForm, BinActionForm
 from common import auth
-from common.constants import Features, TeamRoles, BinManagementActions
+from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -31,14 +31,20 @@ def index(request):
     if not auth.can_access_settings(request.user):
         return redirect("/")
 
+    # TODO: Each of these permissions needs to hit the database, improve performance by combining or caching
     can_manage_teams = auth.can_manage_teams(request.user)
     can_manage_datasets = auth.can_manage_datasets(request.user)
-    has_settings_to_manage = request.user.is_superuser or can_manage_teams or can_manage_datasets
+    can_manage_metadata = auth.can_manage_metadata(request.user)
+    can_manage_bins = auth.can_manage_bins(request.user)
+    has_settings_to_manage = request.user.is_superuser or can_manage_teams or can_manage_datasets or \
+        can_manage_metadata or can_manage_bins
 
     return render(request, 'secure/index.html', {
         "has_settings_to_manage": has_settings_to_manage,
         "can_manage_teams": can_manage_teams,
         "can_manage_datasets": can_manage_datasets,
+        "can_manage_metadata": can_manage_metadata,
+        "can_manage_bins": can_manage_bins,
     })
 
 
@@ -691,7 +697,7 @@ METADATA_UPLOAD_TASKID_KEY = 'metadata_upload_task_id'
 
 @login_required
 def upload_metadata(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_metadata(request.user):
         return redirect(reverse("secure:index"))
 
     from dashboard.tasks import import_metadata
@@ -714,6 +720,37 @@ def upload_metadata(request):
                     'confirm': '',
                     'in_progress': '',
                     })
+
+            # Filter down the list of bins to update to just ones the user has access to
+            # TODO: Needs a lot of clean up and de-duping of methods
+            if not request.user.is_superuser:
+                def get_column(df, possible_names):
+                    for possible in possible_names:
+                        if possible in df.columns:
+                            return possible
+                    return None
+
+                # Make sure there's a bin column
+                pid_col = get_column(df, BIN_ID_COLUMNS)
+                if pid_col is None:
+                    form.add_error(None, "need to specify bin ID column")
+                    return render(request, 'secure/upload-metadata.html', {
+                        'form': form,
+                        'confirm': '',
+                        'in_progress': '',
+                    })
+
+                # TODO: This will not scale...
+                team_ids = list(TeamUser.objects.filter(user=request.user).values_list('team_id', flat=True))
+                pids_to_check = list(df[pid_col])
+                bins_ids = Bin.objects \
+                    .filter(pid__in=pids_to_check) \
+                    .filter(team_id__in=team_ids) \
+                    .values_list("pid", flat=True)
+                bins_ids = list(bins_ids)
+
+                df = df[df[pid_col].isin(bins_ids)]
+                json_df = df.to_json()
 
             added = cache.add(METADATA_UPLOAD_LOCK_KEY, True, timeout=None) # this is atomic
             if added:
@@ -780,10 +817,10 @@ def toggle_skip(request):
 
 @login_required
 def bin_management(request):
-    # TODO: Allow support for captains and managers to view/manage bins
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_bins(request.user):
         return redirect(reverse("secure:index"))
 
+    # TODO: Limit search criteria to bins the user can access
     form = BinSearchForm()
 
     # This is not ideal, but loading the action form initially means we can use the assigned/unassigned datasets
