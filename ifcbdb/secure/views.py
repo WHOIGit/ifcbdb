@@ -13,7 +13,7 @@ from django.contrib.auth.models import User, Group
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
-    TeamUser, TeamDataset, TeamRole, bin_query
+    TeamUser, TeamDataset, TeamRole, bin_query, bin_management_query
 from dashboard.accession import export_metadata
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, \
     TeamForm, BinSearchForm, BinActionForm
@@ -820,12 +820,11 @@ def bin_management(request):
     if not auth.can_manage_bins(request.user):
         return redirect(reverse("secure:index"))
 
-    # TODO: Limit search criteria to bins the user can access
-    form = BinSearchForm()
+    form = BinSearchForm(user=request.user)
 
     # This is not ideal, but loading the action form initially means we can use the assigned/unassigned datasets
     #  elements and pre-render them before a search is run
-    action_form = BinActionForm()
+    action_form = BinActionForm(user=request.user)
 
     return render(request, 'secure/bin-management.html', {
         "form": form,
@@ -836,18 +835,18 @@ def bin_management(request):
 @login_required
 @require_POST
 def bin_management_search(request):
-    # TODO: Allow support for captains and managers to view/manage bins
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_bins(request.user):
         return redirect(reverse("secure:index"))
 
-    form = BinSearchForm(request.POST)
+    # TODO: Disable the team filter when the feature is not enabled
+    form = BinSearchForm(request.POST, user=request.user)
     if not form.is_valid():
         return JsonResponse({
             "success": False,
             "errors": form.errors,
         })
 
-    bin_qs = build_bin_query_from_form_data(form)
+    bin_qs = build_bin_query_from_form_data(request.user, form)
     total = bin_qs.count()
 
     return JsonResponse({
@@ -857,11 +856,10 @@ def bin_management_search(request):
 
 @login_required
 def bin_management_export(request, dataset_name=None):
-    # TODO: Allow support for captains and managers to view/manage bins
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_bins(request.user):
         return redirect(reverse("secure:index"))
 
-    form = BinSearchForm(request.GET)
+    form = BinSearchForm(request.GET, user=request.user)
     if not form.is_valid():
         # TODO: DO something? is_valid must be called or cleaned_data never gets populated
         pass
@@ -869,7 +867,7 @@ def bin_management_export(request, dataset_name=None):
     # TODO: Export button uses the form data...technically the user could change those values between the search and the update
     # TODO: Disable fields and a search again option maybe?
 
-    bin_qs = build_bin_query_from_form_data(form)
+    bin_qs = build_bin_query_from_form_data(request.user, form)
 
     # TODO: We're not supplying a dataset name. The benefit of that would be defaulting the location and depth values
     #   in the export. Not sure if that is good here since the goal of this export is partially to re-import?
@@ -889,11 +887,10 @@ def bin_management_export(request, dataset_name=None):
 @login_required
 @require_POST
 def bin_management_execute(request):
-    # TODO: Allow support for captains and managers to view/manage bins
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_bins(request.user):
         return redirect(reverse("secure:index"))
 
-    form = BinSearchForm(request.POST)
+    form = BinSearchForm(request.POST, user=request.user)
     if not form.is_valid():
         # TODO: For now, this should always since there aren't any actual form validators on the search. Later, this
         #     :   form will likely go away for the execute action to ensure that the user cannot change search criteria
@@ -901,7 +898,7 @@ def bin_management_execute(request):
         #     :   values to appear in cleaned_data
         pass
 
-    action_form = BinActionForm(request.POST)
+    action_form = BinActionForm(request.POST, user=request.user)
     if not action_form.is_valid():
         return JsonResponse({
             "success": False,
@@ -913,7 +910,7 @@ def bin_management_execute(request):
     # TODO: Export button uses the form data...technically the user could change those values between the search and the update
     #     : Disable fields and a search again option maybe?
 
-    bin_qs = build_bin_query_from_form_data(form)
+    bin_qs = build_bin_query_from_form_data(request.user, form)
 
     if action == BinManagementActions.SKIP_BINS.value:
         return update_skip(bin_qs, True)
@@ -932,7 +929,8 @@ def bin_management_execute(request):
         "message": f"Please choose an action to perform",
     })
 
-def build_bin_query_from_form_data(form):
+# TODO: Move this to on the form since there isn't much logic anymore besides wrangling all the parameters
+def build_bin_query_from_form_data(user, form):
     dataset = form.cleaned_data.get("dataset")
     team = form.cleaned_data.get("team")
     start_date = form.cleaned_data.get("start_date")
@@ -943,28 +941,16 @@ def build_bin_query_from_form_data(form):
     tag = form.cleaned_data.get("tag")
     tags = [tag.name] if tag else []
 
-    bin_qs = bin_query(
-        filter_skip=False,
+    return bin_management_query(
+        user,
+        start=start_date,
+        end=end_date,
         dataset_name=dataset.name if dataset is not None else None,
         instrument_number=request_get_instrument(instrument),
         tags=tags,
         cruise=cruise,
         sample_type=sample_type,
-        team_name=team.name if team is not None else None)
-
-    # TODO: This logic is borrowed from the nav filtering logic. There are parameters in bin_query that allow for a
-    #     :   start and end date, but it does not work the same. The code below adds a day to the end date and that
-    #     :   means a search fora single date will work, whereas it won't with the bin_query parameters. We should
-    #     :   check to make sure this isn't actually a bug with one of the methods
-    if start_date:
-        start_date = pd.to_datetime(start_date, utc=True)
-        bin_qs = bin_qs.filter(sample_time__gte=start_date)
-
-    if end_date:
-        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
-        bin_qs = bin_qs.filter(sample_time__lte=end_date)
-
-    return bin_qs
+        team_names=[team.name] if team is not None else None)
 
 def update_skip(bin_qs, is_skipped):
     total = 0
