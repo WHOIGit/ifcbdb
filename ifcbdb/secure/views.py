@@ -864,9 +864,6 @@ def bin_management_export(request, dataset_name=None):
         # TODO: DO something? is_valid must be called or cleaned_data never gets populated
         pass
 
-    # TODO: Export button uses the form data...technically the user could change those values between the search and the update
-    # TODO: Disable fields and a search again option maybe?
-
     bin_qs = build_bin_query_from_form_data(request.user, form)
 
     # TODO: We're not supplying a dataset name. The benefit of that would be defaulting the location and depth values
@@ -905,12 +902,9 @@ def bin_management_execute(request):
             "errors": action_form.errors,
         })
 
-    action = action_form.cleaned_data.get("action")
-
-    # TODO: Export button uses the form data...technically the user could change those values between the search and the update
-    #     : Disable fields and a search again option maybe?
-
     bin_qs = build_bin_query_from_form_data(request.user, form)
+
+    action = action_form.cleaned_data.get("action")
 
     if action == BinManagementActions.SKIP_BINS.value:
         return update_skip(bin_qs, True)

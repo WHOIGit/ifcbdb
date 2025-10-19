@@ -92,6 +92,9 @@
                 </div>
             </div>
 
+            <button class="btn btn-sm btn-mdb-color" type="button" id="search-again">
+                <i class="fas fa-magnifying-glass"></i> Search Again
+            </button>
             <button class="btn btn-sm btn-mdb-color" type="button" id="export-button">
                 <i class="fas fa-file-export"></i> Export
             </button>
@@ -175,6 +178,14 @@
             search();
         });
 
+        $("#search-again").on("click", function(e) {
+            e.preventDefault();
+            enableSearchForm(true);
+
+            $("#results-panel").toggleClass("d-none", true);
+            $("#actions-panel").toggleClass("d-none", true);
+        });
+
         $("#export-button").on("click", function(e) {
             e.preventDefault();
             exportBins();
@@ -206,9 +217,11 @@
 
                 $("#total").text(data.total);
                 $("#results-panel").toggleClass("d-none", false);
-                $("#actions-panel").toggleClass("d-none", false);
+                $("#actions-panel").toggleClass("d-none", data.total == 0);
+                $("#export-button").toggleClass("d-none", data.total == 0);
 
                 resetActionForm();
+                enableSearchForm(false);
 
                 // TODO: Could be cleaner, but we need to be able to reset the form independently of the validation
                 $("#execute-message").toggleClass("d-none", true);
@@ -231,8 +244,15 @@
             }
         }
 
+        function enableSearchForm(isEnabled) {
+            $("#search-form input[type=text], #search-form select").each(function() {
+                $(this).prop("disabled", !isEnabled);
+            });
+
+            $("#search-button").toggleClass("invisible", !isEnabled);
+        }
+
         function executeAction() {
-            // TODO: Prevent running actions when no bins were found by the search
             if (!confirm("Are you sure you want to execute this action?")) {
                 return;
             }
@@ -243,12 +263,20 @@
             const messagePanel = document.querySelector("#execute-message");
             messagePanel.classList.toggle("d-none", true);
 
+            // Serialize the data from the search form. Some or all of the values might have been disabled, so
+            //   add them back in, because normally they are not included in the POST data.
             const searchFormData = $("#search-form").serializeArray();
+            $("#search-form").find("[disabled]").each(function() {
+                searchFormData.push({
+                    name: $(this).attr("name"),
+                    value: $(this).val()
+                });
+            });
+
             const executeFormData = $("#execute-form").serializeArray()
             const formData = $.param(searchFormData.concat(executeFormData));
 
             $.post("/secure/bin-management/execute", formData, function(data) {
-
                 if (!data.success) {
                     const validationErrors = formatValidationErrors(data.errors);
 
