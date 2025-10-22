@@ -248,9 +248,15 @@ class Dataset(models.Model):
     attribution = models.CharField(max_length=512, blank=True)
     funding = models.CharField(max_length=512, blank=True)
 
+    # This model implements a __len__ method, which overrides the default truthiness behavior on an ORM
+    #   model. This normally returns True whether the model is saved or not in the database. The logic in
+    #   __len__ will override this, so defining __bool__ will retain the original behavior
+    def __bool__(self):
+        return True
+
     def __len__(self):
         # number of bins
-        return self.bins.count()
+        return self.bins.count() if self.pk else 0
 
     def data_volume(self):
         # total data volume in bytes
