@@ -1,9 +1,12 @@
 import re, os
 from django import forms
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import ValidationError
 
-from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, \
+from dashboard.models import Bin, Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, Tag, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+from common import auth
+from common.constants import BinManagementActions, TeamRoles
 
 
 MIN_LATITUDE = -90
@@ -30,7 +33,10 @@ class DatasetForm(forms.ModelForm):
 
     class Meta:
         model = Dataset
-        fields = ["id", "name", "title", "doi", "attribution", "funding", "is_active", "depth", ]
+        fields = [
+            "id", "name", "title", "doi", "attribution", "funding", "is_active", "depth",
+            "contact_name", "contact_email", "description",
+        ]
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
@@ -39,7 +45,10 @@ class DatasetForm(forms.ModelForm):
             "attribution": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
             "funding": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": ""}),
             "depth": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Depth"}),
-            "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"})
+            "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"}),
+            "contact_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Contact Name"}),
+            "contact_email": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Contact Email"}),
+            "description": forms.Textarea(attrs={"class": "form-control form-control-sm", "placeholder": "Description"}),
         }
 
     def clean_doi(self):
@@ -56,7 +65,22 @@ class DatasetForm(forms.ModelForm):
         return doi
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+
         super(DatasetForm, self).__init__(*args, **kwargs)
+
+        # Restrict non-superadmins to just the teams they are associated with
+        # TODO: Clean up logic
+        teams = Team.objects.all()
+        is_team_required = False
+        if not self.user.is_superuser:
+            team_ids = TeamUser.objects.filter(user=self.user).values_list("team_id", flat=True)
+            teams = teams.filter(id__in=team_ids)
+            is_team_required = True
+
+        self.fields["team"] = forms.ModelChoiceField(
+            queryset=teams, required=is_team_required,
+            widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
 
         if "instance" in kwargs:
             instance = kwargs["instance"]
@@ -302,9 +326,185 @@ class TeamForm(forms.ModelForm):
 
     class Meta:
         model = Team
-        fields = ["id", "name", "default_dataset", ]
+        fields = ["id", "name", "default_dataset", "description", ]
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "default_dataset": forms.Select(attrs={"class": "form-control form-control-sm"}),
+            "description": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 4}),
         }
+
+
+class BinSearchForm(forms.Form):
+    # FUTURE: Add fields and UI to allow users to add a list of excluded date ranges
+    # FUTURE: Allow users to select more than one value for some dropdowns (e.g., tags)
+    # FUTURE: Allow support for progressive filtering. E.g, changing dataset limits values for cruises
+
+    input_classes = "form-control form-control-sm"
+
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}"}))
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}"}))
+    team = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes}))
+    dataset = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes}))
+    tag = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes}))
+    cruise = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={"class": input_classes}))
+    instrument = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={"class": input_classes}))
+    sample_type = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={"class": input_classes}))
+
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user") if "user" in kwargs else None
+
+        super().__init__(*args, **kwargs)
+
+        # TODO: Do a more thorough check to make sure users do not see values they should not (captains/managers)
+
+        # TODO: Should we be filtering down the list of tags?
+        tags = Tag.objects.all()
+
+        # Teams, which could be limited for captains and managers
+        teams = Team.objects.all()
+        if not user.is_superuser:
+            teams = Team.objects \
+                .filter(teamuser__user=user) \
+                .filter(teamuser__role_id__in=[TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value]) \
+                .distinct()
+
+        # Bins, restricted down to just those for the user's team if they are not a superadmin
+        bins = Bin.objects.all()
+        if not user.is_superuser:
+            bins = bins.filter(team__in=teams)
+
+        # Datasets to show, filtered if needed for non-superadmins
+        datasets = Dataset.objects.filter(is_active=True)
+        if not user.is_superuser:
+            dataset_ids = TeamDataset.objects \
+                .filter(team__in=teams) \
+                .values_list("dataset_id", flat=True)
+            datasets = datasets.filter(id__in=dataset_ids)
+
+        self.fields["team"].queryset = teams.order_by("name")
+        self.fields["dataset"].queryset = datasets.order_by("name")
+        self.fields["instrument"].choices = self.build_instrument_choices(bins)
+        self.fields["tag"].queryset = tags.order_by("name")
+        self.fields["cruise"].choices = self.build_cruise_choices(bins)
+        self.fields["sample_type"].choices = self.build_sample_type_choices(bins)
+
+    def clean(self):
+        if not any(value not in [None, ""] for value in self.cleaned_data.values()):
+            raise ValidationError("Please select at least one thing to search for")
+
+    def build_cruise_choices(self, bins):
+        cruises = bins \
+            .exclude(cruise="") \
+            .values_list("cruise", flat=True) \
+            .order_by("cruise") \
+            .distinct()
+        cruises = [""] + list(cruises)
+
+        return list(zip(cruises, cruises))
+
+    def build_instrument_choices(self, bins):
+        instruments = bins \
+            .values_list("instrument__number", flat=True) \
+            .order_by("instrument__number") \
+            .distinct()
+        instruments = [""] + [f"IFCB{instrument_number}" for instrument_number in instruments]
+
+        return list(zip(instruments, instruments))
+
+    def build_sample_type_choices(self, bins):
+        sample_types = bins \
+            .exclude(sample_type="") \
+            .values_list("sample_type", flat=True) \
+            .order_by("sample_type") \
+            .distinct()
+        sample_types = [""] + list(sample_types)
+
+        return list(zip(sample_types, sample_types))
+
+
+class BinActionForm(forms.Form):
+    input_classes = "form-control form-control-sm"
+
+    action = forms.ChoiceField()
+    assigned_dataset = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes + " w-50 ml-2", "disabled": True}))
+    unassigned_dataset = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label=" ",
+        widget=forms.Select(attrs={"class": input_classes + " w-50 ml-2", "disabled": True}))
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user") if "user" in kwargs else None
+
+        super().__init__(*args, **kwargs)
+
+        actions = [
+            BinManagementActions.SKIP_BINS.value,
+            BinManagementActions.UNSKIP_BINS.value,
+            BinManagementActions.ASSIGN_DATASET.value,
+            BinManagementActions.UNASSIGN_DATASET.value,
+        ]
+        action_options = zip(actions, actions)
+
+        self.fields["action"] = forms.ChoiceField(choices=action_options)
+
+        # Teams, which could be limited for captains and managers
+        # TODO: Duplicate in the search form
+        teams = Team.objects.all()
+        if not user.is_superuser:
+            teams = Team.objects \
+                .filter(teamuser__user=user) \
+                .filter(teamuser__role_id__in=[TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value]) \
+                .distinct()
+
+        # Datasets to show, filtered if needed for non-superadmins
+        # TODO: Duplicate from the search form
+        datasets = Dataset.objects.filter(is_active=True)
+        if not user.is_superuser:
+            dataset_ids = TeamDataset.objects \
+                .filter(team__in=teams) \
+                .values_list("dataset_id", flat=True)
+            datasets = datasets.filter(id__in=dataset_ids)
+
+        datasets = datasets.order_by("name")
+        self.fields["assigned_dataset"].queryset = datasets
+        self.fields["unassigned_dataset"].queryset = datasets
+
+    def clean(self):
+        action = self.cleaned_data.get("action")
+        assigned_dataset = self.cleaned_data.get("assigned_dataset")
+        unassigned_dataset = self.cleaned_data.get("unassigned_dataset")
+
+        if action == BinManagementActions.ASSIGN_DATASET.value and assigned_dataset is None:
+            raise ValidationError("Please choose a dataset to assign")
+
+        if action == BinManagementActions.UNASSIGN_DATASET.value and unassigned_dataset is None:
+            raise ValidationError("Please choose a dataset to unassign")

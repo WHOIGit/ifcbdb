@@ -1,19 +1,24 @@
 import json
+from io import BytesIO
+from itertools import groupby
+from operator import attrgetter
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django import forms
 from django.views.decorators.http import require_POST, require_GET
-from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse
+from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse, StreamingHttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 from django.contrib.auth.models import User, Group
 
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
-    TeamUser, TeamDataset, TeamRole
-from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, TeamForm
+    TeamUser, TeamDataset, TeamRole, bin_query, bin_management_query
+from dashboard.accession import export_metadata
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, \
+    TeamForm, BinSearchForm, BinActionForm
 from common import auth
-from common.constants import Features, TeamRoles
+from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -26,21 +31,29 @@ def index(request):
     if not auth.can_access_settings(request.user):
         return redirect("/")
 
+    # TODO: Each of these permissions needs to hit the database, improve performance by combining or caching
     can_manage_teams = auth.can_manage_teams(request.user)
-    has_settings_to_manage = request.user.is_superuser or can_manage_teams
+    can_manage_datasets = auth.can_manage_datasets(request.user)
+    can_manage_metadata = auth.can_manage_metadata(request.user)
+    can_manage_bins = auth.can_manage_bins(request.user)
+    has_settings_to_manage = request.user.is_superuser or can_manage_teams or can_manage_datasets or \
+        can_manage_metadata or can_manage_bins
 
     return render(request, 'secure/index.html', {
         "has_settings_to_manage": has_settings_to_manage,
         "can_manage_teams": can_manage_teams,
+        "can_manage_datasets": can_manage_datasets,
+        "can_manage_metadata": can_manage_metadata,
+        "can_manage_bins": can_manage_bins,
     })
 
 
 @login_required
 def dataset_management(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_datasets(request.user):
         return redirect(reverse("secure:index"))
 
-    form = DatasetForm()
+    form = DatasetForm(user=request.user)
 
     return render(request, 'secure/dataset-management.html', {
         "form": form,
@@ -90,13 +103,27 @@ def team_management(request):
 
 @login_required
 def dt_datasets(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_datasets(request.user):
         return HttpResponseForbidden()
 
-    datasets = list(Dataset.objects.all().values_list("name", "title", "is_active", "id"))
+    datasets = Dataset.objects.all()
+
+    if not request.user.is_superuser:
+        # TODO: This could be reused elsewhere
+        allowed_team_ids = TeamUser.objects \
+            .filter(user=request.user) \
+            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .values_list("team_id", flat=True)
+
+        # TODO: Check this, but there should always be at least one, or the user wouldn't have been allowed here already
+        team_datasets_ids = TeamDataset.objects \
+            .filter(team_id__in=allowed_team_ids) \
+            .values_list("dataset_id", flat=True)
+
+        datasets = datasets.filter(id__in=team_datasets_ids)
 
     return JsonResponse({
-        "data": datasets
+        "data": list(datasets.values_list("name", "title", "is_active", "id"))
     })
 
 @waffle_switch('Teams')
@@ -114,7 +141,6 @@ def dt_teams(request):
             .filter(user=request.user) \
             .filter(role_id=TeamRoles.CAPTAIN.value) \
             .values_list("team_id", flat=True)
-        print(allowed_team_ids)
 
         teams = teams.filter(id__in=allowed_team_ids)
 
@@ -145,23 +171,36 @@ def dt_directories(request, dataset_id):
 
 @login_required
 def edit_dataset(request, id):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_datasets(request.user):
         return redirect(reverse("secure:index"))
 
     status = request.GET.get("status")
+    dataset = get_object_or_404(Dataset, pk=id) if int(id) > 0 else Dataset()
+    is_new = dataset.pk is None
 
-    if int(id) > 0:
-        dataset = get_object_or_404(Dataset, pk=id)
-    else:
-        dataset = Dataset()
+    # Non-superadmins (essentially team captains) can only manage their own teams' datasets. They can create new
+    #   datasets, so this check is only needed for existing datasets
+    if not auth.is_admin(request.user) and not is_new:
+        team_dataset = TeamDataset.objects.filter(dataset=dataset).first()
+        if not team_dataset:
+            return redirect(reverse("secure:dataset-management"))
+
+        is_team_captain = TeamUser.objects \
+            .filter(team=team_dataset.team) \
+            .filter(user=request.user) \
+            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .exists()
+        if not is_team_captain:
+            return redirect(reverse("secure:dataset-management"))
 
     if request.POST:
-        form = DatasetForm(request.POST, instance=dataset)
+        form = DatasetForm(request.POST, instance=dataset, user=request.user)
         if form.is_valid():
             instance = form.save()
 
             existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
             team = form.cleaned_data.get("team")
+
             original_team = existing.team if existing else None
             is_team_removed = False
 
@@ -187,7 +226,7 @@ def edit_dataset(request, id):
             status = "created" if id == 0 else "updated"
             return redirect(reverse("secure:edit-dataset", kwargs={"id": instance.id}) + "?status=" + status)
     else:
-        form = DatasetForm(instance=dataset)
+        form = DatasetForm(instance=dataset, user=request.user)
 
     return render(request, "secure/edit-dataset.html", {
         "status": status,
@@ -658,7 +697,7 @@ METADATA_UPLOAD_TASKID_KEY = 'metadata_upload_task_id'
 
 @login_required
 def upload_metadata(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_metadata(request.user):
         return redirect(reverse("secure:index"))
 
     from dashboard.tasks import import_metadata
@@ -681,6 +720,37 @@ def upload_metadata(request):
                     'confirm': '',
                     'in_progress': '',
                     })
+
+            # Filter down the list of bins to update to just ones the user has access to
+            # TODO: Needs a lot of clean up and de-duping of methods
+            if not request.user.is_superuser:
+                def get_column(df, possible_names):
+                    for possible in possible_names:
+                        if possible in df.columns:
+                            return possible
+                    return None
+
+                # Make sure there's a bin column
+                pid_col = get_column(df, BIN_ID_COLUMNS)
+                if pid_col is None:
+                    form.add_error(None, "need to specify bin ID column")
+                    return render(request, 'secure/upload-metadata.html', {
+                        'form': form,
+                        'confirm': '',
+                        'in_progress': '',
+                    })
+
+                # TODO: This will not scale...
+                team_ids = list(TeamUser.objects.filter(user=request.user).values_list('team_id', flat=True))
+                pids_to_check = list(df[pid_col])
+                bins_ids = Bin.objects \
+                    .filter(pid__in=pids_to_check) \
+                    .filter(team_id__in=team_ids) \
+                    .values_list("pid", flat=True)
+                bins_ids = list(bins_ids)
+
+                df = df[df[pid_col].isin(bins_ids)]
+                json_df = df.to_json()
 
             added = cache.add(METADATA_UPLOAD_LOCK_KEY, True, timeout=None) # this is atomic
             if added:
@@ -722,7 +792,7 @@ def metadata_upload_cancel(request):
     if not auth.is_admin(request.user):
         return HttpResponseForbidden()
 
-    added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel");
+    added = cache.add(METADATA_UPLOAD_CANCEL_KEY, "cancel")
     if not added:
         return JsonResponse({ 'status': 'already_canceled'})
     else:
@@ -744,3 +814,198 @@ def toggle_skip(request):
         "bin_id": bin_id,
         "skipped": not skipped,
     })
+
+@login_required
+def bin_management(request):
+    if not auth.can_manage_bins(request.user):
+        return redirect(reverse("secure:index"))
+
+    form = BinSearchForm(user=request.user)
+
+    # This is not ideal, but loading the action form initially means we can use the assigned/unassigned datasets
+    #  elements and pre-render them before a search is run
+    action_form = BinActionForm(user=request.user)
+
+    return render(request, 'secure/bin-management.html', {
+        "form": form,
+        "action_form": action_form,
+    })
+
+
+@login_required
+@require_POST
+def bin_management_search(request):
+    if not auth.can_manage_bins(request.user):
+        return redirect(reverse("secure:index"))
+
+    # TODO: Disable the team filter when the feature is not enabled
+    form = BinSearchForm(request.POST, user=request.user)
+    if not form.is_valid():
+        return JsonResponse({
+            "success": False,
+            "errors": form.errors,
+        })
+
+    bin_qs = build_bin_query_from_form_data(request.user, form)
+    total = bin_qs.count()
+
+    return JsonResponse({
+        "success": True,
+        "total": total,
+    })
+
+@login_required
+def bin_management_export(request, dataset_name=None):
+    if not auth.can_manage_bins(request.user):
+        return redirect(reverse("secure:index"))
+
+    form = BinSearchForm(request.GET, user=request.user)
+    if not form.is_valid():
+        # TODO: DO something? is_valid must be called or cleaned_data never gets populated
+        pass
+
+    bin_qs = build_bin_query_from_form_data(request.user, form)
+
+    # TODO: We're not supplying a dataset name. The benefit of that would be defaulting the location and depth values
+    #   in the export. Not sure if that is good here since the goal of this export is partially to re-import?
+    df = export_metadata(None, bin_qs)
+
+    filename = 'bins.csv'
+
+    csv_buf = BytesIO()
+    df.to_csv(csv_buf, mode='wb', index=None)
+    csv_buf.seek(0)
+
+    response = StreamingHttpResponse(csv_buf, content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+
+    return response
+
+@login_required
+@require_POST
+def bin_management_execute(request):
+    if not auth.can_manage_bins(request.user):
+        return redirect(reverse("secure:index"))
+
+    form = BinSearchForm(request.POST, user=request.user)
+    if not form.is_valid():
+        # TODO: For now, this should always since there aren't any actual form validators on the search. Later, this
+        #     :   form will likely go away for the execute action to ensure that the user cannot change search criteria
+        #     :   prior to clicking execute (without being intentional about it. But is_valid() must be called for the
+        #     :   values to appear in cleaned_data
+        pass
+
+    action_form = BinActionForm(request.POST, user=request.user)
+    if not action_form.is_valid():
+        return JsonResponse({
+            "success": False,
+            "errors": action_form.errors,
+        })
+
+    bin_qs = build_bin_query_from_form_data(request.user, form)
+
+    action = action_form.cleaned_data.get("action")
+
+    if action == BinManagementActions.SKIP_BINS.value:
+        return update_skip(bin_qs, True)
+
+    if action == BinManagementActions.UNSKIP_BINS.value:
+        return update_skip(bin_qs, False)
+
+    if action == BinManagementActions.ASSIGN_DATASET.value:
+        return assign_dataset(bin_qs, action_form.cleaned_data.get("assigned_dataset"))
+
+    if action == BinManagementActions.UNASSIGN_DATASET.value:
+        return unassign_dataset(bin_qs, action_form.cleaned_data.get("unassigned_dataset"))
+
+    return JsonResponse({
+        "success": False,
+        "message": f"Please choose an action to perform",
+    })
+
+# TODO: Move this to on the form since there isn't much logic anymore besides wrangling all the parameters
+def build_bin_query_from_form_data(user, form):
+    dataset = form.cleaned_data.get("dataset")
+    team = form.cleaned_data.get("team")
+    start_date = form.cleaned_data.get("start_date")
+    end_date = form.cleaned_data.get("end_date")
+    instrument = form.cleaned_data.get("instrument")
+    cruise = form.cleaned_data.get("cruise")
+    sample_type = form.cleaned_data.get("sample_type")
+    tag = form.cleaned_data.get("tag")
+    tags = [tag.name] if tag else []
+
+    return bin_management_query(
+        user,
+        start=start_date,
+        end=end_date,
+        dataset_name=dataset.name if dataset is not None else None,
+        instrument_number=request_get_instrument(instrument),
+        tags=tags,
+        cruise=cruise,
+        sample_type=sample_type,
+        team_names=[team.name] if team is not None else None)
+
+def update_skip(bin_qs, is_skipped):
+    total = 0
+
+    for bin in bin_qs:
+        bin.skip = is_skipped
+        bin.save()
+
+        total += 1
+
+    return JsonResponse({
+        "success": True,
+        "message": f"{total} bin(s) have been updated successfully",
+    })
+
+def assign_dataset(bin_qs, dataset):
+    # This logic requires bin_qs to be a queryset, so at least one search option must have been specified
+    num_already_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
+
+    dataset.bins.add(*bin_qs)
+
+    total = bin_qs.count()
+    num_assigned = total - num_already_assigned
+    label_assigned = "bins" if num_assigned != 1 else "bin"
+    label_already_assigned = "bins" if num_already_assigned != 1 else "bin"
+    msg = f"{num_assigned} {label_assigned} assigned to dataset {dataset}"
+
+    if num_already_assigned == 0:
+        return JsonResponse({
+            "success": True,
+            "message": msg,
+        })
+
+    return JsonResponse({
+        "success": True,
+        "message": msg + f" ({num_already_assigned} {label_already_assigned} already assigned)",
+    })
+
+def unassign_dataset(bin_qs, dataset):
+    # This logic requires bin_qs to be a queryset, so at least one search option must have been specified
+    num_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
+
+    if num_assigned == 0:
+        return JsonResponse({
+            "success": True,
+            "message": f"No bins were unassigned because there weren't any assigned to dataset {dataset}",
+        })
+
+    dataset.bins.remove(*bin_qs)
+
+    label = "bins" if num_assigned != 1 else "bin"
+    return JsonResponse({
+        "success": True,
+        "message": f"{num_assigned} {label} unassigned from dataset {dataset}",
+    })
+
+
+# TODO: This is duplicated in dashboard/views - make a common helper method
+def request_get_instrument(instrument_string):
+    i = instrument_string
+    if i is not None and i:
+        if i.lower().startswith('ifcb'):
+            i = i[4:]
+        return int(i)

@@ -14,6 +14,11 @@ const MAX_SELECTABLE_IMAGES = 25;
 
 let _binFilterMode = "timeline";
 
+function getPage(page, queryString) {
+    return window.location.pathname.replace(/[^/]+$/, page)
+        + (queryString ? "?" + queryString : "");
+}
+
 function initDashboard(appSettings) {
     defaultLat = appSettings.default_latitude;
     defaultLng = appSettings.default_longitude;
@@ -36,7 +41,7 @@ function initDashboard(appSettings) {
     });
 
     $("#dataset-switcher").change(function () {
-        location.href = "/timeline?dataset=" + $(this).val();
+        location.href = getPage("timeline") + "dataset=" + $(this).val();
     });
 
     $("#go-to-bin").click(function () {
@@ -511,7 +516,7 @@ function goToBin(pid) {
             return;
         }
 
-        location.href = "/bin?bin=" + pid.trim();
+        location.href = getPage("bin", "bin=" + pid.trim());
     });
 }
 
@@ -580,12 +585,21 @@ function isFilteringUsed() {
 }
 
 $(function () {
-    $('#dataset-popover').popover({
+    $('#datasets-popover').popover({
         container: 'body',
-        title: 'Select Dataset',
+        title: 'Dataset',
         html: true,
         placement: 'bottom',
         sanitize: false,
         template:  '<div class="popover" style="max-width:60%;" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body" style="max-height:50vh; overflow-y:auto;"></div></div>'
-    })
+    });
+
+    $('#teams-popover').popover({
+        container: 'body',
+        title: 'Teams',
+        html: true,
+        placement: 'bottom',
+        sanitize: false,
+        template:  '<div class="popover" style="max-width:60%;" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body" style="max-height:50vh; overflow-y:auto;"></div></div>'
+    });
   })

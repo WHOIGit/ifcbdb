@@ -8,17 +8,17 @@
     <span class="h3-responsive">
       <a href="/dashboard">Home</a>
       {% if dataset %}»
-        <a href="/timeline?dataset={{ dataset.name }}">
+        <a href="timeline?dataset={{ dataset.name }}">
           {{ dataset.title }}
         </a>
       {% endif %}
       {% if instrument_number %}»
-        <a href="/timeline?instrument={{ instrument_number }}">
+        <a href="timeline?instrument={{ instrument_number }}">
           IFCB{{ instrument_number }}
         </a>
       {% endif %}
       {% if tags %}»
-        <a href="/timeline?tags={{ tags }}">
+        <a href="timeline?tags={{ tags }}">
           {{ tags }}
         </a>
       {% endif %}
@@ -91,14 +91,6 @@
     var binsTable;
     var selectedBins = [];
 
-    function createListLink(bin) {
-        return "/list?" +
-            buildFilterOptionsQueryString(true) +
-            "&start_date=" + _startDate +
-            "&end_date=" + _endDate +
-            "&skip_filters=" + $("#skip-filters input[type=radio]:checked").data("option");
-    }
-
     function updateSkip(skip) {
         if (selectedBins.length == 0) {
             $("#action-message")
@@ -145,7 +137,7 @@
                 e.preventDefault();
 
                 var pid = $(this).data("pid");
-                location.href = "/bin?bin=" + pid;
+                location.href = getPage("bin", "bin=" + pid);
             })
             .on("click", ".select-bin", function(e){
                 var pid = $(this).data("pid");
@@ -176,10 +168,11 @@
         });
 
         $("#view-timeline").click(function(){
-            location.href = "/timeline" +
-            "?start_date=" + _startDate +
-            "&end_date=" + _endDate +
-            "&" + buildFilterOptionsQueryString(true);
+            const queryString = "?start_date=" + _startDate +
+                "&end_date=" + _endDate +
+                "&" + buildFilterOptionsQueryString(true);
+
+            location.href = getPage("timeline", queryString);
         });
 
         $("#select-all").click(function(){

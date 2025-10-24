@@ -15,7 +15,7 @@
         <span class="h3-responsive">{% if dataset.id > 0 %}Edit Dataset {{ dataset.title }}{% else %}Add New Dataset{% endif %}</span>
     </div>
     <div class="flex-column">
-        {% if dataset.id > 0 %}
+        {% if dataset.id > 0 and request.user.is_superuser %}
         <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:directory-management' dataset.id %}">Manage directories</a>
         {% endif %}
     </div>
@@ -69,6 +69,28 @@
             </div>
             <div class="form-row">
                 <div class="form-group col">
+                    <label for="id_doi">Contact Name (optional)</label>
+                    {{ form.contact_name }}
+                    {% if form.contact_name.errors %}<span class="text-danger">{{ form.contact_name.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_doi">Contact Email (optional)</label>
+                    {{ form.contact_email }}
+                    {% if form.contact_email.errors %}<span class="text-danger">{{ form.contact_email.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_doi">Description (optional)</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}<span class="text-danger">{{ form.description.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col">
                     <label for="id_doi">DOI (optional)</label>
                     {{ form.doi }}
                     {% if form.doi.errors %}<span class="text-danger">{{ form.doi.errors.as_text}}</span>{% endif %}
@@ -117,7 +139,7 @@
         </form>
     </div>
     <div class="col-md-6">
-        {% if dataset.id > 0 %}
+        {% if dataset.id > 0 and request.user.is_superuser %}
         <div class="card card-body">
             <span>
                 <button id="sync-button" class="btn btn-sm btn-mdb-color disabled">Sync</button>
@@ -154,7 +176,7 @@
 <script>
     var _csrf = "{{ csrf_token }}";
 
-    {% if dataset.id > 0 %}
+    {% if dataset.id > 0 and request.user.is_superuser %}
     function dataset_sync_status() {
         $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'LOCKED') { // job hasn't started yet
