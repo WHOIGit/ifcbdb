@@ -2,6 +2,7 @@ import json
 from django import template
 from django.shortcuts import reverse
 from django.utils.html import mark_safe
+import waffle
 
 from dashboard.models import Dataset, Team, TeamDataset, Instrument, Tag, bin_query, AppSettings, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
@@ -36,7 +37,7 @@ def dataset_switcher():
 
 @register.inclusion_tag("dashboard/_dataset-nav.html", takes_context=True)
 def dataset_nav(context):
-
+    is_teams_enabled = waffle.switch_is_active('Teams')
     datasets = Dataset.objects.filter(is_active=True)
     teams = Team.objects.all().order_by("name")
     dataset_name = context['request'].GET.get("dataset")
@@ -49,9 +50,6 @@ def dataset_nav(context):
             .values_list("team", flat=True) \
             .first()
         team = Team.objects.filter(id=team_id).first() if team_id else None
-
-    # TODO: Flag for teams feature
-    is_teams_enabled = True
 
     # If teams are enabled and there is a team found, show datasets for that team
     if is_teams_enabled and team is not None:

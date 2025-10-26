@@ -85,10 +85,6 @@ class Accession(object):
             'version': version
         })
 
-        # TODO: Handle team feature not enabled
-        team_dataset = TeamDataset.objects.filter(dataset=self.dataset).first()
-        team_id = team_dataset.team_id if team_dataset else None
-
         # create model object
         timestamp = bin.pid.timestamp
         b, created = Bin.objects.get_or_create(pid=pid, defaults={
@@ -98,7 +94,7 @@ class Accession(object):
             'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
             'data_directory': dd_found,
             'skip': True, # in case accession is interrupted
-            'team_id': team_id,
+            'team': self.dataset.team if self.dataset else None,
         })
         if not created:
             return
@@ -145,10 +141,6 @@ class Accession(object):
             then = time.time()
             bins2save = []
 
-            # TODO: Handle team feature not enabled
-            team_dataset = TeamDataset.objects.filter(dataset=self.dataset).first()
-            team_id = team_dataset.team_id if team_dataset else None
-
             for bin_dd in bin_dds:
                 bin, dd = bin_dd
                 pid = bin.lid
@@ -165,7 +157,7 @@ class Accession(object):
                     'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
                     'data_directory': dd,
                     'skip': True, # in case accession is interrupted
-                    'team_id': team_id,
+                    'team': self.dataset.team if self.dataset else None,
                 })
                 if not created:
                     continue

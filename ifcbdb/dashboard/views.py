@@ -52,16 +52,15 @@ def datasets(request, team_name=None):
     team_panels = [team for team in teams]
     team_panels.append(Team(pk=0, name="Unassigned"))
 
-    # TODO: Initially, make sure only active datasets appear. In the future, this may be changes to allow for users
-    #     :   that "own" those datasets (captains/managers) to see the inactive datasets
+    # Only show active datasets
+    # FUTURE: This may be changes to allow for user__username that "own" those datasets (captains/managers) to
+    #       : see the inactive datasets
     datasets = Dataset.objects.filter(is_active=True).prefetch_related("teamdataset_set__team")
 
     # Add in the team ID for each dataset, which is needed for grouping them within the correct accordion panel
     for dataset in datasets:
         team_dataset = dataset.teamdataset_set.first()
         dataset.team_id = team_dataset.team.id if team_dataset else 0
-
-    # TODO: Confirm dropdown does not appear if teams is disabled
 
     return render(request, 'dashboard/datasets.html', {
         "datasets": datasets,
@@ -1353,6 +1352,7 @@ def sync_bin(request):
     dataset_name = request.GET.get("dataset")
     bin_id = request.GET.get('bin')
     dataset = get_object_or_404(Dataset, name=dataset_name)
+
     try:
         b = Bin.objects.get(pid=bin_id)
         return JsonResponse({'result':'exists'})

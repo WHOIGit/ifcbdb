@@ -419,6 +419,16 @@ class Dataset(models.Model):
             return FILL_VALUE
         return self.location.x
 
+    # Datasets are restricted to a single team, even though the database schema could support a single dataset being
+    #   shared across multiple teams. This means the property just needs to return the first team, if there are any,
+    #   since there will never be more than one
+    @property
+    def team(self):
+        if not self.pk:
+            return None
+
+        return self.teams.first()
+
     def __str__(self):
         return self.name
 
