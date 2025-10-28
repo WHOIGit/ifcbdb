@@ -274,7 +274,7 @@ def bin_management_query(
         team_names = list(set((team_names or []) + list(teams)))
 
     # For the update query, we always want to avoid skipping any bins
-    filter_skip = True
+    filter_skip = False
 
     # Start and end date are not passed because they are handled differently after the initial call is done
     bin_qs = bin_query(

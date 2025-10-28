@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User, Group
-from dashboard.models import TeamUser
+from dashboard.models import Dataset, Team, TeamDataset, TeamUser
 from .constants import TeamRoles
 
 # At the moment, this is simply a wrapper around the superadmin flag. In the future, this, and possibly other
@@ -22,8 +22,6 @@ def is_staff(user):
 
     return user.is_staff
 
-
-# TODO: The can_* methods are all fairly similar and should be made more generic
 def can_manage_teams(user):
     if not user.is_authenticated:
         return False
@@ -32,14 +30,7 @@ def can_manage_teams(user):
         return True
 
     # Team captains have limited access to the admin to manage their own teams
-    is_team_captain = TeamUser.objects \
-        .filter(user=user) \
-        .filter(role_id=TeamRoles.CAPTAIN.value) \
-        .exists()
-    if is_team_captain:
-        return True
-
-    return False
+    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
 
 def can_manage_datasets(user):
     if not user.is_authenticated:
@@ -49,14 +40,7 @@ def can_manage_datasets(user):
         return True
 
     # Team captains have limited access to the admin to manage their own teams
-    is_team_captain = TeamUser.objects \
-        .filter(user=user) \
-        .filter(role_id=TeamRoles.CAPTAIN.value) \
-        .exists()
-    if is_team_captain:
-        return True
-
-    return False
+    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
 
 def can_manage_metadata(user):
     if not user.is_authenticated:
@@ -66,14 +50,7 @@ def can_manage_metadata(user):
         return True
 
     # Team captains have limited access to the admin to manage their own teams
-    is_team_captain = TeamUser.objects \
-        .filter(user=user) \
-        .filter(role_id=TeamRoles.CAPTAIN.value) \
-        .exists()
-    if is_team_captain:
-        return True
-
-    return False
+    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
 
 def can_manage_bins(user):
     if not user.is_authenticated:
@@ -83,14 +60,7 @@ def can_manage_bins(user):
         return True
 
     # Team captains have limited access to the admin to manage their own teams
-    is_team_captain = TeamUser.objects \
-        .filter(user=user) \
-        .filter(role_id=TeamRoles.CAPTAIN.value) \
-        .exists()
-    if is_team_captain:
-        return True
-
-    return False
+    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
 
 def can_access_settings(user):
     if not user.is_authenticated:
@@ -99,7 +69,44 @@ def can_access_settings(user):
     if user.is_superuser or user.is_staff:
         return True
 
-    if can_manage_teams(user):
-        return True
+    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
 
-    return False
+def has_team_roles(user, roles):
+    role_values = [role.value for role in roles]
+
+    return TeamUser.objects \
+        .filter(user=user) \
+        .filter(role_id__in=role_values) \
+        .exists()
+
+def get_manageable_teams(user):
+    if not user.is_authenticated:
+        return []
+
+    if user.is_superuser or user.is_staff:
+        return Team.objects.all()
+
+    return Team.objects \
+        .filter(teamuser__user=user) \
+        .filter(teamuser__role_id__in=[TeamRoles.CAPTAIN.value, ]) \
+        .distinct()
+
+def get_manageable_datasets(user, exclude_inactive=True):
+    if not user.is_authenticated:
+        return []
+
+    datasets = Dataset.objects.all()
+
+    if exclude_inactive:
+        datasets = datasets.exclude(is_active=False)
+
+    if user.is_superuser or user.is_staff:
+        return datasets
+
+    teams = get_manageable_teams(user)
+
+    dataset_ids = TeamDataset.objects \
+        .filter(team__in=teams) \
+        .values_list("dataset_id", flat=True)
+
+    return datasets.filter(id__in=dataset_ids)

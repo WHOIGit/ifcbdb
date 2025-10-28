@@ -70,13 +70,10 @@ class DatasetForm(forms.ModelForm):
         super(DatasetForm, self).__init__(*args, **kwargs)
 
         # Restrict non-superadmins to just the teams they are associated with
-        # TODO: Clean up logic
-        teams = Team.objects.all()
-        is_team_required = False
-        if not self.user.is_superuser:
-            team_ids = TeamUser.objects.filter(user=self.user).values_list("team_id", flat=True)
-            teams = teams.filter(id__in=team_ids)
-            is_team_required = True
+        teams = auth.get_manageable_teams(self.user)
+
+        # Non-superadmins must always select a team
+        is_team_required = not self.user.is_superuser
 
         self.fields["team"] = forms.ModelChoiceField(
             queryset=teams, required=is_team_required,
@@ -379,18 +376,11 @@ class BinSearchForm(forms.Form):
 
         super().__init__(*args, **kwargs)
 
-        # TODO: Do a more thorough check to make sure users do not see values they should not (captains/managers)
-
         # TODO: Should we be filtering down the list of tags?
         tags = Tag.objects.all()
 
         # Teams, which could be limited for captains and managers
-        teams = Team.objects.all()
-        if not user.is_superuser:
-            teams = Team.objects \
-                .filter(teamuser__user=user) \
-                .filter(teamuser__role_id__in=[TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value]) \
-                .distinct()
+        teams = auth.get_manageable_teams(user)
 
         # Bins, restricted down to just those for the user's team if they are not a superadmin
         bins = Bin.objects.all()
@@ -398,12 +388,7 @@ class BinSearchForm(forms.Form):
             bins = bins.filter(team__in=teams)
 
         # Datasets to show, filtered if needed for non-superadmins
-        datasets = Dataset.objects.filter(is_active=True)
-        if not user.is_superuser:
-            dataset_ids = TeamDataset.objects \
-                .filter(team__in=teams) \
-                .values_list("dataset_id", flat=True)
-            datasets = datasets.filter(id__in=dataset_ids)
+        datasets = auth.get_manageable_datasets(user) #Dataset.objects.filter(is_active=True)
 
         self.fields["team"].queryset = teams.order_by("name")
         self.fields["dataset"].queryset = datasets.order_by("name")
@@ -476,25 +461,9 @@ class BinActionForm(forms.Form):
 
         self.fields["action"] = forms.ChoiceField(choices=action_options)
 
-        # Teams, which could be limited for captains and managers
-        # TODO: Duplicate in the search form
-        teams = Team.objects.all()
-        if not user.is_superuser:
-            teams = Team.objects \
-                .filter(teamuser__user=user) \
-                .filter(teamuser__role_id__in=[TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value]) \
-                .distinct()
-
         # Datasets to show, filtered if needed for non-superadmins
-        # TODO: Duplicate from the search form
-        datasets = Dataset.objects.filter(is_active=True)
-        if not user.is_superuser:
-            dataset_ids = TeamDataset.objects \
-                .filter(team__in=teams) \
-                .values_list("dataset_id", flat=True)
-            datasets = datasets.filter(id__in=dataset_ids)
+        datasets = auth.get_manageable_datasets(user).order_by("name")
 
-        datasets = datasets.order_by("name")
         self.fields["assigned_dataset"].queryset = datasets
         self.fields["unassigned_dataset"].queryset = datasets
 
