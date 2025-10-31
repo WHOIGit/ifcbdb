@@ -722,15 +722,19 @@ def class_scores_csv(request, dataset_name, bin_id):
     resp['Content-Disposition'] = 'attachment; filename={}'.format(filename)
     return resp
 
-def zip(request, bin_id, **kw):
+@require_POST
+def zip(request, bin_id, **kwargs):
     b = get_object_or_404(Bin, pid=bin_id)
-    if 'dataset_name' in kw:
-        bin_in_dataset_or_404(b, kw['dataset_name'])
+
+    if 'dataset_name' in kwargs:
+        bin_in_dataset_or_404(b, kwargs['dataset_name'])
     try:
         zip_buf = b.zip()
     except KeyError:
         raise Http404("raw data not found")
+
     filename = '{}.zip'.format(bin_id)
+
     return FileResponse(zip_buf, as_attachment=True, filename=filename, content_type='application/zip')
 
 
