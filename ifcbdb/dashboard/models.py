@@ -923,3 +923,10 @@ class AppSettings(models.Model):
     default_latitude = models.FloatField(blank=False, null=False, default=DEFAULT_LATITUDE)
     default_longitude = models.FloatField(blank=False, null=False, default=DEFAULT_LONGITUDE)
     default_zoom_level = models.IntegerField(blank=False, null=False, default=DEFAULT_ZOOM_LEVEL)
+
+# api
+
+class ApiAccount(models.Model):
+    name = models.CharField(max_length=50)
+    api_key = models.CharField(max_length=128)
+    is_active = models.BooleanField(default=True, blank=False, null=False)
