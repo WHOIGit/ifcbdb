@@ -1190,6 +1190,10 @@ function initAutoComplete() {
         _autoCompleteJS.unInit();
     }
 
+    if (!document.querySelector("#tag-name")) {
+        return;
+    }
+    
     _autoCompleteJS = new autoComplete({
         selector: '#tag-name',
         placeHolder: "tag name",
