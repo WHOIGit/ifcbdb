@@ -176,7 +176,18 @@ function updateBinStats(data) {
     $("#stat-trigger-freq").html(data["trigger_freq"]);
     $("#stat-ml-analyzed").html(data["ml_analyzed"]);
     $("#stat-concentration").html(data["concentration"]);
+
+
+    const dataset =  new URLSearchParams(window.location.search).get("dataset");
+    const cruiseParameters = {
+        cruise: data["cruise"],
+        bin: _bin,
+        ...(dataset && { dataset: dataset })
+    };
+
     $("#stat-cruise").html(data["cruise"]);
+    $("#stat-cruise-link").attr('href','/timeline?' + new URLSearchParams(cruiseParameters).toString());
+
     $("#stat-sample-type").html(data["sample_type"]);
     $("#stat-size").html(filesize.filesize(data["size"]));
     $("#stat-skip")
