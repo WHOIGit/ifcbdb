@@ -1015,6 +1015,13 @@ function initEvents() {
         }
     });
 
+    // Copy bin PID to clipboard
+    $("#copy-bin-button").click(function(e) {
+        e.preventDefault();
+
+        navigator.clipboard.writeText(_bin);
+    });
+
     // Mosaic paging
     $("#bin-paging")
         .on("click", ".page-previous", function(e) {
