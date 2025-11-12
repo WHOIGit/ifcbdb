@@ -108,6 +108,7 @@ urlpatterns = [
     path('api/bin/<slug:bin_id>', views.bin_data),
     path('api/closest_bin', views.closest_bin, name='closest_bin'),  # closest bin in time
     path('api/nearest_bin', views.nearest_bin, name='nearest_bin'),
+    path('api/most_recent_bin', views.most_recent_bin, name='most_recent_bin'),
     path('api/mosaic/coordinates/<slug:bin_id>', views.mosaic_coordinates, name='mosaic_coordintes'),
     path('api/mosaic/encoded_image/<slug:bin_id>', views.mosaic_page_encoded_image, name='mosaic_page_encoded_image'),
     path('api/mosaic/image/<slug:bin_id>.png', views.mosaic_page_image, name='mosaic_page_image'),

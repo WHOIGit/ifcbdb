@@ -14,6 +14,7 @@ from django.http import \
     HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
+from django.utils import timezone
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -983,6 +984,22 @@ def nearest_bin(request):
         'bin_id': bin_id
     })
 
+def most_recent_bin(request):
+    dataset_name = request.GET.get("dataset")
+
+    _ = get_object_or_404(Dataset, name=dataset_name)
+
+    bin = Bin.objects.filter(datasets__name=dataset_name).order_by('-timestamp').first()
+    if not bin:
+        raise Http404("Dataset has no bins")
+
+    return JsonResponse({
+        "pid": bin.pid,
+        "timestamp": bin.timestamp,
+        "time_since": (timezone.now() - bin.timestamp).total_seconds(),
+        "temperature": bin.temperature,
+        "humidity": bin.humidity
+    })
 
 def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
