@@ -404,3 +404,9 @@ a.tstabcollapser:after
     max-height:35vh;
     overflow-y:auto;
 }
+
+#copy-bin-button {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+    border-radius:5px;
+}
