@@ -8,6 +8,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db.models import Case, When, F, Max
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
@@ -989,14 +990,27 @@ def most_recent_bin(request):
 
     _ = get_object_or_404(Dataset, name=dataset_name)
 
-    bin = Bin.objects.filter(datasets__name=dataset_name).order_by('-timestamp').first()
+    # The most recent bin is based on the most recent of the timestamp or sample time on each record. Excluded
+    #   are bins that have a timestamp in the future, which is usually bad data
+    bins = Bin.objects \
+        .filter(datasets__name=dataset_name) \
+        .exclude(timestamp__gt=timezone.now()) \
+        .annotate(
+            latest_time=Case(
+                When(sample_time__gt=F("timestamp"), then=F("sample_time")),
+                default=F("timestamp"),
+            )
+        ) \
+        .order_by('-latest_time')
+    bin = bins.first()
+
     if not bin:
         raise Http404("Dataset has no bins")
 
     return JsonResponse({
         "pid": bin.pid,
         "timestamp": bin.timestamp,
-        "time_since": (timezone.now() - bin.timestamp).total_seconds(),
+        "time_since": round((timezone.now() - bin.timestamp).total_seconds()),
         "temperature": bin.temperature,
         "humidity": bin.humidity
     })
