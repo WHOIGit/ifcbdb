@@ -990,19 +990,13 @@ def most_recent_bin(request):
 
     _ = get_object_or_404(Dataset, name=dataset_name)
 
-    # The most recent bin is based on the most recent of the timestamp or sample time on each record. Excluded
-    #   are bins that have a timestamp in the future, which is usually bad data
-    bins = Bin.objects \
+    # The most recent bin is based on the bin's timestamp. Bins that have a timestamp in the future are excluded
+    #   because it's usually indicative of bad data
+    bin = Bin.objects \
         .filter(datasets__name=dataset_name) \
         .exclude(timestamp__gt=timezone.now()) \
-        .annotate(
-            latest_time=Case(
-                When(sample_time__gt=F("timestamp"), then=F("sample_time")),
-                default=F("timestamp"),
-            )
-        ) \
-        .order_by('-latest_time')
-    bin = bins.first()
+        .order_by('-timestamp') \
+        .first()
 
     if not bin:
         raise Http404("Dataset has no bins")
