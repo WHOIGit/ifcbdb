@@ -8,12 +8,14 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db.models import Case, When, F, Max
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
     HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
+from django.utils import timezone
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -983,6 +985,29 @@ def nearest_bin(request):
         'bin_id': bin_id
     })
 
+def most_recent_bin(request):
+    dataset_name = request.GET.get("dataset")
+
+    _ = get_object_or_404(Dataset, name=dataset_name)
+
+    # The most recent bin is based on the bin's timestamp. Bins that have a timestamp in the future are excluded
+    #   because it's usually indicative of bad data
+    bin = Bin.objects \
+        .filter(datasets__name=dataset_name) \
+        .exclude(timestamp__gt=timezone.now()) \
+        .order_by('-timestamp') \
+        .first()
+
+    if not bin:
+        raise Http404("Dataset has no bins")
+
+    return JsonResponse({
+        "pid": bin.pid,
+        "timestamp": bin.timestamp,
+        "time_since": round((timezone.now() - bin.timestamp).total_seconds()),
+        "temperature": bin.temperature,
+        "humidity": bin.humidity
+    })
 
 def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
