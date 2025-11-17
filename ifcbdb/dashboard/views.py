@@ -14,6 +14,7 @@ from django.http import \
     HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -946,6 +947,7 @@ def bin_data(request, bin_id):
     return JsonResponse(details)
 
 
+@csrf_exempt
 def closest_bin(request):
     bin_qs = filter_parameters_bin_query(request.POST)
 
@@ -960,6 +962,8 @@ def closest_bin(request):
 
     return JsonResponse({
         "bin_id": bin.pid,
+        "sample_time": bin.sample_time.isoformat(),
+        "timestamp": bin.timestamp.isoformat(),
     })
 
 
