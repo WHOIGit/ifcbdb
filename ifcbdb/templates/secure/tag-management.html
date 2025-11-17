@@ -1,0 +1,83 @@
+{% extends 'base.html' %} {% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Tag Management</span>
+    </div>
+    <div class="flex-column">
+        <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:edit-tag' 0 %}"><i class="fas fa-plus magic mr-1"></i> Add New Tag</a>
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <div class="col">
+        <table id="tags" class="table table-sm table-striped table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+    let tagsTable;
+
+    $(function(){
+        tagsTable = $('#tags').DataTable({
+            searching: false,
+            lengthChange: false,
+            ajax: {
+                url: "{% url 'secure:tags_dt' %}"
+            },
+            columns: [
+                {}, // Name
+                { // Edit/Delete
+                    targets: -1,
+                    orderable: false,
+                    render: function ( data, type, row ) {
+                        return (
+                            "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/edit-tag/" + data + "'>" +
+                            "<i class='fas fa-edit magic mr-1'></i>Edit" +
+                            "</a>" +
+                            "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/merge-tag/" + data + "'>" +
+                            "<i class='fas fa-code-merge magic mr-1'></i>Merge" +
+                            "</a>" +
+                            "<a class='btn btn-sm btn-mdb-color mr-2 delete-tag' data-id='" + data + "' href='#'>" +
+                            "<i class='fas fa-minus-circle magic mr-1'></i>Remove" +
+                            "</a>"
+                        );
+                    }
+                }
+            ]
+        });
+    });
+
+    $("#tags").on("click", ".delete-tag", function(e) {
+        e.preventDefault();
+
+        if (!confirm("Are you sure you want to remove this tag? This will also unassign it from all bins")) {
+            return;
+        }
+
+        const tagId = $(this).data("id");
+        const payload = {
+            csrfmiddlewaretoken: "{{ csrf_token }}",
+        }
+
+        $.post("/secure/api/delete-tag/" + tagId, payload, function(data){
+            tagsTable.ajax.reload();
+        });
+    });
+</script>
+{% endblock %}
