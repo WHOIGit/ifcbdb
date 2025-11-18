@@ -25,6 +25,7 @@
         <div class="form-group col">
             <label for="id_name">Name</label>
             {{ form.name }}
+            <div><small class="text-muted">{{ form.name.help_text }}</small></div>
             {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
         </div>
     </div>
@@ -34,4 +35,9 @@
     </div>
 </form>
 
+<script>
+    document.querySelector("[name=name]").addEventListener("input", function(e) {
+        this.value = this.value.toLowerCase();
+    })
+</script>
 {% endblock %}

@@ -2,7 +2,7 @@ import re, os
 from django import forms
 
 from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Tag, \
-    DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+    DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL, normalize_tag_name
 
 
 MIN_LATITUDE = -90
@@ -183,6 +183,10 @@ class InstrumentForm(forms.ModelForm):
 class TagForm(forms.ModelForm):
     def clean_name(self):
         name = self.cleaned_data.get("name")
+        name = normalize_tag_name(name).strip()
+
+        if name.strip() == "":
+            raise forms.ValidationError("Name is required")
 
         # Prevent creating a tag with a duplicate name
         existing = Tag.objects.filter(name__iexact=name)
@@ -197,6 +201,9 @@ class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ["id", "name", ]
+        help_texts = {
+            "name": "Must contain only lowercase letters, numbers, and underscores. No spaces or special characters."
+        }
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
