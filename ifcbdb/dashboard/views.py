@@ -99,8 +99,17 @@ def search_timeline_locations(request):
     # if start_date:
     #     start_date = pd.to_datetime(start_date, utc=True)
 
-    bins_data = qs.filter(location__isnull=False).values('pid', 'location')
-    bin_locations = [[b['pid'], b['location'].y, b['location'].x, "b"] for b in bins_data]
+    bins_data = qs.filter(location__isnull=False).values('pid', 'location', 'sample_time')
+    bin_locations = [
+        [
+            b['pid'],
+            b['location'].y,
+            b['location'].x,
+            "b",
+            b["sample_time"]
+        ]
+        for b in bins_data
+    ]
 
     if dataset_name:
         datasets = Dataset.objects.filter(name=dataset_name).exclude(location__isnull=True)
