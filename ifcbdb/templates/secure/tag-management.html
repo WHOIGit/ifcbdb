@@ -14,6 +14,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Bins</th>
                     <th></th>
                 </tr>
             </thead>
@@ -41,9 +42,14 @@
                 url: "{% url 'secure:tags_dt' %}"
             },
             columns: [
-                {}, // Name
-                { // Edit/Delete
-                    targets: -1,
+                {
+                    data: "name"
+                },
+                {
+                    data: "bin_count"
+                },
+                {
+                    data: "id",
                     orderable: false,
                     render: function ( data, type, row ) {
                         return (
@@ -53,7 +59,7 @@
                             "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/merge-tag/" + data + "'>" +
                             "<i class='fas fa-code-merge magic mr-1'></i>Merge" +
                             "</a>" +
-                            "<a class='btn btn-sm btn-mdb-color mr-2 delete-tag' data-id='" + data + "' data-name='" + row[0] + "' href='#'>" +
+                            "<a class='btn btn-sm btn-mdb-color mr-2 delete-tag' data-id='" + data + "' data-name='" + row.name + "' href='#'>" +
                             "<i class='fas fa-minus-circle magic mr-1'></i>Remove" +
                             "</a>"
                         );

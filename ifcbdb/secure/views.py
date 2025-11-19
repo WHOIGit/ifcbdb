@@ -3,6 +3,7 @@ from django import forms
 from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
+from django.db.models import Count
 
 import pandas as pd
 
@@ -186,10 +187,12 @@ def dt_tags(request):
     if not request.user.is_authenticated:
         return HttpResponseForbidden()
 
-    tags = list(Tag.objects.all().values_list("name", "id"))
+    tags = Tag.objects.all() \
+        .annotate(bin_count=Count("tagevent__bin", distinct=True)) \
+        .values("name", "id", "bin_count")
 
     return JsonResponse({
-        "data": tags
+        "data": list(tags)
     })
 
 
