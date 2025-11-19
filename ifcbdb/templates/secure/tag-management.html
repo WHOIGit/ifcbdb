@@ -53,7 +53,7 @@
                             "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/merge-tag/" + data + "'>" +
                             "<i class='fas fa-code-merge magic mr-1'></i>Merge" +
                             "</a>" +
-                            "<a class='btn btn-sm btn-mdb-color mr-2 delete-tag' data-id='" + data + "' href='#'>" +
+                            "<a class='btn btn-sm btn-mdb-color mr-2 delete-tag' data-id='" + data + "' data-name='" + row[0] + "' href='#'>" +
                             "<i class='fas fa-minus-circle magic mr-1'></i>Remove" +
                             "</a>"
                         );
@@ -66,7 +66,9 @@
     $("#tags").on("click", ".delete-tag", function(e) {
         e.preventDefault();
 
-        if (!confirm("Are you sure you want to remove this tag? This will also unassign it from all bins")) {
+        const name = $(this).data("name");
+        console.log(name)
+        if (!confirm("Are you sure you want to remove the tag named \"" + name + "\"? This will also unassign it from all bins.")) {
             return;
         }
 
