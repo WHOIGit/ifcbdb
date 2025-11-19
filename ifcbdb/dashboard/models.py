@@ -890,8 +890,10 @@ class TagEvent(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True, null=True)
 
     @staticmethod
-    def query(dataset=None, instrument=None):
+    def query(dataset=None, instrument=None, tag=None):
         qs = TagEvent.objects
+        if tag is not None:
+            qs = qs.filter(tag=tag)
         if dataset is not None:
             qs = qs.filter(bin__datasets=dataset)
         if instrument is not None:

@@ -1,8 +1,8 @@
 import re, os
 from django import forms
 
-from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, \
-    DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Tag, \
+    DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL, normalize_tag_name
 
 
 MIN_LATITUDE = -90
@@ -178,6 +178,63 @@ class InstrumentForm(forms.ModelForm):
             "share_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Share Name"}),
             "timeout": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Timeout"}),
         }
+
+
+class TagForm(forms.ModelForm):
+    def clean_name(self):
+        name = self.cleaned_data.get("name")
+        name = normalize_tag_name(name).strip()
+
+        if name.strip() == "":
+            raise forms.ValidationError("Name is required")
+
+        # Prevent creating a tag with a duplicate name
+        existing = Tag.objects.filter(name__iexact=name)
+        if self.instance.pk is not None:
+            existing = existing.exclude(pk=self.instance.pk)
+
+        if existing.count() > 0:
+            raise forms.ValidationError("Name is already in use")
+
+        return name
+
+    class Meta:
+        model = Tag
+        fields = ["id", "name", ]
+        help_texts = {
+            "name": "Must contain only lowercase letters, numbers, and underscores. No spaces or special characters."
+        }
+
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
+        }
+
+
+class MergeTagForm(forms.Form):
+    source = forms.ModelChoiceField(
+        required=True,
+        queryset=Tag.objects.none(),
+        help_text="The tag to be replaced. If no occurrences remain after the replacement, then this tag will be removed.",
+        widget=forms.Select(attrs={"class": "form-control form-control-sm", "readonly": True}))
+    target = forms.ModelChoiceField(
+        required=True,
+        queryset=Tag.objects.none(),
+        help_text="The tag that replaces the source tag, which will be added all bins currently associated with the source tag.",
+        widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
+    dataset = forms.ModelChoiceField(
+        required=False,
+        queryset=Dataset.objects.all(),
+        help_text="Optionally restrict the update to bins associated with a specific dataset.",
+        widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
+
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop("instance", None) if "instance" in kwargs else None
+
+        super().__init__(*args, **kwargs)
+
+        self.fields["source"].queryset = Tag.objects.filter(pk=self.instance.pk)
+        self.fields["source"].initial = self.instance
+        self.fields["target"].queryset = Tag.objects.exclude(pk=self.instance.pk).order_by("name")
 
 
 class MetadataUploadForm(forms.Form):
