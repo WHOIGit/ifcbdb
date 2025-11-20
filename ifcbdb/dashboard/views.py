@@ -1371,6 +1371,9 @@ def extent(request):
         .exclude(location__isnull=True) \
         .aggregate(bbox=Extent("location"))["bbox"]
 
+    dataset_ids = bin_qs.values_list("datasets__id", flat=True)
+    datasets = Dataset.objects.filter(id__in=dataset_ids).exclude(location__isnull=True)
+
     return JsonResponse({
         "start": {
             "bin": first_bin.pid,
@@ -1382,5 +1385,12 @@ def extent(request):
             "timestamp": last_bin.timestamp,
             "sample_time": last_bin.sample_time,
         },
-        "bounding_box": bounding_box
+        "bounding_box": bounding_box,
+        "locations": [
+            {
+                "dataset": dataset.name,
+                "location": [dataset.latitude, dataset.longitude],
+            }
+            for dataset in datasets
+        ]
     })
