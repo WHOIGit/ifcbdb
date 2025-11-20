@@ -135,4 +135,5 @@ urlpatterns = [
     path('api/export_metadata/<slug:dataset_name>', views.export_metadata_view, name='export_metadata'),
     path('api/export_metadata/', views.export_metadata_view, name='export_metadata'),
     path('api/sync_bin', views.sync_bin, name='sync_bin'),
+    path('api/extent', views.extent, name='extent'),
  ]
