@@ -16,6 +16,7 @@ from django.http import \
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.contrib.gis.db.models import Extent
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -1356,3 +1357,49 @@ def legacy_single_roi_features(request, dataset_name, bin_id, target):
         'names': features.columns.tolist(),
         'values': features.loc[target].tolist(),
     })
+
+def extent(request):
+    bin_qs = filter_parameters_bin_query(request.GET).order_by("timestamp")
+
+    if bin_qs.count() == 0:
+        raise Http404("no bins match the given query")
+
+    first_bin = bin_qs.first()
+    last_bin = bin_qs.last()
+
+    bounding_box = bin_qs \
+        .exclude(location__isnull=True) \
+        .aggregate(bbox=Extent("location"))["bbox"]
+
+    dataset_ids = bin_qs.values_list("datasets__id", flat=True)
+    datasets = Dataset.objects.filter(id__in=dataset_ids).exclude(location__isnull=True)
+
+
+    response = {
+        "start": {
+            "bin": first_bin.pid,
+            "timestamp": first_bin.timestamp,
+            "sample_time": first_bin.sample_time,
+        },
+        "end": {
+            "bin": last_bin.pid,
+            "timestamp": last_bin.timestamp,
+            "sample_time": last_bin.sample_time,
+        },
+        "bounding_box": bounding_box,
+        "dataset_locations": [
+            {
+                "dataset": dataset.name,
+                "location": [dataset.latitude, dataset.longitude],
+            }
+            for dataset in datasets
+        ]
+    }
+
+    if first_bin.location is not None:
+        response["start"]["location"] = [first_bin.latitude, first_bin.longitude]
+
+    if last_bin.location is not None:
+        response["end"]["location"] = [last_bin.latitude, last_bin.longitude]
+
+    return JsonResponse(response)
