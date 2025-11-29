@@ -34,6 +34,7 @@ var _binTimestamp = null; // Timestamp for the currently selected bin
 var _preventTimelineRelayout = false; // Used to prevent a relayout on the timeline when switching metrics
 var _filterPopover; // Tracks the container created by the popover library for applying filters
 var _originalMapHeight = null; // Initial size of the map on first render
+var _cachedLocationData = null; // Stored data after the locations endpoint is called
 
 var _autoCompleteJS;
 
@@ -793,7 +794,7 @@ function selectMapMarker(marker) {
     $("#no-bin-location").toggleClass("d-none", true);
 }
 
-function updateMapLocations(data) {
+function updateMapLocations(data, restrictToTimeline=false) {
     if (!_map) {
 
         var lat = defaultLat;
@@ -857,15 +858,19 @@ function updateMapLocations(data) {
     _markerList = [];
 
     _selectedMarker = null;
+
     for (var i = 0; i < locationData.locations.length; i++) {
         var location = locationData.locations[i];
         var isBin = location[3] == "b";
         var title = location[0];
+        var sampleTime = location[4];
+
         var marker = L.marker(
             L.latLng(location[1], location[2]),
             {
                 title: title,
-                icon: isBin ? _binIcon : _datasetIcon
+                icon: isBin ? _binIcon : _datasetIcon,
+                sampleTime: sampleTime,
             }
         );
 
@@ -893,6 +898,16 @@ function updateMapLocations(data) {
         }
     }
 
+    // If enabled, restrict the visible markers to just those bins that have a timestamp that is currently
+    //   visible on the timeline
+    const timelineLayout = $("#primary-plot-container")[0].layout;
+    if (timelineLayout && restrictToTimeline) {
+        const startUtc = getUtcDate(timelineLayout.xaxis.range[0]);
+        const endUtc = getUtcDate(timelineLayout.xaxis.range[1])
+
+        _markerList = restrictMarkersToDateRange(_markerList, startUtc, endUtc);
+    }
+
     if (_markerList.length > 0) {
         _markers.addLayers(_markerList);
         _map.addLayer(_markers);
@@ -914,6 +929,39 @@ function updateMapLocations(data) {
     _map.addLayer(_selectedMarkers);
 
     recenterMap();
+}
+
+// This ensures a date object with a UTC value whether the timezone indicates UTC explicitly (with a trailing "Z") or
+//   whether it's assumed and the "Z" is not there
+function getUtcDate(value) {
+    if (!value.endsWith("Z")) {
+        value = value + "Z";
+    }
+
+    return new Date(value);
+}
+
+function restrictMarkersToDateRange(markerList, startDate, endDate) {
+    const list = [];
+
+    for (const marker of markerList) {
+
+        // Markers without a sampleTime are assumed to be dataset markers
+        if (marker.options.sampleTime === undefined) {
+            list.push(marker);
+            continue;
+        }
+
+        // Do not include markers that fall outside the given date range
+        const markerDate = getUtcDate(marker.options.sampleTime);
+        if (markerDate < startDate || markerDate > endDate) {
+            continue;
+        }
+
+        list.push(marker);
+    }
+
+    return list;
 }
 
 //************* Plotting Methods  ***********************/
