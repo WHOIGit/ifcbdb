@@ -865,8 +865,7 @@ function queryTimeline(container, metric) {
         timelineLoadedAt = new Date();
         timelineLocked = false;
 
-        // TODO: Refresh map - does the call to load location data need to also be re-called
-        //     :   and/or combined with this query so its in one API call?
+        // Refresh map
         updateMapLocations(_cachedLocationData, true);
 
         return false;
