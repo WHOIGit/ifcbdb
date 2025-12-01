@@ -449,6 +449,14 @@
                         <div class="card-body py-1">
                           <div id="map-container" style="height:600px" ></div>
                             <div id="no-bin-location" class="alert alert-warning text-center d-none">The selected bin does not have a latitude/longitude set</div>
+                            <label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="limitMapToTimeline" checked>
+                                    <label class="form-check-label" for="limitMapToTimeline">
+                                        Limit bins on the map to those visible on the timeline
+                                    </label>
+                                </div>
+                            </label>
                         </div>
                       </div>
                       </div>
@@ -856,6 +864,10 @@ function queryTimeline(container, metric) {
         timelineValid = true;
         timelineLoadedAt = new Date();
         timelineLocked = false;
+
+        // Refresh map
+        updateMapLocations(_cachedLocationData, true);
+
         return false;
     });
     _requests += 1;
@@ -985,6 +997,7 @@ function updateLocations() {
     payload["csrfmiddlewaretoken"] = _csrf;
 
     $.post("/api/search_timeline_locations", payload, function(locationData){
+        _cachedLocationData = locationData;
     //    if (_workspace == "map") {
             updateMapLocations(locationData);
 //        } else {
@@ -992,6 +1005,10 @@ function updateLocations() {
   //      }
     });
 }
+
+$("#limitMapToTimeline").on("change", function(e) {
+    updateMapLocations(_cachedLocationData, $(this).is(":checked"));
+});
 
 function previewImage(img) {
     $("#mosaic-details").toggleClass("d-none", false);
