@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: WHOIgit/ifcb-dashboard
+  IMAGE_NAME: whoigit/ifcb-dashboard
 
 permissions:
   contents: read
