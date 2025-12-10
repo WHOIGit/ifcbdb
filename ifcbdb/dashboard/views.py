@@ -8,12 +8,15 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db.models import Case, When, F, Max
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
     HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
+from django.utils import timezone
+from django.contrib.gis.db.models import Extent
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -106,7 +109,7 @@ def search_timeline_locations(request):
 
     # Replace spaces with forward slashes in the dataset name or the cache key will not be valid. We're using a
     #   character that is not a legal character within a dataset name
-    clean_dataset_name = dataset_name.replace(" ", "/")
+    clean_dataset_name = dataset_name.replace(" ", "/") if dataset_name else ""
 
     cache_key = 'tloc_b={};d={};t={};i={};c={};st={}'.format(bin_id, clean_dataset_name, tags, instrument_number, cruise, sample_type)
     cached = cache.get(cache_key)
@@ -125,8 +128,17 @@ def search_timeline_locations(request):
     # if start_date:
     #     start_date = pd.to_datetime(start_date, utc=True)
 
-    bins_data = qs.filter(location__isnull=False).values('pid', 'location')
-    bin_locations = [[b['pid'], b['location'].y, b['location'].x, "b"] for b in bins_data]
+    bins_data = qs.filter(location__isnull=False).values('pid', 'location', 'sample_time')
+    bin_locations = [
+        [
+            b['pid'],
+            b['location'].y,
+            b['location'].x,
+            "b",
+            b["sample_time"]
+        ]
+        for b in bins_data
+    ]
 
     if dataset_name:
         datasets = Dataset.objects.filter(name=dataset_name).exclude(location__isnull=True)
@@ -1013,6 +1025,29 @@ def nearest_bin(request):
         'bin_id': bin_id
     })
 
+def most_recent_bin(request):
+    dataset_name = request.GET.get("dataset")
+
+    _ = get_object_or_404(Dataset, name=dataset_name)
+
+    # The most recent bin is based on the bin's timestamp. Bins that have a timestamp in the future are excluded
+    #   because it's usually indicative of bad data
+    bin = Bin.objects \
+        .filter(datasets__name=dataset_name) \
+        .exclude(timestamp__gt=timezone.now()) \
+        .order_by('-timestamp') \
+        .first()
+
+    if not bin:
+        raise Http404("Dataset has no bins")
+
+    return JsonResponse({
+        "pid": bin.pid,
+        "timestamp": bin.timestamp,
+        "time_since": round((timezone.now() - bin.timestamp).total_seconds()),
+        "temperature": bin.temperature,
+        "humidity": bin.humidity
+    })
 
 def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
@@ -1379,6 +1414,51 @@ def legacy_single_roi_features(request, dataset_name, bin_id, target):
         'values': features.loc[target].tolist(),
     })
 
+def extent(request):
+    bin_qs = filter_parameters_bin_query(request.GET).order_by("timestamp")
+
+    if bin_qs.count() == 0:
+        raise Http404("no bins match the given query")
+
+    first_bin = bin_qs.first()
+    last_bin = bin_qs.last()
+
+    bounding_box = bin_qs \
+        .exclude(location__isnull=True) \
+        .aggregate(bbox=Extent("location"))["bbox"]
+
+    dataset_ids = bin_qs.values_list("datasets__id", flat=True)
+    datasets = Dataset.objects.filter(id__in=dataset_ids).exclude(location__isnull=True)
+
+
+    response = {
+        "start": {
+            "bin": first_bin.pid,
+            "timestamp": first_bin.timestamp,
+            "sample_time": first_bin.sample_time,
+        },
+        "end": {
+            "bin": last_bin.pid,
+            "timestamp": last_bin.timestamp,
+            "sample_time": last_bin.sample_time,
+        },
+        "bounding_box": bounding_box,
+        "dataset_locations": [
+            {
+                "dataset": dataset.name,
+                "location": [dataset.latitude, dataset.longitude],
+            }
+            for dataset in datasets
+        ]
+    }
+
+    if first_bin.location is not None:
+        response["start"]["location"] = [first_bin.latitude, first_bin.longitude]
+
+    if last_bin.location is not None:
+        response["end"]["location"] = [last_bin.latitude, last_bin.longitude]
+
+    return JsonResponse(response)
 
 # Despite the name, there is no actual team page. If the team has a default dataset, the user will get
 #   redirected to its timeline page. If not, the user gets sent to the datasets page with this team

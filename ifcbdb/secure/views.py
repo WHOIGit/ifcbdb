@@ -3,22 +3,25 @@ from io import BytesIO
 from itertools import groupby
 from operator import attrgetter
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User, Group
 from django.db.models import Count
 from django import forms
 from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse, StreamingHttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
-from django.contrib.auth.models import User, Group
+
 
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
     TeamUser, TeamDataset, TeamRole, bin_query, bin_management_query
+from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, TagForm, \
+    MergeTagForm, UserForm, TeamForm, BinSearchForm, BinActionForm
+
 from dashboard.accession import export_metadata
-from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, UserForm, \
-    TeamForm, BinSearchForm, BinActionForm
 from common import auth
 from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS
+
 
 from django.core.cache import cache
 from celery.result import AsyncResult
@@ -83,6 +86,12 @@ def instrument_management(request):
         "form": form,
     })
 
+
+@login_required
+def tag_management(request):
+    return render(request, 'secure/tag-management.html', {
+
+    })
 
 @login_required
 def user_management(request):
@@ -224,6 +233,7 @@ def edit_dataset(request, id):
                 original_team.save()
 
             status = "created" if id == 0 else "updated"
+
             return redirect(reverse("secure:edit-dataset", kwargs={"id": instance.id}) + "?status=" + status)
     else:
         form = DatasetForm(instance=dataset, user=request.user)
@@ -340,6 +350,103 @@ def edit_instrument(request, id):
         "instrument": instrument,
         "form": form,
     })
+
+
+def dt_tags(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
+    tags = Tag.objects.all() \
+        .annotate(bin_count=Count("tagevent__bin", distinct=True)) \
+        .values("name", "id", "bin_count")
+
+    return JsonResponse({
+        "data": list(tags)
+    })
+
+
+@login_required
+def edit_tag(request, id):
+    tag = get_object_or_404(Tag, pk=id) if int(id) > 0 else Tag()
+
+    if request.POST:
+        form = TagForm(request.POST, instance=tag)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+
+            return redirect(reverse("secure:tag-management"))
+    else:
+        form = TagForm(instance=tag)
+
+    return render(request, "secure/edit-tag.html", {
+        "tag": tag,
+        "form": form,
+    })
+
+
+@login_required
+def merge_tag(request, id):
+    tag = get_object_or_404(Tag, pk=id) if int(id) > 0 else Tag()
+
+    if request.POST:
+        form = MergeTagForm(request.POST, instance=tag)
+        if form.is_valid():
+            target = form.cleaned_data.get("target")
+            dataset = form.cleaned_data.get("dataset")
+
+            # Locate matching tag events
+            tag_events = TagEvent.query(tag=tag, dataset=dataset)
+
+            # Get the list of bins already assigned to the target tag to prevent creating duplicates
+            assigned_bins = TagEvent.query(tag=target, dataset=dataset).values("bin")
+
+            # Update the tag on any records not already assigned to the target tag
+            tag_events.exclude(bin__in=assigned_bins).update(tag=target)
+
+            # Remove any records already assigned to the target tag
+            tag_events.filter(bin__in=assigned_bins).delete()
+
+            # If the tag is no longer in use on any bins, remove it
+            if TagEvent.objects.filter(tag=tag).count() == 0:
+                tag.delete()
+
+            return redirect(reverse("secure:tag-management"))
+    else:
+        form = MergeTagForm(instance=tag)
+
+    return render(request, "secure/merge-tag.html", {
+        "tag": tag,
+        "form": form,
+    })
+
+@login_required
+def merge_tag_affected_bins(request, id):
+    tag = get_object_or_404(Tag, pk=id)
+
+    dataset_id = request.POST.get("dataset")
+    dataset = Dataset.objects.get(pk=dataset_id) if dataset_id else None
+
+    total = TagEvent \
+        .query(tag=tag, dataset=dataset) \
+        .values("bin_id") \
+        .distinct() \
+        .count()
+
+    return JsonResponse({
+        "total": total,
+    })
+
+
+@require_POST
+def delete_tag(request, id):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+
+    tag = get_object_or_404(Tag, pk=id)
+    tag.delete()
+
+    return JsonResponse({})
 
 
 @login_required

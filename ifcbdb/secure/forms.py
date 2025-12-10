@@ -3,11 +3,11 @@ from django import forms
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 
-from dashboard.models import Bin, Dataset, Instrument, DataDirectory, AppSettings, Team, TeamUser, TeamDataset, Tag, \
-    DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Tag, \
+    Bin, Team, TeamUser, TeamDataset, \
+    DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL, normalize_tag_name
 from common import auth
 from common.constants import BinManagementActions, TeamRoles
-
 
 MIN_LATITUDE = -90
 MAX_LATITUDE = 90
@@ -208,6 +208,62 @@ class InstrumentForm(forms.ModelForm):
         }
 
 
+class TagForm(forms.ModelForm):
+    def clean_name(self):
+        name = self.cleaned_data.get("name")
+        name = normalize_tag_name(name).strip()
+
+        if name.strip() == "":
+            raise forms.ValidationError("Name is required")
+
+        # Prevent creating a tag with a duplicate name
+        existing = Tag.objects.filter(name__iexact=name)
+        if self.instance.pk is not None:
+            existing = existing.exclude(pk=self.instance.pk)
+
+        if existing.count() > 0:
+            raise forms.ValidationError("Name is already in use")
+
+        return name
+
+    class Meta:
+        model = Tag
+        fields = ["id", "name", ]
+        help_texts = {
+            "name": "Must contain only lowercase letters, numbers, and underscores. No spaces or special characters."
+        }
+
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
+        }
+
+
+class MergeTagForm(forms.Form):
+    source = forms.ModelChoiceField(
+        required=True,
+        queryset=Tag.objects.none(),
+        help_text="The tag to be replaced. If no occurrences remain after the replacement, then this tag will be removed.",
+        widget=forms.Select(attrs={"class": "form-control form-control-sm", "readonly": True}))
+    target = forms.ModelChoiceField(
+        required=True,
+        queryset=Tag.objects.none(),
+        help_text="The tag that replaces the source tag, which will be added all bins currently associated with the source tag.",
+        widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
+    dataset = forms.ModelChoiceField(
+        required=False,
+        queryset=Dataset.objects.all(),
+        help_text="Optionally restrict the update to bins associated with a specific dataset.",
+        widget=forms.Select(attrs={"class": "form-control form-control-sm"}))
+
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop("instance", None) if "instance" in kwargs else None
+
+        super().__init__(*args, **kwargs)
+
+        self.fields["source"].queryset = Tag.objects.filter(pk=self.instance.pk)
+        self.fields["source"].initial = self.instance
+        self.fields["target"].queryset = Tag.objects.exclude(pk=self.instance.pk).order_by("name")
+
 class UserForm(forms.ModelForm):
     password = forms.CharField(max_length=50, required=False,
                                widget=forms.PasswordInput(attrs={"class": "form-control form-control-sm"}))
@@ -248,7 +304,6 @@ class UserForm(forms.ModelForm):
             "last_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Last Name"}),
             "email": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Email"}),
         }
-
 
 class MetadataUploadForm(forms.Form):
     file = forms.FileField(label="Choose file", widget=forms.ClearableFileInput(attrs={"class": "custom-file-input"}))

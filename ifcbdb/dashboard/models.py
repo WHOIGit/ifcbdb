@@ -255,7 +255,6 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
 def bin_management_query(
         user, dataset_name=None, start=None, end=None, tags=[],
         instrument_number=None, cruise=None, sample_type=None, team_names=None):
-
     # No access if the user is not logged in
     if not user.is_authenticated:
         return Bin.objects.none()
@@ -321,9 +320,15 @@ class Dataset(models.Model):
     contact_email = models.EmailField(max_length=256, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
+    # This model implements a __len__ method, which overrides the default truthiness behavior on an ORM
+    #   model. This normally returns True whether the model is saved or not in the database. The logic in
+    #   __len__ will override this, so defining __bool__ will retain the original behavior
+    def __bool__(self):
+        return True
+
     def __len__(self):
         # number of bins
-        return self.bins.count()
+        return self.bins.count() if self.pk else 0
 
     def data_volume(self):
         # total data volume in bytes
@@ -974,8 +979,10 @@ class TagEvent(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True, null=True)
 
     @staticmethod
-    def query(dataset=None, instrument=None):
+    def query(dataset=None, instrument=None, tag=None):
         qs = TagEvent.objects
+        if tag is not None:
+            qs = qs.filter(tag=tag)
         if dataset is not None:
             qs = qs.filter(bin__datasets=dataset)
         if instrument is not None:

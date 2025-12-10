@@ -23,6 +23,7 @@
             {% endif %}
             {% if request.user.is_superuser %}
             <li class="list-group-item"><a href="{% url 'secure:instrument-management' %}">Instrument Management</a></li>
+            <li class="list-group-item"><a href="{% url 'secure:tag-management' %}">Tag Management</a></li>
             <li class="list-group-item"><a href="{% url 'secure:user-management' %}">User Management</a></li>
             {% endif %}
             {% switch 'Teams' %}

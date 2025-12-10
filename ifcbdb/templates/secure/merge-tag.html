@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Merge Tag</span>
+    </div>
+</div>
+<hr class="my-2">
+
+{% if form.non_field_errors %}
+  <div class="non-field-errors">
+    {% for err in form.non_field_errors %}
+      <p class="alert alert-danger">{{ err }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.id }}
+
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_source">Source</label>
+            {{ form.source }}
+            <small class="text-muted">{{ form.source.help_text }}</small>
+            {% if form.source.errors %}<span class="text-danger">{{ form.source.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_target">Target</label>
+            {{ form.target }}
+            <small class="text-muted">{{ form.target.help_text }}</small>
+            {% if form.target.errors %}<span class="text-danger">{{ form.target.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col">
+            <label for="id_dataset">Dataset</label>
+            {{ form.dataset }}
+            <small class="text-muted">{{ form.dataset.help_text }}</small>
+            {% if form.dataset.errors %}<span class="text-danger">{{ form.dataset.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="form-row" id="warning-panel">
+        <div class="alert alert-warning" id="warning-message"></div>
+    </div>
+    <div class="form-row">
+        <a href="{% url 'secure:tag-management' %}" class="btn btn-sm">Cancel</a>
+        <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
+    </div>
+</form>
+
+<script>
+    function updateValues() {
+        const payload = {
+            "csrfmiddlewaretoken": "{{ csrf_token }}",
+            "dataset": $("[name=dataset]").val(),
+        };
+
+        $.post("{% url 'secure:merge_tag_affected_bins' form.instance.pk %}", payload, function(data) {
+            $("#warning-message").text(
+                "This update will affect " + data.total + " bin(s). After the update, the tag will be removed if " +
+                "it is no longer associated with any remaining bins.");
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function(e) {
+        $("[name=dataset]").on("change", updateValues);
+
+        updateValues();
+    });
+</script>
+
+{% endblock %}
