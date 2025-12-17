@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load waffle_tags %}
 
 {% block extra_head %}
 <title>{{ dataset.title }} » Manage</title>
@@ -60,6 +61,7 @@
                     {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
                 </div>
             </div>
+            {% switch 'Teams' %}
             <div class="form-row">
                 <div class="form-group col">
                     <label for="id_team">Team</label>
@@ -67,6 +69,7 @@
                     {% if form.team.errors %}<span class="text-danger">{{ form.team.errors.as_text }}</span>{% endif %}
                 </div>
             </div>
+            {% endswitch %}
             <div class="form-row">
                 <div class="form-group col">
                     <label for="id_doi">Contact Name (optional)</label>
