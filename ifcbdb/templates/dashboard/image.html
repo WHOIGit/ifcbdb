@@ -127,8 +127,8 @@
             <div class="modal-body">
 
             <!-- image_id|stringformat:"05d" -->
-            <input id="share-link" size="50" value="{{ request.scheme }}://{{ request.get_host }}/image?dataset={{ dataset.name }}&bin={{ bin.pid }}&image={{ image_id }}">
-            <input id="share-link-value" type="hidden" value="{{ request.scheme }}://{{ request.get_host }}/image?dataset={{ dataset.name }}&bin={{ bin.pid }}&image={{ image_id }}">
+            <input id="share-link" size="50" value="/image?dataset={{ dataset.name }}&bin={{ bin.pid }}&image={{ image_id }}">
+            <input id="share-link-value" type="hidden" value="/image?dataset={{ dataset.name }}&bin={{ bin.pid }}&image={{ image_id }}">
 
             </div>
             <div class="modal-footer">
@@ -264,14 +264,14 @@
                 "sample_type": _sampleType
             };
 
-            var rootUrl = "{{ request.scheme }}://{{ request.get_host }}/image";
+            const rootUrl = window.location.protocol + "//" + window.location.host;
             var currentUrl = getCurrentUrl();
 
             history.pushState(state, null, currentUrl);
             $("#share-link").val(rootUrl + currentUrl);
-            $("#share-link-value").val(rootUrl + currentUrl);
+            //$("#share-link-value").val(rootUrl + currentUrl);
 
-            $("#direct-image-link").attr('href', '{{ request.scheme }}://{{ request.get_host }}/{{ dataset.name }}/{{ bin.pid }}_' + padDigits(_image_id, 5) + '.png');
+            $("#direct-image-link").attr('href', rootUrl + '/{{ dataset.name }}/{{ bin.pid }}_' + padDigits(_image_id, 5) + '.png');
         }
     }
 
@@ -357,9 +357,8 @@
     $("#share-button").click(function (e) {
         e.preventDefault();
 
-        var url = $("#share-link-value").val() + (_mode != "" ? "&mode=" + _mode : "");
-
-        // TODO: The share image link needs to include the team route/prefix
+        const rootUrl = window.location.protocol + "//" + window.location.host;
+        const url = rootUrl + $("#share-link-value").val() + (_mode != "" ? "&mode=" + _mode : "");
 
         $("#share-link").val(url);
         $("#share-modal").modal();

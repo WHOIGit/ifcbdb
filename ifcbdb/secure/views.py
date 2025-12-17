@@ -28,13 +28,11 @@ from celery.result import AsyncResult
 from waffle.decorators import waffle_switch
 
 
-
 @login_required
 def index(request):
     if not auth.can_access_settings(request.user):
         return redirect("/")
 
-    # TODO: Each of these permissions needs to hit the database, improve performance by combining or caching
     can_manage_teams = auth.can_manage_teams(request.user)
     can_manage_datasets = auth.can_manage_datasets(request.user)
     can_manage_metadata = auth.can_manage_metadata(request.user)
@@ -118,13 +116,11 @@ def dt_datasets(request):
     datasets = Dataset.objects.all()
 
     if not request.user.is_superuser:
-        # TODO: This could be reused elsewhere
         allowed_team_ids = TeamUser.objects \
             .filter(user=request.user) \
             .filter(role_id=TeamRoles.CAPTAIN.value) \
             .values_list("team_id", flat=True)
 
-        # TODO: Check this, but there should always be at least one, or the user wouldn't have been allowed here already
         team_datasets_ids = TeamDataset.objects \
             .filter(team_id__in=allowed_team_ids) \
             .values_list("dataset_id", flat=True)
@@ -828,8 +824,7 @@ def upload_metadata(request):
                     'in_progress': '',
                     })
 
-            # Filter down the list of bins to update to just ones the user has access to
-            # TODO: Needs a lot of clean up and de-duping of methods
+            # Filter down the list of bins to update to just ones the user has access to if they are not a super admin.
             if not request.user.is_superuser:
                 def get_column(df, possible_names):
                     for possible in possible_names:
@@ -847,7 +842,6 @@ def upload_metadata(request):
                         'in_progress': '',
                     })
 
-                # TODO: This will not scale...
                 team_ids = list(TeamUser.objects.filter(user=request.user).values_list('team_id', flat=True))
                 pids_to_check = list(df[pid_col])
                 bins_ids = Bin.objects \
@@ -945,7 +939,6 @@ def bin_management_search(request):
     if not auth.can_manage_bins(request.user):
         return redirect(reverse("secure:index"))
 
-    # TODO: Disable the team filter when the feature is not enabled
     form = BinSearchForm(request.POST, user=request.user)
     if not form.is_valid():
         return JsonResponse({
@@ -966,10 +959,14 @@ def bin_management_export(request, dataset_name=None):
     if not auth.can_manage_bins(request.user):
         return redirect(reverse("secure:index"))
 
+    # This is somewhat redundant because you can't export unless you've already searched (and thus, validated the
+    #   for inputs). But it's necessary to make sure the cleaned_data array of the form is populated
     form = BinSearchForm(request.GET, user=request.user)
     if not form.is_valid():
-        # TODO: DO something? is_valid must be called or cleaned_data never gets populated
-        pass
+        return JsonResponse({
+            "success": False,
+            "errors": form.errors,
+        })
 
     bin_qs = build_bin_query_from_form_data(request.user, form)
 
@@ -994,13 +991,14 @@ def bin_management_execute(request):
     if not auth.can_manage_bins(request.user):
         return redirect(reverse("secure:index"))
 
+    # This is somewhat redundant because you can't export unless you've already searched (and thus, validated the
+    #   for inputs). But it's necessary to make sure the cleaned_data array of the form is populated
     form = BinSearchForm(request.POST, user=request.user)
     if not form.is_valid():
-        # TODO: For now, this should always since there aren't any actual form validators on the search. Later, this
-        #     :   form will likely go away for the execute action to ensure that the user cannot change search criteria
-        #     :   prior to clicking execute (without being intentional about it. But is_valid() must be called for the
-        #     :   values to appear in cleaned_data
-        pass
+        return JsonResponse({
+            "success": False,
+            "errors": form.errors,
+        })
 
     action_form = BinActionForm(request.POST, user=request.user)
     if not action_form.is_valid():
@@ -1030,7 +1028,6 @@ def bin_management_execute(request):
         "message": f"Please choose an action to perform",
     })
 
-# TODO: Move this to on the form since there isn't much logic anymore besides wrangling all the parameters
 def build_bin_query_from_form_data(user, form):
     dataset = form.cleaned_data.get("dataset")
     team = form.cleaned_data.get("team")

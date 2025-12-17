@@ -17,5 +17,4 @@ class BinManagementActions(Enum):
     UNASSIGN_DATASET = "unassign-dataset"
 
 # Metadata column names
-# TODO: More than just this one should be defined here (which is a duplicate of what's defined at the method level)
 BIN_ID_COLUMNS = ['id','pid','lid','bin','bin_id','sample','sample_id','filename']

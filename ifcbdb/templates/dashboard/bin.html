@@ -674,7 +674,7 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <input id="share-link" size="50" data-scheme="{{ request.scheme }}" data-host="{{ request.get_host }}" />
+                <input id="share-link" size="50" />
             </div>
             <div class="modal-footer">
                 <button id="copy-share-link" type="button" class="btn btn-mdb-color btn-sm">Copy to Clipboard</button>
@@ -1118,10 +1118,8 @@ $("#close-image").click(function() {
 $("#share-image").click(function (e) {
   e.preventDefault();
 
-  var rootUrl = "{{ request.scheme }}://{{ request.get_host }}";
-  var url = $("#detailed-image-link-id").attr("href");
-
-  // TODO: The share image link needs to include the team route/prefix
+  const rootUrl = window.location.protocol + "//" + window.location.host;
+  const url = $("#detailed-image-link-id").attr("href");
 
   $("#share-link").val(rootUrl + url);
 

@@ -1035,15 +1035,11 @@ function initEvents() {
     $("#share-button").click(function(e) {
         e.preventDefault();
 
-        var link = $("#share-link");
-        var base = link.data("scheme") + "://" + link.data("host");
-
-        // TODO: The share image link needs to include the team route/prefix
-        // TODO: Http vs https may not be working correctly
+        const rootUrl = window.location.protocol + "//" + window.location.host;
 
         $("#share-modal").modal();
         $("#share-modal .modal-title").text($("#share-modal .modal-title").data("default-text"));
-        $("#share-link").val(base + createLink()).select();
+        $("#share-link").val(rootUrl + createLink()).select();
     });
 
     // Copy the share link to the clipboard

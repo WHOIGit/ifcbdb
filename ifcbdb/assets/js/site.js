@@ -584,6 +584,25 @@ function isFilteringUsed() {
         return true;
 }
 
+// Formats a list of Django validation errors into an <ul />
+function formatValidationErrorsAsList(errors) {
+    const items = [];
+
+    for (const [field, messages] of Object.entries(errors)) {
+
+        // Capitalize and format field name (e.g., "email_address" -> "Email Address")
+        const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+        messages.forEach(message => {
+            const prefix = field === "__all__" ? "" : `<strong>${fieldName}:</strong> `;
+
+            items.push(`<li>${prefix}${message}</li>`);
+        });
+    }
+
+    return "<ul class='error-list mb-0'>" + items.join() + "</ul>";
+}
+
 $(function () {
     $('#datasets-popover').popover({
         container: 'body',
