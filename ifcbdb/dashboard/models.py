@@ -215,7 +215,6 @@ def normalize_tag_name(tag_name):
     normalized = re.sub(r'[^_a-zA-Z0-9]','_',tag_name.lower().strip())
     return normalized
 
-# TODO: Figure out different in logic around start/end date parameters...
 def bin_query(dataset_name=None, start=None, end=None, tags=[],
         instrument_number=None, cruise=None, filter_skip=True, sample_type=None, team_names=None):
     qs = Bin.objects
@@ -262,7 +261,6 @@ def bin_management_query(
     # Users that cannot see everything will be restricted based on the teams they are associated with as either a
     #   captain or a manager. If they are only associated as a user, that's not enough access to be able to
     #   update bins, even though they have the ability to see them
-    # TODO: Do some thorough testing on the data to ensure this is working properly
     if not user.is_superuser:
         teams = Team.objects \
             .filter(teamuser__user=user) \
@@ -275,6 +273,17 @@ def bin_management_query(
     # For the update query, we always want to avoid skipping any bins
     filter_skip = False
 
+    # The user submitted dates are inclusive for the start date and exclusive for the end date. This
+    #   means if the user wants to find all bins for 4/12/2022, they'll need to enter a start date of
+    #   4/12/2022 and an end date of 4/13/2022. The submitted dates are converted to UTC for use in
+    #   the bin_query() method, and the end date will have 1 microsecond subtracted so that it does
+    #   not include the end date in the time range. This is to match the logic behind the bin_query()
+    #   method, which uses greater than or equal to the start date and less than or equal to the end date
+    adjusted_start = pd.to_datetime(start, utc=True) if start is not None else None
+    adjusted_end = pd.to_datetime(end, utc=True) if end is not None else None
+    if adjusted_end is not None:
+        adjusted_end -= pd.Timedelta(microseconds=1)
+
     # Start and end date are not passed because they are handled differently after the initial call is done
     bin_qs = bin_query(
         dataset_name=dataset_name,
@@ -283,22 +292,10 @@ def bin_management_query(
         cruise=cruise,
         filter_skip=filter_skip,
         sample_type=sample_type,
-        team_names=team_names
+        team_names=team_names,
+        start=adjusted_start,
+        end=adjusted_end,
     )
-
-    # TODO: This logic is borrowed from the nav filtering logic. There are parameters in bin_query that allow for a
-    #     :   start and end date, but it does not work the same. The code below adds a day to the end date and that
-    #     :   means a search fora single date will work, whereas it won't with the bin_query parameters. We should
-    #     :   check to make sure this isn't actually a bug with one of the methods
-    # TODO: Double check this is still working after refactor
-    if start:
-        start_date = pd.to_datetime(start, utc=True)
-        bin_qs = bin_qs.filter(sample_time__gte=start_date)
-
-    if end:
-        end_date = pd.to_datetime(end, utc=True) + pd.Timedelta('1d')
-        bin_qs = bin_qs.filter(sample_time__lte=end_date)
-
     return bin_qs
 
 class Dataset(models.Model):

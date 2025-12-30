@@ -453,8 +453,18 @@ class BinSearchForm(forms.Form):
         self.fields["sample_type"].choices = self.build_sample_type_choices(bins)
 
     def clean(self):
-        if not any(value not in [None, ""] for value in self.cleaned_data.values()):
+        cleaned_data = self.cleaned_data
+        start_date = self.cleaned_data.get("start_date")
+        end_date = self.cleaned_data.get("end_date")
+
+        # Ensure the user has entered at least one piece of criteria to prevent searching through
+        #   the entire database of bins
+        if not any(value not in [None, ""] for value in cleaned_data.values()):
             raise ValidationError("Please select at least one thing to search for")
+
+        # If both dates are entered, ensure end date is greater than or equal to start date
+        if start_date is not None and end_date is not None and start_date >= end_date:
+            raise ValidationError("End date cannot be earlier than the start date")
 
     def build_cruise_choices(self, bins):
         cruises = bins \
