@@ -176,6 +176,8 @@
 
             $("#results-panel").toggleClass("d-none", true);
             $("#actions-panel").toggleClass("d-none", true);
+
+            toggleExecuteMessage(false);
         });
 
         $("#export-button").on("click", function(e) {
@@ -213,11 +215,26 @@
         }
 
         function exportBins() {
-            const form = $("#search-form").get(0);
-            form.setAttribute("target", "_blank");
-            form.setAttribute("method", "get");
-            form.setAttribute("action", "/secure/bin-management/export");
-            form.submit();
+            const searchFormData = buildSearchFormData();
+
+            $.ajax({
+                url: "/secure/bin-management/export",
+                method: "POST",
+                data: $.param(searchFormData),
+                contentType: "application/x-www-form-urlencoded",
+                xhrFields: {
+                    responseType: "blob"
+                },
+                success: function(blob) {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = $("<a></a>").attr("href", url).attr("download", "bins.csv");
+
+                    link[0].click();
+                    link.remove();
+
+                    window.URL.revokeObjectURL(url);
+                }
+            });
         }
 
         function resetActionForm() {
@@ -226,6 +243,11 @@
             for (let i = 0; i < actionInputs.length; i++) {
                 actionInputs[i].checked = false;
             }
+
+            changeAction();
+
+            $("[name=assigned_dataset]")[0].selectedIndex = 0;
+            $("[name=unassigned_dataset]").selectedIndex = 0;
         }
 
         function enableSearchForm(isEnabled) {
@@ -236,6 +258,22 @@
             $("#search-button").toggleClass("invisible", !isEnabled);
         }
 
+        function buildSearchFormData() {
+            const searchForm = $("#search-form");
+            const searchFormData = searchForm.serializeArray();
+
+            // Some or all of the values might have been disabled, so add them back in, because normally they are
+            //   not included in the POST data.
+            searchForm.find("[disabled]").each(function() {
+                searchFormData.push({
+                    name: $(this).attr("name"),
+                    value: $(this).val()
+                });
+            });
+
+            return searchFormData;
+        }
+
         function executeAction() {
             if (!confirm("Are you sure you want to execute this action?")) {
                 return;
@@ -244,17 +282,7 @@
             toggleExecuteErrors(false);
             toggleExecuteMessage(false);
 
-            // Serialize the data from the search form. Some or all of the values might have been disabled, so
-            //   add them back in, because normally they are not included in the POST data.
-            const searchForm = $("#search-form");
-            const searchFormData = searchForm.serializeArray();
-            searchForm.find("[disabled]").each(function() {
-                searchFormData.push({
-                    name: $(this).attr("name"),
-                    value: $(this).val()
-                });
-            });
-
+            const searchFormData = buildSearchFormData();
             const executeFormData = $("#execute-form").serializeArray()
             const formData = $.param(searchFormData.concat(executeFormData));
 

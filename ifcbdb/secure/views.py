@@ -961,7 +961,7 @@ def bin_management_export(request, dataset_name=None):
 
     # This is somewhat redundant because you can't export unless you've already searched (and thus, validated the
     #   for inputs). But it's necessary to make sure the cleaned_data array of the form is populated
-    form = BinSearchForm(request.GET, user=request.user)
+    form = BinSearchForm(request.POST, user=request.user)
     if not form.is_valid():
         return JsonResponse({
             "success": False,
