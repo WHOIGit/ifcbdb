@@ -87,6 +87,7 @@ class Accession(object):
 
         # create model object
         timestamp = bin.pid.timestamp
+        team = self.dataset.team if self.dataset else None
         b, created = Bin.objects.get_or_create(pid=pid, defaults={
             'timestamp': timestamp,
             'sample_time': timestamp,
@@ -94,8 +95,15 @@ class Accession(object):
             'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
             'data_directory': dd_found,
             'skip': True, # in case accession is interrupted
-            'team': self.dataset.team if self.dataset else None,
+            'team': team,
         })
+
+        # For existing bins, if the team value is not set, and there is one, save that value. This handles pre-existing
+        #   data that was created prior to the teams feature, allowing it to be backfilled when sync'ing
+        if not created and b.team is None and team is not None:
+            b.team = team
+            b.save()
+
         if not created:
             return
         b2s, error = self.add_bin(bin, b)
@@ -148,6 +156,7 @@ class Accession(object):
                 log_callback('{} found'.format(pid))
                 instrument = instruments[bin.pid.instrument]
                 timestamp = bin.timestamp
+                team = self.dataset.team if self.dataset else None
                 if start_time is not None and bin.timestamp <= start_time:
                     continue
                 b, created = Bin.objects.get_or_create(pid=pid, defaults={
@@ -157,8 +166,15 @@ class Accession(object):
                     'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
                     'data_directory': dd,
                     'skip': True, # in case accession is interrupted
-                    'team': self.dataset.team if self.dataset else None,
+                    'team': team,
                 })
+
+                # For existing bins, if the team value is not set, and there is one, save that value. This handles pre-existing
+                #   data that was created prior to the teams feature, allowing it to be backfilled when sync'ing
+                if not created and b.team is None and team is not None:
+                    b.team = team
+                    b.save()
+
                 if not created:
                     continue
                 b2s, error = self.add_bin(bin, b)
