@@ -13,7 +13,6 @@
     }
     .dataset-item span:before {
         display:inline-block;
-        content: "\200B";
         margin-bottom:.5rem
 
     }
@@ -115,7 +114,7 @@
                                                     {% if dataset.description %}
                                                     <div>
                                                         <label>Description</label>
-                                                        <span>{{ dataset.description }}</span>
+                                                        <span>{{ dataset.description|linebreaksbr }}</span>
                                                     </div>
                                                     {% endif %}
                                                 </div>
