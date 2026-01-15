@@ -370,6 +370,9 @@ class TeamForm(forms.ModelForm):
     def clean_name(self):
         name = self.cleaned_data.get("name")
 
+        if name.strip() == "":
+            raise forms.ValidationError("Name is required")
+
         team = Team.objects.filter(name__iexact=name).exclude(id=self.instance.id)
         if team.exists():
             raise forms.ValidationError("This name is already in use.")
