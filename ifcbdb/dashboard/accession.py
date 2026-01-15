@@ -332,7 +332,7 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
         except TypeError:
             return val
 
-    df.columns = [s.lower() for s in df.columns]
+    df.columns = [s.lower().strip() for s in df.columns]
 
     pid_col = get_column(df, BIN_ID_COLUMNS)
 
