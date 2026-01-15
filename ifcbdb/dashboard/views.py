@@ -58,7 +58,10 @@ def datasets(request, team_name=None):
     # Only show active datasets
     # FUTURE: This may be changes to allow for user__username that "own" those datasets (captains/managers) to
     #       : see the inactive datasets
-    datasets = Dataset.objects.filter(is_active=True).prefetch_related("teamdataset_set__team")
+    datasets = Dataset.objects \
+        .filter(is_active=True) \
+        .prefetch_related("teamdataset_set__team") \
+        .order_by("title")
 
     # Add in the team ID for each dataset, which is needed for grouping them within the correct accordion panel
     for dataset in datasets:

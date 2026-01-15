@@ -1,0 +1,49 @@
+<div class="col-md-4 mb-3">
+    <div class="card h-100">
+        <div class="card-body">
+            <h5><strong>
+                <a href="{% url 'timeline_page' %}?dataset={{ dataset.name }}">{{ dataset.title }}</a>
+            </strong></h5>
+            <hr style="margin: .5rem 0" />
+            <div class="row dataset-item">
+                <div class="col">
+                    {% if dataset.contact_name %}
+                    <div>
+                        <label class="d-inline-block">Contact:</label>
+                        {{ contact_email }}
+                        {% if dataset.contact_email %}
+                        <span><a href="mailto:{{ dataset.contact_email }}">{{ dataset.contact_name }}</a></span>
+                        {% else %}
+                        <span>{{ dataset.contact_name }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if dataset.doi %}
+                    <div>
+                        <label class="d-inline-block">DOI:</label>
+                        <span>{{ dataset.doi }}</span>
+                    </div>
+                    {% endif %}
+                    {% if dataset.attribution %}
+                    <div>
+                        <label>Investigators</label>
+                        <span>{{ dataset.attribution }}</span>
+                    </div>
+                    {% endif %}
+                    {% if dataset.funding %}
+                    <div>
+                        <label>Funding</label>
+                        <span>{{ dataset.funding }}</span>
+                    </div>
+                    {% endif %}
+                    {% if dataset.description %}
+                    <div>
+                        <label>Description</label>
+                        <span>{{ dataset.description|linebreaksbr }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
