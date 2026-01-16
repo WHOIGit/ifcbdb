@@ -10,7 +10,6 @@
                     {% if dataset.contact_name %}
                     <div>
                         <label class="d-inline-block">Contact:</label>
-                        {{ contact_email }}
                         {% if dataset.contact_email %}
                         <span><a href="mailto:{{ dataset.contact_email }}">{{ dataset.contact_name }}</a></span>
                         {% else %}

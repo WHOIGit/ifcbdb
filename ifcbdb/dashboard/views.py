@@ -481,6 +481,14 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
     else:
         dataset = None
 
+    # If there's a dataset but no bin by this point, it means the dataset has no bins associated with it. In which
+    #   case, the user should be shown a message indicating such, rather than a 404 (which is how all the other checks
+    #   will respond)
+    if bin is None and dataset is not None:
+        return render(request, "dashboard/empty-dataset.html", {
+            "dataset": dataset,
+        })
+
     bin, dataset = bin_in_dataset_or_404(bin, dataset)
 
     instrument = get_object_or_404(Instrument, number=instrument_number) if instrument_number else None
