@@ -445,20 +445,27 @@
 
                       <!-- Map Tap -->
                       <div id="map-tab-content" class="tab-pane py-2" role="tabpanel">
-                        <div class="card">
-                        <div class="card-body py-1">
-                          <div id="map-container" style="height:600px" ></div>
-                            <div id="no-bin-location" class="alert alert-warning text-center d-none">The selected bin does not have a latitude/longitude set</div>
-                            <label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="limitMapToTimeline" checked>
-                                    <label class="form-check-label" for="limitMapToTimeline">
-                                        Limit bins on the map to those visible on the timeline
-                                    </label>
-                                </div>
-                            </label>
-                        </div>
-                      </div>
+                          <div class="card">
+                              <div class="card-body py-1">
+                                  <div id="map-container" style="height:600px"></div>
+                                  <div id="no-bin-location" class="alert alert-warning text-center d-none">
+                                      The selected bin does not have a latitude/longitude set
+                                  </div>
+                                  <div class="form-check">
+                                      {% if route == 'timeline' %}
+                                      <input class="form-check-input" type="checkbox" id="limitMapToTimeline" checked>
+                                      <label class="form-check-label" for="limitMapToTimeline">
+                                          Limit bins on the map to those visible on the timeline
+                                      </label>
+                                      {% else %}
+                                      <input class="form-check-input" type="checkbox" id="limitMapToSelectedBin">
+                                      <label class="form-check-label" for="limitMapToSelectedBin">
+                                          Show only this bin on the map
+                                      </label>
+                                      {% endif %}
+                                  </div>
+                              </div>
+                          </div>
                       </div>
                       <!--End Map Tab-->
                   </div>
@@ -1007,7 +1014,11 @@ function updateLocations() {
 }
 
 $("#limitMapToTimeline").on("change", function(e) {
-    updateMapLocations(_cachedLocationData, $(this).is(":checked"));
+    updateMapLocations(_cachedLocationData, $(this).is(":checked"), false);
+});
+
+$("#limitMapToSelectedBin").on("change", function(e) {
+    updateMapLocations(_cachedLocationData, false, $(this).is(":checked"));
 });
 
 function previewImage(img) {
