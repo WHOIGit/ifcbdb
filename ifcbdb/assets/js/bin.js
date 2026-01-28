@@ -794,7 +794,7 @@ function selectMapMarker(marker) {
     $("#no-bin-location").toggleClass("d-none", true);
 }
 
-function updateMapLocations(data, restrictToTimeline=false) {
+function updateMapLocations(data, restrictToTimeline=false, restrictToSelectedBin=false) {
     if (!_map) {
 
         var lat = defaultLat;
@@ -842,7 +842,7 @@ function updateMapLocations(data, restrictToTimeline=false) {
 
         // This event is needed to make the disabling of zoomToBoundsOnClick work properly. Without it, if clicking
         //   on the cluster would have normally spiderfied the cluster, it won't. This forces the spiderfy to happen
-        //   regarldess, making things work as a user would expect
+        //   regardless, making things work as a user would expect
         _markers.on('clusterclick', function (cluster) {
             cluster.layer.spiderfy();
         });
@@ -899,13 +899,20 @@ function updateMapLocations(data, restrictToTimeline=false) {
     }
 
     // If enabled, restrict the visible markers to just those bins that have a timestamp that is currently
-    //   visible on the timeline
-    const timelineLayout = $("#primary-plot-container")[0].layout;
-    if (timelineLayout && restrictToTimeline) {
-        const startUtc = getUtcDate(timelineLayout.xaxis.range[0]);
-        const endUtc = getUtcDate(timelineLayout.xaxis.range[1])
+    //   visible on the timeline. Since this relies on the timeline, there's additional checks to make sure
+    //   that the timeline layout (used to get the xaxis range) is on the page.
+    const plot = $("#primary-plot-container")[0];
+    if (plot && plot.layout && restrictToTimeline) {
+        const startUtc = getUtcDate(plot.layout.xaxis.range[0]);
+        const endUtc = getUtcDate(plot.layout.xaxis.range[1])
 
         _markerList = restrictMarkersToDateRange(_markerList, startUtc, endUtc);
+    }
+
+    // The selected bin is stored in _selectedMarkers, which means _markerList can be cleared out entirely if the
+    //   user only wants to see the selected bin on the map
+    if (restrictToSelectedBin) {
+        _markerList = [];
     }
 
     if (_markerList.length > 0) {
