@@ -40,6 +40,11 @@ var _autoCompleteJS;
 
 //************* Common Methods ***********************/
 
+function getPage(page, queryString = "") {
+    return window.location.pathname.replace(/[^/]+$/, page)
+        + (queryString ? "?" + queryString : "");
+}
+
 // Generates a relative link to the current bin/dataset
 function createLink() {
     // Bin Mode
@@ -47,18 +52,18 @@ function createLink() {
         return createBinModeLink();
 
     // Timeline Mode
-    return "/timeline?" +
-        buildFilterOptionsQueryString(true) +
-        (_bin != "" ? "&bin=" + _bin : "");
+    const queryString = buildFilterOptionsQueryString(true) + (_bin != "" ? "&bin=" + _bin : "");
+
+    return getPage("timeline", queryString);
 }
 
 function createListLink(start, end) {
     if (!isFilteringUsed())
         return "javascript:;;";
 
-    return "/list?" + getGroupingParameters(_bin) +
-        "&start_date=" + start +
-        "&end_date=" + end;
+    const queryString = getGroupingParameters(_bin) + "&start_date=" + start + "&end_date=" + end;
+
+    return getPage("list", queryString);
 }
 
 function createBinModeLink(bin) {
@@ -66,7 +71,7 @@ function createBinModeLink(bin) {
         bin = _bin;
     }
 
-    return "/bin?" + getGroupingParameters(bin);
+    return getPage("bin", getGroupingParameters(bin));
 }
 
 function getGroupingParameters(bin) {
@@ -104,15 +109,15 @@ function createBinLink(bin) {
         return createBinModeLink(bin);
     }
 
-    return "/timeline?" + getGroupingParameters(bin);
+    return getPage("timeline", getGroupingParameters(bin));
 }
 
 function createImageLink(imageId) {
     if (_route == "bin") {
-        return "/image?image=" + imageId + "&bin=" + _bin;
+        return getPage("image", "image=" + imageId + "&bin=" + _bin);
     }
 
-    var url = "/image?image=" + imageId;
+    var url = getPage("image", "image=" + imageId);
     var parameters = getGroupingParameters(_bin);
 
     return url + (parameters != "" ? "&" + parameters : "");
@@ -171,7 +176,7 @@ function updateBinStats(data) {
     }
 
     $("#stat-instrument").html(data["instrument"]);
-    $("#stat-instrument-link").attr('href','/timeline?instrument='+data["instrument"]+'&bin='+_bin);
+    $("#stat-instrument-link").attr('href', getPage("timeline", 'instrument='+data["instrument"]+'&bin='+_bin));
     $("#stat-num-triggers").html(data["num_triggers"]);
     $("#stat-num-images").html(data["num_images"]);
     $("#stat-trigger-freq").html(data["trigger_freq"]);
@@ -226,12 +231,11 @@ function updateBinDatasets(data) {
     $("#dataset-links").empty();
 
     for (var i = 0; i < data.datasets.length; i++) {
-        // <a href="#" class="d-block">asdasd</a>
         $("#dataset-links").append(
             $("<a class='d-block' />")
-            .attr("href", "/timeline?bin=" + _bin + "&dataset=" + data.datasets[i])
+            .attr("href", getPage("timeline", "bin=" + _bin + "&dataset=" + data.datasets[i]))
             .text(data.datasets[i])
-        )
+        );
     }
 }
 
@@ -367,8 +371,10 @@ function displayTags(tags) {
     for (var i = 0; i < tags.length; i++) {
         var tag = tags[i];
         var li = $("<span class='badge badge-pill badge-light mx-1'>");
-        var link = "timeline?tags=" + tag + "&" +
-            buildFilterOptionsQueryString(false, _dataset, _instrument, null, _cruise, _sampleType);
+
+        const queryString = "tags=" + tag + "&" + buildFilterOptionsQueryString(
+            false, _dataset, _instrument, null, _cruise, _sampleType);
+        var link = getPage("timeline", queryString);
 
         var span = li.html("<a href='"+link+"'>"+tag+"</a>");
         var icon = $("<i class='fas fa-times pl-1'></i>");
@@ -1036,12 +1042,11 @@ function initEvents() {
     $("#share-button").click(function(e) {
         e.preventDefault();
 
-        var link = $("#share-link");
-        var base = link.data("scheme") + "://" + link.data("host");
+        const rootUrl = window.location.protocol + "//" + window.location.host;
 
         $("#share-modal").modal();
         $("#share-modal .modal-title").text($("#share-modal .modal-title").data("default-text"));
-        $("#share-link").val(base + createLink()).select();
+        $("#share-link").val(rootUrl + createLink()).select();
     });
 
     // Copy the share link to the clipboard

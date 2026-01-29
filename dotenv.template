@@ -20,3 +20,4 @@ DJANGO_SECRET_KEY=changeme
 POSTGRES_PASSWORD=changeme
 
 #LOCAL_SETTINGS=./local_settings.py
+

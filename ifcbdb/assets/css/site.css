@@ -248,6 +248,20 @@ table .btn-mdb-color {
     text-overflow: ellipsis;
 }
 
+#team-nav-menu {
+    -webkit-columns: 3;
+    -moz-columns: 3;
+    columns: 3;
+    list-style-position: inside;
+    overflow-x: auto;
+}
+
+#team-nav-menu li a{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 #filter-content {
     min-width: 250px;
 }
@@ -384,7 +398,7 @@ a.tstabcollapser:after
 #go-to-bid-pid {
     height:22px;
     margin-top:9px;
-    width:200px;
+    width:100px;
     border:none;
     padding-left:2px;
     padding-right:2px;

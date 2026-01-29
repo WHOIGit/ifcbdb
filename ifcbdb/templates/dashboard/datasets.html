@@ -1,214 +1,106 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static waffle_tags %}
 {% block extra_head %}
-<link href="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.css' %}" rel="stylesheet" />
-<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.css' %}" rel="stylesheet" />
-<link href="{% static 'vendor/leaflet-markercluster/MarkerCluster.Default.css' %}" rel="stylesheet" />
 <title>IFCB dashboard</title>
 {% endblock %}
 {% block content %}
 
+<style>
+    .dataset-item label {
+        display: block;
+        font-weight: bold;
+        margin-bottom:.1rem
+    }
+    .dataset-item span:before {
+        display:inline-block;
+        margin-bottom:.5rem
+
+    }
+    .accordion-header {
+        text-transform: none;
+        padding: .8rem;
+        font-size:1rem;
+    }
+
+    .accordion-header .team-name {
+        font-weight:bold;
+        color: #212529;
+    }
+
+    .accordion-header .team-description {
+        font-style: italic;
+        color: #212529;
+        font-size: .9rem;
+        font-weight:300;
+    }
+</style>
 <div class="row">
-    <div class="col">
-        <span class="h3-responsive">Search IFCB data</span>
-        <div id="progress"><div id="progress-bar"></div></div>
+    <div class="col-md-6">
+        <span class="h3-responsive">Datasets{% if team_name %}: {{ team_name }}{% endif %}</span>
+    </div>
+    <div class="col-md-6 text-right">
+        {% switch 'Teams' %}
+        Team:
+        <select name="team" class="form-control w-auto d-inline-block">
+            <option value="">All</option>
+            {% for team in teams %}
+                <option value="{{ team.name }}" {% if team_name == team.name %}selected{% endif %}>{{ team.name }}</option>
+            {% endfor %}
+        </select>
+        {% endswitch %}
     </div>
 </div>
 <hr class="my-2">
-<div class="row py-2 px-3">
-    <div class="col-xs-12 col-lg-12">
-        <div class="card h-100">
-            <div class="card-body text-primary">
-                <div class="row">
-                    <div class="col-xs-12 col-md-4 col-lg-6 col-xl-4 order-2 order-md-1 pt-2 pt-md-0">
-                        <form method="post" class="form black-text" id="search-form">
-                            {% csrf_token %}
-                            <div class="form-group">
-                                <label for="id_start_date">Start Date:</label>
-                                {{ form.start_date }}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_end_date">End Date:</label>
-                                {{ form.end_date }}
-                            </div>
 
-                            <div class="form-group">
-                                <label for="id_min_depth">Min Depth:</label>
-                                {{ form.min_depth }}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_max_depth">Max Depth:</label>
-                                {{ form.max_depth }}
-                            </div>
-                            <div class="form-group">
-                                <label>Region:</label><br />
-                                <a href="javascript:;" id="select-region" class="btn btn-sm btn-mdb-color">Select a Region</a>
-                                <div id="region" class="d-none card p-2">
-                                    <div class="row">
-                                        <div class="col-md-5">Southwest:</div>
-                                        <div class="col-md-3 p-0 mr-1">{{ form.region_sw_lat }}</div>
-                                        <div class="col-md-3 p-0">{{ form.region_sw_lon }}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-5">Northeast:</div>
-                                        <div class="col-md-3 p-0 mr-1">{{ form.region_ne_lat }}</div>
-                                        <div class="col-md-3 p-0">{{ form.region_ne_lon }}</div>
-                                    </div>
-                                    <a href="javascript:;" id="cancel-region" class="btn btn-sm btn-mdb-color">Cancel</a>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Dataset:</label>
-                                {{ form.dataset }}
-                            </div>
-                            <button id="search" type="submit" class="btn btn-mdb-color btn-block">Search</button>
-                        </form>
-                    </div>
-                    <div class="col-xs-12 col-md-8 col-lg-6 col-xl-8 order-1 order-md-2">
-                        <div id="map-container" style="height:600px;"></div>
+{% switch 'Teams' %}
+<div class="row py-2 px-3">
+    <div id="team-accordion" role="tablist" aria-multiselectable="true" class="w-100">
+        {% for team in team_panels %}
+
+        <div class="card mb-3 w-100">
+            <div class="card-header p-0" role="tab" id="heading{{ forloop.counter }}">
+                <button class="btn btn-link btn-block text-left accordion-header {% if team_name != team.name %}collapsed{% endif %}"
+                        data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
+                        aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                    <span class="team-name">{{ team.name }}</span>
+                    {% if team.description %}<span class="team-description"> | {{ team.description }}</span>{% endif %}
+                </button>
+            </div>
+            <div id="collapse{{ forloop.counter }}" class="{% if team_name != team.name %}collapse{% endif %}"
+                 role="tabpanel" aria-labelledby="heading{{ forloop.counter }}"
+                 data-parent="#team-accordion">
+                <div class="card-body">
+                    <div class="row">
+                        {% for dataset in datasets %}
+                            {% if dataset.team_id == team.id %}
+                                {% include "dashboard/_dataset-card.html" %}
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
+
+        {% endfor %}
     </div>
 </div>
+{% else %}
+<div class="row py-2">
+    {% for dataset in datasets %}
+        {% include "dashboard/_dataset-card.html" %}
+    {% endfor %}
+</div>
+{% endswitch %}
+
+
 {% endblock %} {% block scripts %}
-<script type="text/javascript" src="{% static 'vendor/leaflet-areaselect/leaflet-areaselect.js' %}"></script>
-<script type="text/javascript" src="{% static 'vendor/leaflet-markercluster/leaflet.markercluster.js' %}"></script>
 <script>
-    var map;
-    var markers = null;
-    var markerList = [];
-    var fixedMarkers = null;
-    var areaSelect = null;
-
-    function updateSearchButton(enabled) {
-        $("#search")
-            .prop("disabled", enabled ? "" : "disabled")
-            .html(enabled ?
-                "Search":
-                "<i class='fas fa-circle-notch fa-spin'></i> Search"
-            );
-    }
-
-    function enableRegionSelection() {
-        areaSelect = L.areaSelect({width:200, height:250});
-        areaSelect.on("change", function() {
-            var bounds = this.getBounds();
-            $("#id_region_sw_lat").val(bounds.getSouthWest().lat);
-            $("#id_region_sw_lon").val(bounds.getSouthWest().lng);
-            $("#id_region_ne_lat").val(bounds.getNorthEast().lat);
-            $("#id_region_ne_lon").val(bounds.getNorthEast().lng);
-        });
-        areaSelect.addTo(map);
-
-        $("#select-region").toggleClass("d-none", true);
-        $("#region").toggleClass("d-none", false);
-    }
-
-    function cancelRegionSelection() {
-        if (areaSelect)
-            areaSelect.remove();
-
-        $("#id_region_sw_lat").val("");
-        $("#id_region_sw_lon").val("");
-        $("#id_region_ne_lat").val("");
-        $("#id_region_ne_lon").val("");
-        $("#select-region").toggleClass("d-none", false);
-        $("#region").toggleClass("d-none", true);
-        areaSelect = null;
-    }
-
-    function hideRegionSelection() {
-        if (areaSelect)
-            areaSelect.remove();
-
-        areaSelect = null;
-    }
-
-    function updateMapStatus(processed, total, elapsed, layersArray) {
-
-    }
-
-    function searchLocations() {
-        var formData = $("#search-form").serialize();
-        var binIcon = buildLeafletIcon("orange");
-        var datasetIcon = buildLeafletIcon("red");
-
-        updateSearchButton(false);
-        $.post("/api/search_bin_locations", formData, function(locationData){
-            markers.clearLayers();
-            fixedMarkers.clearLayers();
-
-            for (var i = 0; i < locationData.locations.length; i++) {
-                var location = locationData.locations[i];
-                var isBin = location[3] == "b";
-                var title = location[0];
-                var marker = L.marker(
-                    L.latLng(location[1], location[2]),
-                    {
-                        title: title,
-                        icon: isBin ? binIcon : datasetIcon
-                    }
-                );
-
-                if (isBin) {
-                    marker.bindPopup("Bin: <a href='/bin?bin=" + title + "'>" + title + "</a>");
-                    markerList.push(marker);
-                } else {
-                    var values = title.split("|");
-                    marker.bindPopup("Dataset: <a href='/timeline?dataset=" + values[0] + "'>" + values[1] + "</a>");
-                    fixedMarkers.addLayer(marker);
-                }
-            }
-
-            if (markerList.length > 0) {
-                markers.addLayers(markerList);
-                map.addLayer(markers);
-            }
-
-            map.addLayer(fixedMarkers);
-
-            markerList = [];
-            hideRegionSelection();
-
-            // The small timeout is intentionally to prevent flickering of the button UI as well as add a
-            //   small delay between runs of the search
-            setTimeout(function(){ updateSearchButton(true); }, 500);
-        });
-    }
-
     $(function() {
-        map = createMap();
-        markers = L.markerClusterGroup({
-            chunkedLoading: true,
-            chunkProgress: updateMapStatus,
-            maxClusterRadius: 8,
-            iconCreateFunction: function(cluster) {
-                var children = cluster.getChildCount();
+        $("[name=team]").on("change", function() {
+            const team = $(this).val();
+            const team_path = team ? "/" + team : team;
 
-                return new L.DivIcon({
-                    html: '<div style="width:20px;height:20px;margin-left:0px; margin-top:0px"><span style="font-size:10px;line-height:22px"></span></div>',
-                    className: 'text-center marker-cluster marker-cluster-custom',
-                    iconSize: new L.Point(8, 8)
-                });
-            }
-
-        });
-        fixedMarkers = L.layerGroup();
-
-        $("#select-region").click(function(e){
-            enableRegionSelection();
-        });
-
-        $("#cancel-region").click(function(){
-            cancelRegionSelection();
-        });
-
-        $("#search-form").submit(function(e){
-            e.preventDefault();
-
-            searchLocations();
+            location.href = "/datasets" + team_path;
         });
     });
 </script>

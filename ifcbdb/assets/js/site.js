@@ -14,6 +14,11 @@ const MAX_SELECTABLE_IMAGES = 25;
 
 let _binFilterMode = "timeline";
 
+function getPage(page, queryString) {
+    return window.location.pathname.replace(/[^/]+$/, page)
+        + (queryString ? "?" + queryString : "");
+}
+
 function initDashboard(appSettings) {
     defaultLat = appSettings.default_latitude;
     defaultLng = appSettings.default_longitude;
@@ -36,7 +41,7 @@ function initDashboard(appSettings) {
     });
 
     $("#dataset-switcher").change(function () {
-        location.href = "/timeline?dataset=" + $(this).val();
+        location.href = getPage("timeline") + "dataset=" + $(this).val();
     });
 
     $("#go-to-bin").click(function () {
@@ -511,7 +516,7 @@ function goToBin(pid) {
             return;
         }
 
-        location.href = "/bin?bin=" + pid.trim();
+        location.href = getPage("bin", "bin=" + pid.trim());
     });
 }
 
@@ -579,13 +584,41 @@ function isFilteringUsed() {
         return true;
 }
 
+// Formats a list of Django validation errors into an <ul />
+function formatValidationErrorsAsList(errors) {
+    const items = [];
+
+    for (const [field, messages] of Object.entries(errors)) {
+
+        // Capitalize and format field name (e.g., "email_address" -> "Email Address")
+        const fieldName = field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+        messages.forEach(message => {
+            const prefix = field === "__all__" ? "" : `<strong>${fieldName}:</strong> `;
+
+            items.push(`<li>${prefix}${message}</li>`);
+        });
+    }
+
+    return "<ul class='error-list mb-0'>" + items.join() + "</ul>";
+}
+
 $(function () {
-    $('#dataset-popover').popover({
+    $('#datasets-popover').popover({
         container: 'body',
-        title: 'Select Dataset',
+        title: 'Dataset',
         html: true,
         placement: 'bottom',
         sanitize: false,
         template:  '<div class="popover" style="max-width:60%;" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body" style="max-height:50vh; overflow-y:auto;"></div></div>'
-    })
+    });
+
+    $('#teams-popover').popover({
+        container: 'body',
+        title: 'Teams',
+        html: true,
+        placement: 'bottom',
+        sanitize: false,
+        template:  '<div class="popover" style="max-width:60%;" role="tooltip"><div class="arrow"></div><h3 class="popover-header"></h3><div class="popover-body" style="max-height:50vh; overflow-y:auto;"></div></div>'
+    });
   })

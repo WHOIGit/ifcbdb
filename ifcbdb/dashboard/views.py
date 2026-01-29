@@ -24,11 +24,12 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, Team, TeamDataset
 from .forms import DatasetSearchForm
 from common.utilities import *
 
 from dashboard.accession import Accession, export_metadata
+import waffle
 
 def index(request):
     if settings.DEFAULT_DATASET:
@@ -36,14 +37,42 @@ def index(request):
     return HttpResponseRedirect(reverse("datasets"))
 
 
-def datasets(request):
+def dashboard(request):
     if request.POST:
         form = DatasetSearchForm(request.POST)
     else:
         form = DatasetSearchForm()
 
-    return render(request, 'dashboard/datasets.html', {
+    return render(request, 'dashboard/dashboard.html', {
         "form": form,
+    })
+
+def datasets(request, team_name=None):
+    teams = list(Team.objects.all().order_by("name"))
+
+    # Duplicate the teams list and add a dummy record at the end to make sure that in the template, dataset that
+    #   are not assigned to a team are accounted for
+    team_panels = [team for team in teams]
+    team_panels.append(Team(pk=0, name="Unassigned"))
+
+    # Only show active datasets
+    # FUTURE: This may be changes to allow for user__username that "own" those datasets (captains/managers) to
+    #       : see the inactive datasets
+    datasets = Dataset.objects \
+        .filter(is_active=True) \
+        .prefetch_related("teamdataset_set__team") \
+        .order_by("title")
+
+    # Add in the team ID for each dataset, which is needed for grouping them within the correct accordion panel
+    for dataset in datasets:
+        team_dataset = dataset.teamdataset_set.first()
+        dataset.team_id = team_dataset.team.id if team_dataset else 0
+
+    return render(request, 'dashboard/datasets.html', {
+        "datasets": datasets,
+        "teams": teams,
+        "team_name": team_name,
+        "team_panels": team_panels,
     })
 
 def bin_in_dataset_or_404(bin, dataset):
@@ -212,7 +241,7 @@ def filter_parameters_bin_query(method):
 
     return bin_qs
 
-def timeline_page(request):
+def timeline_page(request, team_name=None):
     bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
@@ -242,7 +271,7 @@ def timeline_page(request):
 
 
 @login_required
-def list_page(request):
+def list_page(request, team_name=None):
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
@@ -273,7 +302,7 @@ def list_page(request):
     })
 
 
-def bin_page(request):
+def bin_page(request, team_name=None):
     dataset_name = request.GET.get("dataset",None)
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
@@ -293,7 +322,7 @@ def bin_page(request):
     )
 
 
-def image_page(request):
+def image_page(request, team_name=None):
     bin_id = request.GET.get("bin")
     image_id = request.GET.get("image")
 
@@ -452,12 +481,23 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
     else:
         dataset = None
 
+    # If there's a dataset but no bin by this point, it means the dataset has no bins associated with it. In which
+    #   case, the user should be shown a message indicating such, rather than a 404 (which is how all the other checks
+    #   will respond)
+    if bin is None and dataset is not None:
+        return render(request, "dashboard/empty-dataset.html", {
+            "dataset": dataset,
+        })
+
     bin, dataset = bin_in_dataset_or_404(bin, dataset)
 
     instrument = get_object_or_404(Instrument, number=instrument_number) if instrument_number else None
 
     if bin is None:
         return render(request, "dashboard/no-bins.html", {})
+
+    team_dataset = TeamDataset.objects.filter(dataset=dataset).select_related("team").first()
+    team = team_dataset.team if team_dataset else None
 
     return render(request, "dashboard/bin.html", {
         "route": route,
@@ -480,6 +520,7 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
         "default_end_date": default_end_date,
         "details": _bin_details(bin, dataset, preload_adjacent_bins=False, include_coordinates=False,
                                 instrument_number=instrument_number, tags=tags),
+        "team": team,
     })
 
 
@@ -1284,6 +1325,22 @@ def list_images(request, pid):
         'images': b.list_images()
         })
 
+def list_datasets(request, team_name=''):
+    if team_name and not waffle.switch_is_active('Teams'):
+        return HttpResponseNotFound()
+
+    if not team_name:
+        datasets = Dataset.objects.all()
+    else:
+        _ = get_object_or_404(Team, name=team_name)
+        datasets = Dataset.objects.filter(teams__name=team_name)
+
+    dataset_names = datasets.order_by("name").values_list("name", flat=True)
+
+    return JsonResponse({
+        "datasets": list(dataset_names)
+    })
+
 
 @login_required
 def update_skip(request):
@@ -1341,6 +1398,7 @@ def sync_bin(request):
     dataset_name = request.GET.get("dataset")
     bin_id = request.GET.get('bin')
     dataset = get_object_or_404(Dataset, name=dataset_name)
+
     try:
         b = Bin.objects.get(pid=bin_id)
         return JsonResponse({'result':'exists'})
@@ -1412,3 +1470,18 @@ def extent(request):
         response["end"]["location"] = [last_bin.latitude, last_bin.longitude]
 
     return JsonResponse(response)
+
+# Despite the name, there is no actual team page. If the team has a default dataset, the user will get
+#   redirected to its timeline page. If not, the user gets sent to the datasets page with this team
+#   set as the filter
+def team_page(request, team_name):
+    team = get_object_or_404(Team, name=team_name)
+
+    if team.default_dataset:
+        page_route = reverse("timeline_page")
+
+        url = f"/t/{team.name}{page_route}?dataset={team.default_dataset.name}"
+    else:
+        url = reverse("datasets", args=[team.name])
+
+    return HttpResponseRedirect(url)

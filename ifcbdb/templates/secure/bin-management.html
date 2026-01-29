@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+{% load waffle_tags %}
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css">
+
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive">Bin Management</span>
+    </div>
+    <div class="flex-column">
+    </div>
+</div>
+<hr class="my-2">
+<div class="row py-2 px-3">
+    <div class="col-md-4">
+        <div id="search-errors" class="d-none alert alert-danger"></div>
+        <form id="search-form" method="post">
+            {% csrf_token %}
+            <div id="filter-content" class="filter-options">
+                {% switch 'Teams' %}
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Team</div>
+                    <div class="col-md-8">
+                        {{ form.team }}
+                    </div>
+                </div>
+                {% endswitch %}
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Dataset</div>
+                    <div class="col-md-8">
+                        {{ form.dataset }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Instrument</div>
+                    <div class="col-md-8">
+                        {{ form.instrument }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Start Date</div>
+                    <div class="col-md-8">
+                        {{ form.start_date }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">End Date</div>
+                    <div class="col-md-8">
+                        {{ form.end_date }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Tags</div>
+                    <div class="col-md-8">
+                        {{ form.tag }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4">Cruise</div>
+                    <div class="col-md-8">
+                        {{ form.cruise }}
+                    </div>
+                </div>
+                <div class="form-row mb-2">
+                    <div class="col-md-4" style="white-space: nowrap;">Sample Type</div>
+                    <div class="col-md-8">
+                        {{ form.sample_type }}
+                    </div>
+                </div>
+              <div class="form-row">
+                  <button class="btn btn-sm btn-mdb-color" type="button" id="search-button">
+                    <i class="fas fa-magnifying-glass"></i> Search
+                  </button>
+              </div>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4">
+        <div id="results-panel" class="d-none alert alert-info">
+            <h5>Search Results</h5>
+            <hr />
+
+            <p>Total Bins Found: <strong><span id="total"></span></strong></p>
+
+            <button class="btn btn-sm btn-mdb-color" type="button" id="search-again">
+                <i class="fas fa-magnifying-glass"></i> Search Again
+            </button>
+            <button class="btn btn-sm btn-mdb-color" type="button" id="export-button">
+                <i class="fas fa-file-export"></i> Export
+            </button>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div id="actions-panel" class="d-none">
+            <form id="execute-form" method="post">
+                {% csrf_token %}
+                <fieldset class="border rounded p-3 mb-3">
+                    <legend class="float-none w-auto px-2 fw-semibold">Actions</legend>
+
+                    <div id="execute-errors" class="d-none alert alert-danger"></div>
+                    <div id="execute-message" class="alert alert-success d-none"></div>
+
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="skip-bins" />
+                            Skip Bins
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="unskip-bins" />
+                            Unskip Bins
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="assign-dataset" />
+                            Assign Dataset
+                        </label>
+                    </div>
+                    <div class="form-row pl-5">
+                        <label>Dataset:</label>
+                        {{ action_form.assigned_dataset }}
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="radio" name="action" value="unassign-dataset" />
+                            Unassign Dataset
+                        </label>
+                    </div>
+                    <div class="form-row pl-5">
+                        <label>Dataset:</label>
+                        {{ action_form.unassigned_dataset }}
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-mdb-color" type="button" id="execute-button">Execute</button>
+                    </div>
+                </fieldset>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<div>
+    <hr />
+    <a href="{% url 'secure:index' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-arrow-left magic mr-1'></i>
+        Back to Settings
+    </a>
+    <a href="{% url 'secure:upload-metadata' %}" class="btn btn-sm btn-mdb-color">
+        <i class="fas fa-upload"></i> Upload Metadata
+    </a>
+</div>
+
+{% endblock %} {% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js" integrity="sha512-LsnSViqQyaXpD4mBBdRYeP6sRwJiJveh2ZIbW41EBrNmKxgr/LFZIiWT6yr+nycvhvauz8c2nYMhrP80YhG7Cw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    $(function(){
+        const AssignDatasetAction = "assign-dataset";
+        const UnassignDatasetAction = "unassign-dataset";
+
+        $('.date-picker').datepicker({
+            "orientation": "bottom",
+            "autoclose": true,
+        });
+
+        $("#search-button").on("click", function(e) {
+            e.preventDefault();
+            search();
+        });
+
+        $("#search-again").on("click", function(e) {
+            e.preventDefault();
+            enableSearchForm(true);
+
+            $("#results-panel").toggleClass("d-none", true);
+            $("#actions-panel").toggleClass("d-none", true);
+
+            toggleExecuteMessage(false);
+        });
+
+        $("#export-button").on("click", function(e) {
+            e.preventDefault();
+            exportBins();
+        });
+
+        $("#execute-button").on("click", function(e) {
+            e.preventDefault();
+            executeAction();
+        });
+
+        $("input[name=action]").on("change", function(e) {
+            changeAction();
+        });
+
+        function search() {
+            toggleSearchErrors(false);
+
+            $.post("/secure/bin-management/search", $("#search-form").serialize(), function(data) {
+                if (!data.success) {
+                    toggleSearchErrors(true, data.errors);
+                    return;
+                }
+
+                $("#total").text(data.total);
+                $("#results-panel").toggleClass("d-none", false);
+                $("#actions-panel").toggleClass("d-none", data.total == 0);
+                $("#export-button").toggleClass("d-none", data.total == 0);
+
+                resetActionForm();
+                enableSearchForm(false);
+                toggleExecuteErrors(false);
+            });
+        }
+
+        function exportBins() {
+            const searchFormData = buildSearchFormData();
+
+            $.ajax({
+                url: "/secure/bin-management/export",
+                method: "POST",
+                data: $.param(searchFormData),
+                contentType: "application/x-www-form-urlencoded",
+                xhrFields: {
+                    responseType: "blob"
+                },
+                success: function(blob) {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = $("<a></a>").attr("href", url).attr("download", "bins.csv");
+
+                    link[0].click();
+                    link.remove();
+
+                    window.URL.revokeObjectURL(url);
+                }
+            });
+        }
+
+        function resetActionForm() {
+            const actionInputs = document.querySelectorAll("[name=action]");
+
+            for (let i = 0; i < actionInputs.length; i++) {
+                actionInputs[i].checked = false;
+            }
+
+            changeAction();
+
+            $("[name=assigned_dataset]")[0].selectedIndex = 0;
+            $("[name=unassigned_dataset]").selectedIndex = 0;
+        }
+
+        function enableSearchForm(isEnabled) {
+            $("#search-form input[type=text], #search-form select").each(function() {
+                $(this).prop("disabled", !isEnabled);
+            });
+
+            $("#search-button").toggleClass("invisible", !isEnabled);
+        }
+
+        function buildSearchFormData() {
+            const searchForm = $("#search-form");
+            const searchFormData = searchForm.serializeArray();
+
+            // Some or all of the values might have been disabled, so add them back in, because normally they are
+            //   not included in the POST data.
+            searchForm.find("[disabled]").each(function() {
+                searchFormData.push({
+                    name: $(this).attr("name"),
+                    value: $(this).val()
+                });
+            });
+
+            return searchFormData;
+        }
+
+        function executeAction() {
+            if (!confirm("Are you sure you want to execute this action?")) {
+                return;
+            }
+
+            toggleExecuteErrors(false);
+            toggleExecuteMessage(false);
+
+            const searchFormData = buildSearchFormData();
+            const executeFormData = $("#execute-form").serializeArray()
+            const formData = $.param(searchFormData.concat(executeFormData));
+
+            $.post("/secure/bin-management/execute", formData, function(data) {
+                if (!data.success) {
+                    toggleExecuteErrors(true, data.errors);
+                    return;
+                }
+
+                toggleExecuteMessage(true, data.success, data.message);
+
+                resetActionForm();
+            });
+        }
+
+        function toggleSearchErrors(visible, errors) {
+            const searchErrors = document.querySelector("#search-errors");
+
+            if (!visible) {
+                searchErrors.classList.toggle("d-none", true);
+                return;
+            }
+
+            const formattedErrors = formatValidationErrorsAsList(errors);
+            searchErrors.classList.toggle("d-none", false);
+            searchErrors.innerHTML = formattedErrors;
+        }
+
+        function toggleExecuteErrors(visible, errors) {
+            const executeErrors = document.querySelector("#execute-errors");
+
+            if (!visible) {
+                executeErrors.classList.toggle("d-none", true);
+                return;
+            }
+
+            const formattedErrors = formatValidationErrorsAsList(errors);
+            executeErrors.classList.toggle("d-none", false);
+            executeErrors.innerHTML = formattedErrors;
+        }
+
+        function toggleExecuteMessage(visible, success, message) {
+            const messagePanel = document.querySelector("#execute-message");
+
+            if (!visible) {
+                messagePanel.classList.toggle("d-none", true);
+                return;
+            }
+
+            messagePanel.innerHTML = message;
+            messagePanel.classList.toggle("alert-success", success);
+            messagePanel.classList.toggle("alert-danger", !success);
+            messagePanel.classList.toggle("d-none", false);
+        }
+
+        function changeAction() {
+            const action = $("[name=action]:checked").val();
+
+            $("[name=assigned_dataset]").prop("disabled", action !== AssignDatasetAction);
+            $("[name=unassigned_dataset]").prop("disabled", action !== UnassignDatasetAction);
+        }
+    });
+</script>
+{% endblock %}

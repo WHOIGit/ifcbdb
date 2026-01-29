@@ -1,0 +1,64 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row">
+    <div class="col">
+        <span class="h3-responsive">{{ dataset.title }}</span>
+    </div>
+</div>
+<hr class="my-2">
+
+<div class="row container">
+    <div class="col-4">
+        {% if dataset.contact_name %}
+        <div class="mb-2">
+            <div><strong>Contact:</strong></div>
+            <div>{{ dataset.contact_name }}</div>
+        </div>
+        {% endif %}
+        {% if dataset.contact_email %}
+        <div class="mb-2">
+            <div><strong>Contact Email:</strong></div>
+            <div><a href="mailto:{{ dataset.contact_email }}">{{ dataset.contact_email }}</a></div>
+        </div>
+        {% endif %}
+        {% if dataset.doi %}
+        <div class="mb-2">
+            <div><strong>DOI:</strong></div>
+            <div>{{ dataset.doi }}</div>
+        </div>
+        {% endif %}
+        {% if dataset.attribution %}
+        <div class="mb-2">
+            <div class="d-block"><strong>Investigators</strong></div>
+            <div>{{ dataset.attribution }}</div>
+        </div>
+        {% endif %}
+        {% if dataset.funding %}
+        <div class="mb-2">
+            <div class="d-block"><strong>Funding</strong></div>
+            <div>{{ dataset.funding }}</div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-8">
+        {% if dataset.description %}
+        <div class="mb-2">
+            <div class="d-block"><strong>Description</strong></div>
+            <div>{{ dataset.description|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="flex-row d-flex mt-3">
+    <div class="alert alert-danger">
+        There are no bins associated with this dataset. Please use the button below to search for other datasets
+    </div>
+</div>
+<div class="flex-row d-flex ">
+    <a href="{% url 'datasets' %}" class="btn btn-sm btn-mdb-color">
+        <i class='fas fa-search magic mr-1'></i>
+        Search for Other Datasets
+    </a>
+</div>
+
+{% endblock %}

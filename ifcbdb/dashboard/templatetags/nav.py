@@ -2,9 +2,11 @@ import json
 from django import template
 from django.shortcuts import reverse
 from django.utils.html import mark_safe
+import waffle
 
-from dashboard.models import Dataset, Instrument, Tag, bin_query, AppSettings, \
+from dashboard.models import Dataset, Team, TeamDataset, Instrument, Tag, bin_query, AppSettings, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL
+from common import auth
 
 register = template.Library()
 
@@ -20,6 +22,10 @@ def app_settings():
 
     return mark_safe(settings)
 
+@register.simple_tag(takes_context=False)
+def can_access_settings(user):
+    return auth.can_access_settings(user)
+
 @register.inclusion_tag('dashboard/_dataset_switcher.html')
 def dataset_switcher():
     datasets = Dataset.objects.all()
@@ -29,19 +35,43 @@ def dataset_switcher():
     }
 
 
-@register.inclusion_tag("dashboard/_dataset-nav.html")
-def dataset_nav():
+@register.inclusion_tag("dashboard/_dataset-nav.html", takes_context=True)
+def dataset_nav(context):
+    is_teams_enabled = waffle.switch_is_active('Teams')
     datasets = Dataset.objects.filter(is_active=True)
+    teams = Team.objects.all().order_by("name")
+    dataset_name = context['request'].GET.get("dataset")
+
+    # If there is a dataset selected, pull the team off of it
+    team = None
+    if dataset_name:
+        team_id = Dataset.objects.filter(name=dataset_name) \
+            .prefetch_related("teamdataset_set__team") \
+            .values_list("team", flat=True) \
+            .first()
+        team = Team.objects.filter(id=team_id).first() if team_id else None
+
+    # If teams are enabled and there is a team found, show datasets for that team
+    if is_teams_enabled and team is not None:
+        team_dataset_ids = TeamDataset.objects.filter(team=team).values_list("dataset_id", flat=True)
+        datasets = datasets.filter(id__in=team_dataset_ids)
+
+    # If teams are enabled and there is no team, show the default dataset of all teams
+    if is_teams_enabled and team is None:
+        default_dataset_ids = Team.objects.all().exclude(default_dataset=None).values_list("default_dataset_id", flat=True)
+        datasets = datasets.filter(id__in=default_dataset_ids)
 
     return {
         "datasets": datasets,
+        "teams": teams,
+        "team": team,
     }
 
 
 @register.inclusion_tag("dashboard/_timeline-filters.html", takes_context=True)
 def timeline_filters(context):
     return {
-    }
+}
 
 
 @register.inclusion_tag("dashboard/_comments-nav.html", takes_context=True)

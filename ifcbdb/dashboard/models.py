@@ -39,6 +39,8 @@ from ifcb.data.files import Fileset, FilesetBin
 from .tasks import mosaic_coordinates_task
 from .mosaic import Mosaic
 
+from common.constants import TeamRoles
+
 logger = logging.getLogger(__name__)
 
 FILL_VALUE = -9999999
@@ -214,24 +216,87 @@ def normalize_tag_name(tag_name):
     return normalized
 
 def bin_query(dataset_name=None, start=None, end=None, tags=[],
-        instrument_number=None, cruise=None, filter_skip=True, sample_type=None):
+        instrument_number=None, cruise=None, filter_skip=True, sample_type=None, team_names=None):
     qs = Bin.objects
+
     if filter_skip:
         qs = qs.filter(skip=False)
+
     if start is not None or end is not None:
         qs = Timeline(qs).time_range(start, end)
+
     if dataset_name:
         qs = qs.filter(datasets__name=dataset_name)
+
     if tags is not None:
         for tag in tags:
             qs = qs.filter(tags__name__iexact=tag)
-    if instrument_number is not None and instrument_number != 0:
+
+    if instrument_number not in [None, "", 0]:
         qs = qs.filter(instrument__number=instrument_number)
-    if cruise is not None:
+
+    if cruise not in [None, ""]:
         qs = qs.filter(cruise__iexact=cruise)
-    if sample_type is not None and sample_type != "":
+
+    if sample_type not in [None, ""]:
         qs = qs.filter(sample_type__iexact=sample_type)
+
+    if team_names is not None and len(team_names) > 0:
+        team_ids = list(Team.objects.filter(name__in=team_names).values_list("id", flat=True))
+
+        qs = qs.filter(team_id__in=team_ids)
+
     return qs
+
+# This is a separate query from the standard one to ensure that for updates, the updatable bins are restricted to just
+#   those that this user is able to view. It's intentionally a separate method, even though it mostly wraps the standard
+#   bin query, to emphasize the caller's intent when they do a search
+def bin_management_query(
+        user, dataset_name=None, start=None, end=None, tags=[],
+        instrument_number=None, cruise=None, sample_type=None, team_names=None):
+    # No access if the user is not logged in
+    if not user.is_authenticated:
+        return Bin.objects.none()
+
+    # Users that cannot see everything will be restricted based on the teams they are associated with as either a
+    #   captain or a manager. If they are only associated as a user, that's not enough access to be able to
+    #   update bins, even though they have the ability to see them
+    if not user.is_superuser:
+        teams = Team.objects \
+            .filter(teamuser__user=user) \
+            .filter(teamuser__role_id__in=[TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value]) \
+            .distinct() \
+            .values_list("name", flat=True)
+
+        team_names = list(set((team_names or []) + list(teams)))
+
+    # For the update query, we always want to avoid skipping any bins
+    filter_skip = False
+
+    # The user submitted dates are inclusive for the start date and exclusive for the end date. This
+    #   means if the user wants to find all bins for 4/12/2022, they'll need to enter a start date of
+    #   4/12/2022 and an end date of 4/13/2022. The submitted dates are converted to UTC for use in
+    #   the bin_query() method, and the end date will have 1 microsecond subtracted so that it does
+    #   not include the end date in the time range. This is to match the logic behind the bin_query()
+    #   method, which uses greater than or equal to the start date and less than or equal to the end date
+    adjusted_start = pd.to_datetime(start, utc=True) if start is not None else None
+    adjusted_end = pd.to_datetime(end, utc=True) if end is not None else None
+    if adjusted_end is not None:
+        adjusted_end -= pd.Timedelta(microseconds=1)
+
+    # Start and end date are not passed because they are handled differently after the initial call is done
+    bin_qs = bin_query(
+        dataset_name=dataset_name,
+        tags=tags,
+        instrument_number=instrument_number,
+        cruise=cruise,
+        filter_skip=filter_skip,
+        sample_type=sample_type,
+        team_names=team_names,
+        start=adjusted_start,
+        end=adjusted_end,
+    )
+    return bin_qs
 
 class Dataset(models.Model):
     name = models.CharField(max_length=64, unique=True)
@@ -247,6 +312,10 @@ class Dataset(models.Model):
     # attribution and funding
     attribution = models.CharField(max_length=512, blank=True)
     funding = models.CharField(max_length=512, blank=True)
+
+    contact_name = models.CharField(max_length=256, blank=True, null=True)
+    contact_email = models.EmailField(max_length=256, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
 
     # This model implements a __len__ method, which overrides the default truthiness behavior on an ORM
     #   model. This normally returns True whether the model is saved or not in the database. The logic in
@@ -352,6 +421,16 @@ class Dataset(models.Model):
             return FILL_VALUE
         return self.location.x
 
+    # Datasets are restricted to a single team, even though the database schema could support a single dataset being
+    #   shared across multiple teams. This means the property just needs to return the first team, if there are any,
+    #   since there will never be more than one
+    @property
+    def team(self):
+        if not self.pk:
+            return None
+
+        return self.teams.first()
+
     def __str__(self):
         return self.name
 
@@ -423,6 +502,9 @@ class Bin(models.Model):
     instrument = models.ForeignKey('Instrument', related_name='bins', null=True, on_delete=models.SET_NULL)
     # many-to-many relationship with datasets
     datasets = models.ManyToManyField('Dataset', related_name='bins')
+    # most recently located path of dataset, and which data directory it came from
+    path = models.CharField(max_length=1024, blank=True)
+    data_directory = models.ForeignKey('DataDirectory', null=True, blank=True, on_delete=models.SET_NULL)
     # accession
     added = models.DateTimeField(auto_now_add=True, null=True)
     # qaqc flags
@@ -453,6 +535,8 @@ class Bin(models.Model):
 
     # tags
     tags = models.ManyToManyField('Tag', through='TagEvent')
+
+    team = models.ForeignKey('Team', blank=True, null=True, on_delete=models.SET_NULL)
 
     MOSAIC_SCALE_FACTORS = [25, 33, 66, 100]
     MOSAIC_VIEW_SIZES = ["640x480", "800x600", "800x1280", "1080x1920"]
@@ -529,17 +613,19 @@ class Bin(models.Model):
                 yield directory
 
     def _get_bin(self):
-        cache_key = '{}_path'.format(self.pid)
-        cached_path = cache.get(cache_key)
-        if cached_path is not None and os.path.exists(cached_path+'.adc'):
-            return FilesetBin(Fileset(cached_path))
         # return the underlying ifcb.Bin object backed by the raw filesets
-        for directory in self._directories(kind=DataDirectory.RAW):
+        if self.path and os.path.exists(self.path+'.adc'):
+            return FilesetBin(Fileset(self.path))
+        to_search = [] if not self.data_directory else [self.data_directory]
+        to_search.extend(self._directories(kind=DataDirectory.RAW))
+        for directory in to_search:
             dd = directory.get_raw_directory()
             try:
                 b = dd[self.pid]
-                basepath, _  = os.path.splitext(b.fileset.adc_path)
-                cache.set(cache_key, basepath)
+                if not self.path: # cache path of first found fileset
+                    self.path, _  = os.path.splitext(b.fileset.adc_path)
+                    self.data_directory = directory
+                    self.save()
                 return b
             except KeyError:
                 pass # keep searching
@@ -925,3 +1011,46 @@ class AppSettings(models.Model):
     default_latitude = models.FloatField(blank=False, null=False, default=DEFAULT_LATITUDE)
     default_longitude = models.FloatField(blank=False, null=False, default=DEFAULT_LONGITUDE)
     default_zoom_level = models.IntegerField(blank=False, null=False, default=DEFAULT_ZOOM_LEVEL)
+
+
+# teams
+
+class Team(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    name = models.SlugField(max_length=50, blank=False, null=False)
+    default_dataset = models.ForeignKey(Dataset, null=True, blank=True, on_delete=models.SET_NULL)
+    description = models.TextField(blank=True, null=True)
+
+    users = models.ManyToManyField(User, through='TeamUser', related_name='teams')
+    datasets = models.ManyToManyField(Dataset, through='TeamDataset', related_name='teams')
+
+    def __str__(self):
+        return self.name
+
+class TeamRole(models.Model):
+    name = models.CharField(max_length=50, blank=False, null=False)
+
+class TeamUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    role = models.ForeignKey(TeamRole, on_delete=models.CASCADE, default=TeamRoles.USER.value)
+
+    @property
+    def display_name (self):
+        if not self.user:
+            return ""
+
+        if self.user.first_name or self.user.last_name:
+            return f"{self.user.first_name} {self.user.last_name}"
+
+        return self.user.username
+
+    class Meta:
+        unique_together = ('user', 'team')
+
+class TeamDataset(models.Model):
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('dataset', 'team')
