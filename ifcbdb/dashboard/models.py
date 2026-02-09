@@ -1018,6 +1018,7 @@ class AppSettings(models.Model):
 class Team(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     name = models.SlugField(max_length=50, blank=False, null=False)
+    title = models.CharField(max_length=256, blank=True, null=True)
     default_dataset = models.ForeignKey(Dataset, null=True, blank=True, on_delete=models.SET_NULL)
     description = models.TextField(blank=True, null=True)
 

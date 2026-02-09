@@ -9,6 +9,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, When, F, Max
+from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
@@ -48,7 +49,7 @@ def dashboard(request):
     })
 
 def datasets(request, team_name=None):
-    teams = list(Team.objects.all().order_by("name"))
+    teams = list(Team.objects.all().order_by(Coalesce("title", "name")))
 
     # Duplicate the teams list and add a dummy record at the end to make sure that in the template, dataset that
     #   are not assigned to a team are accounted for

@@ -62,7 +62,7 @@
                 <button class="btn btn-link btn-block text-left accordion-header {% if team_name != team.name %}collapsed{% endif %}"
                         data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
                         aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
-                    <span class="team-name">{{ team.name }}</span>
+                    <span class="team-name">{{ team.title|default:team.name }}</span>
                     {% if team.description %}<span class="team-description"> | {{ team.description }}</span>{% endif %}
                 </button>
             </div>
