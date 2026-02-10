@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static waffle_tags %}
+{% load static waffle_tags custom %}
 {% block extra_head %}
 <title>IFCB dashboard</title>
 {% endblock %}
@@ -63,7 +63,7 @@
                         data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
                         aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
                     <span class="team-name">{{ team.name }}</span>
-                    {% if team.description %}<span class="team-description"> | {{ team.description }}</span>{% endif %}
+                    {% if team.description %}<span class="team-description"> | {{ team.description|first_line }}</span>{% endif %}
                 </button>
             </div>
             <div id="collapse{{ forloop.counter }}" class="{% if team_name != team.name %}collapse{% endif %}"
