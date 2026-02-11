@@ -718,6 +718,26 @@ var defaultEndDate = null;
     defaultEndDate = "{{ default_end_date }}";
 {% endif %}
 
+function handleTimelineClick(xPosition, eventTarget) {
+    // Prevent clicks on plotly controls (modebar actions)
+    if ($(eventTarget).parents(".modebar").length > 0) {
+        return
+    }
+
+    _coordinates = [];
+    $("#previous-bin").addClass("disabled");
+    $("#next-bin").addClass("disabled");
+
+    container = $("#primary-plot-container");
+    const xaxis = container[0]._fullLayout.xaxis;
+    const margin = container[0]._fullLayout.margin.l;
+    const containerMargin = $(container[0]).offset().left;
+    const x = xaxis.p2c(xPosition - margin - containerMargin);
+    const date = (new Date(x)).toISOString();
+
+    changeToClosestBin(date);
+}
+
 function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
     container = $("#primary-plot-container");
 
@@ -764,27 +784,15 @@ function createTimeSeries(metric, defaultStartDate, defaultEndDate) {
 
         highlightSelectedBinByDate();
 
-        // Add event to locate nearest bin to user's click
-        container[0].addEventListener('mousemove', function(event) {
-            var xaxis = container[0]._fullLayout.xaxis;
-            var margin = container[0]._fullLayout.margin.l;
-            var containerMargin = $(container[0]).offset().left;
-            var x = xaxis.p2c(event.x - margin - containerMargin);
-            var date = (new Date(x)).toISOString();
-            $(container[0]).data('date', date);
+        container[0].addEventListener('click', function(event) {
+            handleTimelineClick(event.x, event.target);
         });
 
-        container[0].addEventListener('click', function(event) {
-            // Prevent clicks on plotly controls (modebar actions)
-            if ($(event.target).parents(".modebar").length > 0) {
-                return
-            }
+        container[0].addEventListener("touchend", function(event) {
+            // Prevents this event from bubbling up a second click event on mobile
+            event.preventDefault();
 
-            _coordinates = [];
-            $("#previous-bin").addClass("disabled");
-            $("#next-bin").addClass("disabled");
-
-            changeToClosestBin($(container[0]).data("date"));
+            handleTimelineClick(event.changedTouches[0].pageX, event.target)
         });
 
         // Add event to handle resolution change when zooming
