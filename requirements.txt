@@ -9,7 +9,7 @@ scipy==1.13.1
 pandas==2.2.3
 h5py==3.12.1
 requests==2.32.3
-Pillow==11.1.0
+Pillow==12.1.1
 rectpack==0.2.2
 scikit-image==0.24.0
 pysmb==1.2.10
