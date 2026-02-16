@@ -22,6 +22,15 @@ def is_staff(user):
 
     return user.is_staff
 
+
+# This is a wrapper for checking on whether the user has full access to bins, datasets without the need to be associated
+#   with them as either a captain or team
+def has_admin_access(user):
+    if not user.is_authenticated:
+        return False
+
+    return user.is_superuser or user.is_staff
+
 def can_manage_teams(user):
     if not user.is_authenticated:
         return False
@@ -39,7 +48,7 @@ def can_manage_datasets(user):
     if user.is_superuser or user.is_staff:
         return True
 
-    # Team captains have limited access to the admin to manage their own teams
+    # Team captains have limited access to the admin to manage their own datasets
     return has_team_roles(user, [TeamRoles.CAPTAIN, ])
 
 def can_manage_metadata(user):
@@ -49,7 +58,7 @@ def can_manage_metadata(user):
     if user.is_superuser or user.is_staff:
         return True
 
-    # Team captains have limited access to the admin to manage their own teams
+    # Team captains have limited access to the admin to manage their own metadata
     return has_team_roles(user, [TeamRoles.CAPTAIN, ])
 
 def can_manage_bins(user):
@@ -59,17 +68,17 @@ def can_manage_bins(user):
     if user.is_superuser or user.is_staff:
         return True
 
-    # Team captains have limited access to the admin to manage their own teams
-    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
+    # Team captains and managers have limited access to the admin to manage their own bins
+    return has_team_roles(user, [TeamRoles.CAPTAIN, TeamRoles.MANAGER, ])
 
 def can_access_settings(user):
     if not user.is_authenticated:
         return False
-    
+
     if user.is_superuser or user.is_staff:
         return True
 
-    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
+    return has_team_roles(user, [TeamRoles.CAPTAIN, TeamRoles.MANAGER ])
 
 def has_team_roles(user, roles):
     role_values = [role.value for role in roles]
@@ -87,8 +96,7 @@ def get_manageable_teams(user):
         return Team.objects.all()
 
     return Team.objects \
-        .filter(teamuser__user=user) \
-        .filter(teamuser__role_id__in=[TeamRoles.CAPTAIN.value, ]) \
+        .filter(teamuser__user=user, teamuser__role_id__in=[TeamRoles.CAPTAIN.value, ]) \
         .distinct()
 
 def get_manageable_datasets(user, exclude_inactive=True):
