@@ -4,10 +4,6 @@ body,
     height: 100%;
 }
 
-body {
-    padding-top: 45px
-}
-
 body.modal-open {
     overflow: hidden;
 }
@@ -15,10 +11,6 @@ body.modal-open {
 .navbar {
     min-height: 15px;
     transition: top 0.5s ease !important;
-}
-
-.navbar-hide {
-    top: -56px;
 }
 
 .navbar-brand {
