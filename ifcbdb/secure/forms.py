@@ -381,13 +381,14 @@ class TeamForm(forms.ModelForm):
 
     class Meta:
         model = Team
-        fields = ["id", "name", "title", "default_dataset", "description", ]
+        fields = ["id", "name", "title", "default_dataset", "description", "short_description", ]
 
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "title": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Title"}),
             "default_dataset": forms.Select(attrs={"class": "form-control form-control-sm"}),
             "description": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 4}),
+            "short_description": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
         }
 
 
