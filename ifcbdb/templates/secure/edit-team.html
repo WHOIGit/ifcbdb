@@ -67,7 +67,7 @@
                                 {% if form.description.errors %}<span class="text-danger">{{ form.description.errors.as_text }}</span>{% endif %}
                             {% else %}
                                 <input type="hidden" name="description" value="{{ team.description }}" />
-                                <textarea type="text" class="form-control form-control-sm" disabled>{{ team.name }}</textarea>
+                                <textarea type="text" class="form-control form-control-sm" rows="4" disabled>{{ team.description }}</textarea>
                             {% endif %}
                         </div>
                     </div>
