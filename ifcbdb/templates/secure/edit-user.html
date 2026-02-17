@@ -21,52 +21,83 @@
     {% csrf_token %}
     {{ form.id }}
 
-    <div class="form-row">
-        <div class="form-group col">
-            <label for="id_first_name">First Name</label>
-            {{ form.first_name }}
-            {% if form.first_name.errors %}<span class="text-danger">{{ form.first_name.errors.as_text }}</span>{% endif %}
+    <div class="row">
+        <div class="col-md-7">
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_first_name">First Name</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}<span class="text-danger">{{ form.first_name.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_last_name">Last Name</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}<span class="text-danger">{{ form.last_name.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_email">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<span class="text-danger">{{ form.email.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_is_superuser">Superuser?</label>
+                    {{ form.is_superuser }}
+                    {% if form.is_superuser.errors %}<span class="text-danger">{{ form.is_superuser.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_password">Password</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}<span class="text-danger">{{ form.password.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_confirm_password">Confirm Password</label>
+                    {{ form.confirm_password }}
+                    {% if form.confirm_password.errors %}<span class="text-danger">{{ form.confirm_password.errors.as_text }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-row">
+                <a href="{% url 'secure:user-management' %}" class="btn btn-sm">Cancel</a>
+                <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
+            </div>
+        </div>
+        <div class="col-md-5">
+            {% if user.id %}
+            <div class="card card-body">
+                <h5>Assigned Teams</h5>
+
+                <table class="table table-sm table-striped table-bordered dataTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">Team</th>
+                            <th scope="col">Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in assigned_teams %}
+                        <tr>
+                            <td>{{ item.team.name }}</td>
+                            <td>{{ item.role.name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+            {% endif %}
         </div>
     </div>
-    <div class="form-row">
-        <div class="form-group col">
-            <label for="id_last_name">Last Name</label>
-            {{ form.last_name }}
-            {% if form.last_name.errors %}<span class="text-danger">{{ form.last_name.errors.as_text }}</span>{% endif %}
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col">
-            <label for="id_email">Email</label>
-            {{ form.email }}
-            {% if form.email.errors %}<span class="text-danger">{{ form.email.errors.as_text }}</span>{% endif %}
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col">
-            <label for="id_is_superuser">Superuser?</label>
-            {{ form.is_superuser }}
-            {% if form.is_superuser.errors %}<span class="text-danger">{{ form.is_superuser.errors.as_text }}</span>{% endif %}
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col">
-            <label for="id_password">Password</label>
-            {{ form.password }}
-            {% if form.password.errors %}<span class="text-danger">{{ form.password.errors.as_text }}</span>{% endif %}
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group col">
-            <label for="id_confirm_password">Confirm Password</label>
-            {{ form.confirm_password }}
-            {% if form.confirm_password.errors %}<span class="text-danger">{{ form.confirm_password.errors.as_text }}</span>{% endif %}
-        </div>
-    </div>
-    <div class="form-row">
-        <a href="{% url 'secure:user-management' %}" class="btn btn-sm">Cancel</a>
-        <button type="submit" class="btn btn-sm btn-mdb-color">Save</button>
-    </div>
+
+
 </form>
 
 {% endblock %}

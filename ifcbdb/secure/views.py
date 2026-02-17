@@ -468,9 +468,14 @@ def edit_user(request, id):
     else:
         form = UserForm(instance=user)
 
+    assigned_teams = TeamUser.objects \
+        .filter(user=user) \
+        .select_related("team", "role")
+
     return render(request, "secure/edit-user.html", {
         "user": user,
         "form": form,
+        "assigned_teams": assigned_teams,
     })
 
 @login_required
