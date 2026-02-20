@@ -118,7 +118,7 @@ def dt_datasets(request):
     if not request.user.is_superuser:
         allowed_team_ids = TeamUser.objects \
             .filter(user=request.user) \
-            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .filter(role_id__in=[TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value, ]) \
             .values_list("team_id", flat=True)
 
         team_datasets_ids = TeamDataset.objects \
@@ -190,12 +190,12 @@ def edit_dataset(request, id):
         if not team_dataset:
             return redirect(reverse("secure:dataset-management"))
 
-        is_team_captain = TeamUser.objects \
+        can_edit_dataset = TeamUser.objects \
             .filter(team=team_dataset.team) \
             .filter(user=request.user) \
-            .filter(role_id=TeamRoles.CAPTAIN.value) \
+            .filter(role_id__in=[TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value, ]) \
             .exists()
-        if not is_team_captain:
+        if not can_edit_dataset:
             return redirect(reverse("secure:dataset-management"))
 
     if request.POST:
@@ -875,8 +875,8 @@ def upload_metadata(request):
     })
 
 def metadata_upload_status(request):
-    if not auth.is_admin(request.user):
-        return HttpResponseForbidden()
+    if not auth.can_manage_metadata(request.user):
+        return redirect(reverse("secure:index"))
 
     task_id = cache.get(METADATA_UPLOAD_TASKID_KEY)
     if task_id is None:

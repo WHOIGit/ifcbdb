@@ -49,7 +49,7 @@ def can_manage_datasets(user):
         return True
 
     # Team captains have limited access to the admin to manage their own datasets
-    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
+    return has_team_roles(user, [TeamRoles.CAPTAIN, TeamRoles.MANAGER, ])
 
 def can_manage_metadata(user):
     if not user.is_authenticated:
@@ -59,7 +59,7 @@ def can_manage_metadata(user):
         return True
 
     # Team captains have limited access to the admin to manage their own metadata
-    return has_team_roles(user, [TeamRoles.CAPTAIN, ])
+    return has_team_roles(user, [TeamRoles.CAPTAIN, TeamRoles.MANAGER, ])
 
 def can_manage_bins(user):
     if not user.is_authenticated:
@@ -88,6 +88,7 @@ def has_team_roles(user, roles):
         .filter(role_id__in=role_values) \
         .exists()
 
+# These are teams that the user are associated with and can edit
 def get_manageable_teams(user):
     if not user.is_authenticated:
         return []
@@ -97,6 +98,19 @@ def get_manageable_teams(user):
 
     return Team.objects \
         .filter(teamuser__user=user, teamuser__role_id__in=[TeamRoles.CAPTAIN.value, ]) \
+        .distinct()
+
+# These are any teams the user is associated with
+def get_associated_teams(user):
+    if not user.is_authenticated:
+        return []
+
+    if user.is_superuser or user.is_staff:
+        return Team.objects.all()
+
+    roles = [TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value, ]
+    return Team.objects \
+        .filter(teamuser__user=user, teamuser__role_id__in=roles) \
         .distinct()
 
 def get_manageable_datasets(user, exclude_inactive=True):

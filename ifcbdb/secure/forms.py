@@ -70,7 +70,7 @@ class DatasetForm(forms.ModelForm):
         super(DatasetForm, self).__init__(*args, **kwargs)
 
         # Restrict non-superadmins to just the teams they are associated with
-        teams = auth.get_manageable_teams(self.user)
+        teams = auth.get_associated_teams(self.user)
 
         # Non-superadmins must always select a team
         is_team_required = not self.user.is_superuser
@@ -438,16 +438,11 @@ class BinSearchForm(forms.Form):
         tags = Tag.objects.all()
 
         datasets = Dataset.objects.exclude(is_active=False)
-        teams = Team.objects.all()
+        teams = auth.get_associated_teams(user)
 
         # Anyone that is not a staff or super admin will need their list of teams and datasets filtered down to just
         #   what they have access to. This also then carries through to which bins they are able to manage
         if not auth.has_admin_access(user):
-            roles = [TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value, ]
-            teams = Team.objects \
-                .filter(teamuser__user=user, teamuser__role_id__in=roles) \
-                .distinct()
-
             dataset_ids = TeamDataset.objects \
                 .filter(team__in=teams) \
                 .values_list("dataset_id", flat=True)
