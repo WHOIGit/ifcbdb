@@ -11,6 +11,7 @@ body.modal-open {
 .navbar {
     min-height: 15px;
     transition: top 0.5s ease !important;
+    margin-bottom: 10px;
 }
 
 .navbar-brand {
