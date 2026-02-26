@@ -496,12 +496,15 @@ def edit_team(request, id):
     if request.POST:
         form = TeamForm(request.POST, instance=team)
         if form.is_valid():
+            original_name = team.name
+            original_title = team.title
+
             instance = form.save(commit=False)
 
             # These fields are only editable by super admins
             if not is_admin:
-                instance.name = team.name
-                instance.title = team.title
+                instance.name = original_name
+                instance.title = original_title
 
             instance.save()
 
