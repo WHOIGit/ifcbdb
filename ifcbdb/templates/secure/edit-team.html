@@ -61,6 +61,22 @@
                 <div class="col">
                     <div class="form-row">
                         <div class="form-group col">
+                            <label for="id_short_description">Short Description</label>
+                            {% if is_admin %}
+                                {{ form.short_description }}
+                                {% if form.short_description.errors %}<span class="text-danger">{{ form.short_description.errors.as_text }}</span>{% endif %}
+                            {% else %}
+                                <input type="hidden" name="short_description" value="{{ team.short_description }}" />
+                                <textarea type="text" class="form-control form-control-sm" disabled>{{ team.short_description }}</textarea>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="form-row">
+                        <div class="form-group col">
                             <label for="id_description">Description</label>
                             {% if is_admin %}
                                 {{ form.description }}

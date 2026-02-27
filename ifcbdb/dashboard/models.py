@@ -1021,6 +1021,7 @@ class Team(models.Model):
     title = models.CharField(max_length=256, blank=True, null=True)
     default_dataset = models.ForeignKey(Dataset, null=True, blank=True, on_delete=models.SET_NULL)
     description = models.TextField(blank=True, null=True)
+    short_description = models.CharField(max_length=255, blank=True, null=True)
 
     users = models.ManyToManyField(User, through='TeamUser', related_name='teams')
     datasets = models.ManyToManyField(Dataset, through='TeamDataset', related_name='teams')
