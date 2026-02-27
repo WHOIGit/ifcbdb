@@ -113,7 +113,7 @@ def get_associated_teams(user):
         .filter(teamuser__user=user, teamuser__role_id__in=roles) \
         .distinct()
 
-def get_manageable_datasets(user, exclude_inactive=True):
+def get_associated_datasets(user, exclude_inactive=True):
     if not user.is_authenticated:
         return []
 
@@ -125,7 +125,7 @@ def get_manageable_datasets(user, exclude_inactive=True):
     if user.is_superuser or user.is_staff:
         return datasets
 
-    teams = get_manageable_teams(user)
+    teams = get_associated_teams(user)
 
     dataset_ids = TeamDataset.objects \
         .filter(team__in=teams) \

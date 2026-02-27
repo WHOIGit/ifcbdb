@@ -536,7 +536,7 @@ class BinActionForm(forms.Form):
         self.fields["action"] = forms.ChoiceField(choices=action_options)
 
         # Datasets to show, filtered if needed for non-superadmins
-        datasets = auth.get_manageable_datasets(user).order_by("name")
+        datasets = auth.get_associated_datasets(user).order_by("name")
 
         self.fields["assigned_dataset"].queryset = datasets
         self.fields["unassigned_dataset"].queryset = datasets
