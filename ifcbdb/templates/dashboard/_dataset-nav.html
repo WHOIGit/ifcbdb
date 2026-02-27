@@ -19,9 +19,9 @@
             {% for team in teams %}
             <li>
             {% if team.default_dataset %}
-                <a class='dropdown-item' href='{% url 'timeline_page' %}?dataset={{ team.default_dataset }}' title='{{ team.name }}'>{{ team.name }}</a>
+                <a class='dropdown-item' href='{% url 'timeline_page' %}?dataset={{ team.default_dataset }}' title='{{ team.title|default:team.name }}'>{{ team.title|default:team.name }}</a>
             {% else %}
-                <a class='dropdown-item' href='{% url 'datasets' team.name %}' title='{{ team.name }}'>{{ team.name }}</a>
+                <a class='dropdown-item' href='{% url 'datasets' team.name %}' title='{{ team.title|default:team.name }}'>{{ team.title|default:team.name }}</a>
             {% endif %}
                 </li>
             {% endfor %}

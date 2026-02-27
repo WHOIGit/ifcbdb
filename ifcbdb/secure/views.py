@@ -154,6 +154,7 @@ def dt_teams(request):
             {
                 "id": team.id,
                 "name": team.name,
+                "title": team.title,
                 "user_count": team.user_count,
                 "dataset_count": team.dataset_count,
             }
@@ -485,9 +486,10 @@ def edit_team(request, id):
 
     team = get_object_or_404(Team, pk=id) if int(id) > 0 else Team()
     is_new = team.pk is None
+    is_admin = auth.is_admin(request.user)
 
     # Non-superadmins (essentially team captains) can only manage their own teams
-    if not auth.is_admin(request.user):
+    if not is_admin:
         is_team_captain = TeamUser.objects \
             .filter(team=team) \
             .filter(user=request.user) \
@@ -499,7 +501,17 @@ def edit_team(request, id):
     if request.POST:
         form = TeamForm(request.POST, instance=team)
         if form.is_valid():
-            instance = form.save()
+            original_name = team.name
+            original_title = team.title
+
+            instance = form.save(commit=False)
+
+            # These fields are only editable by super admins
+            if not is_admin:
+                instance.name = original_name
+                instance.title = original_title
+
+            instance.save()
 
             # If this is a new team, and a default dataset is selected, make sure to associate it with
             #  the team. The only allowed values for team should already be datasets not already associated

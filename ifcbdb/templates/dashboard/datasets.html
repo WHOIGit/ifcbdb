@@ -27,7 +27,7 @@
         color: #212529;
     }
 
-    .accordion-header .team-description {
+    .accordion-header .team-short-description {
         font-style: italic;
         color: #212529;
         font-size: .9rem;
@@ -62,8 +62,8 @@
                 <button class="btn btn-link btn-block text-left accordion-header {% if team_name != team.name %}collapsed{% endif %}"
                         data-toggle="collapse" data-target="#collapse{{ forloop.counter }}"
                         aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
-                    <span class="team-name">{{ team.name }}</span>
-                    {% if team.description %}<span class="team-description"> | {{ team.description }}</span>{% endif %}
+                    <span class="team-name">{{ team.title|default:team.name }}</span>
+                    {% if team.short_description %}<span class="team-short-description"> | {{ team.short_description }}</span>{% endif %}
                 </button>
             </div>
             <div id="collapse{{ forloop.counter }}" class="{% if team_name != team.name %}collapse{% endif %}"
