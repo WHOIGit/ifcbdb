@@ -70,7 +70,7 @@ class DatasetForm(forms.ModelForm):
         super(DatasetForm, self).__init__(*args, **kwargs)
 
         # Restrict non-superadmins to just the teams they are associated with
-        teams = auth.get_manageable_teams(self.user)
+        teams = auth.get_associated_teams(self.user)
 
         # Non-superadmins must always select a team
         is_team_required = not self.user.is_superuser
@@ -439,16 +439,22 @@ class BinSearchForm(forms.Form):
         # TODO: Should we be filtering down the list of tags?
         tags = Tag.objects.all()
 
-        # Teams, which could be limited for captains and managers
-        teams = auth.get_manageable_teams(user)
+        datasets = Dataset.objects.exclude(is_active=False)
+        teams = auth.get_associated_teams(user)
+
+        # Anyone that is not a staff or super admin will need their list of teams and datasets filtered down to just
+        #   what they have access to. This also then carries through to which bins they are able to manage
+        if not auth.has_admin_access(user):
+            dataset_ids = TeamDataset.objects \
+                .filter(team__in=teams) \
+                .values_list("dataset_id", flat=True)
+
+            datasets = datasets.filter(id__in=dataset_ids)
 
         # Bins, restricted down to just those for the user's team if they are not a superadmin
         bins = Bin.objects.all()
         if not user.is_superuser:
             bins = bins.filter(team__in=teams)
-
-        # Datasets to show, filtered if needed for non-superadmins
-        datasets = auth.get_manageable_datasets(user) #Dataset.objects.filter(is_active=True)
 
         self.fields["team"].queryset = teams.order_by("name")
         self.fields["dataset"].queryset = datasets.order_by("name")
@@ -532,7 +538,7 @@ class BinActionForm(forms.Form):
         self.fields["action"] = forms.ChoiceField(choices=action_options)
 
         # Datasets to show, filtered if needed for non-superadmins
-        datasets = auth.get_manageable_datasets(user).order_by("name")
+        datasets = auth.get_associated_datasets(user).order_by("name")
 
         self.fields["assigned_dataset"].queryset = datasets
         self.fields["unassigned_dataset"].queryset = datasets
