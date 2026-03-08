@@ -48,7 +48,6 @@
                     <a href="timeline?tags={{ tags }}">{{ tags }}</a>
                 {% endif %}
             </span>
-            {% if user.is_authenticated %}<a id="view-list" class="pl-3 my-auto" href="#" title="View As List" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="far h3-responsive fa-list-alt"></i></a>{% endif %}
             <a class="d-sm-none d-inline tstabcollapser ml-auto" data-toggle="collapse" data-target="#ts-tabs" aria-expanded="false"></a>
             <span class="d-none">
                 <button class="btn btn-link" data-toggle="collapse" data-target=".ts-collapse" aria-expanded="true" aria-controls="ts-data">
@@ -927,19 +926,6 @@ function changeBin(binId, updateHistory) {
     $("#plot-images").empty();
     $("#plotImages").toggleClass("d-none", true);
     $("#too-many-images").toggle(false);
-
-    // Update bin name/links
-    $("#view-list").click(function(e){
-        e.preventDefault();
-
-        var timeline_container = $("#primary-plot-container");
-        location.href = createListLink(
-            container[0].layout.xaxis.range[0],
-            container[0].layout.xaxis.range[1]
-        );
-
-        return false;
-    });
 
     $("#bin-header")
         .attr("href", createBinModeLink())
