@@ -270,37 +270,37 @@ def timeline_page(request, team_name=None):
                     cruise=cruise, sample_type=sample_type,
                     default_start_date=start_date, default_end_date=end_date)
 
-
-@login_required
-def list_page(request, team_name=None):
-    dataset_name = request.GET.get("dataset")
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    tags = request_get_tags(request.GET.get("tags"))
-    cruise = request_get_cruise(request.GET.get('cruise'))
-    sample_type = request_get_sample_type(request.GET.get('sample_type'))
-
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
-    skip_filters = request.GET.get("skip_filters")
-
-    dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
-
-    # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
-    # if not dataset_name and not tags and instrument_number is None:
-    #     return bin_page(request)
-
-    return render(request, "dashboard/list.html", {
-        "dataset": dataset,
-        "dataset_name": dataset_name,
-        "instrument_number": instrument_number,
-        "tags": ','.join(tags) if tags else '',
-        'cruise': cruise,
-        'sample_type': sample_type,
-        "start_date": start_date,
-        "end_date": end_date,
-        "can_filter_page": True,
-        "skip_filters": skip_filters,
-    })
+#
+# @login_required
+# def list_page(request, team_name=None):
+#     dataset_name = request.GET.get("dataset")
+#     instrument_number = request_get_instrument(request.GET.get("instrument"))
+#     tags = request_get_tags(request.GET.get("tags"))
+#     cruise = request_get_cruise(request.GET.get('cruise'))
+#     sample_type = request_get_sample_type(request.GET.get('sample_type'))
+#
+#     start_date = request.GET.get("start_date")
+#     end_date = request.GET.get("end_date")
+#     skip_filters = request.GET.get("skip_filters")
+#
+#     dataset = get_object_or_404(Dataset, name=dataset_name) if dataset_name else None
+#
+#     # If we reach this page w/o any grouping options, all we can do is render the standalone bin page
+#     # if not dataset_name and not tags and instrument_number is None:
+#     #     return bin_page(request)
+#
+#     return render(request, "dashboard/list.html", {
+#         "dataset": dataset,
+#         "dataset_name": dataset_name,
+#         "instrument_number": instrument_number,
+#         "tags": ','.join(tags) if tags else '',
+#         'cruise': cruise,
+#         'sample_type': sample_type,
+#         "start_date": start_date,
+#         "end_date": end_date,
+#         "can_filter_page": True,
+#         "skip_filters": skip_filters,
+#     })
 
 
 def bin_page(request, team_name=None):
@@ -1273,53 +1273,6 @@ def timeline_info(request):
         'n_images': timeline.n_images(),
         })
 
-
-def list_bins(request):
-    dataset_name = request.GET.get("dataset")
-    tags = request_get_tags(request.GET.get("tags"))
-    instrument_number = request_get_instrument(request.GET.get("instrument"))
-    cruise = request_get_cruise(request.GET.get("cruise"))
-    sample_type = request.GET.get('sample_type')
-    skip_filter = request.GET.get("skip_filter")
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
-    output_format = request.GET.get("format")
-
-    # Initial query for pulling bins. Note that skipped bins are included so it can be filtered based
-    #   on the querystring options
-    bin_qs = bin_query(dataset_name=dataset_name,
-                       tags=tags,
-                       instrument_number=instrument_number,
-                       cruise=cruise,
-                       sample_type=sample_type,
-                       filter_skip=False)
-
-    if start_date:
-        start_date = pd.to_datetime(start_date, utc=True)
-        bin_qs = bin_qs.filter(sample_time__gte=start_date)
-
-    if end_date:
-        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
-        bin_qs = bin_qs.filter(sample_time__lte=end_date)
-
-    if skip_filter == "exclude":
-        bin_qs = bin_qs.exclude(skip=True)
-    elif skip_filter == "only":
-        bin_qs = bin_qs.filter(skip=True)
-
-    bin_qs = bin_qs.order_by('sample_time')
-
-    bins = list(bin_qs.values("pid", "sample_time", "skip"))
-
-    if output_format and output_format == 'csv':
-        df = pd.DataFrame.from_dict(bins)
-        return dataframe_csv_response(df, index=None)
-
-    return JsonResponse({
-        "data": bins
-    })
-
-
 def list_images(request, pid):
     b = get_object_or_404(Bin, pid=pid)
     return JsonResponse({
@@ -1340,21 +1293,6 @@ def list_datasets(request, team_name=''):
 
     return JsonResponse({
         "datasets": list(dataset_names)
-    })
-
-
-@login_required
-def update_skip(request):
-    skip = request.POST.get("skip") == "true"
-    bin_ids = request.POST.getlist("bins[]")
-
-    for bin in Bin.objects.filter(pid__in=bin_ids):
-        bin.skip = skip
-        bin.save()
-
-    return JsonResponse({
-        "skip": skip,
-        "bins": bin_ids
     })
 
 def export_metadata_view(request, dataset_name=None):

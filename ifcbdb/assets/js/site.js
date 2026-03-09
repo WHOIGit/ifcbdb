@@ -12,8 +12,6 @@ const PLOT_X_DEFAULT = "roi_x";
 const PLOT_Y_DEFAULT = "roi_y";
 const MAX_SELECTABLE_IMAGES = 25;
 
-let _binFilterMode = "timeline";
-
 function getPage(page, queryString) {
     return window.location.pathname.replace(/[^/]+$/, page)
         + (queryString ? "?" + queryString : "");
@@ -428,9 +426,7 @@ function updateTimelineFilters(wrapper, initialValues) {
     });
 }
 
-function initBinFilter(binFilterMode) {
-    _binFilterMode = binFilterMode;
-
+function initBinFilter() {
     updateTimelineFilters($("#SearchPopoverContent"), {
         "dataset": _dataset,
         "instrument": _instrument,
@@ -486,11 +482,7 @@ function applyFilters() {
         _cruise = cruise;
         _sampleType = sampleType;
 
-        if (_binFilterMode == "list") {
-            location.href = createListLink();
-        } else {
-            location.href = createBinLink(_bin);
-        }
+        location.href = createBinLink(_bin);
     });
 
     return false;

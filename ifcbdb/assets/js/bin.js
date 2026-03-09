@@ -57,15 +57,6 @@ function createLink() {
     return getPage("timeline", queryString);
 }
 
-function createListLink(start, end) {
-    if (!isFilteringUsed())
-        return "javascript:;;";
-
-    const queryString = getGroupingParameters(_bin) + "&start_date=" + start + "&end_date=" + end;
-
-    return getPage("list", queryString);
-}
-
 function createBinModeLink(bin) {
     if (bin == "" || typeof bin == "undefined") {
         bin = _bin;
@@ -1313,5 +1304,5 @@ $(function() {
 
     initEvents();
     //initPlotData();
-    initBinFilter("timeline");
+    initBinFilter();
 });
