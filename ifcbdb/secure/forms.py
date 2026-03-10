@@ -399,14 +399,13 @@ class BinSearchForm(forms.Form):
     # FUTURE: Allow support for progressive filtering. E.g, changing dataset limits values for cruises
 
     input_classes = "form-control form-control-sm"
-    is_teams_enabled = waffle.switch_is_active("Teams")
 
     start_date = forms.DateField(
         required=False,
-        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}", "disabled": is_teams_enabled}))
+        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}",}))
     end_date = forms.DateField(
         required=False,
-        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}", "disabled": is_teams_enabled}))
+        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}",}))
 
     # All dropdown based criteria are CharField's with a Select() width to allow for values to be
     #   loaded after the page loads using a POST call. This enables the values to be limited to
@@ -420,24 +419,26 @@ class BinSearchForm(forms.Form):
         widget=forms.Select(attrs={"class": input_classes}))
     dataset = forms.CharField(
         required=False,
-        widget=forms.Select(attrs={"class": input_classes, "disabled": is_teams_enabled}))
+        widget=forms.Select(attrs={"class": input_classes}))
     tag = forms.CharField(
         required=False,
-        widget=forms.Select(attrs={"class": input_classes, "disabled": is_teams_enabled}))
+        widget=forms.Select(attrs={"class": input_classes}))
     cruise = forms.CharField(
         required=False,
-        widget=forms.Select(attrs={"class": input_classes, "disabled": is_teams_enabled}))
+        widget=forms.Select(attrs={"class": input_classes}))
     instrument = forms.CharField(
         required=False,
-        widget=forms.Select(attrs={"class": input_classes, "disabled": is_teams_enabled}))
+        widget=forms.Select(attrs={"class": input_classes}))
     sample_type = forms.CharField(
         required=False,
-        widget=forms.Select(attrs={"class": input_classes, "disabled": is_teams_enabled}))
+        widget=forms.Select(attrs={"class": input_classes}))
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user") if "user" in kwargs else None
 
         super().__init__(*args, **kwargs)
+
+        is_teams_enabled = waffle.switch_is_active("Teams")
 
         # TODO: Should we be filtering down the list of tags?
         tags = Tag.objects.all()
@@ -461,10 +462,17 @@ class BinSearchForm(forms.Form):
 
         self.fields["team"].queryset = teams.order_by("name")
         self.fields["dataset"].queryset = datasets.order_by("name")
+        self.fields["dataset"].widget.attrs["disabled"] = is_teams_enabled
         self.fields["instrument"].choices = self.build_instrument_choices(bins)
+        self.fields["instrument"].widget.attrs["disabled"] = is_teams_enabled
         self.fields["tag"].queryset = tags.order_by("name")
+        self.fields["tag"].widget.attrs["disabled"] = is_teams_enabled
         self.fields["cruise"].choices = self.build_cruise_choices(bins)
+        self.fields["cruise"].widget.attrs["disabled"] = is_teams_enabled
         self.fields["sample_type"].choices = self.build_sample_type_choices(bins)
+        self.fields["sample_type"].widget.attrs["disabled"] = is_teams_enabled
+        self.fields["start_date"].widget.attrs["disabled"] = is_teams_enabled
+        self.fields["end_date"].widget.attrs["disabled"] = is_teams_enabled
 
     def clean(self):
         cleaned_data = self.cleaned_data
