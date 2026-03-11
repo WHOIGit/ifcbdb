@@ -377,6 +377,12 @@
 
         function changeTeam() {
             if (!$("[name=team]").val().length) {
+               fillDropdown("[name=dataset]", []);
+               fillDropdown("[name=instrument]", []);
+               fillDropdown("[name=cruise]", []);
+               fillDropdown("[name=sample_type]", []);
+               fillDropdown("[name=tag]", []);
+
                 enableSearchForm(true);
                 return;
             }
@@ -395,11 +401,26 @@
             });
         }
 
+        function fillDropdown(selector, values) {
+            const dropdown = $(selector);
+
+            const currentValue = dropdown.val();
+
+            dropdown.empty();
+
+            $.each(values, function(index, item) {
+                dropdown.append($('<option></option>').val(item).text(item));
+            });
+
+            dropdown.val(currentValue);
+        }
+
         {% switch 'Teams' %}
 
         const teamOptions = $("[name=team] option");
         if (teamOptions.length === 2) {
             teamOptions.get(1).selected = true;
+            changeTeam();
         }
 
         {% else %}
@@ -419,18 +440,6 @@
         {% endswitch %}
     });
 
-    function fillDropdown(selector, values) {
-        const dropdown = $(selector);
 
-        const currentValue = dropdown.val();
-
-        dropdown.empty();
-
-        $.each(values, function(index, item) {
-            dropdown.append($('<option></option>').val(item).text(item));
-        });
-
-        dropdown.val(currentValue);
-    }
 </script>
 {% endblock %}

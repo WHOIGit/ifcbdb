@@ -966,6 +966,9 @@ def bin_management(request):
 @login_required
 @require_POST
 def bin_management_criteria(request):
+    if not auth.can_manage_bins(request.user):
+        return redirect(reverse("secure:index"))
+
     team_id = request.POST.get("team")
     team = get_object_or_404(Team, pk=team_id)
 
