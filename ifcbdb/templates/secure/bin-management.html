@@ -24,6 +24,7 @@
                         {{ form.team }}
                     </div>
                 </div>
+                <hr />
                 {% endswitch %}
                 <div class="form-row mb-2">
                     <div class="col-md-4">Dataset</div>
@@ -155,7 +156,17 @@
 
 {% endblock %} {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js" integrity="sha512-LsnSViqQyaXpD4mBBdRYeP6sRwJiJveh2ZIbW41EBrNmKxgr/LFZIiWT6yr+nycvhvauz8c2nYMhrP80YhG7Cw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% switch 'Teams' %}
+{% else %}
+    {{ datasets|json_script:"dataset-choices" }}
+    {{ instruments|json_script:"instrument-choices" }}
+    {{ cruises|json_script:"cruise-choices" }}
+    {{ sample_types|json_script:"sample-type-choices" }}
+    {{ tags|json_script:"tag-choices" }}
+{% endswitch %}
 <script>
+
+
     $(function(){
         const AssignDatasetAction = "assign-dataset";
         const UnassignDatasetAction = "unassign-dataset";
@@ -193,6 +204,10 @@
         $("input[name=action]").on("change", function(e) {
             changeAction();
         });
+
+        $("select[name=team]").on("change", function(e) {
+            changeTeam();
+        })
 
         function search() {
             toggleSearchErrors(false);
@@ -251,8 +266,23 @@
         }
 
         function enableSearchForm(isEnabled) {
+            let isCriteriaEnabled = isEnabled;
+
+            {% switch 'Teams' %}
+            isCriteriaEnabled = isCriteriaEnabled && $("select[name=team]").val() !== "";
+            {% endswitch %}
+
             $("#search-form input[type=text], #search-form select").each(function() {
-                $(this).prop("disabled", !isEnabled);
+                const name = $(this).attr("name");
+
+                {% switch 'Teams' %}
+                if (name === "team") {
+                    $(this).prop("disabled", !isEnabled);
+                    return;
+                }
+                {% endswitch %}
+
+                $(this).prop("disabled", !isCriteriaEnabled);
             });
 
             $("#search-button").toggleClass("invisible", !isEnabled);
@@ -344,6 +374,72 @@
             $("[name=assigned_dataset]").prop("disabled", action !== AssignDatasetAction);
             $("[name=unassigned_dataset]").prop("disabled", action !== UnassignDatasetAction);
         }
+
+        function changeTeam() {
+            if (!$("[name=team]").val().length) {
+               fillDropdown("[name=dataset]", []);
+               fillDropdown("[name=instrument]", []);
+               fillDropdown("[name=cruise]", []);
+               fillDropdown("[name=sample_type]", []);
+               fillDropdown("[name=tag]", []);
+
+                enableSearchForm(true);
+                return;
+            }
+
+            const searchForm = $("#search-form");
+            const searchFormData = searchForm.serializeArray();
+
+           $.post("/secure/bin-management/criteria", searchFormData, function(data) {
+               fillDropdown("[name=dataset]", data.datasets || []);
+               fillDropdown("[name=instrument]", data.instruments || []);
+               fillDropdown("[name=cruise]", data.cruises || []);
+               fillDropdown("[name=sample_type]", data.sample_types || []);
+               fillDropdown("[name=tag]", data.tags || []);
+
+               enableSearchForm(true);
+            });
+        }
+
+        function fillDropdown(selector, values) {
+            const dropdown = $(selector);
+
+            const currentValue = dropdown.val();
+
+            dropdown.empty();
+
+            $.each(values, function(index, item) {
+                dropdown.append($('<option></option>').val(item).text(item));
+            });
+
+            dropdown.val(currentValue);
+        }
+
+        {% switch 'Teams' %}
+
+        const teamOptions = $("[name=team] option");
+        if (teamOptions.length === 2) {
+            teamOptions.get(1).selected = true;
+            changeTeam();
+        }
+
+        {% else %}
+
+        const datasetChoices = JSON.parse(document.getElementById('dataset-choices').textContent);
+        const instrumentChoices = JSON.parse(document.getElementById('instrument-choices').textContent);
+        const cruiseChoices = JSON.parse(document.getElementById('cruise-choices').textContent);
+        const sampleTypeChoices = JSON.parse(document.getElementById('sample-type-choices').textContent);
+        const tagChoices = JSON.parse(document.getElementById('tag-choices').textContent);
+
+        fillDropdown("[name=dataset]", datasetChoices || []);
+        fillDropdown("[name=instrument]", instrumentChoices || []);
+        fillDropdown("[name=cruise]", cruiseChoices || []);
+        fillDropdown("[name=sample_type]", sampleTypeChoices || []);
+        fillDropdown("[name=tag]", tagChoices || []);
+
+        {% endswitch %}
     });
+
+
 </script>
 {% endblock %}

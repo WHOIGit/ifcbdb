@@ -25,6 +25,7 @@ from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_C
 
 from django.core.cache import cache
 from celery.result import AsyncResult
+import waffle
 from waffle.decorators import waffle_switch
 
 
@@ -944,11 +945,54 @@ def bin_management(request):
     #  elements and pre-render them before a search is run
     action_form = BinActionForm(user=request.user)
 
+    # Additional criteria on page load is only needed when the teams feature is not enabled. When it is, the data will
+    #  be populated after the user selects a team in the UI
+    criteria = {}
+    if not waffle.switch_is_active("Teams"):
+        bins = Bin.objects.all()
+
+        criteria["datasets"] =  BinSearchForm.build_dataset_choices(bins)
+        criteria["instruments"] = BinSearchForm.build_instrument_choices(bins)
+        criteria["cruises"] = BinSearchForm.build_cruise_choices(bins)
+        criteria["sample_types"] = BinSearchForm.build_sample_type_choices(bins)
+        criteria["tags"] = BinSearchForm.build_tag_choices(bins)
+
     return render(request, 'secure/bin-management.html', {
         "form": form,
         "action_form": action_form,
+        **criteria,
     })
 
+@login_required
+@require_POST
+def bin_management_criteria(request):
+    if not auth.can_manage_bins(request.user):
+        return redirect(reverse("secure:index"))
+
+    team_id = request.POST.get("team")
+    team = get_object_or_404(Team, pk=team_id)
+
+    # Ensure non-admins have selected a team they are associated with
+    if not auth.is_admin(request.user):
+        teams = auth.get_associated_teams(request.user)
+        if not team in teams:
+            return HttpResponseForbidden()
+
+    bins = Bin.objects.filter(team=team)
+
+    datasets =  BinSearchForm.build_dataset_choices(bins)
+    instruments = BinSearchForm.build_instrument_choices(bins)
+    cruises = BinSearchForm.build_cruise_choices(bins)
+    sample_types = BinSearchForm.build_sample_type_choices(bins)
+    tags = BinSearchForm.build_tag_choices(bins)
+
+    return JsonResponse({
+        "datasets": datasets,
+        "instruments": instruments,
+        "cruises": cruises,
+        "sample_types": sample_types,
+        "tags": tags,
+    })
 
 @login_required
 @require_POST
@@ -986,11 +1030,7 @@ def bin_management_export(request, dataset_name=None):
         })
 
     bin_qs = build_bin_query_from_form_data(request.user, form)
-
-    # TODO: We're not supplying a dataset name. The benefit of that would be defaulting the location and depth values
-    #   in the export. Not sure if that is good here since the goal of this export is partially to re-import?
     df = export_metadata(None, bin_qs)
-
     filename = 'bins.csv'
 
     csv_buf = BytesIO()
@@ -1054,13 +1094,13 @@ def build_bin_query_from_form_data(user, form):
     cruise = form.cleaned_data.get("cruise")
     sample_type = form.cleaned_data.get("sample_type")
     tag = form.cleaned_data.get("tag")
-    tags = [tag.name] if tag else []
+    tags = [tag] if tag else []
 
     return bin_management_query(
         user,
         start=start_date,
         end=end_date,
-        dataset_name=dataset.name if dataset is not None else None,
+        dataset_name=dataset,
         instrument_number=request_get_instrument(instrument),
         tags=tags,
         cruise=cruise,

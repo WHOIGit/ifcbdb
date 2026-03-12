@@ -24,6 +24,7 @@ urlpatterns = [
     path('edit-directory/<int:dataset_id>/<int:id>', views.edit_directory, name='edit-directory'),
     path('app-settings', views.app_settings, name='app-settings'),
     path('bin-management', views.bin_management, name='bin-management'),
+    path('bin-management/criteria', views.bin_management_criteria, name='bin-management-criteria'),
     path('bin-management/search', views.bin_management_search, name='bin-management-search'),
     path('bin-management/export', views.bin_management_export, name='bin-management-export'),
     path('bin-management/execute', views.bin_management_execute, name='bin-management-execute'),

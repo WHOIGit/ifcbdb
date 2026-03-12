@@ -2,6 +2,7 @@ import re, os
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
+import waffle
 
 from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Tag, \
     Bin, Team, TeamUser, TeamDataset, \
@@ -401,67 +402,53 @@ class BinSearchForm(forms.Form):
 
     start_date = forms.DateField(
         required=False,
-        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}"}))
+        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}",}))
     end_date = forms.DateField(
         required=False,
-        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}"}))
+        widget=forms.TextInput(attrs={"class": f"date-picker {input_classes}",}))
+
+    # All dropdown based criteria are CharField's with a Select() width to allow for values to be
+    #   loaded after the page loads using a POST call. This enables the values to be limited to
+    #   just the team that's selected (if enabled). This removes the validation logic on those values,
+    #   but that is covered by the validation on the team, since that will restrict all results down
+    #   to just bins associated with a team the user has access to
     team = forms.ModelChoiceField(
         required=False,
-        queryset=None,
+        queryset=Team.objects.none(),
         empty_label=" ",
         widget=forms.Select(attrs={"class": input_classes}))
-    dataset = forms.ModelChoiceField(
-        required=False,
-        queryset=None,
-        empty_label=" ",
-        widget=forms.Select(attrs={"class": input_classes}))
-    tag = forms.ModelChoiceField(
-        required=False,
-        queryset=None,
-        empty_label=" ",
-        widget=forms.Select(attrs={"class": input_classes}))
-    cruise = forms.ChoiceField(
+    dataset = forms.CharField(
         required=False,
         widget=forms.Select(attrs={"class": input_classes}))
-    instrument = forms.ChoiceField(
+    tag = forms.CharField(
         required=False,
         widget=forms.Select(attrs={"class": input_classes}))
-    sample_type = forms.ChoiceField(
+    cruise = forms.CharField(
         required=False,
         widget=forms.Select(attrs={"class": input_classes}))
-
+    instrument = forms.CharField(
+        required=False,
+        widget=forms.Select(attrs={"class": input_classes}))
+    sample_type = forms.CharField(
+        required=False,
+        widget=forms.Select(attrs={"class": input_classes}))
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user") if "user" in kwargs else None
 
         super().__init__(*args, **kwargs)
 
-        # TODO: Should we be filtering down the list of tags?
-        tags = Tag.objects.all()
-
-        datasets = Dataset.objects.exclude(is_active=False)
+        is_teams_enabled = waffle.switch_is_active("Teams")
         teams = auth.get_associated_teams(user)
 
-        # Anyone that is not a staff or super admin will need their list of teams and datasets filtered down to just
-        #   what they have access to. This also then carries through to which bins they are able to manage
-        if not auth.has_admin_access(user):
-            dataset_ids = TeamDataset.objects \
-                .filter(team__in=teams) \
-                .values_list("dataset_id", flat=True)
-
-            datasets = datasets.filter(id__in=dataset_ids)
-
-        # Bins, restricted down to just those for the user's team if they are not a superadmin
-        bins = Bin.objects.all()
-        if not user.is_superuser:
-            bins = bins.filter(team__in=teams)
-
         self.fields["team"].queryset = teams.order_by("name")
-        self.fields["dataset"].queryset = datasets.order_by("name")
-        self.fields["instrument"].choices = self.build_instrument_choices(bins)
-        self.fields["tag"].queryset = tags.order_by("name")
-        self.fields["cruise"].choices = self.build_cruise_choices(bins)
-        self.fields["sample_type"].choices = self.build_sample_type_choices(bins)
+        self.fields["dataset"].widget.attrs["disabled"] = is_teams_enabled
+        self.fields["instrument"].widget.attrs["disabled"] = is_teams_enabled
+        self.fields["tag"].widget.attrs["disabled"] = is_teams_enabled
+        self.fields["cruise"].widget.attrs["disabled"] = is_teams_enabled
+        self.fields["sample_type"].widget.attrs["disabled"] = is_teams_enabled
+        self.fields["start_date"].widget.attrs["disabled"] = is_teams_enabled
+        self.fields["end_date"].widget.attrs["disabled"] = is_teams_enabled
 
     def clean(self):
         cleaned_data = self.cleaned_data
@@ -470,42 +457,61 @@ class BinSearchForm(forms.Form):
 
         # Ensure the user has entered at least one piece of criteria to prevent searching through
         #   the entire database of bins
-        if not any(value not in [None, ""] for value in cleaned_data.values()):
+        values = [value for key, value in cleaned_data.items() if key != "team" and value not in [None, ""]]
+        if not any(values):
             raise ValidationError("Please select at least one thing to search for")
 
         # If both dates are entered, ensure end date is greater than or equal to start date
         if start_date is not None and end_date is not None and start_date >= end_date:
             raise ValidationError("End date cannot be earlier than the start date")
 
-    def build_cruise_choices(self, bins):
+    @staticmethod
+    def build_dataset_choices(bins):
+        datasets = Dataset.objects \
+            .filter(bins__in=bins) \
+            .distinct() \
+            .values_list("name", flat=True)
+
+        return [""] + list(datasets)
+
+    @staticmethod
+    def build_tag_choices(bins):
+        tags = Tag.objects \
+            .filter(tagevent__bin__in=bins) \
+            .distinct() \
+            .values_list("name", flat=True)
+
+        return [""] + list(tags)
+
+    @staticmethod
+    def build_cruise_choices(bins):
         cruises = bins \
             .exclude(cruise="") \
             .values_list("cruise", flat=True) \
             .order_by("cruise") \
             .distinct()
-        cruises = [""] + list(cruises)
 
-        return list(zip(cruises, cruises))
+        return [""] + list(cruises)
 
-    def build_instrument_choices(self, bins):
+    @staticmethod
+    def build_instrument_choices(bins):
         instruments = bins \
             .values_list("instrument__number", flat=True) \
             .order_by("instrument__number") \
             .distinct()
-        instruments = [""] + [f"IFCB{instrument_number}" for instrument_number in instruments]
+        instrument_choices = [f"IFCB{instrument_number}" for instrument_number in instruments]
 
-        return list(zip(instruments, instruments))
+        return [""] + instrument_choices
 
-    def build_sample_type_choices(self, bins):
+    @staticmethod
+    def build_sample_type_choices(bins):
         sample_types = bins \
             .exclude(sample_type="") \
             .values_list("sample_type", flat=True) \
             .order_by("sample_type") \
             .distinct()
-        sample_types = [""] + list(sample_types)
 
-        return list(zip(sample_types, sample_types))
-
+        return [""] + list(sample_types)
 
 class BinActionForm(forms.Form):
     input_classes = "form-control form-control-sm"

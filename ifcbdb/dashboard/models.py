@@ -268,7 +268,10 @@ def bin_management_query(
             .distinct() \
             .values_list("name", flat=True)
 
-        team_names = list(set((team_names or []) + list(teams)))
+        if team_names is None:
+            team_names = teams
+        else:
+            team_names = [t for t in team_names if t in teams]
 
     # For the update query, we always want to avoid skipping any bins
     filter_skip = False
