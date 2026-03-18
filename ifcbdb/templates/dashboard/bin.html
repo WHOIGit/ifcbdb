@@ -1421,7 +1421,7 @@ $(function() {
     })
 
     var title = "";
-    {% if dataset %}title += " » {{ dataset.title }}";{% endif %}
+    {% if dataset %}title += " » {{ dataset.title|escapejs }}";{% endif %}
     {% if instrument %}title += " » IFCB{{ instrument.number }}";{% endif %}
     {% if cruise %}title += " » {{ cruise }}"{% endif %}
         {% if sample_type %}title += " » {{ sample_type }}"{% endif %}
