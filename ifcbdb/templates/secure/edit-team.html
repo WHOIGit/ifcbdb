@@ -1,4 +1,9 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<link href="{% static 'vendor/summernote/summernote-bs4.min.css' %}" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
 
@@ -34,8 +39,8 @@
                                 {{ form.name }}
                                 {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
                             {% else %}
-                                <input type="hidden" name="name" value="{{ team.name }}" />
-                                <input type="text" class="form-control form-control-sm" value="{{ team.name }}" disabled />
+                                <input type="hidden" name="name" value="{{ team.name|default:"" }}" />
+                                <input type="text" class="form-control form-control-sm" value="{{ team.name|default:"" }}" disabled />
                             {% endif %}
                         </div>
                     </div>
@@ -50,8 +55,8 @@
                                 {{ form.title }}
                                 {% if form.title.errors %}<span class="text-danger">{{ form.title.errors.as_text }}</span>{% endif %}
                             {% else %}
-                                <input type="hidden" name="title" value="{{ team.title }}" />
-                                <input type="text" class="form-control form-control-sm" value="{{ team.title }}" disabled />
+                                <input type="hidden" name="title" value="{{ team.title|default:"" }}" />
+                                <input type="text" class="form-control form-control-sm" value="{{ team.title|default:"" }}" disabled />
                             {% endif %}
                         </div>
                     </div>
@@ -66,8 +71,8 @@
                                 {{ form.short_description }}
                                 {% if form.short_description.errors %}<span class="text-danger">{{ form.short_description.errors.as_text }}</span>{% endif %}
                             {% else %}
-                                <input type="hidden" name="short_description" value="{{ team.short_description }}" />
-                                <textarea type="text" class="form-control form-control-sm" disabled>{{ team.short_description }}</textarea>
+                                <input type="hidden" name="short_description" value="{{ team.short_description|default:"" }}" />
+                                <textarea type="text" class="form-control form-control-sm" disabled>{{ team.short_description|default:"" }}</textarea>
                             {% endif %}
                         </div>
                     </div>
@@ -82,8 +87,8 @@
                                 {{ form.description }}
                                 {% if form.description.errors %}<span class="text-danger">{{ form.description.errors.as_text }}</span>{% endif %}
                             {% else %}
-                                <input type="hidden" name="description" value="{{ team.description }}" />
-                                <textarea type="text" class="form-control form-control-sm" rows="4" disabled>{{ team.description }}</textarea>
+                                <input type="hidden" name="description" value="{{ team.description|default:"" }}" />
+                                <textarea type="text" class="form-control form-control-sm" rows="4" disabled>{{ team.description|default:"" }}</textarea>
                             {% endif %}
                         </div>
                     </div>
@@ -198,7 +203,20 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'vendor/summernote/summernote-bs4.min.js' %}"></script>
 <script>
+    {% if is_admin %}
+    $('[name=description]').summernote({
+        placeholder: 'Enter the description...',
+        tabsize: 2,
+        height: 200,
+        toolbar: [
+            ['font', ['bold', 'underline', 'italic']],
+            ['insert', ['link']],
+        ]
+    });
+    {% endif %}
+
     let assignedUsers = JSON.parse(`{{ assigned_users_json|safe }}`);
     let assignedUsersTable = null;
 
