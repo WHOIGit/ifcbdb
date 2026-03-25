@@ -510,6 +510,7 @@ class Bin(models.Model):
     data_directory = models.ForeignKey('DataDirectory', null=True, blank=True, on_delete=models.SET_NULL)
     # accession
     added = models.DateTimeField(auto_now_add=True, null=True)
+    modified = models.DateTimeField(auto_now=True, null=True)
     # qaqc flags
     qc_bad = models.BooleanField(default=False) # is this bin invalid
     qc_no_rois = models.BooleanField(default=False)
@@ -816,6 +817,11 @@ class Bin(models.Model):
         event, created = TagEvent.objects.get_or_create(bin=self, tag=tag)
         if created and user is not None:
             event.user = user
+
+        # Update the timestamp on the bin
+        if created:
+            self.save(update_fields=['modified'])
+
         return event
 
     def delete_tag(self, tag_name, normalize=True):
@@ -824,6 +830,9 @@ class Bin(models.Model):
         tag = Tag.objects.get(name=tag_name)
         event = TagEvent.objects.get(bin=self, tag=tag)
         event.delete()
+
+        # Update the timestamp on the bin
+        self.save(update_fields=['modified'])
 
     # comments
 
@@ -835,11 +844,17 @@ class Bin(models.Model):
         comment = Comment(bin=self, content=content, user=user)
         comment.save()
 
+        # Update the timestamp on the bin
+        self.save(update_fields=['modified'])
+
     def delete_comment(self, comment_id, user):
         try:
             comment = Comment.objects.get(bin=self, pk=comment_id)
             if user.is_staff:
                 comment.delete()
+
+                # Update the timestamp on the bin
+                self.save(update_fields=['modified'])
         except:
             pass
 

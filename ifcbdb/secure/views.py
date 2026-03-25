@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, Group
 from django.db.models import Count
 from django import forms
+from django.utils import timezone
 from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse, StreamingHttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
@@ -399,11 +400,17 @@ def merge_tag(request, id):
             # Get the list of bins already assigned to the target tag to prevent creating duplicates
             assigned_bins = TagEvent.query(tag=target, dataset=dataset).values("bin")
 
+            # Get the bins that will be affected so we can update the modified date
+            affected_bin_ids = list(tag_events.values_list("bin_id", flat=True))
+
             # Update the tag on any records not already assigned to the target tag
             tag_events.exclude(bin__in=assigned_bins).update(tag=target)
 
             # Remove any records already assigned to the target tag
             tag_events.filter(bin__in=assigned_bins).delete()
+
+            # Update the timestamp on affected bins
+            Bin.objects.filter(id__in=affected_bin_ids).update(modified=timezone.now())
 
             # If the tag is no longer in use on any bins, remove it
             if TagEvent.objects.filter(tag=tag).count() == 0:
@@ -720,6 +727,9 @@ def update_comment(request, bin_id):
 
     comment.content = content
     comment.save()
+
+    # Update the timestamp on the bin
+    bin.save(update_fields=['modified'])
 
     return JsonResponse({
         "id": comment.id,
@@ -1126,6 +1136,9 @@ def assign_dataset(bin_qs, dataset):
     num_already_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
 
     dataset.bins.add(*bin_qs)
+    
+    # Update the timestamp on all updated bins
+    bin_qs.update(modified=timezone.now())
 
     total = bin_qs.count()
     num_assigned = total - num_already_assigned
@@ -1155,6 +1168,9 @@ def unassign_dataset(bin_qs, dataset):
         })
 
     dataset.bins.remove(*bin_qs)
+    
+    # Update the timestamp on all updated bins
+    bin_qs.update(modified=timezone.now())
 
     label = "bins" if num_assigned != 1 else "bin"
     return JsonResponse({

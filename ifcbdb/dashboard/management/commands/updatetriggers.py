@@ -5,6 +5,7 @@ import re
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 from tqdm import tqdm
 from tqdm._utils import _term_move_up
 
@@ -42,8 +43,10 @@ class Command(BaseCommand):
                 pbar.write(self.border)
                 continue
             bin.n_triggers = self.n_triggers(self.last_line(bin.adc_path()))
+            bin.modified = timezone.now()
             objs.append(bin)
-        res = Bin.objects.bulk_update(objs, ['n_triggers'])
+
+        res = Bin.objects.bulk_update(objs, ['n_triggers', 'modified'])
         pbar.update(res)
         if res == 0:
             pbar.write(self.clear_border + ("Error: Bins, " + str(objs) + " not updated! Continuing ..."))
@@ -77,8 +80,7 @@ class Command(BaseCommand):
             row = next(reader)
             with transaction.atomic():
                 for row in reader:
-                    res = 0
-                    res = Bin.objects.filter(pid=row[0]).update(n_triggers=row[1])
+                    res = Bin.objects.filter(pid=row[0]).update(n_triggers=row[1], modified=timezone.now())
                     if res == 0:
                         print("Error: Bin, " + bin.pid + " not updated! Continuing ...")
 
