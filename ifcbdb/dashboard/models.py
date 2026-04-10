@@ -456,6 +456,9 @@ class DataDirectory(models.Model):
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
     # for product directories, the product version
     version = models.IntegerField(null=True, blank=True)
+    model = models.SlugField(max_length=100, blank=True, null=True)
+    # for class score directories; the default directory if there is more than one (falls back to most recently created)
+    is_class_score_default = models.BooleanField(default=False, blank=False, null=False)
 
     def get_raw_directory(self):
         if self.kind != self.RAW:

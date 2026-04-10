@@ -157,7 +157,7 @@ class DirectoryForm(forms.ModelForm):
 
     class Meta:
         model = DataDirectory
-        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", ]
+        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", "model", "is_class_score_default" ]
 
         widgets = {
             "path": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Path"}),
@@ -173,6 +173,7 @@ class DirectoryForm(forms.ModelForm):
             "blacklist": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Blacklist"}),
             "version": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Version"}),
             "priority": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Priority"}),
+            "model": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Model"}),
         }
 
 
