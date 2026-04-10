@@ -142,10 +142,14 @@ class DirectoryForm(forms.ModelForm):
         data = self.cleaned_data
         path = self.cleaned_data.get("path")
         kind = self.cleaned_data.get("kind")
+        instance_id = self.instance.id if self.instance else 0
 
         # make sure the directory path is not already in the database
-        existing_path = DataDirectory.objects.filter(dataset_id=self.dataset_id, path=path, kind=kind).first()
-        if existing_path:
+        existing_path = DataDirectory.objects \
+            .filter(dataset_id=self.dataset_id, path=path, kind=kind) \
+            .exclude(id=instance_id)
+
+        if existing_path.exists():
             raise forms.ValidationError({
                 'path': 'Path "{}" (kind: {}) is already in use'.format(path, kind)
             })
