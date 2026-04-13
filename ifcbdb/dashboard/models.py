@@ -610,11 +610,13 @@ class Bin(models.Model):
 
     # access to underlying FilesetBin objects
 
-    def _directories(self, kind=DataDirectory.RAW, version=None):
+    def _directories(self, kind=DataDirectory.RAW, version=None, model=None):
         for dataset in self.datasets.all():
             qs = dataset.directories.filter(kind=kind)
             if version is not None:
                 qs = qs.filter(version=version)
+            if model is not None:
+                qs = qs.filter(model=model)
             for directory in qs.order_by('priority'):
                 yield directory
 
@@ -734,9 +736,34 @@ class Bin(models.Model):
 
     # class scores
 
-    def class_scores_file(self, version=None):
+    # TODO: might be better to rename this, or to refactor the existing method instead
+    # TODO: Refactor if needed (use yield?)
+    # TODO: Name is also hard to read (two plurals)
+    # TODO: "autoclass" default may not be correct. If it is, it needs to be a constant
+    def class_scores_files(self, version=None, model=None):
+        class_scores = []
+
+
         for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version):
             csd = directory.get_class_scores_directory()
+            try:
+                # TODO: We might only need model_id
+                class_scores.append({
+                    "path": csd[self.pid].path,
+                    "model": directory.model,
+                })
+            except KeyError:
+                pass
+
+        return class_scores
+
+    # TODO: Needed to pass in model ID - still refactor as above?
+    # TODO: This needs to sort by is default first, then ID (since there is no date field)
+    def class_scores_file(self, version=None, model=None):
+        for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version, model=model):
+            csd = directory.get_class_scores_directory()
+
+            print(f"dir {csd.path}")
             try:
                 return csd[self.pid]
             except KeyError:
@@ -753,8 +780,9 @@ class Bin(models.Model):
     def class_scores_path(self, version=None):
         return self.class_scores_file(version=version).path
 
-    def class_scores(self, version=None):
-        return self.class_scores_file(version=version).class_scores()
+    # TODO: Permiate the model id parameter other places
+    def class_scores(self, version=None, model=None):
+        return self.class_scores_file(version=version, model=model).class_scores()
 
     # mosaics
 

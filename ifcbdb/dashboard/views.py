@@ -746,6 +746,8 @@ def features_csv(request, bin_id, **kw):
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='text/csv')
 
 def class_scores_mat(request, bin_id, **kw):
+    # TODO: THis needs the same updates as the csv method
+
     b = get_object_or_404(Bin, pid=bin_id)
     if 'dataset_name' in kw:
         bin_in_dataset_or_404(b, kw['dataset_name'])
@@ -764,14 +766,34 @@ def class_scores_csv(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     bin_in_dataset_or_404(b, dataset_name)
     version = get_product_version_parameter(request, None)
+    model_id = request.GET.get("model_id")
+
+    # TODO: Distinguish between no model and any model? This will work, but then it needs to go into the function and
+    #   its not so clear? empty string vs null maybe?
+    if "model" in request.GET:
+        pass
+    else:
+        pass
+
+    # TODO: Filtering based on the blank model ID option not working (throwing 404)
+
+    print(f"m: {model_id}")
+
     try:
-        class_scores = b.class_scores(version=version)
+        # TODO model of "" vs null? or b.class_scores_by_model(), but overloading it is messy
+        class_scores = b.class_scores(version=version, model_id=model_id)
     except KeyError:
         raise Http404
     class_scores.index = ['{}_{:05d}'.format(bin_id, tn) for tn in class_scores.index]
     class_scores.index.name = 'pid'
     resp = dataframe_csv_response(class_scores)
-    filename = '{}_class_v{}.csv'.format(bin_id, version)
+
+    # TODO: Where does mdoel ID go in the file name>
+    # TODO: Prior bug? version is none and that gets added to the filename?
+    # TODO: Per joe, just remove version and replace it with model instead
+    #filename = '{}_class_v{}.csv'.format(bin_id, version)
+    filename = '{}_class_v{}_{}.csv'.format(bin_id, version, model_id)
+
     resp['Content-Disposition'] = 'attachment; filename={}'.format(filename)
     return resp
 
@@ -1211,10 +1233,15 @@ def filter_options(request):
 def has_products(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
 
+    # TODO: Ensure this is correct
+    class_scores = b.class_scores_files()
+    print(class_scores)
+
     return JsonResponse({
         "has_blobs": b.has_blobs(),
         "has_features": b.has_features(),
         "has_class_scores": b.has_class_scores(),
+        "class_scores": class_scores,
     })
 
 # legacy feed view

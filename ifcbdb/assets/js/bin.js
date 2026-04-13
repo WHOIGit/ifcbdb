@@ -240,6 +240,9 @@ function updateBinComments(data) {
 }
 
 function updateBinDownloadLinks(data) {
+    console.log(updateBinDownloadLinks)
+    console.log(data);
+
     var infix = '/data/';
     if(_dataset) {
         infix = '/' + _dataset + '/';
@@ -252,7 +255,6 @@ function updateBinDownloadLinks(data) {
     $("#download-zip").attr("href", infix + _bin + ".zip");
     $("#download-blobs").attr("href", infix + _bin + "_blob.zip");
     $("#download-features").attr("href", infix + _bin + "_features.csv");
-    $("#download-class-scores").attr("href", infix + _bin + "_class_scores.csv");
 
     $.get('/api/has_products/' + _bin, function(r) {
         $("#download-blobs").toggle(r["has_blobs"]);
@@ -261,8 +263,32 @@ function updateBinDownloadLinks(data) {
         $("#download-features").toggle(r["has_features"]);
         $("#download-features-disabled").toggle(!r["has_features"]);
 
-        $("#download-class-scores").toggle(r["has_class_scores"]);
-        $("#download-class-scores-disabled").toggle(!r["has_class_scores"]);
+        const featuresList = $("#features-list");
+        const hasClassScores = r["has_class_scores"] && r.class_scores != null;
+
+        if (hasClassScores) {
+            // remove the static placeholder
+            $("#download-class-scores-disabled").closest("li").remove();
+
+            r.class_scores.forEach((item) => {
+                let href = infix + _bin + "_class_scores.csv?model=";
+                let text = "autoclass";
+
+                if (item.model) {
+                    href += "?model=" + item.model;
+                    text += ` (${item.model})`;
+                }
+
+                const link = $("<a />");
+                link.text(text);
+                link.attr("href", href);
+
+                const listItem = $("<li />");
+                listItem.append(link);
+
+                featuresList.append(listItem);
+            })
+        }
 
         // Update outline/blob links
         $("#detailed-image-blob-link").toggleClass("disabled", !r["has_blobs"]);
