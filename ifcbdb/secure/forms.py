@@ -154,6 +154,23 @@ class DirectoryForm(forms.ModelForm):
                 'path': 'Path "{}" (kind: {}) is already in use'.format(path, kind)
             })
 
+        # Class score directories have an additional requirement to not allow for duplicate model values. This
+        #   includes preventing more than one directory where the model value is left blank
+        if kind == DataDirectory.CLASS_SCORES:
+            model = self.cleaned_data.get("model") or ""
+
+            existing_model = DataDirectory.objects \
+                .filter(dataset_id=self.dataset_id, kind=kind, model=model) \
+                .exclude(id=instance_id)
+
+            if existing_model.exists():
+                msg = f"Model {model} is already in use" if model \
+                    else "Only one class score data directory can be created with a blank value for the model"
+
+                raise forms.ValidationError({
+                    'path': msg
+                })
+
         return data
 
     def _match_folder_names(self, value):
