@@ -240,9 +240,6 @@ function updateBinComments(data) {
 }
 
 function updateBinDownloadLinks(data) {
-    console.log(updateBinDownloadLinks)
-    console.log(data);
-
     var infix = '/data/';
     if(_dataset) {
         infix = '/' + _dataset + '/';
@@ -263,32 +260,37 @@ function updateBinDownloadLinks(data) {
         $("#download-features").toggle(r["has_features"]);
         $("#download-features-disabled").toggle(!r["has_features"]);
 
-        const featuresList = $("#features-list");
-        const hasClassScores = r["has_class_scores"] && r.class_scores != null;
+        // Remove existing class scores, including the disable placeholder
+        $("#features-list li.class-score").remove();
 
-        if (hasClassScores) {
-            // remove the static placeholder
-            $("#download-class-scores-disabled").closest("li").remove();
+        const classScores = r.class_scores.map((item) => {
+            const href = infix + _bin + "_class_scores.csv?model=" + item.model;
+            const text = "autoclass" + (item.model ? ` (${item.model})` : "");
 
-            r.class_scores.forEach((item) => {
-                let href = infix + _bin + "_class_scores.csv?model=";
-                let text = "autoclass";
+            return $("<a />", {
+                text: text,
+                href: href
+            });
+        });
 
-                if (item.model) {
-                    href += "?model=" + item.model;
-                    text += ` (${item.model})`;
-                }
+        // If there are no class scores, show a placeholder w/o a link
+        if (!classScores.length) {
+            const placeholder = $("<span />", {
+                class: "download-class-scores-disabled",
+                text: "autoclass"
+            });
 
-                const link = $("<a />");
-                link.text(text);
-                link.attr("href", href);
-
-                const listItem = $("<li />");
-                listItem.append(link);
-
-                featuresList.append(listItem);
-            })
+            classScores.push(placeholder);
         }
+
+        classScores.forEach((item) => {
+            const listItem = $("<li />", {
+                class: "class-score",
+                html: item
+            });
+
+            $("#features-list").append(listItem);
+        });
 
         // Update outline/blob links
         $("#detailed-image-blob-link").toggleClass("disabled", !r["has_blobs"]);

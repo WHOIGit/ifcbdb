@@ -456,7 +456,7 @@ class DataDirectory(models.Model):
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
     # for product directories, the product version
     version = models.IntegerField(null=True, blank=True)
-    model = models.SlugField(max_length=100, blank=True, null=True)
+    model = models.SlugField(max_length=100, blank=True, null=False, default="")
     # for class score directories; the default directory if there is more than one (falls back to most recently created)
     is_class_score_default = models.BooleanField(default=False, blank=False, null=False)
 
@@ -615,9 +615,19 @@ class Bin(models.Model):
             qs = dataset.directories.filter(kind=kind)
             if version is not None:
                 qs = qs.filter(version=version)
+
+            # A value of None for the model indicates it is not specified and should not be filtered
+            #   on. But model could also be an empty string, in which case this should return that
+            #   specific data directory (the one w/o a model set on it)
             if model is not None:
                 qs = qs.filter(model=model)
-            for directory in qs.order_by('priority'):
+
+            if kind == DataDirectory.CLASS_SCORES:
+                qs = qs.order_by("-is_class_score_default", "-pk")
+            else:
+                qs = qs.order_by("priority")
+
+            for directory in qs:
                 yield directory
 
     def _get_bin(self):
@@ -736,51 +746,36 @@ class Bin(models.Model):
 
     # class scores
 
-    # TODO: might be better to rename this, or to refactor the existing method instead
-    # TODO: Refactor if needed (use yield?)
-    # TODO: Name is also hard to read (two plurals)
-    # TODO: "autoclass" default may not be correct. If it is, it needs to be a constant
-    def class_scores_files(self, version=None, model=None):
+    def class_scores_file_list(self, version=None):
         class_scores = []
-
 
         for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version):
             csd = directory.get_class_scores_directory()
             try:
-                # TODO: We might only need model_id
-                class_scores.append({
-                    "path": csd[self.pid].path,
-                    "model": directory.model,
-                })
+                class_scores.append(
+                    {
+                        "path": csd[self.pid].path,
+                        "model": directory.model,
+                    }
+                )
             except KeyError:
                 pass
 
         return class_scores
 
-    # TODO: Needed to pass in model ID - still refactor as above?
-    # TODO: This needs to sort by is default first, then ID (since there is no date field)
     def class_scores_file(self, version=None, model=None):
         for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version, model=model):
             csd = directory.get_class_scores_directory()
-
-            print(f"dir {csd.path}")
             try:
                 return csd[self.pid]
             except KeyError:
                 pass
-        raise KeyError('no class scores found for {}'.format(self.pid))
 
-    def has_class_scores(self, version=None):
-        try:
-            self.class_scores_file(version=version)
-            return True
-        except KeyError:
-            return False
+        raise KeyError("no class scores found for {}".format(self.pid))
 
     def class_scores_path(self, version=None):
         return self.class_scores_file(version=version).path
 
-    # TODO: Permiate the model id parameter other places
     def class_scores(self, version=None, model=None):
         return self.class_scores_file(version=version, model=model).class_scores()
 
