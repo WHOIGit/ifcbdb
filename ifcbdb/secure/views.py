@@ -20,7 +20,7 @@ from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadFor
 
 from dashboard.accession import export_metadata
 from common import auth
-from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS
+from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS, ADD_DATASET_COLUMNS, REMOVE_DATASET_COLUMNS
 
 
 from django.core.cache import cache
@@ -869,6 +869,27 @@ def upload_metadata(request):
                 bins_ids = list(bins_ids)
 
                 df = df[df[pid_col].isin(bins_ids)]
+
+                # Blank out any dataset names that are not associated with the user uploading the data to
+                #   ensure they cannot assign or unassign bins to datasets they are not privy to
+                add_dataset_col = get_column(df, ADD_DATASET_COLUMNS)
+                remove_dataset_col = get_column(df, REMOVE_DATASET_COLUMNS)
+
+                if add_dataset_col is not None or remove_dataset_col is not None:
+                    valid_dataset_names = auth \
+                        .get_associated_datasets(request.user) \
+                        .values_list("name", flat=True)
+
+                    if add_dataset_col is not None:
+                        df[add_dataset_col] = df[add_dataset_col].apply(
+                            lambda x: x if pd.isna(x) or str(x).strip() in valid_dataset_names else ""
+                        )
+
+                    if remove_dataset_col is not None:
+                        df[remove_dataset_col] = df[remove_dataset_col].apply(
+                            lambda x: x if pd.isna(x) or str(x).strip() in valid_dataset_names else ""
+                        )
+
                 json_df = df.to_json()
 
             added = cache.add(METADATA_UPLOAD_LOCK_KEY, True, timeout=None) # this is atomic

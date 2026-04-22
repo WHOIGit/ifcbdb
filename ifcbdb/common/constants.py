@@ -18,3 +18,5 @@ class BinManagementActions(Enum):
 
 # Metadata column names
 BIN_ID_COLUMNS = ['id','pid','lid','bin','bin_id','sample','sample_id','filename']
+ADD_DATASET_COLUMNS = ['add_dataset', 'adddataset']
+REMOVE_DATASET_COLUMNS = ['remove_dataset', 'removedataset', 'delete_dataset', 'deletedataset']

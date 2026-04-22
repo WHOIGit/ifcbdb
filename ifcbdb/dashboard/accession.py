@@ -479,8 +479,6 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
 
             # command columns
 
-            # TODO: the dataset being added or removed must be accessible by the user (for non-admins)
-
             if add_dataset_col is not None:
                 dataset_name = get_cell(row, add_dataset_col)
                 if str(dataset_name or "").strip():
