@@ -114,6 +114,10 @@
     <div class="row d-flex justify-content-between">
       <div class="pl-3">
         <span class="h3-responsive">
+            {% if team %}
+                <a href="{% url 'datasets' team.name %}">{{ team.name }}</a> »
+            {% endif %}
+
             {% if dataset %}
               <a href="timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
                 {{ dataset.title }}
