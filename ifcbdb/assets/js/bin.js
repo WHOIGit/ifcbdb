@@ -135,20 +135,30 @@ function showWorkspace(workspace) {
     }
 }
 
+function updateDateTimeLabel(selector, value) {
+    if (!value) {
+        $(selector).closest(".flex-row").hide();
+        return;
+    }
+
+    const timestamp = moment.utc(value);
+    const dateString = timestamp.format("YYYY-MM-DD");
+    const timeString = timestamp.format("HH:mm:ss z");
+    const relativeTime = timestamp.fromNow();
+
+    const text =
+        `${dateString}<br/>${timeString}<br/>` +
+        `(<span data-livestamp='${value}'>${relativeTime}</span>)`;
+
+    $(selector).closest(".flex-row").show();
+    $(selector).html(text);
+}
+
 //************* Bin Methods ***********************/
 function updateBinStats(data) {
-    var timestamp_iso = data["timestamp_iso"];
-    var timestamp = moment.utc(timestamp_iso);
-
-    var date_string = timestamp.format("YYYY-MM-DD");
-    var time_string = timestamp.format("HH:mm:ss z");
-    var initial_relative_time = timestamp.fromNow();
-
-    $("#stat-date-time").html(
-        date_string + "<br/>" +
-        time_string + "<br/>" +
-        "(<span data-livestamp='"+timestamp_iso+"'>"+initial_relative_time+"</span>)"
-    );
+    updateDateTimeLabel("#stat-date-time", data.timestamp_iso);
+    updateDateTimeLabel("#stat-modified", data.modified);
+    updateDateTimeLabel("#stat-accessioned", data.accessioned);
 
     function showField(id, text) {
         $("#show-"+id).removeClass("d-none").addClass("d-flex");

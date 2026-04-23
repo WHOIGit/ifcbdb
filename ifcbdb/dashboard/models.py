@@ -510,7 +510,8 @@ class Bin(models.Model):
     data_directory = models.ForeignKey('DataDirectory', null=True, blank=True, on_delete=models.SET_NULL)
     # accession
     added = models.DateTimeField(auto_now_add=True, null=True)
-    modified = models.DateTimeField(auto_now=True, null=True)
+    modified = models.DateTimeField(auto_now=False, null=True)
+    accessioned = models.DateTimeField(auto_now=False, null=True)
     # qaqc flags
     qc_bad = models.BooleanField(default=False) # is this bin invalid
     qc_no_rois = models.BooleanField(default=False)
