@@ -49,7 +49,7 @@ class DatasetForm(forms.ModelForm):
             "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"}),
             "contact_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Contact Name"}),
             "contact_email": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Contact Email"}),
-            "description": forms.Textarea(attrs={"class": "form-control form-control-sm", "placeholder": "Description"}),
+            "description": forms.Textarea(attrs={"class": "form-control form-control-sm summernote", "placeholder": "Description"}),
         }
 
     def clean_doi(self):
@@ -388,7 +388,7 @@ class TeamForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "title": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Title"}),
             "default_dataset": forms.Select(attrs={"class": "form-control form-control-sm"}),
-            "description": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 4}),
+            "description": forms.Textarea(attrs={"class": "form-control form-control-sm summernote", "rows": 4}),
             "short_description": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
         }
 
