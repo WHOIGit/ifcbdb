@@ -541,6 +541,18 @@ def image_data(request, bin_id, target):
     })
 
 
+def image_blob_legacy(request, bin_id, target, dataset_name):
+    bin, _ = bin_in_dataset_or_404(bin_id, dataset_name)
+    try:
+        arr = bin.blob(int(target)) if bin.has_blobs() else None
+    except KeyError:
+        raise Http404(f"blob data not found for target {target} in bin {bin_id}")
+    if arr is None:
+        raise Http404(f"bin {bin_id} has no associated blob data")
+    png_data = format_image(arr, 'image/png')
+    return HttpResponse(png_data, content_type='image/png')
+
+
 def image_blob(request, bin_id, target):
     bin = get_object_or_404(Bin, pid=bin_id)
     blob = embed_image(bin.blob(int(target))) if bin.has_blobs() else None
