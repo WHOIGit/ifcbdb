@@ -1,4 +1,5 @@
 import json
+import csv
 from io import BytesIO
 from itertools import groupby
 from operator import attrgetter
@@ -1080,7 +1081,7 @@ def bin_management_export(request, dataset_name=None):
     filename = 'bins.csv'
 
     csv_buf = BytesIO()
-    df.to_csv(csv_buf, mode='wb', index=None)
+    df.to_csv(csv_buf, mode='wb', quoting=csv.QUOTE_NONNUMERIC, index=None)
     csv_buf.seek(0)
 
     response = StreamingHttpResponse(csv_buf, content_type='text/csv')

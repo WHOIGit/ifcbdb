@@ -1,6 +1,7 @@
 import json
 import re
 from io import BytesIO
+import csv
 
 import numpy as np
 import pandas as pd
@@ -95,7 +96,7 @@ def bin_in_dataset_or_404(bin, dataset):
 
 def dataframe_csv_response(df, **kw):
     csv_buf = BytesIO()
-    df.to_csv(csv_buf, mode='wb', **kw)
+    df.to_csv(csv_buf, mode="wb", quoting=csv.QUOTE_NONNUMERIC, **kw)
     csv_buf.seek(0)
     response = StreamingHttpResponse(csv_buf, content_type='text/csv')
     return response
