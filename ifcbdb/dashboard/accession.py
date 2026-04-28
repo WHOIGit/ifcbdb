@@ -9,6 +9,7 @@ from itertools import islice
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max
 from django.contrib.postgres.aggregates.general import StringAgg
+from django.utils import timezone
 
 import pandas as pd
 import numpy as np
@@ -96,6 +97,8 @@ class Accession(object):
             'data_directory': dd_found,
             'skip': True, # in case accession is interrupted
             'team': team,
+            'modified': timezone.now(),
+            'accessioned': timezone.now(),
         })
 
         # For existing bins, if the team value is not set, and there is one, save that value. This handles pre-existing
@@ -167,6 +170,8 @@ class Accession(object):
                     'data_directory': dd,
                     'skip': True, # in case accession is interrupted
                     'team': team,
+                    'modified': timezone.now(),
+                    'accessioned': timezone.now(),
                 })
 
                 # For existing bins, if the team value is not set, and there is one, save that value. This handles pre-existing

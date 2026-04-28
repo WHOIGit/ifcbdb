@@ -893,6 +893,8 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "cruise": bin.cruise,
         "cast": bin.cast,
         "niskin": bin.niskin,
+        "modified": bin.modified,
+        "accessioned": bin.accessioned,
     }
 
 def _mosaic_page_image(request, bin_id):
