@@ -142,13 +142,34 @@ class DirectoryForm(forms.ModelForm):
         data = self.cleaned_data
         path = self.cleaned_data.get("path")
         kind = self.cleaned_data.get("kind")
+        instance_id = self.instance.id if self.instance else 0
 
         # make sure the directory path is not already in the database
-        existing_path = DataDirectory.objects.filter(dataset_id=self.dataset_id, path=path, kind=kind).first()
-        if existing_path:
+        existing_path = DataDirectory.objects \
+            .filter(dataset_id=self.dataset_id, path=path, kind=kind) \
+            .exclude(id=instance_id)
+
+        if existing_path.exists():
             raise forms.ValidationError({
                 'path': 'Path "{}" (kind: {}) is already in use'.format(path, kind)
             })
+
+        # Class score directories have an additional requirement to not allow for duplicate model values. This
+        #   includes preventing more than one directory where the model value is left blank
+        if kind == DataDirectory.CLASS_SCORES:
+            model = self.cleaned_data.get("model") or ""
+
+            existing_model = DataDirectory.objects \
+                .filter(dataset_id=self.dataset_id, kind=kind, model=model) \
+                .exclude(id=instance_id)
+
+            if existing_model.exists():
+                msg = f"Model {model} is already in use" if model \
+                    else "Only one class score data directory can be created with a blank value for the model"
+
+                raise forms.ValidationError({
+                    'path': msg
+                })
 
         return data
 
@@ -157,7 +178,7 @@ class DirectoryForm(forms.ModelForm):
 
     class Meta:
         model = DataDirectory
-        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", ]
+        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", "model", "is_class_score_default" ]
 
         widgets = {
             "path": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Path"}),
@@ -173,6 +194,7 @@ class DirectoryForm(forms.ModelForm):
             "blacklist": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Blacklist"}),
             "version": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Version"}),
             "priority": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Priority"}),
+            "model": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Model"}),
         }
 
 

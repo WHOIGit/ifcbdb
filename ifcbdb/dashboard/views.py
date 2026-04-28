@@ -762,13 +762,17 @@ def class_scores_mat(request, bin_id, **kw):
     if 'dataset_name' in kw:
         bin_in_dataset_or_404(b, kw['dataset_name'])
     version = get_product_version_parameter(request)
+    model = request.GET.get("model")
+
     try:
         class_scores_file = b.class_scores_file(version=version)
         version = class_scores_file.version
         class_scores_path = class_scores_file.path
     except KeyError:
         raise Http404
-    filename = '{}_class_v{}.mat'.format(bin_id, version)
+
+    filename = bin_id + ("_" + model if model is not None else "") + ".mat"
+
     fin = open(class_scores_path, 'rb')
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')    
 
@@ -776,14 +780,19 @@ def class_scores_csv(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     bin_in_dataset_or_404(b, dataset_name)
     version = get_product_version_parameter(request, None)
+    model = request.GET.get("model")
+
     try:
-        class_scores = b.class_scores(version=version)
+        class_scores = b.class_scores(version=version, model=model)
     except KeyError:
         raise Http404
+
     class_scores.index = ['{}_{:05d}'.format(bin_id, tn) for tn in class_scores.index]
     class_scores.index.name = 'pid'
     resp = dataframe_csv_response(class_scores)
-    filename = '{}_class_v{}.csv'.format(bin_id, version)
+
+    filename = bin_id + ("_" + model if model is not None else "") + ".csv"
+
     resp['Content-Disposition'] = 'attachment; filename={}'.format(filename)
     return resp
 
@@ -873,10 +882,8 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "coordinates": coordinates_json,
         #"has_blobs": bin.has_blobs(),
         #"has_features": bin.has_features(),
-        #"has_class_scores": bin.has_class_scores(), # FIXME slow
         "has_blobs": False,
         "has_features": False,
-        "has_class_scores": False,
         "timestamp_iso": bin.sample_time.isoformat(),
         "instrument": "IFCB" + str(bin.instrument.number),
         "num_triggers": bin.n_triggers,
@@ -1224,11 +1231,12 @@ def filter_options(request):
 
 def has_products(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
+    class_scores = b.class_scores_file_list()
 
     return JsonResponse({
         "has_blobs": b.has_blobs(),
         "has_features": b.has_features(),
-        "has_class_scores": b.has_class_scores(),
+        "class_scores": class_scores,
     })
 
 # legacy feed view

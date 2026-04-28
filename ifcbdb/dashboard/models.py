@@ -456,6 +456,9 @@ class DataDirectory(models.Model):
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
     # for product directories, the product version
     version = models.IntegerField(null=True, blank=True)
+    model = models.SlugField(max_length=100, blank=True, null=False, default="")
+    # for class score directories; the default directory if there is more than one (falls back to most recently created)
+    is_class_score_default = models.BooleanField(default=False, blank=False, null=False)
 
     def get_raw_directory(self):
         if self.kind != self.RAW:
@@ -609,12 +612,24 @@ class Bin(models.Model):
 
     # access to underlying FilesetBin objects
 
-    def _directories(self, kind=DataDirectory.RAW, version=None):
+    def _directories(self, kind=DataDirectory.RAW, version=None, model=None):
         for dataset in self.datasets.all():
             qs = dataset.directories.filter(kind=kind)
             if version is not None:
                 qs = qs.filter(version=version)
-            for directory in qs.order_by('priority'):
+
+            # A value of None for the model indicates it is not specified and should not be filtered
+            #   on. But model could also be an empty string, in which case this should return that
+            #   specific data directory (the one w/o a model set on it)
+            if model is not None:
+                qs = qs.filter(model=model)
+
+            if kind == DataDirectory.CLASS_SCORES:
+                qs = qs.order_by("-is_class_score_default", "-pk")
+            else:
+                qs = qs.order_by("priority")
+
+            for directory in qs:
                 yield directory
 
     def _get_bin(self):
@@ -733,27 +748,38 @@ class Bin(models.Model):
 
     # class scores
 
-    def class_scores_file(self, version=None):
+    def class_scores_file_list(self, version=None):
+        class_scores = []
+
         for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version):
+            csd = directory.get_class_scores_directory()
+            try:
+                class_scores.append(
+                    {
+                        "path": csd[self.pid].path,
+                        "model": directory.model,
+                    }
+                )
+            except KeyError:
+                pass
+
+        return class_scores
+
+    def class_scores_file(self, version=None, model=None):
+        for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version, model=model):
             csd = directory.get_class_scores_directory()
             try:
                 return csd[self.pid]
             except KeyError:
                 pass
-        raise KeyError('no class scores found for {}'.format(self.pid))
 
-    def has_class_scores(self, version=None):
-        try:
-            self.class_scores_file(version=version)
-            return True
-        except KeyError:
-            return False
+        raise KeyError("no class scores found for {}".format(self.pid))
 
     def class_scores_path(self, version=None):
         return self.class_scores_file(version=version).path
 
-    def class_scores(self, version=None):
-        return self.class_scores_file(version=version).class_scores()
+    def class_scores(self, version=None, model=None):
+        return self.class_scores_file(version=version, model=model).class_scores()
 
     # mosaics
 

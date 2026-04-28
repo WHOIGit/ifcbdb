@@ -262,7 +262,6 @@ function updateBinDownloadLinks(data) {
     $("#download-zip").attr("href", infix + _bin + ".zip");
     $("#download-blobs").attr("href", infix + _bin + "_blob.zip");
     $("#download-features").attr("href", infix + _bin + "_features.csv");
-    $("#download-class-scores").attr("href", infix + _bin + "_class_scores.csv");
 
     $.get('/api/has_products/' + _bin, function(r) {
         $("#download-blobs").toggle(r["has_blobs"]);
@@ -271,8 +270,37 @@ function updateBinDownloadLinks(data) {
         $("#download-features").toggle(r["has_features"]);
         $("#download-features-disabled").toggle(!r["has_features"]);
 
-        $("#download-class-scores").toggle(r["has_class_scores"]);
-        $("#download-class-scores-disabled").toggle(!r["has_class_scores"]);
+        // Remove existing class scores, including the disable placeholder
+        $("#features-list li.class-score").remove();
+
+        const classScores = r.class_scores.map((item) => {
+            const href = infix + _bin + "_class_scores.csv?model=" + item.model;
+            const text = "autoclass" + (item.model ? ` (${item.model})` : "");
+
+            return $("<a />", {
+                text: text,
+                href: href
+            });
+        });
+
+        // If there are no class scores, show a placeholder w/o a link
+        if (!classScores.length) {
+            const placeholder = $("<span />", {
+                class: "download-class-scores-disabled",
+                text: "autoclass"
+            });
+
+            classScores.push(placeholder);
+        }
+
+        classScores.forEach((item) => {
+            const listItem = $("<li />", {
+                class: "class-score",
+                html: item
+            });
+
+            $("#features-list").append(listItem);
+        });
 
         // Update outline/blob links
         $("#detailed-image-blob-link").toggleClass("disabled", !r["has_blobs"]);
