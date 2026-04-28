@@ -57,8 +57,11 @@ def dataset_management(request):
 
     form = DatasetForm(user=request.user)
 
+    is_teams_enabled = waffle.switch_is_active("Teams")
+
     return render(request, 'secure/dataset-management.html', {
         "form": form,
+        "is_teams_enabled": is_teams_enabled,
     })
 
 
@@ -128,8 +131,20 @@ def dt_datasets(request):
 
         datasets = datasets.filter(id__in=team_datasets_ids)
 
+    is_teams_enabled = waffle.switch_is_active("Teams")
+
+    if is_teams_enabled:
+        datasets = datasets.prefetch_related("teamdataset_set__team")
+
+    data = []
+    for dataset in datasets:
+        item = dataset.teamdataset_set.first() if is_teams_enabled else None
+        team_name = item.team.name if item else ""
+
+        data.append([dataset.name, dataset.title, dataset.is_active, team_name, dataset.id])
+
     return JsonResponse({
-        "data": list(datasets.values_list("name", "title", "is_active", "id"))
+        "data": data
     })
 
 @waffle_switch('Teams')
