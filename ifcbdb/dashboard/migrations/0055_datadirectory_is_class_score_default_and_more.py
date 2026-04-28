@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0052_team_short_description'),
+        ('dashboard', '0054_convert_description_newlines_to_br'),
     ]
 
     operations = [

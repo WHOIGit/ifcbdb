@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0053_datadirectory_is_class_score_default_and_more'),
+        ('dashboard', '0055_datadirectory_is_class_score_default_and_more'),
     ]
 
     operations = [

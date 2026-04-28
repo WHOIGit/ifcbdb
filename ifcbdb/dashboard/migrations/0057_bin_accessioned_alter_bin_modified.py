@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0053_bin_modified'),
+        ('dashboard', '0056_alter_datadirectory_model'),
     ]
 
     operations = [

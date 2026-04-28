@@ -38,7 +38,7 @@ def reverse_br_to_newlines(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dashboard', '0052_team_short_description'),
+        ('dashboard', '0053_bin_modified'),
     ]
 
     operations = [
