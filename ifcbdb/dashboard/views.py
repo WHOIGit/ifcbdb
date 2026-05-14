@@ -13,7 +13,7 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
-    HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse
+    HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponseNotFound, StreamingHttpResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -25,7 +25,8 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, Team, TeamDataset
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, \
+    Team, TeamDataset, ReservedDatasetName
 from .forms import DatasetSearchForm
 from common.utilities import *
 
@@ -76,6 +77,16 @@ def datasets(request, team_name=None):
         "team_panels": team_panels,
     })
 
+def resolve_dataset_name(name):
+    """Get dataset by current or reserved name. Returns (dataset, is_reserved)."""
+    print("A")
+    try:
+        return Dataset.objects.get(name=name), False
+    except Dataset.DoesNotExist:
+        reserved = ReservedDatasetName.objects.select_related("dataset").get(name=name)
+        return reserved.dataset, True
+
+
 def bin_in_dataset_or_404(bin, dataset):
     "bin can be either a Bin instance or a bin pid"
     "dataset can be either a Dataset instance or a dataset name"
@@ -86,8 +97,8 @@ def bin_in_dataset_or_404(bin, dataset):
     if not dataset:
         return bin, None
     try:
-        dataset = Dataset.objects.get(name=dataset)
-    except Dataset.DoesNotExist:
+        dataset, is_reserved = resolve_dataset_name(dataset)
+    except (Dataset.DoesNotExist, ReservedDatasetName.DoesNotExist):
         raise Http404(f'No such dataset {dataset}')
     if dataset in list(bin.datasets.all()):
         return bin, dataset
@@ -242,7 +253,35 @@ def filter_parameters_bin_query(method):
 
     return bin_qs
 
+def check_for_dataset_redirect(request):
+    """
+    Checks the 'dataset' querystring parameter to ensure it matches an existing database. First checking
+      for a dataset by name, then falling back to reserved dataset names. If the dataset is reserved, this
+      returns a 301 redirect response to transfer the user to the url w/ the correct dataset name
+    """
+    dataset_name = request.GET.get("dataset")
+    if not dataset_name:
+        return None
+
+    if Dataset.objects.filter(name=dataset_name).exists():
+        return None
+
+    reserved = ReservedDatasetName.objects.select_related("dataset").filter(name=dataset_name).first()
+    if reserved is not None:
+        params = request.GET.copy()
+        params["dataset"] = reserved.dataset.name
+
+        # TODO: Remove debugging
+        print(f"Directing dataset from {dataset_name} to {reserved.dataset.name}")
+
+        return HttpResponseRedirect(request.path + "?" + params.urlencode())
+
+    return None
+
 def timeline_page(request, team_name=None):
+    if redirect_response := check_for_dataset_redirect(request):
+        return redirect_response
+
     bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
@@ -304,6 +343,11 @@ def timeline_page(request, team_name=None):
 
 
 def bin_page(request, team_name=None):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR bin_page")
+        return redirect_response
+
     dataset_name = request.GET.get("dataset",None)
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
@@ -324,6 +368,11 @@ def bin_page(request, team_name=None):
 
 
 def image_page(request, team_name=None):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR image_page")
+        return redirect_response
+
     bin_id = request.GET.get("bin")
     image_id = request.GET.get("image")
 
@@ -346,6 +395,11 @@ def image_page(request, team_name=None):
 
 
 def comments_page(request):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR comments_page")
+        return redirect_response
+
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
@@ -441,16 +495,35 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
 
 
 def legacy_dataset_page(request, dataset_name, bin_id):
-    return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name )
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR legacy_dataset_page")
+        return redirect_response
+
+    return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)
 
 def legacy_dataset_redirect(request, dataset_name):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR legacy_dataset_redirect")
+        return redirect_response
+
     return HttpResponseRedirect(reverse("timeline_page") + "?dataset=" + dataset_name)
 
 def legacy_bin_page(request, dataset_name, bin_id):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR legacy_bin_page")
+        return redirect_response
+
     return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)
 
-
 def legacy_image_page(request, dataset_name, bin_id, image_id):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR legacy_image_page")
+        return redirect_response
+
     return _image_details(request, image_id, bin_id, dataset_name)
 
 
@@ -968,6 +1041,11 @@ def generate_time_series(request, metric,):
 
 # TODO: This is also where page caching could occur...
 def bin_data(request, bin_id):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR bin_data")
+        return redirect_response
+
     dataset_name = request.GET.get("dataset")
 
     instrument_number = request_get_instrument(request.GET.get("instrument"))
@@ -1038,6 +1116,11 @@ def nearest_bin(request):
     })
 
 def most_recent_bin(request):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR most_recent_bin")
+        return redirect_response
+
     dataset_name = request.GET.get("dataset")
 
     _ = get_object_or_404(Dataset, name=dataset_name)
@@ -1170,6 +1253,11 @@ def bin_location(request):
 
 
 def filter_options(request):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR filter_options")
+        return redirect_response
+
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
@@ -1249,6 +1337,11 @@ def tag_list(request):
     return JsonResponse({'tags': list(tags)})
 
 def tags(request):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR tags")
+        return redirect_response
+
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     if dataset_name is not None:
@@ -1334,6 +1427,11 @@ def export_metadata_view(request, dataset_name=None):
     return response
 
 def sync_bin(request):
+    # TODO: Test
+    if redirect_response := check_for_dataset_redirect(request):
+        print("RR sync_bin")
+        return redirect_response
+
     dataset_name = request.GET.get("dataset")
     bin_id = request.GET.get('bin')
     dataset = get_object_or_404(Dataset, name=dataset_name)
