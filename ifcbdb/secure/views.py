@@ -12,7 +12,6 @@ from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse, StreamingHttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 
-
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
@@ -22,7 +21,8 @@ from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadFor
 
 from dashboard.accession import export_metadata
 from common import auth
-from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS, ADD_DATASET_COLUMNS, REMOVE_DATASET_COLUMNS
+from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS, ADD_DATASET_COLUMNS, REMOVE_DATASET_COLUMNS, \
+BinManagementDatasetFilters, BinManagementTeamFilters
 
 
 from django.core.cache import cache
@@ -1077,15 +1077,21 @@ def bin_management_criteria(request):
         return redirect(reverse("secure:index"))
 
     team_id = request.POST.get("team")
-    team = get_object_or_404(Team, pk=team_id)
 
-    # Ensure non-admins have selected a team they are associated with
     if not auth.is_admin(request.user):
-        teams = auth.get_associated_teams(request.user)
-        if not team in teams:
+        # Only super-admins can search for bins w/o a team
+        if team_id == BinManagementTeamFilters.UNASSIGNED.value:
             return HttpResponseForbidden()
 
-    bins = Bin.objects.filter(team=team)
+        # Ensure this user has access to the team
+        matching_teams = auth.get_associated_teams(request.user).filter(id=team_id)
+        if not matching_teams.exists():
+            return HttpResponseForbidden()
+
+    if team_id == BinManagementTeamFilters.UNASSIGNED.value:
+        bins = Bin.objects.filter(team__isnull=True)
+    else:
+        bins = Bin.objects.filter(team_id=team_id)
 
     datasets =  BinSearchForm.build_dataset_choices(bins)
     instruments = BinSearchForm.build_instrument_choices(bins)
@@ -1194,7 +1200,7 @@ def bin_management_execute(request):
 
 def build_bin_query_from_form_data(user, form):
     dataset = form.cleaned_data.get("dataset")
-    team = form.cleaned_data.get("team")
+    team_value = form.cleaned_data.get("team")
     start_date = form.cleaned_data.get("start_date")
     end_date = form.cleaned_data.get("end_date")
     instrument = form.cleaned_data.get("instrument")
@@ -1202,6 +1208,10 @@ def build_bin_query_from_form_data(user, form):
     sample_type = form.cleaned_data.get("sample_type")
     tag = form.cleaned_data.get("tag")
     tags = [tag] if tag else []
+
+    # Pull the selected team from the form data. Only one selection is possible in the UI right now, even though the bin
+    #   query supports a list
+    team_names = request_get_team_name(team_value)
 
     return bin_management_query(
         user,
@@ -1212,7 +1222,7 @@ def build_bin_query_from_form_data(user, form):
         tags=tags,
         cruise=cruise,
         sample_type=sample_type,
-        team_names=[team.name] if team is not None else None)
+        team_names=team_names)
 
 def update_skip(bin_qs, is_skipped):
     total = 0
@@ -1234,7 +1244,7 @@ def assign_dataset(bin_qs, dataset):
     num_already_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
 
     dataset.bins.add(*bin_qs)
-    
+
     # Update the timestamp on all updated bins
     bin_qs.update(modified=timezone.now())
 
@@ -1266,7 +1276,7 @@ def unassign_dataset(bin_qs, dataset):
         })
 
     dataset.bins.remove(*bin_qs)
-    
+
     # Update the timestamp on all updated bins
     bin_qs.update(modified=timezone.now())
 
@@ -1284,3 +1294,15 @@ def request_get_instrument(instrument_string):
         if i.lower().startswith('ifcb'):
             i = i[4:]
         return int(i)
+
+
+def request_get_team_name(team_value: str):
+    if not team_value:
+        return None
+
+    if team_value == BinManagementTeamFilters.UNASSIGNED.value:
+        return [team_value]
+
+    team = Team.objects.filter(pk=int(team_value)).first()
+
+    return [team.name] if team else None
