@@ -79,7 +79,6 @@ def datasets(request, team_name=None):
 
 def resolve_dataset_name(name):
     """Get dataset by current or reserved name. Returns (dataset, is_reserved)."""
-    print("A")
     try:
         return Dataset.objects.get(name=name), False
     except Dataset.DoesNotExist:
@@ -253,30 +252,37 @@ def filter_parameters_bin_query(method):
 
     return bin_qs
 
-def check_for_dataset_redirect(request):
+def check_for_dataset_redirect(request, from_querystring=True):
     """
-    Checks the 'dataset' querystring parameter to ensure it matches an existing database. First checking
-      for a dataset by name, then falling back to reserved dataset names. If the dataset is reserved, this
-      returns a 301 redirect response to transfer the user to the url w/ the correct dataset name
+    Checks the dataset name to ensure it matches an active dataset. First checking for a dataset by name, then falling
+      back to reserved dataset names. If the dataset is reserved, this returns a 301 redirect response to transfer the
+      user to the url w/ the correct dataset name
     """
-    dataset_name = request.GET.get("dataset")
-    if not dataset_name:
-        return None
 
-    if Dataset.objects.filter(name=dataset_name).exists():
+    # The from_querystring flag determines whether the dataset name should be pulled from the querystring (with the
+    #   name "dataset", or from the route's path as a keyword argument named "dataset_name"
+    dataset_name = request.GET.get("dataset") if from_querystring \
+        else request.resolver_match.kwargs.get("dataset_name")
+
+    if not dataset_name or Dataset.objects.filter(name=dataset_name).exists():
         return None
 
     reserved = ReservedDatasetName.objects.select_related("dataset").filter(name=dataset_name).first()
-    if reserved is not None:
+    if reserved is None:
+        return None
+
+    if from_querystring:
         params = request.GET.copy()
         params["dataset"] = reserved.dataset.name
 
-        # TODO: Remove debugging
-        print(f"Directing dataset from {dataset_name} to {reserved.dataset.name}")
+        url = request.path + "?" + params.urlencode()
+    else:
+        kwargs = dict(request.resolver_match.kwargs)
+        kwargs["dataset_name"] = reserved.dataset.name
 
-        return HttpResponseRedirect(request.path + "?" + params.urlencode())
+        url = reverse(request.resolver_match.url_name, kwargs=kwargs)
 
-    return None
+    return HttpResponsePermanentRedirect(url)
 
 def timeline_page(request, team_name=None):
     if redirect_response := check_for_dataset_redirect(request):
@@ -343,9 +349,7 @@ def timeline_page(request, team_name=None):
 
 
 def bin_page(request, team_name=None):
-    # TODO: Test
     if redirect_response := check_for_dataset_redirect(request):
-        print("RR bin_page")
         return redirect_response
 
     dataset_name = request.GET.get("dataset",None)
@@ -368,9 +372,7 @@ def bin_page(request, team_name=None):
 
 
 def image_page(request, team_name=None):
-    # TODO: Test
     if redirect_response := check_for_dataset_redirect(request):
-        print("RR image_page")
         return redirect_response
 
     bin_id = request.GET.get("bin")
@@ -395,9 +397,7 @@ def image_page(request, team_name=None):
 
 
 def comments_page(request):
-    # TODO: Test
     if redirect_response := check_for_dataset_redirect(request):
-        print("RR comments_page")
         return redirect_response
 
     dataset_name = request.GET.get("dataset")
@@ -493,43 +493,29 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
         "sample_type": sample_type,
     })
 
-
 def legacy_dataset_page(request, dataset_name, bin_id):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR legacy_dataset_page")
+    if redirect_response := check_for_dataset_redirect(request, False):
         return redirect_response
 
     return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)
 
 def legacy_dataset_redirect(request, dataset_name):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR legacy_dataset_redirect")
-        return redirect_response
-
+    # This method does not directly check the dataset name to see if it was deleted, but the timeline page that this
+    #   redirects will do so, and cover that requirement
     return HttpResponseRedirect(reverse("timeline_page") + "?dataset=" + dataset_name)
 
-def legacy_bin_page(request, dataset_name, bin_id):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR legacy_bin_page")
-        return redirect_response
-
-    return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)
+# Deprecated 2026-05-28 - there were no routes or other calls to this method
+# def legacy_bin_page(request, dataset_name, bin_id):
+#     return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)
 
 def legacy_image_page(request, dataset_name, bin_id, image_id):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR legacy_image_page")
+    if redirect_response := check_for_dataset_redirect(request, False):
         return redirect_response
 
     return _image_details(request, image_id, bin_id, dataset_name)
 
-
 def legacy_image_page_alt(request, bin_id, image_id):
     return _image_details(request, image_id, bin_id)
-
 
 def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, cruise=None, bin_reset=False,
              default_start_date=None, default_end_date=None, sample_type=None):
@@ -1041,11 +1027,6 @@ def generate_time_series(request, metric,):
 
 # TODO: This is also where page caching could occur...
 def bin_data(request, bin_id):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR bin_data")
-        return redirect_response
-
     dataset_name = request.GET.get("dataset")
 
     instrument_number = request_get_instrument(request.GET.get("instrument"))
@@ -1116,11 +1097,6 @@ def nearest_bin(request):
     })
 
 def most_recent_bin(request):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR most_recent_bin")
-        return redirect_response
-
     dataset_name = request.GET.get("dataset")
 
     _ = get_object_or_404(Dataset, name=dataset_name)
@@ -1253,11 +1229,6 @@ def bin_location(request):
 
 
 def filter_options(request):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR filter_options")
-        return redirect_response
-
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
     instrument_number = request_get_instrument(request.GET.get("instrument"))
@@ -1337,11 +1308,6 @@ def tag_list(request):
     return JsonResponse({'tags': list(tags)})
 
 def tags(request):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR tags")
-        return redirect_response
-
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     if dataset_name is not None:
@@ -1427,11 +1393,6 @@ def export_metadata_view(request, dataset_name=None):
     return response
 
 def sync_bin(request):
-    # TODO: Test
-    if redirect_response := check_for_dataset_redirect(request):
-        print("RR sync_bin")
-        return redirect_response
-
     dataset_name = request.GET.get("dataset")
     bin_id = request.GET.get('bin')
     dataset = get_object_or_404(Dataset, name=dataset_name)
