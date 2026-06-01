@@ -208,11 +208,8 @@ def edit_dataset(request, id):
 
             # Handle reserved dataset names on rename (only for existing datasets)
             if not is_new:
-                # TODO: Still need a warning to the user about effects from renaming
-                # TODO: Is old name going to be correct? won't the form change the dataset name (same as originalteam issue)
                 new_dataset_name = form.cleaned_data.get("name")
 
-                print(f"Old: {original_dataset_name}, New: {new_dataset_name}")
                 if original_dataset_name != new_dataset_name:
                     # Delete any existing reservation for the new name (allows reclaiming)
                     ReservedDatasetName.objects.filter(name=new_dataset_name).delete()
