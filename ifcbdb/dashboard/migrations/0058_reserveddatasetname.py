@@ -6,7 +6,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("dashboard", "0052_team_short_description"),
+        ("dashboard", "0057_bin_accessioned_alter_bin_modified"),
     ]
 
     operations = [
