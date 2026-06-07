@@ -437,6 +437,15 @@ class Dataset(models.Model):
     def __str__(self):
         return self.name
 
+
+class ReservedDatasetName(models.Model):
+    name = models.CharField(max_length=64, unique=True, db_index=True)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name="reserved_names")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
 class DataDirectory(models.Model):
     # directory types
     RAW = 'raw'

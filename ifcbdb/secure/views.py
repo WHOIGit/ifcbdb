@@ -16,7 +16,7 @@ from django.shortcuts import render, get_object_or_404, redirect, reverse
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
-    TeamUser, TeamDataset, TeamRole, bin_query, bin_management_query
+    TeamUser, TeamDataset, TeamRole, bin_query, bin_management_query, ReservedDatasetName
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, TagForm, \
     MergeTagForm, UserForm, TeamForm, BinSearchForm, BinActionForm
 
@@ -200,6 +200,7 @@ def edit_dataset(request, id):
 
     status = request.GET.get("status")
     dataset = get_object_or_404(Dataset, pk=id) if int(id) > 0 else Dataset()
+    original_dataset_name = dataset.name
     is_new = dataset.pk is None
 
     # Non-superadmins (essentially team captains) can only manage their own teams' datasets. They can create new
@@ -221,6 +222,16 @@ def edit_dataset(request, id):
         form = DatasetForm(request.POST, instance=dataset, user=request.user)
         if form.is_valid():
             instance = form.save()
+
+            # Handle reserved dataset names on rename (only for existing datasets)
+            if not is_new:
+                new_dataset_name = form.cleaned_data.get("name")
+
+                if original_dataset_name != new_dataset_name:
+                    # Delete any existing reservation for the new name (allows reclaiming)
+                    ReservedDatasetName.objects.filter(name=new_dataset_name).delete()
+                    # Reserve the old name
+                    ReservedDatasetName.objects.create(name=original_dataset_name, dataset=instance)
 
             existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
             team = form.cleaned_data.get("team")

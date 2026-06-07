@@ -48,11 +48,15 @@
             </div>
             <div class="form-row">
                 <div class="form-group col">
+                    <input type="hidden" id="original-name" value="{{ form.name.value }}" />
                     <label for="id_name">Name</label>
                     {{ form.name }}
                     {% if form.name.errors %}<span class="text-danger">{{ form.name.errors.as_text }}</span>{% endif %}
-                    <div class="mt-2" id="id_name_message" data-default-href="/timeline?dataset=" >
-                        The URL to this dataset is: <span><a href="/timeline?dataset={{ form.name.value }}">/timeline?dataset=<strong>{{ form.name.value }}</strong></a><span>
+                    <div class="mt-2" id="id_name_message" data-default-href="/timeline?dataset=" ></div>
+                    <div class="mt-2 alert alert-warning d-none" id="rename-warning">
+                        Existing links will redirect to the new URL automatically, but only until
+                        the prior name is reclaimed by another dataset. This redirect only applies to web pages, not
+                        API calls.
                     </div>
                 </div>
             </div>
@@ -193,6 +197,7 @@
     var _csrf = "{{ csrf_token }}";
 
     {% if dataset.id > 0 and request.user.is_superuser %}
+
     function dataset_sync_status() {
         $.getJSON("{% url 'secure:sync_dataset_status' dataset.id %}", function(data) {
             if(data.state == 'LOCKED') { // job hasn't started yet
@@ -238,21 +243,6 @@
             }
         });
     }
-    $('#id_name').keyup(function(){
-        let $name_field = $('#id_name');
-        let name = $name_field.val()
-        if(name.indexOf(" ")!=-1){
-            name = name.split(" ").join("");
-            $name_field.val(name)
-        }
-
-        let $name_message_el = $('#id_name_message')
-        let message = 'The URL to this dataset <strong>will be: </strong>';
-        message += $name_message_el.data('default-href');
-        message += '<strong>' + name +'</strong>';
-        $name_message_el.html(message);
-
-    })
 
     $('#sync-button').click(function() {
         var payload = {
@@ -286,6 +276,44 @@
         });
     }, 10);
     {% endif %}
+
+    function updateNameDetails() {
+        const name = $('#id_name').val();
+        const original = $("#original-name").val().toLowerCase();
+        const isNew = !original.trim();
+        const hasChanged = original && name.toLowerCase() !== original;
+        const message = $("#id_name_message");
+        const defaultUrl = message.data('default-href');
+
+        // Show a warning only when the url is changing, which does not include if the dataset is new
+        $("#rename-warning").toggleClass("d-none", !hasChanged);
+
+        // Dynamically change the message so that it's not a link only when the name has changed
+        const state = isNew || hasChanged ? "<strong>will be</strong>" : "is";
+        const text = isNew || hasChanged
+            ? `${defaultUrl}<strong>${name}</strong>`
+            : `<a href="${defaultUrl}${name}">/timeline?dataset=<strong>${name}</strong></a>`;
+
+        message.html(`The URL to this dataset ${state}: ${text}`);
+    }
+
+    document.addEventListener("DOMContentLoaded", function(){
+        $('#id_name')
+            .on('keydown', function(e) {
+                // Prevent spaces from entering the input to avoid character position issues with the other input handler
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    return false;
+                }
+            })
+            .on('input', function(){
+                this.value = this.value.replace(/\s/g, '');
+
+                updateNameDetails();
+            });
+
+        updateNameDetails();
+    });
 </script>
 
 {% endblock %}
