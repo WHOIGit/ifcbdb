@@ -40,11 +40,6 @@ var _autoCompleteJS;
 
 //************* Common Methods ***********************/
 
-function getPage(page, queryString = "") {
-    return window.location.pathname.replace(/[^/]+$/, page)
-        + (queryString ? "?" + queryString : "");
-}
-
 // Generates a relative link to the current bin/dataset
 function createLink() {
     // Bin Mode
