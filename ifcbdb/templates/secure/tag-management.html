@@ -73,7 +73,6 @@
         e.preventDefault();
 
         const name = $(this).data("name");
-        console.log(name)
         if (!confirm("Are you sure you want to remove the tag named \"" + name + "\"? This will also unassign it from all bins.")) {
             return;
         }

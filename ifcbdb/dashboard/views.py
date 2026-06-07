@@ -30,6 +30,7 @@ from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment,
     Team, TeamDataset, ReservedDatasetName
 from .forms import DatasetSearchForm
 from common.utilities import *
+from common import auth
 
 from dashboard.accession import Accession, export_metadata
 import waffle
@@ -518,12 +519,11 @@ def legacy_image_page(request, dataset_name, bin_id, image_id):
 def legacy_image_page_alt(request, bin_id, image_id):
     return _image_details(request, image_id, bin_id)
 
-def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, cruise=None, bin_reset=False,
-             default_start_date=None, default_end_date=None, sample_type=None):
+def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, cruise=None,
+             bin_reset=False, default_start_date=None, default_end_date=None, sample_type=None):
     if not bin_id and not dataset_name and not tags and not instrument_number and not cruise and not sample_type:
         # TODO: 404 error; don't have enough info to proceed
         pass
-
 
     bin_qs = bin_query(dataset_name=dataset_name,
         tags=tags,
@@ -559,11 +559,13 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
 
     team_dataset = TeamDataset.objects.filter(dataset=dataset).select_related("team").first()
     team = team_dataset.team if team_dataset else None
+    can_update_bin = auth.can_update_bin(request.user, bin)
 
     return render(request, "dashboard/bin.html", {
         "route": route,
         "can_share_page": True,
         "can_filter_page": (route == "timeline"),
+        "can_update_bin": can_update_bin,
         "dataset": dataset,
         "instrument": instrument,
         'sample_type': sample_type,

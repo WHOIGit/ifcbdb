@@ -677,11 +677,15 @@ def app_settings(request):
 
 @require_POST
 def add_tag(request, bin_id):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_metadata(request.user):
         return HttpResponseForbidden()
 
     tag_name = request.POST.get("tag_name", "")
     bin = get_object_or_404(Bin, pid=bin_id)
+
+    if not auth.can_update_bin(request.user, bin):
+        return HttpResponseForbidden()
+
     bin.add_tag(tag_name, user=request.user)
 
     return JsonResponse({
@@ -691,11 +695,15 @@ def add_tag(request, bin_id):
 
 @require_POST
 def remove_tag(request, bin_id):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_metadata(request.user):
         return HttpResponseForbidden()
 
     tag_name = request.POST.get("tag_name", "")
     bin = get_object_or_404(Bin, pid=bin_id)
+
+    if not auth.can_update_bin(request.user, bin):
+        return HttpResponseForbidden()
+
     bin.delete_tag(tag_name)
 
     return JsonResponse({
@@ -977,13 +985,16 @@ def metadata_upload_cancel(request):
 
 @require_POST
 def toggle_skip(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_metadata(request.user):
         return HttpResponseForbidden()
 
     bin_id = request.POST.get("bin_id")
     skipped = request.POST.get("skipped") == "true"
 
     bin = get_object_or_404(Bin, pid=bin_id)
+    if not auth.can_update_bin(request.user, bin):
+        return HttpResponseForbidden()
+
     bin.skip = not skipped
     bin.save()
 

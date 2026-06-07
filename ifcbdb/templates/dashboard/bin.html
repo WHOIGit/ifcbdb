@@ -484,7 +484,7 @@
                 <div class="pl-2">
                   <span>Tags:</span>
                     <span id="tags" ></span>
-                  {% if user.is_authenticated %}
+                  {% if can_update_bin %}
                   <a class="btn btn-sm btn-mdb-color px-2 py-1" id="add-tag"><i class="fas fa-plus"></i></a>
                   <input type="text" placeholder="tag name" id="tag-name" class="d-none" tabindex="0" />
                   <a class="btn btn-sm btn-mdb-color ml-0 d-none pt-1 pb-1 pl-2 pr-2" id="tag-confirm">
@@ -567,7 +567,11 @@
                         <div class="d-flex flex-row">
                             <div class="flex-column">
                                 Skipped:
-                                <a {% if user.is_authenticated %}href="javascript:;"{% endif %} id="stat-skip"></a>
+                                {% if can_update_bin %}
+                                    <a id="stat-skip" href="#"></a>
+                                {% else %}
+                                    <span id="stat-skip"></span>
+                                {% endif %}
                             </div>
                         </div>
                       <div class="d-flex flex-row">

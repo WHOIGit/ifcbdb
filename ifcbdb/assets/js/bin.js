@@ -406,7 +406,7 @@ function displayTags(tags) {
 
         li.append(span);
 
-        if (_userId != null) {
+        if (_userId != null && $("#add-tag").length) {
             li.append(remove);
             remove.append(icon);
         }
@@ -813,6 +813,10 @@ function recenterMap() {
 }
 
 function selectMapMarker(marker) {
+    if (!marker) {
+        return;
+    }
+
     // TODO: Make sure zooming to layer is no longer required (might have only been needed to handle clustering)
     // _selectedMarkers.zoomToShowLayer(marker, function(){
     //     marker.openPopup();
@@ -1255,14 +1259,16 @@ function initEvents() {
     });
 
     $("#stat-skip").click(function(e){
-        if (_userId == null)
+        e.preventDefault();
+
+        if (_userId == null || !$(this).is("a"))
             return;
 
-        var skipped = $(this).data("skipped");
+        const skipped = $(this).data("skipped");
         if (!skipped && !confirm("Are you sure you want to mark this bin as skipped?"))
             return;
 
-        var payload = {
+        const payload = {
             "csrfmiddlewaretoken": _csrf,
             "bin_id": _bin,
             "skipped": skipped
