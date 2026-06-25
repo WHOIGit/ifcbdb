@@ -99,6 +99,9 @@ urlpatterns = [
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.png', views.image_png_legacy, name='image_png_legacy'),
     path('<slug:dataset_name>/<slug:bin_id>_<int:target>.jpg', views.image_jpg_legacy, name='image_jpg_legacy'),
 
+    # legacy blob access
+    path('<slug:dataset_name>/<slug:bin_id>_<int:target>_blob.png', views.image_blob_legacy, name='image_blob_legacy'),
+
     # legacy feed API
     path('<ds_plus_tags>/api/feed/<slug:metric>/start/<start>/end/<end>', views.feed_legacy, name='feed_legacy'),
 
