@@ -1,4 +1,4 @@
-django==4.2.29
+django==4.2.30
 gunicorn==23.0.0
 psycopg2-binary==2.9.9
 numba==0.59.1
@@ -9,7 +9,7 @@ scipy==1.13.1
 pandas==2.2.3
 h5py==3.12.1
 requests==2.33.0
-Pillow==12.1.1
+Pillow==12.2.0
 rectpack==0.2.2
 scikit-image==0.24.0
 pysmb==1.2.10
