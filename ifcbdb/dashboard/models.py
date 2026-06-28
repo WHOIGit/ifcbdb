@@ -5,21 +5,18 @@ import os
 
 from functools import lru_cache
 
-from django.db import models
-
 from django.conf import settings
-
-from django.db.models import F, Count, Sum, Avg, Min, Max, Q
-from django.db.models.functions import Trunc
 from django.contrib.auth.models import User
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.geos import Point, Polygon
 from django.contrib.gis.db.models.functions import Distance
-
+from django.core.cache import cache
+from django.db import models
+from django.db.models import F, Count, Sum, Avg, Min, Max, Q
+from django.db.models.functions import Trunc
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-
-from django.core.cache import cache
+from django.utils import timezone
 
 import pandas as pd
 
@@ -821,6 +818,7 @@ class Bin(models.Model):
 
         # Update the timestamp on the bin
         if created:
+            self.modified = timezone.now()
             self.save(update_fields=['modified'])
 
         return event
@@ -833,6 +831,7 @@ class Bin(models.Model):
         event.delete()
 
         # Update the timestamp on the bin
+        self.modified = timezone.now()
         self.save(update_fields=['modified'])
 
     # comments
@@ -846,6 +845,7 @@ class Bin(models.Model):
         comment.save()
 
         # Update the timestamp on the bin
+        self.modified = timezone.now()
         self.save(update_fields=['modified'])
 
     def delete_comment(self, comment_id, user):
@@ -855,6 +855,7 @@ class Bin(models.Model):
                 comment.delete()
 
                 # Update the timestamp on the bin
+                self.modified = timezone.now()
                 self.save(update_fields=['modified'])
         except:
             pass

@@ -347,6 +347,8 @@ function addTag(value) {
         $('#tag-name').val('');
         initAutoComplete();
         $("#tag-name").focus();
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -362,6 +364,8 @@ function removeTag(tag) {
     $.post("/secure/api/remove-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
         initAutoComplete();
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -407,6 +411,8 @@ function addComment() {
     $.post("/secure/api/add-comment/" + _bin, payload, function(data){
         $("#comment-input").val("");
         displayComments(data.comments);
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -447,6 +453,8 @@ function updateComment() {
         $("#comment-input").val("");
         cancelComment();
         displayComments(data.comments);
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -464,6 +472,8 @@ function deleteComment(id) {
 
     $.post("/secure/api/delete-comment/" + _bin, payload, function(data){
         displayComments(data.comments);
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -1249,6 +1259,8 @@ function initEvents() {
             $("#stat-skip")
                 .text(resp["skipped"] ? "Yes" : "No")
                 .data("skipped", resp["skipped"]);
+
+            updateDateTimeLabel("#stat-modified", resp.modified);
         });
     });
 
