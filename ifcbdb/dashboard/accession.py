@@ -50,13 +50,15 @@ class Accession(object):
         self.lon = lon
         self.depth = depth
         self.newest_only = newest_only
+
     def start_time(self):
         if not self.newest_only or not self.dataset.bins:
             return None
-        b = Timeline(self.dataset.bins).most_recent_bin()
-        if b:
-            return b.sample_time
-        return None
+
+        bin = Timeline(self.dataset.bins).most_recent_bin()
+
+        return bin.sample_time if bin else None
+
     def scan(self):
         for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             if not os.path.exists(dd.path):
@@ -64,39 +66,28 @@ class Accession(object):
             directory = ifcb.DataDirectory(dd.path)
             for b in directory:
                 yield (b, dd)
-    def sync_one(self, pid):
-        bin = None
-        dd_found = None
-        for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
-            if not os.path.exists(dd.path):
-                continue # skip and continue searching
-            directory = ifcb.DataDirectory(dd.path)
-            try:
-                bin = directory[pid]
-                dd_found = dd
-            except KeyError:
-                continue
-            if bin is not None:
-                break
-        if bin is None:
-            return 'bin {} not found'.format(pid)
-        # create instrument if necessary
-        i = bin.pid.instrument
-        version = bin.pid.schema_version
-        instrument, created = Instrument.objects.get_or_create(number=i, defaults={
-            'version': version
-        })
 
-        # create model object
-        timestamp = bin.pid.timestamp
+    def _get_or_create_instrument(self, ifcb_bin):
+        instrument, _ = Instrument.objects.get_or_create(
+            number=ifcb_bin.pid.instrument,
+            defaults={ "version": ifcb_bin.pid.schema_version })
+
+        return instrument
+
+    def _get_or_create_bin(self, pid, ifcb_bin, instrument, ifcb_directory):
         team = self.dataset.team if self.dataset else None
-        b, created = Bin.objects.get_or_create(pid=pid, defaults={
-            'timestamp': timestamp,
-            'sample_time': timestamp,
+
+        # Path without extension
+        path = os.path.splitext(ifcb_bin.fileset.adc_path)[0]
+
+        # The skip flag is set to true in case accession is interrupted
+        bin, created = Bin.objects.get_or_create(pid=pid, defaults={
+            'timestamp': ifcb_bin.pid.timestamp,
+            'sample_time': ifcb_bin.pid.timestamp,
             'instrument': instrument,
-            'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
-            'data_directory': dd_found,
-            'skip': True, # in case accession is interrupted
+            'path': path,
+            'data_directory': ifcb_directory,
+            'skip': True,
             'team': team,
             'modified': timezone.now(),
             'accessioned': timezone.now(),
@@ -104,127 +95,148 @@ class Accession(object):
 
         # For existing bins, if the team value is not set, and there is one, save that value. This handles pre-existing
         #   data that was created prior to the teams feature, allowing it to be backfilled when sync'ing
-        if not created and b.team is None and team is not None:
-            b.team = team
-            b.save()
+        if not created and bin.team is None and team is not None:
+            bin.team = team
+            bin.save()
 
+        return bin, created
+
+    def _process_bins(self, bins, log_callback):
+        for bin in bins:
+            bin.skip = False
+            bin.save()
+
+            log_callback(f"{bin.pid} saved")
+
+            self.dataset.bins.add(bin)
+
+    def _find_ifcb_bin(self, pid):
+        for directory in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
+            # skip and continue searching
+            if not os.path.exists(dd.path):
+                continue
+
+            directory = ifcb.DataDirectory(directory.path)
+            try:
+                return directory[pid], directory
+            except KeyError:
+                continue
+
+        return None, None
+
+    def sync_one(self, pid):
+        ifcb_bin, ifcb_directory = self._find_ifcb_bin(pid)
+        if ifcb_bin is None:
+            return None
+
+        instrument = self._get_or_create_instrument(ifcb_bin)
+        bin, created = self._get_or_create_bin(pid, ifcb_bin, instrument, ifcb_directory)
+
+        # If this is a pre-existing bin, nothing more needs to be done
         if not created:
-            return
-        b2s, error = self.add_bin(bin, b)
+            return bin
+
+        bin, error = self.add_bin(ifcb_bin, bin)
         if error is not None:
-            # there was an error. if we created a bin, delete it
-            if created:
-                b.delete()
-                return error
+            bin.delete()
+
+            return None
+
         with transaction.atomic():
-            if not b2s.qc_no_rois:
-                b2s.skip = False
-                b2s.save()
-                self.dataset.bins.add(b2s)
-            else:
-                b2s.save()
+            self._process_bins([bin,], do_nothing)
+
+        return bin
+
     def sync(self, progress_callback=do_nothing, log_callback=do_nothing):
         progress_callback(print_progress(progress('',0,0,0,{})))
+
         bins_added = 0
         total_bins = 0
         bad_bins = 0
         most_recent_bin_id = ''
-        newest_done = False
         scanner = self.scan()
         start_time = self.start_time()
         errors = {}
+
         while True:
-            bin_dds = list(islice(scanner, self.batch_size))
-            if not bin_dds:
+            batch = list(islice(scanner, self.batch_size))
+            if not batch:
                 break
-            total_bins += len(bin_dds)
-            # create instrument(s)
-            instruments = {} # keyed by instrument number
-            for bin_dd in bin_dds:
-                bin, dd = bin_dd
-                i = bin.pid.instrument
-                if not i in instruments:
-                    version = bin.pid.schema_version
-                    instrument, created = Instrument.objects.get_or_create(number=i, defaults={
-                        'version': version
-                    })
-                    instruments[i] = instrument
+
+            total_bins += len(batch)
+
+            # create instrument(s), keyed by instrument number
+            instruments = {}
+            for ifcb_bin, _ in batch:
+                if ifcb_bin.pid.instrument in instruments:
+                    continue
+
+                instrument = self._get_or_create_instrument(ifcb_bin)
+                instruments[ifcb_bin.pid.instrument] = instrument
+
             # create bins
-            then = time.time()
             bins2save = []
 
-            for bin_dd in bin_dds:
-                bin, dd = bin_dd
-                pid = bin.lid
+            for ifcb_bin, ifcb_directory in batch:
+                pid = ifcb_bin.lid
                 most_recent_bin_id = pid
-                log_callback('{} found'.format(pid))
-                instrument = instruments[bin.pid.instrument]
-                timestamp = bin.timestamp
-                team = self.dataset.team if self.dataset else None
-                if start_time is not None and bin.timestamp <= start_time:
+
+                log_callback(f"{pid} found")
+
+                if start_time is not None and ifcb_bin.timestamp <= start_time:
                     continue
-                b, created = Bin.objects.get_or_create(pid=pid, defaults={
-                    'timestamp': timestamp,
-                    'sample_time': timestamp,
-                    'instrument': instrument,
-                    'path': os.path.splitext(bin.fileset.adc_path)[0], # path without extension
-                    'data_directory': dd,
-                    'skip': True, # in case accession is interrupted
-                    'team': team,
-                    'modified': timezone.now(),
-                    'accessioned': timezone.now(),
-                })
 
-                # For existing bins, if the team value is not set, and there is one, save that value. This handles pre-existing
-                #   data that was created prior to the teams feature, allowing it to be backfilled when sync'ing
-                if not created and b.team is None and team is not None:
-                    b.team = team
-                    b.save()
-
+                instrument = instruments[ifcb_bin.pid.instrument]
+                bin, created = self._get_or_create_bin(pid, ifcb_bin, instrument, ifcb_directory)
                 if not created:
+                    log_callback(f"{bin.pid} not adding bin")
                     continue
-                b2s, error = self.add_bin(bin, b)
+
+                bin, error = self.add_bin(ifcb_bin, bin)
                 if error is not None:
-                    b2s = None
-                    errors[b.pid] = error
-                if b2s is not None:
-                    bins2save.append(b2s)
-                elif created: # created, but bad! delete
-                    log_callback('{} deleting bad bin'.format(b.pid))
-                    b.delete()
+                    log_callback(f"{pid} deleting bad bin")
+                    bin.delete()
+                    errors[pid] = error
                     bad_bins += 1
-                else:
-                    log_callback('{} not adding bin'.format(b.pid))
+                    continue
+
+                bins2save.append(bin)
+
             with transaction.atomic():
-                for b in bins2save:
-                    b.skip = False # unskip because we're ready to save
-                    b.save()
-                    log_callback('{} saved'.format(b.pid))
-                # add to dataset, unless the bin has no rois
-                for b in bins2save:
-                    if b.qc_no_rois:
-                        continue
-                    self.dataset.bins.add(b)
-                    bins_added += 1
+                self._process_bins(bins2save, log_callback)
+
+            bins_added += len(bins2save)
+
             # done with the batch
             status = progress_callback(progress(most_recent_bin_id, bins_added, total_bins, bad_bins, errors))
             if not status: # cancel
                 break
+
         # done.
         prog = progress(most_recent_bin_id, bins_added, total_bins, bad_bins, errors)
         progress_callback(prog)
+
         return prog
 
+    # All of these checks are related to the headers, which means  that they do not need to be re-run even if the bin
+    #   is re-sync'd/reaccessed
+    # FUTURE: The qc_bad flag is never used. Consumers of this method will delete the bin if it returns an error, and
+    #   since that's the only time the qc_bad flag would ever be set to true, it is essentially dead code that could be
+    #   refactored away. Additionally, this method should be named something more related to the QC checks that are done
+    #   and/or the parsing of metadata
     def add_bin(self, bin, b): # IFCB bin, Bin instance
+
         # qaqc checks
         qc_bad = check_bad(bin)
         if qc_bad:
             b.qc_bad = True
             return b, 'malformed raw data'
+
         no_rois = check_no_rois(bin)
         if no_rois:
             b.qc_bad = True
             return b, 'zero ROIs'
+
         # more error checking for setting attributes
         try:
             ml_analyzed = bin.ml_analyzed
@@ -234,9 +246,11 @@ class Accession(object):
         except Exception as e:
             b.qc_bad = True
             return b, 'ml_analyzed: {}'.format(str(e))
+
         # paths
         if b.path is None:
             b.path, _ = os.path.splitext(bin.fileset.adc_path)
+
         # metadata
         try:
             headers = bin.hdr_attributes
@@ -244,7 +258,7 @@ class Accession(object):
             b.qc_bad = True
             return b, 'header: {}'.format(str(e))
         b.metadata_json = json.dumps(headers)
-        #
+
         # lat/lon/depth
         latitude = headers.get('latitude') or headers.get('gpsLatitude')
         longitude = headers.get('longitude') or headers.get('gpsLongitude')
@@ -263,12 +277,14 @@ class Accession(object):
                 depth = None
             if latitude is not None and longitude is not None:
                 b.set_location(longitude, latitude, depth)
-        #
+
+        # sample type
         sample_type = headers.get('sampleType')
         if sample_type is not None:
             b.sample_type = sample_type
     
         b.qc_no_rois = check_no_rois(bin)
+
         # metrics
         try:
             b.temperature = bin.temperature
@@ -283,6 +299,7 @@ class Accession(object):
         b.look_time = bin.look_time
         b.run_time = bin.run_time
         b.n_triggers = bin.n_triggers
+
         if bin.pid.schema_version == SCHEMA_VERSION_1:
             ii = InfilledImages(bin)
             b.n_images = len(ii)
@@ -291,6 +308,7 @@ class Accession(object):
         b.concentration = b.n_images / ml_analyzed
         if b.concentration < 0: # metadata is bogus!
             return b, 'rois/ml is < 0'
+
         return b, None # defer save
 
 def import_progress(bin_id, n_modded, errors, done=False):

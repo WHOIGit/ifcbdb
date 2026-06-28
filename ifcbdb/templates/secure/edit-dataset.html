@@ -220,6 +220,7 @@
                 $("#cancel-button").addClass("disabled");
                 // job has either succeeded or failed
                 if(data.state == 'SUCCESS') {
+                    $('#sync-status').removeClass('d-none');
                     $('#sync-spinner').addClass('d-none');
                     $('#sync-state').html('Synced.');
                     $('#sync-total').html(data.info.total);
@@ -245,6 +246,8 @@
     }
 
     $('#sync-button').click(function() {
+        $('#sync-status').addClass('d-none');
+
         var payload = {
             "csrfmiddlewaretoken": _csrf,
             "newest_only": $("#newest-only").is(":checked")
@@ -256,6 +259,8 @@
     })
 
     $('#cancel-button').click(function() {
+        $('#sync-status').addClass('d-none');
+
         var payload = {
             "csrfmiddlewaretoken": _csrf,
         };
