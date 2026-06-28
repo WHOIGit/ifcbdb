@@ -690,6 +690,7 @@ def add_tag(request, bin_id):
 
     return JsonResponse({
         "tags": bin.tag_names,
+        "bin_modified": bin.modified,
     })
 
 
@@ -708,6 +709,7 @@ def remove_tag(request, bin_id):
 
     return JsonResponse({
         "tags": bin.tag_names,
+        "bin_modified": bin.modified,
     })
 
 
@@ -724,6 +726,7 @@ def add_comment(request, bin_id):
 
     return JsonResponse({
         "comments": bin.comment_list,
+        "bin_modified": bin.modified,
     })
 
 @require_GET
@@ -741,7 +744,7 @@ def edit_comment(request, bin_id):
 
     return JsonResponse({
         "id": comment.id,
-        "content": comment.content
+        "content": comment.content,
     })
 
 
@@ -764,11 +767,13 @@ def update_comment(request, bin_id):
     comment.save()
 
     # Update the timestamp on the bin
+    bin.modified = timezone.now()
     bin.save(update_fields=['modified'])
 
     return JsonResponse({
         "id": comment.id,
         "comments": bin.comment_list,
+        "bin_modified": bin.modified,
     })
 
 
@@ -789,6 +794,7 @@ def delete_comment(request, bin_id):
 
     return JsonResponse({
         "comments": bin.comment_list,
+        "bin_modified": bin.modified,
     })
 
 # dataset syncing
@@ -996,11 +1002,13 @@ def toggle_skip(request):
         return HttpResponseForbidden()
 
     bin.skip = not skipped
+    bin.modified = timezone.now()
     bin.save()
 
     return JsonResponse({
         "bin_id": bin_id,
         "skipped": not skipped,
+        "modified": bin.modified,
     })
 
 @login_required
@@ -1181,6 +1189,7 @@ def update_skip(bin_qs, is_skipped):
 
     for bin in bin_qs:
         bin.skip = is_skipped
+        bin.modified = timezone.now()
         bin.save()
 
         total += 1

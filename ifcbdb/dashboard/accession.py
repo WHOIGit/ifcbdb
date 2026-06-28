@@ -539,6 +539,7 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
                         'skip value "{}" had unsupported type "{}"'.format(skip, type(skip).__name__))
 
             n_modded += 1
+            b.modified = timezone.now()
             b.save()
             
             if n_modded % progress_batch_size == 0:
