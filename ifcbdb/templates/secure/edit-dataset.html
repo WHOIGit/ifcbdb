@@ -18,6 +18,9 @@
         <span class="h3-responsive">{% if dataset.id > 0 %}Edit Dataset {{ dataset.title }}{% else %}Add New Dataset{% endif %}</span>
     </div>
     <div class="flex-column">
+        {% if dataset.id > 0 %}
+        <button type="button" id="delete-dataset-btn" class="btn btn-sm btn-danger mr-2">Delete Dataset</button>
+        {% endif %}
         {% if dataset.id > 0 and request.user.is_superuser %}
         <a class="btn btn-sm btn-mdb-color" href="{% url 'secure:directory-management' dataset.id %}">Manage directories</a>
         {% endif %}
@@ -275,7 +278,40 @@
             }
         });
     }, 10);
+
     {% endif %}
+
+    $('#id_name').keyup(function(){
+        let $name_field = $('#id_name');
+        let name = $name_field.val()
+        if(name.indexOf(" ")!=-1){
+            name = name.split(" ").join("");
+            $name_field.val(name)
+        }
+
+        let $name_message_el = $('#id_name_message')
+        let message = 'The URL to this dataset <strong>will be: </strong>';
+        message += $name_message_el.data('default-href');
+        message += '<strong>' + name +'</strong>';
+        $name_message_el.html(message);
+    });
+
+    $("#delete-dataset-btn").click(function() {
+        $.getJSON("/secure/api/dataset/{{ dataset.id }}/bin-count", function(data) {
+            const warning = data.bin_count > 0
+                ? `This dataset contains ${data.bin_count} bin${data.bin_count === 1 ? '' : 's'} which may become orphaned if they are not associated with any other datasets`
+                : "This dataset does not have any bins and can be safely deleted";
+
+            if (!confirm("Are you sure you want to delete this dataset?\n\n" + warning)) {
+                return;
+            }
+
+            const payload = { csrfmiddlewaretoken: _csrf };
+            $.post("/secure/api/delete-dataset/{{ dataset.id }}", payload, function() {
+                window.location.href = "{% url 'secure:dataset-management' %}";
+            });
+        });
+    });
 
     function updateNameDetails() {
         const name = $('#id_name').val();

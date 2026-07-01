@@ -272,6 +272,36 @@ def edit_dataset(request, id):
 
 
 @login_required
+def dataset_bin_count(request, dataset_id):
+    if not auth.can_manage_datasets(request.user):
+        return HttpResponseForbidden()
+
+    dataset = get_object_or_404(Dataset, pk=dataset_id)
+
+    if not auth.is_admin(request.user) and not TeamDataset.objects.filter(dataset=dataset).exists():
+        return HttpResponseForbidden()
+
+    return JsonResponse({
+        "bin_count": dataset.bins.count(),
+    })
+
+
+@require_POST
+def delete_dataset(request, dataset_id):
+    if not auth.can_manage_datasets(request.user):
+        return HttpResponseForbidden()
+
+    dataset = get_object_or_404(Dataset, pk=dataset_id)
+
+    if not auth.is_admin(request.user) and not TeamDataset.objects.filter(dataset=dataset).exists():
+        return HttpResponseForbidden()
+
+    dataset.delete()
+
+    return JsonResponse({})
+
+
+@login_required
 def edit_directory(request, dataset_id, id):
     if not auth.is_admin(request.user):
         return redirect(reverse("secure:index"))
