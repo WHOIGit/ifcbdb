@@ -36,7 +36,7 @@ from ifcb.data.files import Fileset, FilesetBin
 from .tasks import mosaic_coordinates_task
 from .mosaic import Mosaic
 
-from common.constants import TeamRoles
+from common.constants import TeamRoles, BinManagementDatasetFilters, BinManagementTeamFilters
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +223,10 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
         qs = Timeline(qs).time_range(start, end)
 
     if dataset_name:
-        qs = qs.filter(datasets__name=dataset_name)
+        if dataset_name == BinManagementDatasetFilters.UNASSIGNED.value:
+            qs = qs.filter(datasets=None)
+        else:
+            qs = qs.filter(datasets__name=dataset_name)
 
     if tags is not None:
         for tag in tags:
@@ -238,10 +241,14 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
     if sample_type not in [None, ""]:
         qs = qs.filter(sample_type__iexact=sample_type)
 
-    if team_names is not None and len(team_names) > 0:
-        team_ids = list(Team.objects.filter(name__in=team_names).values_list("id", flat=True))
 
-        qs = qs.filter(team_id__in=team_ids)
+    if team_names is not None and len(team_names) > 0:
+        if BinManagementTeamFilters.UNASSIGNED.value in team_names:
+            qs = qs.filter(team__isnull=True)
+        else:
+            team_ids = list(Team.objects.filter(name__in=team_names).values_list("id", flat=True))
+
+            qs = qs.filter(team_id__in=team_ids)
 
     return qs
 

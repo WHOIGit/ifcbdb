@@ -409,7 +409,9 @@
             dropdown.empty();
 
             $.each(values, function(index, item) {
-                dropdown.append($('<option></option>').val(item).text(item));
+                const text = item === "__unassigned__" ? "Unassigned" : item;
+
+                dropdown.append($('<option></option>').val(item).text(text));
             });
 
             dropdown.val(currentValue);
