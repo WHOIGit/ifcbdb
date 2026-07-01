@@ -132,3 +132,16 @@ def get_associated_datasets(user, exclude_inactive=True):
         .values_list("dataset_id", flat=True)
 
     return datasets.filter(id__in=dataset_ids)
+
+def can_update_bin(user, bin):
+    if not user.is_authenticated or not bin:
+        return False
+
+    if user.is_superuser or user.is_staff:
+        return True
+
+    return Team.objects \
+        .filter(pk=bin.team_id) \
+        .filter(teamuser__user=user) \
+        .filter(teamuser__role_id__in=[TeamRoles.CAPTAIN.value, TeamRoles.MANAGER.value]) \
+        .exists()

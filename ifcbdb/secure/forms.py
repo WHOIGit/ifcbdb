@@ -8,7 +8,9 @@ from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Ta
     Bin, Team, TeamUser, TeamDataset, \
     DEFAULT_LATITUDE, DEFAULT_LONGITUDE, DEFAULT_ZOOM_LEVEL, normalize_tag_name
 from common import auth
-from common.constants import BinManagementActions, TeamRoles
+from common.constants import BinManagementActions, TeamRoles, BinManagementDatasetFilters, BinManagementTeamFilters
+
+from common.constants import BinManagementTeamFilters, BinManagementDatasetFilters
 
 MIN_LATITUDE = -90
 MAX_LATITUDE = 90
@@ -49,7 +51,7 @@ class DatasetForm(forms.ModelForm):
             "is_active": forms.CheckboxInput(attrs={"class": "custom-control-input"}),
             "contact_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Contact Name"}),
             "contact_email": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Contact Email"}),
-            "description": forms.Textarea(attrs={"class": "form-control form-control-sm", "placeholder": "Description"}),
+            "description": forms.Textarea(attrs={"class": "form-control form-control-sm summernote", "placeholder": "Description"}),
         }
 
     def clean_doi(self):
@@ -142,13 +144,34 @@ class DirectoryForm(forms.ModelForm):
         data = self.cleaned_data
         path = self.cleaned_data.get("path")
         kind = self.cleaned_data.get("kind")
+        instance_id = self.instance.id if self.instance else 0
 
         # make sure the directory path is not already in the database
-        existing_path = DataDirectory.objects.filter(dataset_id=self.dataset_id, path=path, kind=kind).first()
-        if existing_path:
+        existing_path = DataDirectory.objects \
+            .filter(dataset_id=self.dataset_id, path=path, kind=kind) \
+            .exclude(id=instance_id)
+
+        if existing_path.exists():
             raise forms.ValidationError({
                 'path': 'Path "{}" (kind: {}) is already in use'.format(path, kind)
             })
+
+        # Class score directories have an additional requirement to not allow for duplicate model values. This
+        #   includes preventing more than one directory where the model value is left blank
+        if kind == DataDirectory.CLASS_SCORES:
+            model = self.cleaned_data.get("model") or ""
+
+            existing_model = DataDirectory.objects \
+                .filter(dataset_id=self.dataset_id, kind=kind, model=model) \
+                .exclude(id=instance_id)
+
+            if existing_model.exists():
+                msg = f"Model {model} is already in use" if model \
+                    else "Only one class score data directory can be created with a blank value for the model"
+
+                raise forms.ValidationError({
+                    'path': msg
+                })
 
         return data
 
@@ -157,7 +180,7 @@ class DirectoryForm(forms.ModelForm):
 
     class Meta:
         model = DataDirectory
-        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", ]
+        fields = ["id", "path", "kind", "priority", "whitelist", "blacklist", "version", "model", "is_class_score_default" ]
 
         widgets = {
             "path": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Path"}),
@@ -173,6 +196,7 @@ class DirectoryForm(forms.ModelForm):
             "blacklist": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Blacklist"}),
             "version": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Version"}),
             "priority": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Priority"}),
+            "model": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Model"}),
         }
 
 
@@ -388,7 +412,7 @@ class TeamForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Name"}),
             "title": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Title"}),
             "default_dataset": forms.Select(attrs={"class": "form-control form-control-sm"}),
-            "description": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 4}),
+            "description": forms.Textarea(attrs={"class": "form-control form-control-sm summernote", "rows": 4}),
             "short_description": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
         }
 
@@ -412,10 +436,8 @@ class BinSearchForm(forms.Form):
     #   just the team that's selected (if enabled). This removes the validation logic on those values,
     #   but that is covered by the validation on the team, since that will restrict all results down
     #   to just bins associated with a team the user has access to
-    team = forms.ModelChoiceField(
+    team = forms.CharField(
         required=False,
-        queryset=Team.objects.none(),
-        empty_label=" ",
         widget=forms.Select(attrs={"class": input_classes}))
     dataset = forms.CharField(
         required=False,
@@ -434,14 +456,22 @@ class BinSearchForm(forms.Form):
         widget=forms.Select(attrs={"class": input_classes}))
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop("user") if "user" in kwargs else None
+        self.user = kwargs.pop("user") if "user" in kwargs else None
 
         super().__init__(*args, **kwargs)
 
         is_teams_enabled = waffle.switch_is_active("Teams")
-        teams = auth.get_associated_teams(user)
+        teams = auth.get_associated_teams(self.user)
 
-        self.fields["team"].queryset = teams.order_by("name")
+        # The teams list is based on what the user has access two. Only superadmins are allowed search for bins not
+        #   yet associated with a team
+        team_choices = [("", " ")]
+        if auth.is_admin(self.user):
+            team_choices.append((BinManagementTeamFilters.UNASSIGNED.value, "Unassigned"))
+        for team in teams:
+            team_choices.append((team.pk, team.name))
+
+        self.fields["team"].widget.choices = team_choices
         self.fields["dataset"].widget.attrs["disabled"] = is_teams_enabled
         self.fields["instrument"].widget.attrs["disabled"] = is_teams_enabled
         self.fields["tag"].widget.attrs["disabled"] = is_teams_enabled
@@ -454,6 +484,11 @@ class BinSearchForm(forms.Form):
         cleaned_data = self.cleaned_data
         start_date = self.cleaned_data.get("start_date")
         end_date = self.cleaned_data.get("end_date")
+
+        # Prevent non-admins from selecting "Unassigned"
+        team = self.cleaned_data.get("team")
+        if team == BinManagementTeamFilters.UNASSIGNED.value and not auth.is_admin(self.user):
+            raise ValidationError("You do not have permission to search for team-less bins")
 
         # Ensure the user has entered at least one piece of criteria to prevent searching through
         #   the entire database of bins
@@ -472,7 +507,7 @@ class BinSearchForm(forms.Form):
             .distinct() \
             .values_list("name", flat=True)
 
-        return [""] + list(datasets)
+        return ["", BinManagementDatasetFilters.UNASSIGNED.value] + list(datasets)
 
     @staticmethod
     def build_tag_choices(bins):
