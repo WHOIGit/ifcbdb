@@ -40,11 +40,6 @@ var _autoCompleteJS;
 
 //************* Common Methods ***********************/
 
-function getPage(page, queryString = "") {
-    return window.location.pathname.replace(/[^/]+$/, page)
-        + (queryString ? "?" + queryString : "");
-}
-
 // Generates a relative link to the current bin/dataset
 function createLink() {
     // Bin Mode
@@ -135,20 +130,30 @@ function showWorkspace(workspace) {
     }
 }
 
+function updateDateTimeLabel(selector, value) {
+    if (!value) {
+        $(selector).closest(".flex-row").hide();
+        return;
+    }
+
+    const timestamp = moment.utc(value);
+    const dateString = timestamp.format("YYYY-MM-DD");
+    const timeString = timestamp.format("HH:mm:ss z");
+    const relativeTime = timestamp.fromNow();
+
+    const text =
+        `${dateString}<br/>${timeString}<br/>` +
+        `(<span data-livestamp='${value}'>${relativeTime}</span>)`;
+
+    $(selector).closest(".flex-row").show();
+    $(selector).html(text);
+}
+
 //************* Bin Methods ***********************/
 function updateBinStats(data) {
-    var timestamp_iso = data["timestamp_iso"];
-    var timestamp = moment.utc(timestamp_iso);
-
-    var date_string = timestamp.format("YYYY-MM-DD");
-    var time_string = timestamp.format("HH:mm:ss z");
-    var initial_relative_time = timestamp.fromNow();
-
-    $("#stat-date-time").html(
-        date_string + "<br/>" +
-        time_string + "<br/>" +
-        "(<span data-livestamp='"+timestamp_iso+"'>"+initial_relative_time+"</span>)"
-    );
+    updateDateTimeLabel("#stat-date-time", data.timestamp_iso);
+    updateDateTimeLabel("#stat-modified", data.modified);
+    updateDateTimeLabel("#stat-accessioned", data.accessioned);
 
     function showField(id, text) {
         $("#show-"+id).removeClass("d-none").addClass("d-flex");
@@ -252,7 +257,6 @@ function updateBinDownloadLinks(data) {
     $("#download-zip").attr("href", infix + _bin + ".zip");
     $("#download-blobs").attr("href", infix + _bin + "_blob.zip");
     $("#download-features").attr("href", infix + _bin + "_features.csv");
-    $("#download-class-scores").attr("href", infix + _bin + "_class_scores.csv");
 
     $.get('/api/has_products/' + _bin, function(r) {
         $("#download-blobs").toggle(r["has_blobs"]);
@@ -261,8 +265,37 @@ function updateBinDownloadLinks(data) {
         $("#download-features").toggle(r["has_features"]);
         $("#download-features-disabled").toggle(!r["has_features"]);
 
-        $("#download-class-scores").toggle(r["has_class_scores"]);
-        $("#download-class-scores-disabled").toggle(!r["has_class_scores"]);
+        // Remove existing class scores, including the disable placeholder
+        $("#features-list li.class-score").remove();
+
+        const classScores = r.class_scores.map((item) => {
+            const href = infix + _bin + "_class_scores.csv?model=" + item.model;
+            const text = "autoclass" + (item.model ? ` (${item.model})` : "");
+
+            return $("<a />", {
+                text: text,
+                href: href
+            });
+        });
+
+        // If there are no class scores, show a placeholder w/o a link
+        if (!classScores.length) {
+            const placeholder = $("<span />", {
+                class: "download-class-scores-disabled",
+                text: "autoclass"
+            });
+
+            classScores.push(placeholder);
+        }
+
+        classScores.forEach((item) => {
+            const listItem = $("<li />", {
+                class: "class-score",
+                html: item
+            });
+
+            $("#features-list").append(listItem);
+        });
 
         // Update outline/blob links
         $("#detailed-image-blob-link").toggleClass("disabled", !r["has_blobs"]);
@@ -337,6 +370,8 @@ function addTag(value) {
         $('#tag-name').val('');
         initAutoComplete();
         $("#tag-name").focus();
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -352,6 +387,8 @@ function removeTag(tag) {
     $.post("/secure/api/remove-tag/" + _bin, payload, function(data) {
         displayTags(data.tags);
         initAutoComplete();
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -373,7 +410,7 @@ function displayTags(tags) {
 
         li.append(span);
 
-        if (_userId != null) {
+        if (_userId != null && $("#add-tag").length) {
             li.append(remove);
             remove.append(icon);
         }
@@ -397,6 +434,8 @@ function addComment() {
     $.post("/secure/api/add-comment/" + _bin, payload, function(data){
         $("#comment-input").val("");
         displayComments(data.comments);
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -437,6 +476,8 @@ function updateComment() {
         $("#comment-input").val("");
         cancelComment();
         displayComments(data.comments);
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -454,6 +495,8 @@ function deleteComment(id) {
 
     $.post("/secure/api/delete-comment/" + _bin, payload, function(data){
         displayComments(data.comments);
+
+        updateDateTimeLabel("#stat-modified", data.bin_modified);
     });
 }
 
@@ -780,6 +823,10 @@ function recenterMap() {
 }
 
 function selectMapMarker(marker) {
+    if (!marker) {
+        return;
+    }
+
     // TODO: Make sure zooming to layer is no longer required (might have only been needed to handle clustering)
     // _selectedMarkers.zoomToShowLayer(marker, function(){
     //     marker.openPopup();
@@ -1222,14 +1269,16 @@ function initEvents() {
     });
 
     $("#stat-skip").click(function(e){
-        if (_userId == null)
+        e.preventDefault();
+
+        if (_userId == null || !$(this).is("a"))
             return;
 
-        var skipped = $(this).data("skipped");
+        const skipped = $(this).data("skipped");
         if (!skipped && !confirm("Are you sure you want to mark this bin as skipped?"))
             return;
 
-        var payload = {
+        const payload = {
             "csrfmiddlewaretoken": _csrf,
             "bin_id": _bin,
             "skipped": skipped
@@ -1239,6 +1288,8 @@ function initEvents() {
             $("#stat-skip")
                 .text(resp["skipped"] ? "Yes" : "No")
                 .data("skipped", resp["skipped"]);
+
+            updateDateTimeLabel("#stat-modified", resp.modified);
         });
     });
 

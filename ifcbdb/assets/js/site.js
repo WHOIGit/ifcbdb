@@ -12,9 +12,12 @@ const PLOT_X_DEFAULT = "roi_x";
 const PLOT_Y_DEFAULT = "roi_y";
 const MAX_SELECTABLE_IMAGES = 25;
 
-function getPage(page, queryString) {
-    return window.location.pathname.replace(/[^/]+$/, page)
-        + (queryString ? "?" + queryString : "");
+function getPage(page, queryString="") {
+    const path = window.location.pathname.startsWith("/secure")
+        ? "/" + page
+        : window.location.pathname.replace(/[^/]+$/, page);
+
+    return path + (queryString ? "?" + queryString : "");
 }
 
 function initDashboard(appSettings) {

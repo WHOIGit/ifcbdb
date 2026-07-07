@@ -5,21 +5,18 @@ import os
 
 from functools import lru_cache
 
-from django.db import models
-
 from django.conf import settings
-
-from django.db.models import F, Count, Sum, Avg, Min, Max, Q
-from django.db.models.functions import Trunc
 from django.contrib.auth.models import User
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.geos import Point, Polygon
 from django.contrib.gis.db.models.functions import Distance
-
+from django.core.cache import cache
+from django.db import models
+from django.db.models import F, Count, Sum, Avg, Min, Max, Q
+from django.db.models.functions import Trunc
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-
-from django.core.cache import cache
+from django.utils import timezone
 
 import pandas as pd
 
@@ -39,7 +36,7 @@ from ifcb.data.files import Fileset, FilesetBin
 from .tasks import mosaic_coordinates_task
 from .mosaic import Mosaic
 
-from common.constants import TeamRoles
+from common.constants import TeamRoles, BinManagementDatasetFilters, BinManagementTeamFilters
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +223,10 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
         qs = Timeline(qs).time_range(start, end)
 
     if dataset_name:
-        qs = qs.filter(datasets__name=dataset_name)
+        if dataset_name == BinManagementDatasetFilters.UNASSIGNED.value:
+            qs = qs.filter(datasets=None)
+        else:
+            qs = qs.filter(datasets__name=dataset_name)
 
     if tags is not None:
         for tag in tags:
@@ -241,10 +241,14 @@ def bin_query(dataset_name=None, start=None, end=None, tags=[],
     if sample_type not in [None, ""]:
         qs = qs.filter(sample_type__iexact=sample_type)
 
-    if team_names is not None and len(team_names) > 0:
-        team_ids = list(Team.objects.filter(name__in=team_names).values_list("id", flat=True))
 
-        qs = qs.filter(team_id__in=team_ids)
+    if team_names is not None and len(team_names) > 0:
+        if BinManagementTeamFilters.UNASSIGNED.value in team_names:
+            qs = qs.filter(team__isnull=True)
+        else:
+            team_ids = list(Team.objects.filter(name__in=team_names).values_list("id", flat=True))
+
+            qs = qs.filter(team_id__in=team_ids)
 
     return qs
 
@@ -437,6 +441,15 @@ class Dataset(models.Model):
     def __str__(self):
         return self.name
 
+
+class ReservedDatasetName(models.Model):
+    name = models.CharField(max_length=64, unique=True, db_index=True)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name="reserved_names")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+
 class DataDirectory(models.Model):
     # directory types
     RAW = 'raw'
@@ -456,6 +469,9 @@ class DataDirectory(models.Model):
     blacklist = models.CharField(max_length=512, default='skip,bad') # comma separated list of directory names to skip
     # for product directories, the product version
     version = models.IntegerField(null=True, blank=True)
+    model = models.SlugField(max_length=100, blank=True, null=False, default="")
+    # for class score directories; the default directory if there is more than one (falls back to most recently created)
+    is_class_score_default = models.BooleanField(default=False, blank=False, null=False)
 
     def get_raw_directory(self):
         if self.kind != self.RAW:
@@ -510,6 +526,8 @@ class Bin(models.Model):
     data_directory = models.ForeignKey('DataDirectory', null=True, blank=True, on_delete=models.SET_NULL)
     # accession
     added = models.DateTimeField(auto_now_add=True, null=True)
+    modified = models.DateTimeField(auto_now=False, null=True)
+    accessioned = models.DateTimeField(auto_now=False, null=True)
     # qaqc flags
     qc_bad = models.BooleanField(default=False) # is this bin invalid
     qc_no_rois = models.BooleanField(default=False)
@@ -607,12 +625,24 @@ class Bin(models.Model):
 
     # access to underlying FilesetBin objects
 
-    def _directories(self, kind=DataDirectory.RAW, version=None):
+    def _directories(self, kind=DataDirectory.RAW, version=None, model=None):
         for dataset in self.datasets.all():
             qs = dataset.directories.filter(kind=kind)
             if version is not None:
                 qs = qs.filter(version=version)
-            for directory in qs.order_by('priority'):
+
+            # A value of None for the model indicates it is not specified and should not be filtered
+            #   on. But model could also be an empty string, in which case this should return that
+            #   specific data directory (the one w/o a model set on it)
+            if model is not None:
+                qs = qs.filter(model=model)
+
+            if kind == DataDirectory.CLASS_SCORES:
+                qs = qs.order_by("-is_class_score_default", "-pk")
+            else:
+                qs = qs.order_by("priority")
+
+            for directory in qs:
                 yield directory
 
     def _get_bin(self):
@@ -731,27 +761,38 @@ class Bin(models.Model):
 
     # class scores
 
-    def class_scores_file(self, version=None):
+    def class_scores_file_list(self, version=None):
+        class_scores = []
+
         for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version):
+            csd = directory.get_class_scores_directory()
+            try:
+                class_scores.append(
+                    {
+                        "path": csd[self.pid].path,
+                        "model": directory.model,
+                    }
+                )
+            except KeyError:
+                pass
+
+        return class_scores
+
+    def class_scores_file(self, version=None, model=None):
+        for directory in self._directories(kind=DataDirectory.CLASS_SCORES, version=version, model=model):
             csd = directory.get_class_scores_directory()
             try:
                 return csd[self.pid]
             except KeyError:
                 pass
-        raise KeyError('no class scores found for {}'.format(self.pid))
 
-    def has_class_scores(self, version=None):
-        try:
-            self.class_scores_file(version=version)
-            return True
-        except KeyError:
-            return False
+        raise KeyError("no class scores found for {}".format(self.pid))
 
     def class_scores_path(self, version=None):
         return self.class_scores_file(version=version).path
 
-    def class_scores(self, version=None):
-        return self.class_scores_file(version=version).class_scores()
+    def class_scores(self, version=None, model=None):
+        return self.class_scores_file(version=version, model=model).class_scores()
 
     # mosaics
 
@@ -816,6 +857,12 @@ class Bin(models.Model):
         event, created = TagEvent.objects.get_or_create(bin=self, tag=tag)
         if created and user is not None:
             event.user = user
+
+        # Update the timestamp on the bin
+        if created:
+            self.modified = timezone.now()
+            self.save(update_fields=['modified'])
+
         return event
 
     def delete_tag(self, tag_name, normalize=True):
@@ -824,6 +871,10 @@ class Bin(models.Model):
         tag = Tag.objects.get(name=tag_name)
         event = TagEvent.objects.get(bin=self, tag=tag)
         event.delete()
+
+        # Update the timestamp on the bin
+        self.modified = timezone.now()
+        self.save(update_fields=['modified'])
 
     # comments
 
@@ -835,11 +886,19 @@ class Bin(models.Model):
         comment = Comment(bin=self, content=content, user=user)
         comment.save()
 
+        # Update the timestamp on the bin
+        self.modified = timezone.now()
+        self.save(update_fields=['modified'])
+
     def delete_comment(self, comment_id, user):
         try:
             comment = Comment.objects.get(bin=self, pk=comment_id)
             if user.is_staff:
                 comment.delete()
+
+                # Update the timestamp on the bin
+                self.modified = timezone.now()
+                self.save(update_fields=['modified'])
         except:
             pass
 

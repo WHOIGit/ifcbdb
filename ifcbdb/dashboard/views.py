@@ -1,6 +1,7 @@
 import json
 import re
 from io import BytesIO
+import csv
 
 import numpy as np
 import pandas as pd
@@ -13,7 +14,7 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import render, get_object_or_404, reverse
 from django.http import \
     HttpResponse, FileResponse, Http404, HttpResponseBadRequest, JsonResponse, \
-    HttpResponseRedirect, HttpResponseNotFound, StreamingHttpResponse
+    HttpResponseRedirect, HttpResponsePermanentRedirect, HttpResponseNotFound, StreamingHttpResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -25,9 +26,11 @@ from celery.result import AsyncResult
 from ifcb.data.imageio import format_image
 from ifcb.data.adc import schema_names
 
-from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, Team, TeamDataset
+from .models import Dataset, Bin, Instrument, Timeline, bin_query, Tag, Comment, normalize_tag_name, \
+    Team, TeamDataset, ReservedDatasetName
 from .forms import DatasetSearchForm
 from common.utilities import *
+from common import auth
 
 from dashboard.accession import Accession, export_metadata
 import waffle
@@ -76,6 +79,15 @@ def datasets(request, team_name=None):
         "team_panels": team_panels,
     })
 
+def resolve_dataset_name(name):
+    """Get dataset by current or reserved name. Returns (dataset, is_reserved)."""
+    try:
+        return Dataset.objects.get(name=name), False
+    except Dataset.DoesNotExist:
+        reserved = ReservedDatasetName.objects.select_related("dataset").get(name=name)
+        return reserved.dataset, True
+
+
 def bin_in_dataset_or_404(bin, dataset):
     "bin can be either a Bin instance or a bin pid"
     "dataset can be either a Dataset instance or a dataset name"
@@ -86,8 +98,8 @@ def bin_in_dataset_or_404(bin, dataset):
     if not dataset:
         return bin, None
     try:
-        dataset = Dataset.objects.get(name=dataset)
-    except Dataset.DoesNotExist:
+        dataset, is_reserved = resolve_dataset_name(dataset)
+    except (Dataset.DoesNotExist, ReservedDatasetName.DoesNotExist):
         raise Http404(f'No such dataset {dataset}')
     if dataset in list(bin.datasets.all()):
         return bin, dataset
@@ -95,7 +107,7 @@ def bin_in_dataset_or_404(bin, dataset):
 
 def dataframe_csv_response(df, **kw):
     csv_buf = BytesIO()
-    df.to_csv(csv_buf, mode='wb', **kw)
+    df.to_csv(csv_buf, mode="wb", quoting=csv.QUOTE_NONNUMERIC, **kw)
     csv_buf.seek(0)
     response = StreamingHttpResponse(csv_buf, content_type='text/csv')
     return response
@@ -242,7 +254,42 @@ def filter_parameters_bin_query(method):
 
     return bin_qs
 
+def check_for_dataset_redirect(request, from_querystring=True):
+    """
+    Checks the dataset name to ensure it matches an active dataset. First checking for a dataset by name, then falling
+      back to reserved dataset names. If the dataset is reserved, this returns a 301 redirect response to transfer the
+      user to the url w/ the correct dataset name
+    """
+
+    # The from_querystring flag determines whether the dataset name should be pulled from the querystring (with the
+    #   name "dataset", or from the route's path as a keyword argument named "dataset_name"
+    dataset_name = request.GET.get("dataset") if from_querystring \
+        else request.resolver_match.kwargs.get("dataset_name")
+
+    if not dataset_name or Dataset.objects.filter(name=dataset_name).exists():
+        return None
+
+    reserved = ReservedDatasetName.objects.select_related("dataset").filter(name=dataset_name).first()
+    if reserved is None:
+        return None
+
+    if from_querystring:
+        params = request.GET.copy()
+        params["dataset"] = reserved.dataset.name
+
+        url = request.path + "?" + params.urlencode()
+    else:
+        kwargs = dict(request.resolver_match.kwargs)
+        kwargs["dataset_name"] = reserved.dataset.name
+
+        url = reverse(request.resolver_match.url_name, kwargs=kwargs)
+
+    return HttpResponsePermanentRedirect(url)
+
 def timeline_page(request, team_name=None):
+    if redirect_response := check_for_dataset_redirect(request):
+        return redirect_response
+
     bin_id = request.GET.get("bin")
     dataset_name = request.GET.get("dataset")
     tags = request_get_tags(request.GET.get("tags"))
@@ -304,6 +351,9 @@ def timeline_page(request, team_name=None):
 
 
 def bin_page(request, team_name=None):
+    if redirect_response := check_for_dataset_redirect(request):
+        return redirect_response
+
     dataset_name = request.GET.get("dataset",None)
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
@@ -324,6 +374,9 @@ def bin_page(request, team_name=None):
 
 
 def image_page(request, team_name=None):
+    if redirect_response := check_for_dataset_redirect(request):
+        return redirect_response
+
     bin_id = request.GET.get("bin")
     image_id = request.GET.get("image")
 
@@ -346,6 +399,9 @@ def image_page(request, team_name=None):
 
 
 def comments_page(request):
+    if redirect_response := check_for_dataset_redirect(request):
+        return redirect_response
+
     dataset_name = request.GET.get("dataset")
     instrument_number = request_get_instrument(request.GET.get("instrument"))
     tags = request_get_tags(request.GET.get("tags"))
@@ -439,31 +495,35 @@ def _image_details(request, image_id, bin_id, dataset_name=None, instrument_numb
         "sample_type": sample_type,
     })
 
-
 def legacy_dataset_page(request, dataset_name, bin_id):
-    return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name )
+    if redirect_response := check_for_dataset_redirect(request, False):
+        return redirect_response
 
-def legacy_dataset_redirect(request, dataset_name):
-    return HttpResponseRedirect(reverse("timeline_page") + "?dataset=" + dataset_name)
-
-def legacy_bin_page(request, dataset_name, bin_id):
     return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)
 
+def legacy_dataset_redirect(request, dataset_name):
+    # This method does not directly check the dataset name to see if it was deleted, but the timeline page that this
+    #   redirects will do so, and cover that requirement
+    return HttpResponseRedirect(reverse("timeline_page") + "?dataset=" + dataset_name)
+
+# Deprecated 2026-05-28 - there were no routes or other calls to this method
+# def legacy_bin_page(request, dataset_name, bin_id):
+#     return _details(request, bin_id=bin_id, route="dataset", dataset_name=dataset_name)
 
 def legacy_image_page(request, dataset_name, bin_id, image_id):
-    return _image_details(request, image_id, bin_id, dataset_name)
+    if redirect_response := check_for_dataset_redirect(request, False):
+        return redirect_response
 
+    return _image_details(request, image_id, bin_id, dataset_name)
 
 def legacy_image_page_alt(request, bin_id, image_id):
     return _image_details(request, image_id, bin_id)
 
-
-def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, cruise=None, bin_reset=False,
-             default_start_date=None, default_end_date=None, sample_type=None):
+def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, instrument_number=None, cruise=None,
+             bin_reset=False, default_start_date=None, default_end_date=None, sample_type=None):
     if not bin_id and not dataset_name and not tags and not instrument_number and not cruise and not sample_type:
         # TODO: 404 error; don't have enough info to proceed
         pass
-
 
     bin_qs = bin_query(dataset_name=dataset_name,
         tags=tags,
@@ -499,11 +559,13 @@ def _details(request, bin_id=None, route=None, dataset_name=None, tags=None, ins
 
     team_dataset = TeamDataset.objects.filter(dataset=dataset).select_related("team").first()
     team = team_dataset.team if team_dataset else None
+    can_update_bin = auth.can_update_bin(request.user, bin)
 
     return render(request, "dashboard/bin.html", {
         "route": route,
         "can_share_page": True,
         "can_filter_page": (route == "timeline"),
+        "can_update_bin": can_update_bin,
         "dataset": dataset,
         "instrument": instrument,
         'sample_type': sample_type,
@@ -762,13 +824,17 @@ def class_scores_mat(request, bin_id, **kw):
     if 'dataset_name' in kw:
         bin_in_dataset_or_404(b, kw['dataset_name'])
     version = get_product_version_parameter(request)
+    model = request.GET.get("model")
+
     try:
         class_scores_file = b.class_scores_file(version=version)
         version = class_scores_file.version
         class_scores_path = class_scores_file.path
     except KeyError:
         raise Http404
-    filename = '{}_class_v{}.mat'.format(bin_id, version)
+
+    filename = bin_id + ("_" + model if model is not None else "") + ".mat"
+
     fin = open(class_scores_path, 'rb')
     return FileResponse(fin, as_attachment=True, filename=filename, content_type='application/octet-stream')    
 
@@ -776,14 +842,19 @@ def class_scores_csv(request, dataset_name, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     bin_in_dataset_or_404(b, dataset_name)
     version = get_product_version_parameter(request, None)
+    model = request.GET.get("model")
+
     try:
-        class_scores = b.class_scores(version=version)
+        class_scores = b.class_scores(version=version, model=model)
     except KeyError:
         raise Http404
+
     class_scores.index = ['{}_{:05d}'.format(bin_id, tn) for tn in class_scores.index]
     class_scores.index.name = 'pid'
     resp = dataframe_csv_response(class_scores)
-    filename = '{}_class_v{}.csv'.format(bin_id, version)
+
+    filename = bin_id + ("_" + model if model is not None else "") + ".csv"
+
     resp['Content-Disposition'] = 'attachment; filename={}'.format(filename)
     return resp
 
@@ -873,10 +944,8 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "coordinates": coordinates_json,
         #"has_blobs": bin.has_blobs(),
         #"has_features": bin.has_features(),
-        #"has_class_scores": bin.has_class_scores(), # FIXME slow
         "has_blobs": False,
         "has_features": False,
-        "has_class_scores": False,
         "timestamp_iso": bin.sample_time.isoformat(),
         "instrument": "IFCB" + str(bin.instrument.number),
         "num_triggers": bin.n_triggers,
@@ -893,6 +962,8 @@ def _bin_details(bin, dataset=None, view_size=None, scale_factor=None, preload_a
         "cruise": bin.cruise,
         "cast": bin.cast,
         "niskin": bin.niskin,
+        "modified": bin.modified,
+        "accessioned": bin.accessioned,
     }
 
 def _mosaic_page_image(request, bin_id):
@@ -1222,11 +1293,12 @@ def filter_options(request):
 
 def has_products(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
+    class_scores = b.class_scores_file_list()
 
     return JsonResponse({
         "has_blobs": b.has_blobs(),
         "has_features": b.has_features(),
-        "has_class_scores": b.has_class_scores(),
+        "class_scores": class_scores,
     })
 
 # legacy feed view

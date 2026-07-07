@@ -43,7 +43,7 @@
         {% if dataset.description %}
         <div class="mb-2">
             <div class="d-block"><strong>Description</strong></div>
-            <div>{{ dataset.description|linebreaksbr }}</div>
+            <div>{{ dataset.description|safe }}</div>
         </div>
         {% endif %}
     </div>

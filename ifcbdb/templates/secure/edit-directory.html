@@ -57,6 +57,22 @@
             {% if form.version.errors %}<span class="text-danger">{{ form.version.errors.as_text }}</span>{% endif %}
         </div>
     </div>
+    <div id="model-container" class="form-row d-none">
+        <div class="form-group col">
+            <label for="id_model">Model</label>
+            {{ form.model }}
+            {% if form.model.errors %}<span class="text-danger">{{ form.model.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
+    <div id="is-class-score-default-container" class="form-row d-none">
+        <div class="form-group col">
+            <label for="id_is_class_score_default">Default Class Score Data Directory?</label>
+            <div>
+                {{ form.is_class_score_default }}
+            </div>
+            {% if form.is_class_score_default.errors %}<span class="text-danger">{{ form.is_class_score_default.errors.as_text }}</span>{% endif %}
+        </div>
+    </div>
     <div class="form-row">
         <div class="form-group col">
             <label for="id_priority">Priority</label>
@@ -74,16 +90,19 @@
 {% block scripts %}
 <script>
     function updateKind() {
-        console.log("ASD");
-        var kind = $("#id_kind").val();
-        $("#version-container").toggleClass("d-none", kind == "raw");
+        const kind = $("#id_kind").val();
+
+        $("#version-container").toggleClass("d-none", kind === "raw");
+        $("#model-container").toggleClass("d-none", kind !== "class_scores");
+        $("#is-class-score-default-container").toggleClass("d-none", kind !== "class_scores");
     }
+
     $(function(){
         updateKind();
+
         $("#id_kind").change(function(e){
             updateKind();
         });
     });
-
 </script>
 {% endblock %}

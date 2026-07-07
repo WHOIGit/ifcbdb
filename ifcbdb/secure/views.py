@@ -1,4 +1,5 @@
 import json
+import csv
 from io import BytesIO
 from itertools import groupby
 from operator import attrgetter
@@ -6,21 +7,22 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, Group
 from django.db.models import Count
 from django import forms
+from django.utils import timezone
 from django.views.decorators.http import require_POST, require_GET
 from django.http import JsonResponse, Http404, HttpResponseForbidden, HttpResponse, StreamingHttpResponse
 from django.shortcuts import render, get_object_or_404, redirect, reverse
 
-
 import pandas as pd
 
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
-    TeamUser, TeamDataset, TeamRole, bin_query, bin_management_query
+    TeamUser, TeamDataset, TeamRole, bin_query, bin_management_query, ReservedDatasetName
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, TagForm, \
     MergeTagForm, UserForm, TeamForm, BinSearchForm, BinActionForm
 
 from dashboard.accession import export_metadata
 from common import auth
-from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS
+from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS, ADD_DATASET_COLUMNS, REMOVE_DATASET_COLUMNS, \
+BinManagementDatasetFilters, BinManagementTeamFilters
 
 
 from django.core.cache import cache
@@ -57,8 +59,11 @@ def dataset_management(request):
 
     form = DatasetForm(user=request.user)
 
+    is_teams_enabled = waffle.switch_is_active("Teams")
+
     return render(request, 'secure/dataset-management.html', {
         "form": form,
+        "is_teams_enabled": is_teams_enabled,
     })
 
 
@@ -128,8 +133,20 @@ def dt_datasets(request):
 
         datasets = datasets.filter(id__in=team_datasets_ids)
 
+    is_teams_enabled = waffle.switch_is_active("Teams")
+
+    if is_teams_enabled:
+        datasets = datasets.prefetch_related("teamdataset_set__team")
+
+    data = []
+    for dataset in datasets:
+        item = dataset.teamdataset_set.first() if is_teams_enabled else None
+        team_name = item.team.name if item else ""
+
+        data.append([dataset.name, dataset.title, dataset.is_active, team_name, dataset.id])
+
     return JsonResponse({
-        "data": list(datasets.values_list("name", "title", "is_active", "id"))
+        "data": data
     })
 
 @waffle_switch('Teams')
@@ -183,6 +200,7 @@ def edit_dataset(request, id):
 
     status = request.GET.get("status")
     dataset = get_object_or_404(Dataset, pk=id) if int(id) > 0 else Dataset()
+    original_dataset_name = dataset.name
     is_new = dataset.pk is None
 
     # Non-superadmins (essentially team captains) can only manage their own teams' datasets. They can create new
@@ -204,6 +222,16 @@ def edit_dataset(request, id):
         form = DatasetForm(request.POST, instance=dataset, user=request.user)
         if form.is_valid():
             instance = form.save()
+
+            # Handle reserved dataset names on rename (only for existing datasets)
+            if not is_new:
+                new_dataset_name = form.cleaned_data.get("name")
+
+                if original_dataset_name != new_dataset_name:
+                    # Delete any existing reservation for the new name (allows reclaiming)
+                    ReservedDatasetName.objects.filter(name=new_dataset_name).delete()
+                    # Reserve the old name
+                    ReservedDatasetName.objects.create(name=original_dataset_name, dataset=instance)
 
             existing = TeamDataset.objects.filter(dataset_id=dataset.id).first()
             team = form.cleaned_data.get("team")
@@ -241,6 +269,36 @@ def edit_dataset(request, id):
         "form": form,
         "dataset": dataset,
     })
+
+
+@login_required
+def dataset_bin_count(request, dataset_id):
+    if not auth.can_manage_datasets(request.user):
+        return HttpResponseForbidden()
+
+    dataset = get_object_or_404(Dataset, pk=dataset_id)
+
+    if not auth.is_admin(request.user) and not TeamDataset.objects.filter(dataset=dataset).exists():
+        return HttpResponseForbidden()
+
+    return JsonResponse({
+        "bin_count": dataset.bins.count(),
+    })
+
+
+@require_POST
+def delete_dataset(request, dataset_id):
+    if not auth.can_manage_datasets(request.user):
+        return HttpResponseForbidden()
+
+    dataset = get_object_or_404(Dataset, pk=dataset_id)
+
+    if not auth.is_admin(request.user) and not TeamDataset.objects.filter(dataset=dataset).exists():
+        return HttpResponseForbidden()
+
+    dataset.delete()
+
+    return JsonResponse({})
 
 
 @login_required
@@ -399,11 +457,17 @@ def merge_tag(request, id):
             # Get the list of bins already assigned to the target tag to prevent creating duplicates
             assigned_bins = TagEvent.query(tag=target, dataset=dataset).values("bin")
 
+            # Get the bins that will be affected so we can update the modified date
+            affected_bin_ids = list(tag_events.values_list("bin_id", flat=True))
+
             # Update the tag on any records not already assigned to the target tag
             tag_events.exclude(bin__in=assigned_bins).update(tag=target)
 
             # Remove any records already assigned to the target tag
             tag_events.filter(bin__in=assigned_bins).delete()
+
+            # Update the timestamp on affected bins
+            Bin.objects.filter(id__in=affected_bin_ids).update(modified=timezone.now())
 
             # If the tag is no longer in use on any bins, remove it
             if TagEvent.objects.filter(tag=tag).count() == 0:
@@ -643,29 +707,39 @@ def app_settings(request):
 
 @require_POST
 def add_tag(request, bin_id):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_metadata(request.user):
         return HttpResponseForbidden()
 
     tag_name = request.POST.get("tag_name", "")
     bin = get_object_or_404(Bin, pid=bin_id)
+
+    if not auth.can_update_bin(request.user, bin):
+        return HttpResponseForbidden()
+
     bin.add_tag(tag_name, user=request.user)
 
     return JsonResponse({
         "tags": bin.tag_names,
+        "bin_modified": bin.modified,
     })
 
 
 @require_POST
 def remove_tag(request, bin_id):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_metadata(request.user):
         return HttpResponseForbidden()
 
     tag_name = request.POST.get("tag_name", "")
     bin = get_object_or_404(Bin, pid=bin_id)
+
+    if not auth.can_update_bin(request.user, bin):
+        return HttpResponseForbidden()
+
     bin.delete_tag(tag_name)
 
     return JsonResponse({
         "tags": bin.tag_names,
+        "bin_modified": bin.modified,
     })
 
 
@@ -682,6 +756,7 @@ def add_comment(request, bin_id):
 
     return JsonResponse({
         "comments": bin.comment_list,
+        "bin_modified": bin.modified,
     })
 
 @require_GET
@@ -699,7 +774,7 @@ def edit_comment(request, bin_id):
 
     return JsonResponse({
         "id": comment.id,
-        "content": comment.content
+        "content": comment.content,
     })
 
 
@@ -721,9 +796,14 @@ def update_comment(request, bin_id):
     comment.content = content
     comment.save()
 
+    # Update the timestamp on the bin
+    bin.modified = timezone.now()
+    bin.save(update_fields=['modified'])
+
     return JsonResponse({
         "id": comment.id,
         "comments": bin.comment_list,
+        "bin_modified": bin.modified,
     })
 
 
@@ -744,6 +824,7 @@ def delete_comment(request, bin_id):
 
     return JsonResponse({
         "comments": bin.comment_list,
+        "bin_modified": bin.modified,
     })
 
 # dataset syncing
@@ -869,6 +950,27 @@ def upload_metadata(request):
                 bins_ids = list(bins_ids)
 
                 df = df[df[pid_col].isin(bins_ids)]
+
+                # Blank out any dataset names that are not associated with the user uploading the data to
+                #   ensure they cannot assign or unassign bins to datasets they are not privy to
+                add_dataset_col = get_column(df, ADD_DATASET_COLUMNS)
+                remove_dataset_col = get_column(df, REMOVE_DATASET_COLUMNS)
+
+                if add_dataset_col is not None or remove_dataset_col is not None:
+                    valid_dataset_names = auth \
+                        .get_associated_datasets(request.user) \
+                        .values_list("name", flat=True)
+
+                    if add_dataset_col is not None:
+                        df[add_dataset_col] = df[add_dataset_col].apply(
+                            lambda x: x if pd.isna(x) or str(x).strip() in valid_dataset_names else ""
+                        )
+
+                    if remove_dataset_col is not None:
+                        df[remove_dataset_col] = df[remove_dataset_col].apply(
+                            lambda x: x if pd.isna(x) or str(x).strip() in valid_dataset_names else ""
+                        )
+
                 json_df = df.to_json()
 
             added = cache.add(METADATA_UPLOAD_LOCK_KEY, True, timeout=None) # this is atomic
@@ -919,19 +1021,24 @@ def metadata_upload_cancel(request):
 
 @require_POST
 def toggle_skip(request):
-    if not auth.is_admin(request.user):
+    if not auth.can_manage_metadata(request.user):
         return HttpResponseForbidden()
 
     bin_id = request.POST.get("bin_id")
     skipped = request.POST.get("skipped") == "true"
 
     bin = get_object_or_404(Bin, pid=bin_id)
+    if not auth.can_update_bin(request.user, bin):
+        return HttpResponseForbidden()
+
     bin.skip = not skipped
+    bin.modified = timezone.now()
     bin.save()
 
     return JsonResponse({
         "bin_id": bin_id,
         "skipped": not skipped,
+        "modified": bin.modified,
     })
 
 @login_required
@@ -970,15 +1077,21 @@ def bin_management_criteria(request):
         return redirect(reverse("secure:index"))
 
     team_id = request.POST.get("team")
-    team = get_object_or_404(Team, pk=team_id)
 
-    # Ensure non-admins have selected a team they are associated with
     if not auth.is_admin(request.user):
-        teams = auth.get_associated_teams(request.user)
-        if not team in teams:
+        # Only super-admins can search for bins w/o a team
+        if team_id == BinManagementTeamFilters.UNASSIGNED.value:
             return HttpResponseForbidden()
 
-    bins = Bin.objects.filter(team=team)
+        # Ensure this user has access to the team
+        matching_teams = auth.get_associated_teams(request.user).filter(id=team_id)
+        if not matching_teams.exists():
+            return HttpResponseForbidden()
+
+    if team_id == BinManagementTeamFilters.UNASSIGNED.value:
+        bins = Bin.objects.filter(team__isnull=True)
+    else:
+        bins = Bin.objects.filter(team_id=team_id)
 
     datasets =  BinSearchForm.build_dataset_choices(bins)
     instruments = BinSearchForm.build_instrument_choices(bins)
@@ -1034,7 +1147,7 @@ def bin_management_export(request, dataset_name=None):
     filename = 'bins.csv'
 
     csv_buf = BytesIO()
-    df.to_csv(csv_buf, mode='wb', index=None)
+    df.to_csv(csv_buf, mode='wb', quoting=csv.QUOTE_NONNUMERIC, index=None)
     csv_buf.seek(0)
 
     response = StreamingHttpResponse(csv_buf, content_type='text/csv')
@@ -1087,7 +1200,7 @@ def bin_management_execute(request):
 
 def build_bin_query_from_form_data(user, form):
     dataset = form.cleaned_data.get("dataset")
-    team = form.cleaned_data.get("team")
+    team_value = form.cleaned_data.get("team")
     start_date = form.cleaned_data.get("start_date")
     end_date = form.cleaned_data.get("end_date")
     instrument = form.cleaned_data.get("instrument")
@@ -1095,6 +1208,10 @@ def build_bin_query_from_form_data(user, form):
     sample_type = form.cleaned_data.get("sample_type")
     tag = form.cleaned_data.get("tag")
     tags = [tag] if tag else []
+
+    # Pull the selected team from the form data. Only one selection is possible in the UI right now, even though the bin
+    #   query supports a list
+    team_names = request_get_team_name(team_value)
 
     return bin_management_query(
         user,
@@ -1105,13 +1222,14 @@ def build_bin_query_from_form_data(user, form):
         tags=tags,
         cruise=cruise,
         sample_type=sample_type,
-        team_names=[team.name] if team is not None else None)
+        team_names=team_names)
 
 def update_skip(bin_qs, is_skipped):
     total = 0
 
     for bin in bin_qs:
         bin.skip = is_skipped
+        bin.modified = timezone.now()
         bin.save()
 
         total += 1
@@ -1126,6 +1244,9 @@ def assign_dataset(bin_qs, dataset):
     num_already_assigned = dataset.bins.filter(id__in=bin_qs.values_list("id", flat=True)).count()
 
     dataset.bins.add(*bin_qs)
+
+    # Update the timestamp on all updated bins
+    bin_qs.update(modified=timezone.now())
 
     total = bin_qs.count()
     num_assigned = total - num_already_assigned
@@ -1156,6 +1277,9 @@ def unassign_dataset(bin_qs, dataset):
 
     dataset.bins.remove(*bin_qs)
 
+    # Update the timestamp on all updated bins
+    bin_qs.update(modified=timezone.now())
+
     label = "bins" if num_assigned != 1 else "bin"
     return JsonResponse({
         "success": True,
@@ -1170,3 +1294,15 @@ def request_get_instrument(instrument_string):
         if i.lower().startswith('ifcb'):
             i = i[4:]
         return int(i)
+
+
+def request_get_team_name(team_value: str):
+    if not team_value:
+        return None
+
+    if team_value == BinManagementTeamFilters.UNASSIGNED.value:
+        return [team_value]
+
+    team = Team.objects.filter(pk=int(team_value)).first()
+
+    return [team.name] if team else None
