@@ -16,17 +16,7 @@
 <hr class="my-2">
 <div class="row py-2 px-3">
     <div class="col">
-        <table id="datasets" class="table table-sm table-striped table-bordered" style="width:100%">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Title</th>
-                    <th>Active?</th>
-                    {% if is_teams_enabled %}<th>Team</th>{% endif %}
-                    <th></th>
-                </tr>
-            </thead>
-        </table>
+        <table id="datasets" class="table table-sm table-striped table-bordered" style="width:100%"></table>
     </div>
 </div>
 
@@ -49,24 +39,34 @@
                 url: "{% url 'secure:datasets_dt' %}"
             },
             columns: [
-                {}, // Name
-                {}, // Description
                 {
-                    targets: 2,
-                    render: function(data, type, row) {
-                        return data ? "Yes" : "No";
-                    }
-                }, // Is Active
-                {% if is_teams_enabled %}{}, // Team{% endif %}
-                { // Edit and datasets
-                    targets: -1,
-                    render: function ( data, type, row ) {
-                        return (
-                            "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/edit-dataset/" + data + "'>" +
-                            "<i class='fas fa-edit magic mr-1'></i>Manage" +
-                            "</a>"
-                        );
-                    }
+                    title: "Name",
+                    data: "name"
+                },
+                {
+                    title: "Title",
+                    data: "title"
+                },
+                {
+                    title: "Active?",
+                    data: "is_active",
+                    render: (data) => data ? "Yes" : "No"
+                },
+                {
+                    title: "Team",
+                    data: "team",
+                    visible: "{{ is_teams_enabled }}".toLowerCase() === "true",
+                },
+                {
+                    title: "",
+                    data: "dataset_id",
+                    orderable: false,
+                    render: (data) => ((
+                        "<a class='btn btn-sm btn-mdb-color mr-2' href='/secure/edit-dataset/" + data + "'>" +
+                        "<i class='fas fa-edit magic mr-1'></i>Manage" +
+                        "</a>"
+                    ))
+
                 }
             ]
         });
