@@ -140,14 +140,21 @@ def dt_datasets(request):
 
     data = []
     for dataset in datasets:
-        item = dataset.teamdataset_set.first() if is_teams_enabled else None
-        team_name = item.team.name if item else ""
+        row = {
+            "dataset_id": dataset.id,
+            "name": dataset.name,
+            "title": dataset.title,
+            "is_active": dataset.is_active,
+            "team": "",
+        }
 
-        data.append([dataset.name, dataset.title, dataset.is_active, team_name, dataset.id])
+        if is_teams_enabled:
+            item = dataset.teamdataset_set.first()
+            row["team"] = item.team.name if item else ""
 
-    return JsonResponse({
-        "data": data
-    })
+        data.append(row)
+
+    return JsonResponse({"data": data})
 
 @waffle_switch('Teams')
 def dt_teams(request):
