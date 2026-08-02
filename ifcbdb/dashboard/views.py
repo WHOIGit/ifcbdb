@@ -18,6 +18,7 @@ from django.http import \
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.utils.html import mark_safe
 from django.contrib.gis.db.models import Extent
 
 from django.core.cache import cache
@@ -659,9 +660,20 @@ def mosaic_page_image(request, bin_id):
 @cache_control(max_age=31557600) # client cache for 1y
 @require_POST
 def mosaic_page_encoded_image(request, bin_id):
-    arr = _mosaic_page_image(request, bin_id)
+    try:
+        arr = _mosaic_page_image(request, bin_id)
 
-    return HttpResponse(embed_image(arr), content_type='plain/text')
+        return HttpResponse(embed_image(arr), content_type='plain/text')
+    except FileNotFoundError as e:
+        missing_roi_message = "Image data not accessible"
+        dataset_name = request.GET.get("dataset", None)
+
+        if dataset_name:
+            dataset = Dataset.objects.filter(name=dataset_name).first()
+            if not dataset is None:
+                missing_roi_message = dataset.missing_roi_message
+
+        return HttpResponseNotFound(mark_safe(missing_roi_message))
 
 
 def _image_data(bin_id, target, mimetype):

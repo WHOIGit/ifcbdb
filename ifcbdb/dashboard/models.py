@@ -323,6 +323,7 @@ class Dataset(models.Model):
     contact_name = models.CharField(max_length=256, blank=True, null=True)
     contact_email = models.EmailField(max_length=256, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    missing_roi_message = models.TextField(blank=True, null=True)
 
     # This model implements a __len__ method, which overrides the default truthiness behavior on an ORM
     #   model. This normally returns True whether the model is saved or not in the database. The logic in

@@ -64,7 +64,7 @@ class Accession(object):
             if not os.path.exists(directory.path):
                 continue # skip and continue searching
 
-            ifcb_directory = ifcb.DataDirectory(directory.path)
+            ifcb_directory = ifcb.DataDirectory(directory.path, require_roi_files=False)
 
             for ifcb_bin in ifcb_directory:
                 yield (ifcb_bin, directory)
@@ -286,7 +286,8 @@ class Accession(object):
         sample_type = headers.get('sampleType')
         if sample_type is not None:
             b.sample_type = sample_type
-    
+
+        # TODO: Move this above - the roi check is done twice
         b.qc_no_rois = check_no_rois(bin)
 
         # metrics
@@ -298,7 +299,10 @@ class Accession(object):
             b.humidity = bin.humidity
         except KeyError: # older data
             b.humidity = 0
-        b.size = bin.fileset.getsize() # assumes FilesetBin
+
+        # TODO: temporarily disabled due to pyifcb issue
+        #b.size = bin.fileset.getsize() # assumes FilesetBin
+
         b.ml_analyzed = ml_analyzed
         b.look_time = bin.look_time
         b.run_time = bin.run_time
