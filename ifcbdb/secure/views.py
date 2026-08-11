@@ -1150,7 +1150,7 @@ def bin_management_export(request, dataset_name=None):
         })
 
     bin_qs = build_bin_query_from_form_data(request.user, form)
-    df = export_metadata(None, bin_qs)
+    df = export_metadata(None, bin_qs, form.cleaned_data.get("include_actions"))
     filename = 'bins.csv'
 
     csv_buf = BytesIO()
