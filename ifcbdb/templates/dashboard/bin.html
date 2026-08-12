@@ -19,33 +19,33 @@
                 {% endif %}
 
                 {% if dataset %}
-                    <a href="timeline?dataset={{ dataset.name }}">
+                    <a href="/timeline?dataset={{ dataset.name }}">
                       {{ dataset.title }}
                     </a>
                     {% if instrument or tags or cruise or sample_type %}» {% endif %}
                 {% endif %}
 
                 {% if cruise %}
-                    <a href="timeline?cruise={{ cruise }}">{{ cruise }}</a>
+                    <a href="/timeline?cruise={{ cruise }}">{{ cruise }}</a>
                     {% if instrument or tags or sample_type %}» {% endif %}
                 {% endif %}
 
                 {% if sample_type %}
-                    <a href="timeline?sample_type={{ sample_type }}">
+                    <a href="/timeline?sample_type={{ sample_type }}">
                         {{ sample_type }}
                     </a>
                    {% if instrument or tags %}» {% endif %}
                 {% endif %}
 
                 {% if instrument %}
-                    <a href="timeline?instrument={{ instrument.number }}">
+                    <a href="/timeline?instrument={{ instrument.number }}">
                       IFCB{{ instrument.number }}
                     </a>
                     {% if tags %}» {% endif %}
                 {% endif %}
 
                 {% if tags %}
-                    <a href="timeline?tags={{ tags }}">{{ tags }}</a>
+                    <a href="/timeline?tags={{ tags }}">{{ tags }}</a>
                 {% endif %}
             </span>
             <a class="d-sm-none d-inline tstabcollapser ml-auto" data-toggle="collapse" data-target="#ts-tabs" aria-expanded="false"></a>
@@ -119,31 +119,31 @@
             {% endif %}
 
             {% if dataset %}
-              <a href="timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
+              <a href="/timeline?dataset={{ dataset.name }}&bin={{ bin.pid }}">
                 {{ dataset.title }}
               </a>
             {% elif bin.primary_dataset %}
-              <a href="timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
+              <a href="/timeline?dataset={{ bin.primary_dataset.name }}&bin={{ bin.pid }}">
                 {{ bin.primary_dataset.title }}
               </a>
             {% endif %}
             {% if cruise %}»
-                <a href="timeline?cruise={{ cruise }}&bin={{ bin.pid }}">
+                <a href="/timeline?cruise={{ cruise }}&bin={{ bin.pid }}">
                     {{ cruise }}
                 </a>
             {% endif %}
             {% if sample_type %}»
-                <a href="timeline?sample_type={{ sample_type }}&bin={{ bin.pid }}">
+                <a href="/timeline?sample_type={{ sample_type }}&bin={{ bin.pid }}">
                 {{ sample_type }}
               </a>
             {% endif %}
             {% if instrument %}»
-              <a href="timeline?instrument={{ instrument.number }}&bin={{ bin.pid }}">
+              <a href="/timeline?instrument={{ instrument.number }}&bin={{ bin.pid }}">
                 IFCB{{ instrument.number }}
               </a>
             {% endif %}
             {% if tags %}»
-              <a href="timeline?tags={{ tags }}&bin={{ bin.pid }}">
+              <a href="/timeline?tags={{ tags }}&bin={{ bin.pid }}">
                 {{ tags }}
               </a>
             {% endif %}

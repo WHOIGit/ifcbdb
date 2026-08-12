@@ -8,17 +8,17 @@
     <span class="h3-responsive">
       <a href="/dashboard">Home</a>
       {% if dataset %}»
-        <a href="timeline?dataset={{ dataset.name }}">
+        <a href="/timeline?dataset={{ dataset.name }}">
           {{ dataset.title }}
         </a>
       {% endif %}
       {% if instrument_number %}»
-        <a href="timeline?instrument={{ instrument_number }}">
+        <a href="/timeline?instrument={{ instrument_number }}">
           IFCB{{ instrument_number }}
         </a>
       {% endif %}
       {% if tags %}»
-        <a href="timeline?tags={{ tags }}">
+        <a href="/timeline?tags={{ tags }}">
           {{ tags }}
         </a>
       {% endif %}
