@@ -135,6 +135,7 @@ urlpatterns = [
     path('api/bin_location', views.bin_location, name='bin_location'),
     path('api/filter_options', views.filter_options, name='filter_options'),
     path('api/has_products/<slug:bin_id>', views.has_products, name='has_products'),
+    path('api/list_bins', views.list_bins, name='list_bins'),
     path('api/search_bin_locations', views.search_bin_locations, name='search_bin_locations'),
     path('api/search_timeline_locations', views.search_timeline_locations, name='search_timeline_locations'),
     path('api/search_comments', views.search_comments, name='search_comments'),
