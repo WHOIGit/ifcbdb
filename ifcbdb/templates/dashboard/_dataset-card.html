@@ -38,7 +38,7 @@
                     {% if dataset.description %}
                     <div>
                         <label>Description</label>
-                        <span>{{ dataset.description|linebreaksbr }}</span>
+                        <span>{{ dataset.description|safe }}</span>
                     </div>
                     {% endif %}
                 </div>

@@ -59,6 +59,9 @@ class Command(BaseCommand):
             except Dataset.DoesNotExist:
                 self.stderr.write(f"Dataset '{add_dataset_name}' does not exist.")
 
+        # Update timestamp on affected bins
+        bins.update(modified=timezone.now())
+
         if options['cache_paths']:
             for b in bins:
                 b._get_bin() # this will cache the path if it isn't already

@@ -9,11 +9,13 @@ from itertools import islice
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max
 from django.contrib.postgres.aggregates.general import StringAgg
+from django.utils import timezone
 
 import pandas as pd
 import numpy as np
 
-from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, normalize_tag_name, Team, TeamDataset
+from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, Tag, TagEvent, \
+    normalize_tag_name, Team, TeamDataset
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
@@ -96,6 +98,8 @@ class Accession(object):
             'data_directory': dd_found,
             'skip': True, # in case accession is interrupted
             'team': team,
+            'modified': timezone.now(),
+            'accessioned': timezone.now(),
         })
 
         # For existing bins, if the team value is not set, and there is one, save that value. This handles pre-existing
@@ -167,6 +171,8 @@ class Accession(object):
                     'data_directory': dd,
                     'skip': True, # in case accession is interrupted
                     'team': team,
+                    'modified': timezone.now(),
+                    'accessioned': timezone.now(),
                 })
 
                 # For existing bins, if the team value is not set, and there is one, save that value. This handles pre-existing
@@ -312,6 +318,10 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     CAST_COLUMNS = ['cast']
     NISKIN_COLUMNS = ['niskin','bottle']
     SAMPLE_TYPE_COLUMNS = ['sampletype','sample_type']
+    ADD_DATASET_COLUMNS = ['add_dataset', 'adddataset']
+    REMOVE_DATASET_COLUMNS = ['remove_dataset', 'removedataset', 'delete_dataset', 'deletedataset']
+    ADD_TAG_COLUMNS = ['add_tag', 'addtag']
+    REMOVE_TAG_COLUMNS = ['remove_tag', 'removetag', 'delete_tag', 'deletetag']
 
     SKIP_POSITIVE_VALUES = ['skip','yes','y','true','t','1']
     SKIP_NEGATIVE_VALUES = ['noskip','no','n','false','f','0']
@@ -360,6 +370,11 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
     niskin_col = get_column(df, NISKIN_COLUMNS)
 
     sample_type_col = get_column(df, SAMPLE_TYPE_COLUMNS)
+
+    add_dataset_col = get_column(df, ADD_DATASET_COLUMNS)
+    remove_dataset_col = get_column(df, REMOVE_DATASET_COLUMNS)
+    add_tag_col = get_column(df, ADD_TAG_COLUMNS)
+    remove_tag_col = get_column(df, REMOVE_TAG_COLUMNS)
 
     tag_cols = []
     for c in df.columns:
@@ -467,6 +482,43 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
                 if body is not None:
                     b.add_comment(body, skip_duplicates=True)
 
+            # command columns
+
+            if add_dataset_col is not None:
+                dataset_name = get_cell(row, add_dataset_col)
+                if str(dataset_name or "").strip():
+                    try:
+                        dataset = Dataset.objects.get(name__iexact=dataset_name)
+                        b.datasets.add(dataset)
+                    except Dataset.DoesNotExist:
+                        raise ValueError(f"Dataset '{dataset_name}' not found for {add_dataset_col}")
+
+            if remove_dataset_col is not None:
+                dataset_name = get_cell(row, remove_dataset_col)
+                if str(dataset_name or "").strip():
+                    try:
+                        dataset = Dataset.objects.get(name__iexact=dataset_name)
+                        b.datasets.remove(dataset)
+                    except Dataset.DoesNotExist:
+                        pass
+
+            if add_tag_col is not None:
+                tag = get_cell(row, add_tag_col)
+                if str(tag or "").strip():
+                    if re.match(r"^[0-9\.]+$", str(tag)):
+                        raise ValueError(f"tag '{tag}' consists of only digits")
+                    normalized = normalize_tag_name(str(tag))
+                    b.add_tag(normalized)
+
+            if remove_tag_col is not None:
+                tag = get_cell(row, remove_tag_col)
+                if str(tag or "").strip():
+                    normalized = normalize_tag_name(str(tag))
+                    try:
+                        b.delete_tag(normalized)
+                    except (Tag.DoesNotExist, TagEvent.DoesNotExist):
+                        pass
+
             # skip flag
 
             if skip_col is not None:
@@ -487,6 +539,7 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
                         'skip value "{}" had unsupported type "{}"'.format(skip, type(skip).__name__))
 
             n_modded += 1
+            b.modified = timezone.now()
             b.save()
             
             if n_modded % progress_batch_size == 0:
@@ -597,6 +650,10 @@ def export_metadata(ds, bins):
         r['comment_summary'].append(comment_summary_by_id.get(item['id'], ''))
         r['trigger_selection'].append(trigger_selection_by_id.get(item['id'], ''))
         r['skip'].append(1 if item['skip'] else 0)
+        r['add_dataset'].append('')
+        r['remove_dataset'].append('')
+        r['add_tag'].append('')
+        r['remove_tag'].append('')
 
     df = pd.DataFrame(r)
 
