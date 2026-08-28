@@ -60,12 +60,14 @@ class Accession(object):
         return bin.sample_time if bin else None
 
     def scan(self):
-        for dd in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
-            if not os.path.exists(dd.path):
+        for directory in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
+            if not os.path.exists(directory.path):
                 continue # skip and continue searching
-            directory = ifcb.DataDirectory(dd.path)
-            for b in directory:
-                yield (b, dd)
+
+            ifcb_directory = ifcb.DataDirectory(directory.path)
+
+            for ifcb_bin in ifcb_directory:
+                yield (ifcb_bin, directory)
 
     def _get_or_create_instrument(self, ifcb_bin):
         instrument, _ = Instrument.objects.get_or_create(
@@ -74,7 +76,7 @@ class Accession(object):
 
         return instrument
 
-    def _get_or_create_bin(self, pid, ifcb_bin, instrument, ifcb_directory):
+    def _get_or_create_bin(self, pid, ifcb_bin, instrument, directory):
         team = self.dataset.team if self.dataset else None
 
         # Path without extension
@@ -86,7 +88,7 @@ class Accession(object):
             'sample_time': ifcb_bin.pid.timestamp,
             'instrument': instrument,
             'path': path,
-            'data_directory': ifcb_directory,
+            'data_directory': directory,
             'skip': True,
             'team': team,
             'modified': timezone.now(),
@@ -113,24 +115,26 @@ class Accession(object):
     def _find_ifcb_bin(self, pid):
         for directory in self.dataset.directories.filter(kind=DataDirectory.RAW).order_by('priority'):
             # skip and continue searching
-            if not os.path.exists(dd.path):
+            if not os.path.exists(directory.path):
                 continue
 
-            directory = ifcb.DataDirectory(directory.path)
             try:
-                return directory[pid], directory
+                ifcb_directory = ifcb.DataDirectory(directory.path)
+                ifcb_bin = ifcb_directory[pid]
+
+                return ifcb_bin, directory
             except KeyError:
                 continue
 
         return None, None
 
     def sync_one(self, pid):
-        ifcb_bin, ifcb_directory = self._find_ifcb_bin(pid)
+        ifcb_bin, directory = self._find_ifcb_bin(pid)
         if ifcb_bin is None:
             return None
 
         instrument = self._get_or_create_instrument(ifcb_bin)
-        bin, created = self._get_or_create_bin(pid, ifcb_bin, instrument, ifcb_directory)
+        bin, created = self._get_or_create_bin(pid, ifcb_bin, instrument, directory)
 
         # If this is a pre-existing bin, nothing more needs to be done
         if not created:
@@ -177,7 +181,7 @@ class Accession(object):
             # create bins
             bins2save = []
 
-            for ifcb_bin, ifcb_directory in batch:
+            for ifcb_bin, directory in batch:
                 pid = ifcb_bin.lid
                 most_recent_bin_id = pid
 
@@ -187,7 +191,7 @@ class Accession(object):
                     continue
 
                 instrument = instruments[ifcb_bin.pid.instrument]
-                bin, created = self._get_or_create_bin(pid, ifcb_bin, instrument, ifcb_directory)
+                bin, created = self._get_or_create_bin(pid, ifcb_bin, instrument, directory)
                 if not created:
                     log_callback(f"{bin.pid} not adding bin")
                     continue
