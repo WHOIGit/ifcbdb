@@ -1419,16 +1419,19 @@ def export_metadata_view(request, dataset_name=None):
 
 def sync_bin(request):
     dataset_name = request.GET.get("dataset")
-    bin_id = request.GET.get('bin')
+    pid = request.GET.get('bin')
     dataset = get_object_or_404(Dataset, name=dataset_name)
 
-    try:
-        b = Bin.objects.get(pid=bin_id)
-        return JsonResponse({'result':'exists'})
-    except Bin.DoesNotExist:
-        pass
-    acc = Accession(dataset)
-    acc.sync_one(bin_id)
+    if not pid:
+        return HttpResponseNotFound("Bin not specified")
+
+    if Bin.objects.filter(pid=pid).exists():
+        return JsonResponse({'result': 'exists'})
+
+    bin = Accession(dataset).sync_one(pid)
+    if bin is None:
+        return HttpResponseNotFound()
+
     return JsonResponse({'result':'synced'})
 
 def about_page(request):
