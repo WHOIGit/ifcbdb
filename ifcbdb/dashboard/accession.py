@@ -119,7 +119,7 @@ class Accession(object):
                 continue
 
             try:
-                ifcb_directory = ifcb.DataDirectory(directory.path)
+                ifcb_directory = ifcb.DataDirectory(directory.path, require_roi_files=False)
                 ifcb_bin = ifcb_directory[pid]
 
                 return ifcb_bin, directory
@@ -237,7 +237,7 @@ class Accession(object):
             return b, 'malformed raw data'
 
         no_rois = check_no_rois(bin)
-        if no_rois:
+        if no_rois and bin.fileset.require_roi_files:
             b.qc_bad = True
             return b, 'zero ROIs'
 
@@ -287,8 +287,7 @@ class Accession(object):
         if sample_type is not None:
             b.sample_type = sample_type
 
-        # TODO: Move this above - the roi check is done twice
-        b.qc_no_rois = check_no_rois(bin)
+        b.qc_no_rois = no_rois
 
         # metrics
         try:
@@ -300,9 +299,7 @@ class Accession(object):
         except KeyError: # older data
             b.humidity = 0
 
-        # TODO: temporarily disabled due to pyifcb issue
-        #b.size = bin.fileset.getsize() # assumes FilesetBin
-
+        b.size = bin.fileset.getsize() # assumes FilesetBin
         b.ml_analyzed = ml_analyzed
         b.look_time = bin.look_time
         b.run_time = bin.run_time
