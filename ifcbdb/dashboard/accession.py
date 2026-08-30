@@ -64,7 +64,7 @@ class Accession(object):
             if not os.path.exists(directory.path):
                 continue # skip and continue searching
 
-            ifcb_directory = ifcb.DataDirectory(directory.path)
+            ifcb_directory = ifcb.DataDirectory(directory.path, require_roi_files=False)
 
             for ifcb_bin in ifcb_directory:
                 yield (ifcb_bin, directory)
@@ -119,7 +119,7 @@ class Accession(object):
                 continue
 
             try:
-                ifcb_directory = ifcb.DataDirectory(directory.path)
+                ifcb_directory = ifcb.DataDirectory(directory.path, require_roi_files=False)
                 ifcb_bin = ifcb_directory[pid]
 
                 return ifcb_bin, directory
@@ -237,7 +237,7 @@ class Accession(object):
             return b, 'malformed raw data'
 
         no_rois = check_no_rois(bin)
-        if no_rois:
+        if no_rois and bin.fileset.require_roi_files:
             b.qc_bad = True
             return b, 'zero ROIs'
 
@@ -286,8 +286,8 @@ class Accession(object):
         sample_type = headers.get('sampleType')
         if sample_type is not None:
             b.sample_type = sample_type
-    
-        b.qc_no_rois = check_no_rois(bin)
+
+        b.qc_no_rois = no_rois
 
         # metrics
         try:
@@ -298,6 +298,7 @@ class Accession(object):
             b.humidity = bin.humidity
         except KeyError: # older data
             b.humidity = 0
+
         b.size = bin.fileset.getsize() # assumes FilesetBin
         b.ml_analyzed = ml_analyzed
         b.look_time = bin.look_time
