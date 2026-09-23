@@ -101,6 +101,10 @@ class Accession(object):
             bin.team = team
             bin.save()
 
+        # Ensure that the dataset includes the bin. This applies even if the bin was not created here - it should still
+        #   get associated with the dataset being accessed
+        self.dataset.bins.add(bin)
+
         return bin, created
 
     def _process_bins(self, bins, log_callback):
