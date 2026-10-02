@@ -1371,6 +1371,12 @@ def list_bins(request):
     except (ValueError, TypeError):
         return HttpResponseBadRequest("Invalid modified_since date")
 
+    not_modified_since = request.GET.get('not_modified_since')
+    try:
+        not_modified_since = pd.to_datetime(not_modified_since, utc=True)
+    except (ValueError, TypeError):
+        return HttpResponseBadRequest("Invalid not_modified_since date")
+
     tags = request_get_tags(request.GET.get('tags'))
     instrument_number = request_get_instrument(request.GET.get('instrument'))
     cruise = request_get_cruise(request.GET.get('cruise'))
@@ -1403,6 +1409,9 @@ def list_bins(request):
 
     if modified_since:
         bin_qs = bin_qs.filter(modified__gt=modified_since)
+
+    if not_modified_since:
+        bin_qs = bin_qs.filter(modified__lt=not_modified_since)
 
     bin_qs = bin_qs.order_by('sample_time')
 
