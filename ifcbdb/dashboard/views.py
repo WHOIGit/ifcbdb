@@ -1387,6 +1387,7 @@ def export_metadata_view(request, dataset_name=None):
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
     include_skip = request.GET.get('include_skip', 'true')
+    include_actions = request.GET.get('include_actions', 'false').lower() == 'true'
 
     filter_skip = not include_skip.lower() == 'true'
 
@@ -1409,7 +1410,7 @@ def export_metadata_view(request, dataset_name=None):
         raise Http404('no bins match the given query')
 
     ds = Dataset.objects.get(name=dataset_name) if dataset_name else None
-    df = export_metadata(ds, bin_qs)
+    df = export_metadata(ds, bin_qs, include_actions)
 
     filename = (dataset_name or 'ifcb-metadata') + '.csv'
     response = dataframe_csv_response(df, index=None)

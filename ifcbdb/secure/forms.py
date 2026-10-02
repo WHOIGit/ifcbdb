@@ -454,6 +454,13 @@ class BinSearchForm(forms.Form):
     sample_type = forms.CharField(
         required=False,
         widget=forms.Select(attrs={"class": input_classes}))
+    include_actions = forms.ChoiceField(
+        required=False,
+        choices=[(False, 'Do not include'), (True, 'Include')],
+        widget=forms.Select(attrs={"class": input_classes, "style": "width:10rem"}))
+
+    def clean_include_actions(self):
+        return self.cleaned_data.get("include_actions").lower() == "true"
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user") if "user" in kwargs else None

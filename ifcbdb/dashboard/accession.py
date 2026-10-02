@@ -560,7 +560,7 @@ def import_metadata(metadata_dataframe, progress_callback=do_nothing):
 
     return progress
 
-def export_metadata(ds, bins):
+def export_metadata(ds, bins, include_actions=False):
     # Maximum number of bins this export can return. The limit is relatively arbitrary, and in place to prevent runaway
     #   queries returning lots of data when no search parameters are defined
     max_results = 500_000
@@ -650,10 +650,12 @@ def export_metadata(ds, bins):
         r['comment_summary'].append(comment_summary_by_id.get(item['id'], ''))
         r['trigger_selection'].append(trigger_selection_by_id.get(item['id'], ''))
         r['skip'].append(1 if item['skip'] else 0)
-        r['add_dataset'].append('')
-        r['remove_dataset'].append('')
-        r['add_tag'].append('')
-        r['remove_tag'].append('')
+
+        if include_actions:
+            r['add_dataset'].append('')
+            r['remove_dataset'].append('')
+            r['add_tag'].append('')
+            r['remove_tag'].append('')
 
     df = pd.DataFrame(r)
 
