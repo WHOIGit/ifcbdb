@@ -1357,6 +1357,64 @@ def timeline_info(request):
         'n_images': timeline.n_images(),
         })
 
+def list_bins(request):
+    # Enforce a limit on the number of bins that can be returned
+    MAX_BINS = 500000
+
+    dataset_name = request.GET.get('dataset')
+    if not dataset_name:
+        return HttpResponseBadRequest("Missing dataset parameter")
+
+    modified_since = request.GET.get('modified_since')
+    try:
+        modified_since = pd.to_datetime(modified_since, utc=True)
+    except (ValueError, TypeError):
+        return HttpResponseBadRequest("Invalid modified_since date")
+
+    tags = request_get_tags(request.GET.get('tags'))
+    instrument_number = request_get_instrument(request.GET.get('instrument'))
+    cruise = request_get_cruise(request.GET.get('cruise'))
+    sample_type = request.GET.get('sample_type')
+    skip_filter = request.GET.get('skip_filter')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    output_format = request.GET.get('format')
+
+    bin_qs = bin_query(dataset_name=dataset_name,
+                       tags=tags,
+                       instrument_number=instrument_number,
+                       cruise=cruise,
+                       sample_type=sample_type,
+                       filter_skip=False)
+
+    if start_date:
+        start_date = pd.to_datetime(start_date, utc=True)
+        bin_qs = bin_qs.filter(sample_time__gte=start_date)
+
+    if end_date:
+        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+        bin_qs = bin_qs.filter(sample_time__lte=end_date)
+
+    if skip_filter == 'exclude':
+        bin_qs = bin_qs.exclude(skip=True)
+    elif skip_filter == 'only':
+        bin_qs = bin_qs.filter(skip=True)
+
+    if modified_since:
+        bin_qs = bin_qs.filter(modified__gt=modified_since)
+
+    bin_qs = bin_qs.order_by('sample_time')
+
+    bins = list(bin_qs.values('pid', 'sample_time')[:MAX_BINS])
+
+    if output_format and output_format == 'csv':
+        df = pd.DataFrame.from_dict(bins)
+        return dataframe_csv_response(df, index=None)
+
+    return JsonResponse({'data': bins})
+
+
 def list_images(request, pid):
     b = get_object_or_404(Bin, pid=pid)
     return JsonResponse({
