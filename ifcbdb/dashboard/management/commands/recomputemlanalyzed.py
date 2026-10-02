@@ -23,7 +23,7 @@ def _resolve_bin(pid, cached_path, search_dirs):
         return FilesetBin(Fileset(cached_path))
     for directory_path, whitelist, blacklist in search_dirs:
         data_directory = ifcb.DataDirectory(
-            directory_path, whitelist=whitelist, blacklist=blacklist)
+            directory_path, whitelist=whitelist, blacklist=blacklist, require_roi_files=False)
         try:
             return data_directory[pid]
         except KeyError:

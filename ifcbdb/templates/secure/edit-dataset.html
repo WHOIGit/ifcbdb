@@ -100,6 +100,13 @@
                     {% if form.description.errors %}<span class="text-danger">{{ form.description.errors.as_text}}</span>{% endif %}
                 </div>
             </div>
+            <div class="form-row">
+                <div class="form-group col">
+                    <label for="id_missing_roi_message">Missing ROI Message (optional)</label>
+                    {{ form.missing_roi_message }}
+                    {% if form.missing_roi_message.errors %}<span class="text-danger">{{ form.missing_roi_message.errors.as_text}}</span>{% endif %}
+                </div>
+            </div>
 
             <div class="form-row">
                 <div class="form-group col">
@@ -189,6 +196,16 @@
     // Initialize Summernote on dataset description field
     $('[name=description]').summernote({
         placeholder: 'Enter the description...',
+        tabsize: 2,
+        height: 200,
+        toolbar: [
+            ['font', ['bold', 'underline', 'italic']],
+            ['insert', ['link']],
+        ]
+    });
+
+    $('[name=missing_roi_message]').summernote({
+        placeholder: 'Enter the missing ROI message...',
         tabsize: 2,
         height: 200,
         toolbar: [
