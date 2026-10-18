@@ -65,3 +65,32 @@ If you need to create the superuser non-interactively, you can set the `DJANGO_S
 If you need to set configuration options beyond the available environment variables, you can create a
 `local_settings.py` file and set environment variable `LOCAL_SETTINGS` to its path. The file will
 be imported at the end of Django's `settings.py`, allowing you to override any previous setting.
+
+## Running the tests
+
+Tests are run from inside the running Docker container using the provided `bin/test.sh` script. Note that
+Python dependencies (including django-ninja) exist only in the container, not on your host.
+
+```
+bin/test.sh
+```
+
+By default this runs the entire Django test suite. Pass an app label or a specific test to run a subset:
+
+```
+bin/test.sh dashboard                                              # one app's tests
+bin/test.sh api.tests.test_bins.MostRecentBinTests                 # a single test class
+bin/test.sh api.tests.test_bins.MostRecentBinTests.test_most_recent_bin  # a single test
+```
+
+The script outputs each test as it runs (`-v 2`) but silences the database setup/teardown noise (via a custom
+test runner, `ifcbdb.test_runner.QuietDbSetupRunner`).
+
+Tests run against a temporary `test_ifcb` database created from your Postgres settings; your real data is
+never touched. To bypass the wrapper script, the equivalent commands are:
+
+```
+docker compose exec ifcbdb python manage.py test                          # normal output
+docker compose exec ifcbdb python manage.py test -v 2 \
+  --testrunner ifcbdb.test_runner.QuietDbSetupRunner                      # quiet setup output
+```

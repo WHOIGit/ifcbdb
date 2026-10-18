@@ -1132,6 +1132,8 @@ def nearest_bin(request):
         'bin_id': bin_id
     })
 
+# DEPRECATED: covered by the new Django Ninja API endpoint `/api/most_recent_bin`
+#   (see ifcbdb/api/routers/bins.py) and kept only until external consumers migrate
 def most_recent_bin(request):
     dataset_name = request.GET.get("dataset")
 

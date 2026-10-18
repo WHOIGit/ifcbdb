@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'dashboard.apps.DashboardConfig',
     'secure.apps.SecureConfig',
+    'api.apps.ApiConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -168,6 +169,10 @@ http_origin = f'http://{_HOST}' + (f':{_HTTP_PORT}' if _HTTP_PORT != '80' else '
 CSRF_TRUSTED_ORIGINS = [https_origin, http_origin]
 
 DEFAULT_DATASET = os.getenv('DEFAULT_DATASET', '')
+
+# Django Ninja API configuration
+API_KEY = os.getenv('IFCB_API_KEY', '')
+API_KEY_THROTTLE_RATE = int(os.getenv('API_KEY_THROTTLE_RATE', '600'))
 
 try:
     from .local_settings import *
