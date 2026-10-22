@@ -77,18 +77,40 @@
         </form>
     </div>
     <div class="col-md-4">
-        <div id="results-panel" class="d-none alert alert-info">
-            <h5>Search Results</h5>
-            <hr />
+        <div id="results-panel" class="d-none">
+            <div class="alert alert-info">
+                <h5>Search Results</h5>
+                <hr />
 
-            <p>Total Bins Found: <strong><span id="total"></span></strong></p>
+                <p>Total Bins Found: <strong><span id="total"></span></strong></p>
 
-            <button class="btn btn-sm btn-mdb-color" type="button" id="search-again">
-                <i class="fas fa-magnifying-glass"></i> Search Again
-            </button>
-            <button class="btn btn-sm btn-mdb-color" type="button" id="export-button">
-                <i class="fas fa-file-export"></i> Export Metadata
-            </button>
+                <button class="btn btn-sm btn-mdb-color" type="button" id="search-again">
+                    <i class="fas fa-magnifying-glass"></i> Search Again
+                </button>
+            </div>
+
+            <div class="alert alert-info">
+                <h5>Export Metadata</h5>
+                <hr />
+
+                <div>
+                    <label>Action Columns:</label>
+                    <button type="button" class="btn btn-link p-0 text-muted lh-1"
+                            data-toggle="tooltip" data-placement="top" aria-label="Help information"
+                            title="Including actions will add empty columns to the export file for all supported actions
+                            when uploading metadata. E.g., adding datasets, removing tags, etc.">
+                        <i class="fas fa-question-circle text-info" aria-hidden="true"></i>
+                    </button>
+                    {{ form.include_actions }}
+                </div>
+
+                <br />
+
+                <button class="btn btn-sm btn-mdb-color" type="button" id="export-button">
+                    <i class="fas fa-file-export"></i> Export Metadata
+                </button>
+            </div>
+
         </div>
     </div>
     <div class="col-md-4">
@@ -231,6 +253,14 @@
 
         function exportBins() {
             const searchFormData = buildSearchFormData();
+
+            // Add export options
+            const includeActions = $("[name=include_actions]");
+
+            searchFormData.push({
+                name: includeActions.attr("name"),
+                value: includeActions.val()
+            });
 
             $.ajax({
                 url: "/secure/bin-management/export",

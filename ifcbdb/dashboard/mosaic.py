@@ -242,16 +242,27 @@ class Mosaic(object):
         if self._shapes is not None:
             return self._shapes
         hs, ws, ix = [], [], []
-        with self.bin:
-            if self.bin.schema == SCHEMA_VERSION_1:
-                ii = InfilledImages(self.bin)
-            else:
-                ii = self.bin.images
-            for target_number in ii:
-                h, w = ii.shape(target_number)
-                hs.append(math.floor(h * self.scale))
-                ws.append(math.floor(w * self.scale))
-                ix.append(target_number)
+
+        try:
+            with self.bin:
+                if self.bin.schema == SCHEMA_VERSION_1:
+                    ii = InfilledImages(self.bin)
+                else:
+                    ii = self.bin.images
+                for target_number in ii:
+                    h, w = ii.shape(target_number)
+                    hs.append(math.floor(h * self.scale))
+                    ws.append(math.floor(w * self.scale))
+                    ix.append(target_number)
+        except FileNotFoundError as e:
+            # Return an empty object if the ROI is missing
+            self._shapes = (
+                np.array([], dtype=np.int32),
+                np.array([], dtype=np.int32),
+                np.array([], dtype=np.int32),
+            )
+            return self._shapes
+
         self._shapes = (np.array(hs, dtype=np.int32),
                         np.array(ws, dtype=np.int32),
                         np.array(ix, dtype=np.int32))

@@ -38,7 +38,7 @@ class DatasetForm(forms.ModelForm):
         model = Dataset
         fields = [
             "id", "name", "title", "doi", "attribution", "funding", "is_active", "depth",
-            "contact_name", "contact_email", "description",
+            "contact_name", "contact_email", "description", "missing_roi_message",
         ]
 
         widgets = {
@@ -52,6 +52,7 @@ class DatasetForm(forms.ModelForm):
             "contact_name": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Contact Name"}),
             "contact_email": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Contact Email"}),
             "description": forms.Textarea(attrs={"class": "form-control form-control-sm summernote", "placeholder": "Description"}),
+            "missing_roi_message": forms.Textarea(attrs={"class": "form-control form-control-sm summernote", "placeholder": "Missing ROI Message"}),
         }
 
     def clean_doi(self):
@@ -454,6 +455,13 @@ class BinSearchForm(forms.Form):
     sample_type = forms.CharField(
         required=False,
         widget=forms.Select(attrs={"class": input_classes}))
+    include_actions = forms.ChoiceField(
+        required=False,
+        choices=[(False, 'Do not include'), (True, 'Include')],
+        widget=forms.Select(attrs={"class": input_classes, "style": "width:10rem"}))
+
+    def clean_include_actions(self):
+        return self.cleaned_data.get("include_actions").lower() == "true"
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user") if "user" in kwargs else None
