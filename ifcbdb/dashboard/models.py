@@ -30,7 +30,6 @@ from ifcb.data.products.blobs import BlobDirectory
 from ifcb.data.products.features import FeaturesDirectory
 from ifcb.data.products.class_scores import ClassScoresDirectory
 from ifcb.data.zip import bin2zip_stream
-from ifcb.data.transfer import RemoteIfcb
 from ifcb.data.files import Fileset, FilesetBin
 
 from .tasks import mosaic_coordinates_task
@@ -981,32 +980,6 @@ class Instrument(models.Model):
     @property
     def name(self):
         return 'IFCB{}'.format(self.number)
-    
-    # live instrument access
-
-    def _get_remote(self):
-        return RemoteIfcb(self.address, self.username, self.password,
-            share=self.share_name, timeout=self.timeout)
-
-    def is_responding(self):
-        ifcb = self._get_remote()
-        return ifcb.is_responding()
-
-    def list_shares(self):
-        with self._get_remote() as ifcb:
-            return list(ifcb.list_shares())
-
-    def share_exists(self):
-        with self._get_remote() as ifcb:
-            return ifcb.share_exists()
-
-    def sync(self, data_directory, progress_callback=do_nothing):
-        if not data_directory.kind == DataDirectory.RAW:
-            raise TypeError('cannot sync raw data to product directory {}'.format(data_directory))
-        def destination_directory(lid):
-            return data_directory.raw_destination(lid)
-        with self._get_remote() as ifcb:
-            ifcb.sync(destination_directory, progress_callback=progress_callback)
 
 # tags
 

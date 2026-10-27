@@ -11,18 +11,6 @@ def is_admin(user):
 
     return user.is_superuser
 
-# This one is also just a wrapper around the staff flag. This is likely what will be used to determine if a user
-#   has access to things "quickly" without having to check through associated teams and roles on those records
-def is_staff(user):
-    if not user.is_authenticated:
-        return False
-
-    if not user.is_staff:
-        return False
-
-    return user.is_staff
-
-
 # This is a wrapper for checking on whether the user has full access to bins, datasets without the need to be associated
 #   with them as either a captain or team
 def has_admin_access(user):

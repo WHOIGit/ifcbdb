@@ -22,17 +22,10 @@ def app_settings():
 
     return mark_safe(settings)
 
+
 @register.simple_tag(takes_context=False)
 def can_access_settings(user):
     return auth.can_access_settings(user)
-
-@register.inclusion_tag('dashboard/_dataset_switcher.html')
-def dataset_switcher():
-    datasets = Dataset.objects.all()
-
-    return {
-        "datasets": datasets,
-    }
 
 
 @register.inclusion_tag("dashboard/_dataset-nav.html", takes_context=True)
