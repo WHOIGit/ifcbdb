@@ -19,7 +19,6 @@ from .models import Bin, DataDirectory, Instrument, Timeline, Dataset, Tag, TagE
 from .qaqc import check_bad, check_no_rois
 
 import ifcb
-from ifcb.data.files import time_filter
 from ifcb.data.adc import SCHEMA_VERSION_1
 from ifcb.data.stitching import InfilledImages
 

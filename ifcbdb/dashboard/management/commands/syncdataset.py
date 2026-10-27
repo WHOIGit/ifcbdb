@@ -3,8 +3,6 @@ from django.core.management.base import BaseCommand, CommandError
 from dashboard.models import Dataset, FILL_VALUE
 from dashboard.accession import Accession
 
-from ifcb import DataDirectory
-
 class Command(BaseCommand):
     help = 'sync data directories to db'
 
