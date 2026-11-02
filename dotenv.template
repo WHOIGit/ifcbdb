@@ -21,3 +21,8 @@ POSTGRES_PASSWORD=changeme
 
 #LOCAL_SETTINGS=./local_settings.py
 
+# API key for service-account access (e.g. IFCB Annotate), sent as the X-API-Key header.
+# Blank/disabled disables API key authentication.
+IFCB_API_KEY=
+API_KEY_THROTTLE_RATE=600
+
