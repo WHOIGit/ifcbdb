@@ -323,6 +323,7 @@ class Dataset(models.Model):
     contact_name = models.CharField(max_length=256, blank=True, null=True)
     contact_email = models.EmailField(max_length=256, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    missing_roi_message = models.TextField(blank=True, null=True)
 
     # This model implements a __len__ method, which overrides the default truthiness behavior on an ORM
     #   model. This normally returns True whether the model is saved or not in the database. The logic in
@@ -479,7 +480,7 @@ class DataDirectory(models.Model):
         # return the underlying ifcb.DataDirectory
         whitelist = re.split(',', self.whitelist)
         blacklist = re.split(',', self.blacklist)
-        return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist)
+        return ifcb.DataDirectory(self.path, whitelist=whitelist, blacklist=blacklist, require_roi_files=False)
 
     def raw_destination(self, bin_id):
         # where to put an incoming bin with the given id

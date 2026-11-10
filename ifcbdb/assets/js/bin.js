@@ -621,13 +621,17 @@ function loadMosaic(pageNumber) {
     const mosaicUrl = "/api/mosaic/encoded_image/" + _bin +
         "?view_size=" + viewSize +
         "&scale_factor=" + scaleFactor +
-        "&page=" + pageNumber;
+        "&page=" + pageNumber +
+        "&dataset=" + (_dataset || "");
 
     $.post(mosaicUrl, { "csrfmiddlewaretoken": _csrf }, function(data) {
         $("#mosaic").attr("src", "data:image/png;base64," + data);
         $("#mosaic-loading").hide();
         $("#mosaic").show();
     }).fail(function(data) {
+        const message = data.status === 404 ? data.responseText : "Image data not accessible";
+
+        $("#missing-roi-message").html(message);
         $("#mosaic-failed").show();
         $("#mosaic-loading").hide();
         _isMosaicLoading = false;

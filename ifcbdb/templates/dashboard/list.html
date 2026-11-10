@@ -6,22 +6,24 @@
 
 <div class="pl-3">
     <span class="h3-responsive">
+      {% with team_name=request.resolver_match.kwargs.team_name %}
       <a href="/dashboard">Home</a>
       {% if dataset %}»
-        <a href="timeline?dataset={{ dataset.name }}">
+        <a href="{% if team_name %}/t/{{ team_name }}{% endif %}/timeline?dataset={{ dataset.name }}">
           {{ dataset.title }}
         </a>
       {% endif %}
       {% if instrument_number %}»
-        <a href="timeline?instrument={{ instrument_number }}">
+        <a href="{% if team_name %}/t/{{ team_name }}{% endif %}/timeline?instrument={{ instrument_number }}">
           IFCB{{ instrument_number }}
         </a>
       {% endif %}
       {% if tags %}»
-        <a href="timeline?tags={{ tags }}">
+        <a href="{% if team_name %}/t/{{ team_name }}{% endif %}/timeline?tags={{ tags }}">
           {{ tags }}
         </a>
       {% endif %}
+      {% endwith %}
     </span>
     <a id="view-timeline" class="pl-3 my-auto" href="#"title="View Timeline" Style="color:#59698d" data-toggle="tooltip" data-placement="bottom"><i class="fas h3-responsive fa-chart-line"></i></a>
     <span class="d-none">

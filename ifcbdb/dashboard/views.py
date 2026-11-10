@@ -18,6 +18,7 @@ from django.http import \
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.utils.html import mark_safe
 from django.contrib.gis.db.models import Extent
 
 from django.core.cache import cache
@@ -659,9 +660,20 @@ def mosaic_page_image(request, bin_id):
 @cache_control(max_age=31557600) # client cache for 1y
 @require_POST
 def mosaic_page_encoded_image(request, bin_id):
-    arr = _mosaic_page_image(request, bin_id)
+    try:
+        arr = _mosaic_page_image(request, bin_id)
 
-    return HttpResponse(embed_image(arr), content_type='plain/text')
+        return HttpResponse(embed_image(arr), content_type='plain/text')
+    except FileNotFoundError as e:
+        missing_roi_message = "Image data not accessible"
+        dataset_name = request.GET.get("dataset", None)
+
+        if dataset_name:
+            dataset = Dataset.objects.filter(name=dataset_name).first()
+            if not dataset is None:
+                missing_roi_message = dataset.missing_roi_message
+
+        return HttpResponseNotFound(mark_safe(missing_roi_message))
 
 
 def _image_data(bin_id, target, mimetype):
@@ -1357,6 +1369,73 @@ def timeline_info(request):
         'n_images': timeline.n_images(),
         })
 
+def list_bins(request):
+    # Enforce a limit on the number of bins that can be returned
+    MAX_BINS = 500000
+
+    dataset_name = request.GET.get('dataset')
+    if not dataset_name:
+        return HttpResponseBadRequest("Missing dataset parameter")
+
+    modified_since = request.GET.get('modified_since')
+    try:
+        modified_since = pd.to_datetime(modified_since, utc=True)
+    except (ValueError, TypeError):
+        return HttpResponseBadRequest("Invalid modified_since date")
+
+    not_modified_since = request.GET.get('not_modified_since')
+    try:
+        not_modified_since = pd.to_datetime(not_modified_since, utc=True)
+    except (ValueError, TypeError):
+        return HttpResponseBadRequest("Invalid not_modified_since date")
+
+    tags = request_get_tags(request.GET.get('tags'))
+    instrument_number = request_get_instrument(request.GET.get('instrument'))
+    cruise = request_get_cruise(request.GET.get('cruise'))
+    sample_type = request.GET.get('sample_type')
+    skip_filter = request.GET.get('skip_filter')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    output_format = request.GET.get('format')
+
+    bin_qs = bin_query(dataset_name=dataset_name,
+                       tags=tags,
+                       instrument_number=instrument_number,
+                       cruise=cruise,
+                       sample_type=sample_type,
+                       filter_skip=False)
+
+    if start_date:
+        start_date = pd.to_datetime(start_date, utc=True)
+        bin_qs = bin_qs.filter(sample_time__gte=start_date)
+
+    if end_date:
+        end_date = pd.to_datetime(end_date, utc=True) + pd.Timedelta('1d')
+        bin_qs = bin_qs.filter(sample_time__lte=end_date)
+
+    if skip_filter == 'exclude':
+        bin_qs = bin_qs.exclude(skip=True)
+    elif skip_filter == 'only':
+        bin_qs = bin_qs.filter(skip=True)
+
+    if modified_since:
+        bin_qs = bin_qs.filter(modified__gt=modified_since)
+
+    if not_modified_since:
+        bin_qs = bin_qs.filter(modified__lt=not_modified_since)
+
+    bin_qs = bin_qs.order_by('sample_time')
+
+    bins = list(bin_qs.values('pid', 'sample_time')[:MAX_BINS])
+
+    if output_format and output_format == 'csv':
+        df = pd.DataFrame.from_dict(bins)
+        return dataframe_csv_response(df, index=None)
+
+    return JsonResponse({'data': bins})
+
+
 def list_images(request, pid):
     b = get_object_or_404(Bin, pid=pid)
     return JsonResponse({
@@ -1387,6 +1466,7 @@ def export_metadata_view(request, dataset_name=None):
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
     include_skip = request.GET.get('include_skip', 'true')
+    include_actions = request.GET.get('include_actions', 'false').lower() == 'true'
 
     filter_skip = not include_skip.lower() == 'true'
 
@@ -1409,7 +1489,7 @@ def export_metadata_view(request, dataset_name=None):
         raise Http404('no bins match the given query')
 
     ds = Dataset.objects.get(name=dataset_name) if dataset_name else None
-    df = export_metadata(ds, bin_qs)
+    df = export_metadata(ds, bin_qs, include_actions)
 
     filename = (dataset_name or 'ifcb-metadata') + '.csv'
     response = dataframe_csv_response(df, index=None)
@@ -1419,16 +1499,19 @@ def export_metadata_view(request, dataset_name=None):
 
 def sync_bin(request):
     dataset_name = request.GET.get("dataset")
-    bin_id = request.GET.get('bin')
+    pid = request.GET.get('bin')
     dataset = get_object_or_404(Dataset, name=dataset_name)
 
-    try:
-        b = Bin.objects.get(pid=bin_id)
-        return JsonResponse({'result':'exists'})
-    except Bin.DoesNotExist:
-        pass
-    acc = Accession(dataset)
-    acc.sync_one(bin_id)
+    if not pid:
+        return HttpResponseNotFound("Bin not specified")
+
+    if Bin.objects.filter(pid=pid).exists():
+        return JsonResponse({'result': 'exists'})
+
+    bin = Accession(dataset).sync_one(pid)
+    if bin is None:
+        return HttpResponseNotFound()
+
     return JsonResponse({'result':'synced'})
 
 def about_page(request):

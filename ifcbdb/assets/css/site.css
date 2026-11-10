@@ -417,3 +417,11 @@ a.tstabcollapser:after
     font-size: 0.7rem;
     border-radius:5px;
 }
+
+#mosaic-failed {
+    padding:20px;
+}
+
+#mosaic-failed p {
+    margin:0
+}
