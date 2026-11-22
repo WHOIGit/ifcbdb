@@ -67,7 +67,17 @@
                 <a id="share-button" title="Share" class="flex-md-fill nav-link"><span class="h5-responsive fa fa-share-square"></span> Share</a>
                 {% endif %}
                 {% if user.is_authenticated %}
-                        <a href="{% url 'secure:logout' %}" class="white-text nav-link flex-md-fill" title="Log Out" data-toggle="tooltip" data-placement="bottom"><span class="h5-resonsive fas fa-sign-out-alt"></span> Log Out</a>
+                <div class="nav-item dropdown flex-md-fill">
+                    <a class="white-text nav-link dropdown-toggle" href="#" id="userMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Account" data-placement="bottom">
+                        <span class="h5-responsive fas fa-user-circle mr-1"></span>
+                        {% if user.first_name or user.last_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userMenu">
+                        <a class="dropdown-item" href="{% url 'secure:api-key-management' %}"><span class="fas fa-key mr-2"></span>API Keys</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{% url 'secure:logout' %}"><span class="fas fa-sign-out-alt mr-2"></span>Logout</a>
+                    </div>
+                </div>
                 {% endif %}
                     </nav>
             </div>

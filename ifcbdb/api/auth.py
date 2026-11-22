@@ -1,17 +1,19 @@
 from django.conf import settings
-from django.utils.crypto import constant_time_compare
+
 from ninja.errors import AuthenticationError
 from ninja.security import APIKeyCookie, APIKeyHeader, SessionAuth
 
+from .models import ApiKey
 from .principals import AnonymousPrincipal, ApiKeyPrincipal, UserPrincipal
 
 
 class ApiKeyAuth(APIKeyHeader):
-    """Standalone service-account key sent as the `X-API-Key` header.
+    """Per-user API key sent as the `X-API-Key` header.
 
-    The key comes from the IFCB_API_KEY environment variable. An invalid
-    key raises immediately (it never falls through to other authenticators).
-    A blank/unset API_KEY disables key authentication.
+    Keys are generated and managed by each user from the dashboard's
+    "API Keys" page and stored hashed. An unknown, malformed, revoked,
+    expired key (or a key whose owner is inactive) raises immediately:
+    it never falls through to other authenticators.
     """
 
     param_name = "X-API-Key"
@@ -20,14 +22,11 @@ class ApiKeyAuth(APIKeyHeader):
         if not key:
             return None
 
-        expected = getattr(settings, "API_KEY", "")
-        if not expected:
-            raise AuthenticationError(message="API key authentication is not enabled")
+        api_key = ApiKey.objects.authenticate(key)
+        if api_key is None:
+            raise AuthenticationError(message="Invalid API key")
 
-        if constant_time_compare(key, expected):
-            return ApiKeyPrincipal()
-
-        raise AuthenticationError(message="Invalid API key")
+        return ApiKeyPrincipal(api_key)
 
 
 class DjangoSessionAuth(SessionAuth):

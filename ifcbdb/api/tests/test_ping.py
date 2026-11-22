@@ -1,15 +1,15 @@
 import json
 from unittest.mock import Mock
 
-from django.test import RequestFactory, SimpleTestCase, override_settings
+from django.contrib.auth.models import User
+from django.test import RequestFactory, SimpleTestCase, TestCase
 from ninja.testing import TestClient
 
 from api.api import api
+from api.models import ApiKey
+from api.scopes import BIN_READ
 
-VALID_KEY = "test-key"
 
-
-@override_settings(API_KEY=VALID_KEY)
 class OpenApiSpecTests(SimpleTestCase):
     def _spec(self):
         request = RequestFactory().get("/api/openapi.json")
@@ -45,10 +45,13 @@ class OpenApiSpecTests(SimpleTestCase):
         self.assertEqual(spec["info"]["version"], "1.0.0")
 
 
-@override_settings(API_KEY=VALID_KEY)
-class PingEndpointTests(SimpleTestCase):
+class PingEndpointTests(TestCase):
     def setUp(self):
         self.client = TestClient(api)
+        user = User.objects.create_user("keyuser", password="pw")
+        self.raw_key, _ = ApiKey.objects.create_key(
+            user=user, name="test key", scopes=[BIN_READ]
+        )
 
     def test_anonymous_ping(self):
         r = self.client.get("/ping")
@@ -61,11 +64,11 @@ class PingEndpointTests(SimpleTestCase):
         self.assertEqual(j["api_version"], api.version)
 
     def test_ping_with_api_key(self):
-        r = self.client.get("/ping", headers={"X-API-Key": VALID_KEY})
+        r = self.client.get("/ping", headers={"X-API-Key": self.raw_key})
         self.assertEqual(r.status_code, 200)
         j = r.json()
         self.assertTrue(j["authenticated"])
-        self.assertEqual(j["identity"], "api-key")
+        self.assertTrue(j["identity"].startswith("api-key:"))
         self.assertTrue(j["is_api_key"])
 
     def test_ping_with_invalid_api_key(self):

@@ -10,9 +10,9 @@ api = NinjaAPI(
     version="1.0.0",
     description=(
         "REST API for IFCB Dashboard bin, image and dataset data. "
-        "Authenticated with a Django session (browser) or an API key "
-        "sent as the `X-API-Key` header (service accounts, e.g. IFCB Annotate; "
-        "read-only, all datasets)."
+        "Authenticated with a Django session (browser) or a per-user API key "
+        "sent as the `X-API-Key` header (generate one from the dashboard's "
+        "API Keys page; each key carries scopes that are enforced per endpoint)."
     ),
     docs_decorator=login_required,
     throttle=ApiKeyRateThrottle(),

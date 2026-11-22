@@ -18,7 +18,8 @@ class ApiKeyRateThrottle(SimpleRateThrottle):
         if not is_api_key_principal(auth):
             return None
 
+        # bucket per key (not per user), using the key's prefix
         return self.cache_format % {
             "scope": "api_key",
-            "ident": auth.identity,
+            "ident": auth.api_key.prefix,
         }

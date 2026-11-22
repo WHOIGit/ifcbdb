@@ -33,7 +33,7 @@ from .forms import DatasetSearchForm
 from common.utilities import *
 from common import auth
 
-from dashboard.accession import Accession, export_metadata
+from dashboard.accession import export_metadata
 import waffle
 
 def index(request):
@@ -1498,23 +1498,6 @@ def export_metadata_view(request, dataset_name=None):
     response['Content-Disposition'] = f'attachment; filename={filename}'
 
     return response
-
-def sync_bin(request):
-    dataset_name = request.GET.get("dataset")
-    pid = request.GET.get('bin')
-    dataset = get_object_or_404(Dataset, name=dataset_name)
-
-    if not pid:
-        return HttpResponseNotFound("Bin not specified")
-
-    if Bin.objects.filter(pid=pid).exists():
-        return JsonResponse({'result': 'exists'})
-
-    bin = Accession(dataset).sync_one(pid)
-    if bin is None:
-        return HttpResponseNotFound()
-
-    return JsonResponse({'result':'synced'})
 
 def about_page(request):
     return render(request, 'dashboard/about.html')

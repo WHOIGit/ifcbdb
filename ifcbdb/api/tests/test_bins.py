@@ -1,21 +1,29 @@
 from datetime import timedelta
 
-from django.test import TestCase, override_settings
+from django.contrib.auth.models import User
+from django.test import TestCase
 from django.utils import timezone
 from ninja.testing import TestClient
 
 from api.api import api
+from api.models import ApiKey
+from api.scopes import BIN_READ
 from dashboard.models import Bin, Dataset
 
-VALID_KEY = "test-key"
 
-
-@override_settings(API_KEY=VALID_KEY)
 class MostRecentBinTests(TestCase):
     "GET /api/most_recent_bin"
 
     def setUp(self):
         self.client = TestClient(api)
+
+        user = User.objects.create_user("keyuser", password="pw")
+        self.raw_key, _ = ApiKey.objects.create_key(
+            user=user, name="test key", scopes=[BIN_READ]
+        )
+        self.no_read_key, _ = ApiKey.objects.create_key(
+            user=user, name="no read key", scopes=[]
+        )
 
         now = timezone.now()
 
@@ -95,11 +103,21 @@ class MostRecentBinTests(TestCase):
         response = self.client.get(
             "/most_recent_bin",
             query_params={"dataset": "test-ds"},
-            headers={"X-API-Key": VALID_KEY},
+            headers={"X-API-Key": self.raw_key},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["pid"], "TEST_RECENT_BIN")
+
+    def test_api_key_without_read_scope_forbidden(self):
+        "a key lacking the bins:read scope is rejected even though the endpoint is public"
+        response = self.client.get(
+            "/most_recent_bin",
+            query_params={"dataset": "test-ds"},
+            headers={"X-API-Key": self.no_read_key},
+        )
+
+        self.assertEqual(response.status_code, 403)
 
     def test_invalid_api_key_is_rejected(self):
         response = self.client.get(

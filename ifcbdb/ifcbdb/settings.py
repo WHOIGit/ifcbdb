@@ -171,7 +171,6 @@ CSRF_TRUSTED_ORIGINS = [https_origin, http_origin]
 DEFAULT_DATASET = os.getenv('DEFAULT_DATASET', '')
 
 # Django Ninja API configuration
-API_KEY = os.getenv('IFCB_API_KEY', '')
 API_KEY_THROTTLE_RATE = int(os.getenv('API_KEY_THROTTLE_RATE', '600'))
 
 try:

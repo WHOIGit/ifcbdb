@@ -12,6 +12,8 @@ from common.constants import BinManagementActions, TeamRoles, BinManagementDatas
 
 from common.constants import BinManagementTeamFilters, BinManagementDatasetFilters
 
+from api.scopes import BIN_READ, BIN_SYNC
+
 MIN_LATITUDE = -90
 MAX_LATITUDE = 90
 MIN_LONGITUDE = -180
@@ -602,3 +604,51 @@ class BinActionForm(forms.Form):
 
         if action == BinManagementActions.UNASSIGN_DATASET.value and unassigned_dataset is None:
             raise ValidationError("Please choose a dataset to unassign")
+
+
+class EditApiKeyForm(forms.Form):
+    description = forms.CharField(required=False, max_length=500, widget=forms.Textarea(
+        attrs={"class": "form-control form-control-sm", "rows": 2,
+               "placeholder": "What is this key for? (optional)"}
+    ))
+    scopes = forms.MultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        error_messages={"required": "Please select at least one scope"},
+    )
+    expiry = forms.ChoiceField(
+        choices=[("never", "Never"), ("days", "Expires in")],
+        required=False,
+        initial="never",
+    )
+    days = forms.IntegerField(
+        required=False, min_value=1, max_value=3650,
+        widget=forms.NumberInput(attrs={
+            "class": "form-control form-control-sm d-inline-block", "style": "width: 6rem;",
+            "placeholder": "days",
+        })
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # scope choices are capped by what the owner's own role allows
+        choices = [(BIN_READ, "Read bins")]
+        if user is not None and auth.is_admin(user):
+            choices.append((BIN_SYNC, "Sync bins"))
+        self.fields["scopes"].choices = choices
+
+    def clean(self):
+        cleaned = super().clean()
+
+        if cleaned.get("expiry") == "days" and not cleaned.get("days"):
+            self.add_error("days", "Please enter a number of days for the expiry")
+
+        return cleaned
+
+
+class ApiKeyForm(EditApiKeyForm):
+    name = forms.CharField(max_length=100, widget=forms.TextInput(
+        attrs={"class": "form-control form-control-sm", "placeholder": "e.g. My Application"}
+    ))
+    field_order = ["name", "description", "scopes", "expiry", "days"]
