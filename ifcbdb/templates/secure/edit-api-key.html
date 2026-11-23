@@ -21,7 +21,7 @@
     {% csrf_token %}
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-sm-6">
             <div class="form-group">
                 <label>Name</label>
                 <input type="text" class="form-control form-control-sm" value="{{ api_key.name }}" disabled>
@@ -34,7 +34,7 @@
             </div>
             <div class="form-group">
                 <label>Expiry</label>
-                <small class="text-muted d-block mb-1">Key created {{ api_key.created_at|date:"Y-m-d H:i" }}; a day count is measured from that date.</small>
+                <small class="text-muted d-block mb-1">Key created {{ api_key.created_at|date:"Y-m-d" }}; a day count is measured from that date.</small>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="expiry" id="expiry-never" value="never"{% if form.expiry.value != "days" %} checked{% endif %}>
                     <label class="form-check-label" for="expiry-never">Never</label>
@@ -48,11 +48,13 @@
                 {% for error in form.days.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-sm-6">
             <div class="form-group">
                 <label>Scopes</label>
-                {{ form.scopes }}
-                {% for error in form.scopes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                <div class="border rounded p-3">
+                    {{ form.scopes }}
+                    {% for error in form.scopes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
             </div>
         </div>
     </div>

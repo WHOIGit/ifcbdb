@@ -317,6 +317,21 @@ class EditApiKeyTests(TestCase):
             self.api_key.expires_at, self.created_at + timedelta(days=30)
         )
 
+    def test_cannot_set_expiry_in_the_past(self):
+        "a day count smaller than the key's age would expire it immediately"
+        r = self.client.post(self._edit_url(), {
+            "description": "original description",
+            "scopes": [BIN_READ],
+            "expiry": "days",
+            "days": "4",  # the key is 5 days old
+        })
+        self.assertEqual(r.status_code, 200)  # re-rendered with errors
+        self.assertIn("would put its expiry in the past", r.content.decode())
+        self.api_key.refresh_from_db()
+        self.assertEqual(
+            self.api_key.expires_at, self.created_at + timedelta(days=30)
+        )  # unchanged
+
     def test_edit_never_clears_expiry(self):
         self.client.post(self._edit_url(), {
             "description": "original description",

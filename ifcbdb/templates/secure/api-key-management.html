@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {% block content %}
 <div class="flex-row d-flex justify-content-between">
     <div class="flex-column">
-        <span class="h3-responsive">API Keys</span>
+        <span class="h3-responsive" id="keys-page-header">{% if form.errors %}Add API Key{% else %}API Keys{% endif %}</span>
     </div>
 </div>
 <hr class="my-2">
@@ -41,34 +41,42 @@
         <div id="create-key-form" style="display: {% if form.errors %}block{% else %}none{% endif %};" class="mb-4">
             <form method="post" action="{% url 'secure:api-key-create' %}">
                 {% csrf_token %}
-                <div class="form-group">
-                    <label for="{{ form.name.id_for_label }}">Name</label>
-                    {{ form.name }}
-                    {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.description.id_for_label }}">Description</label>
-                    {{ form.description }}
-                    {% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-                <div class="form-group">
-                    <label>Scopes</label>
-                    {{ form.scopes }}
-                    {% for error in form.scopes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-                <div class="form-group">
-                    <label>Expiry</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="expiry" id="expiry-never" value="never"{% if form.expiry.value != "days" %} checked{% endif %}>
-                        <label class="form-check-label" for="expiry-never">Never</label>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">Name</label>
+                            {{ form.name }}
+                            {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.description.id_for_label }}">Description</label>
+                            {{ form.description }}
+                            {% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="form-group">
+                            <label>Expiry</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="expiry" id="expiry-never" value="never"{% if form.expiry.value != "days" %} checked{% endif %}>
+                                <label class="form-check-label" for="expiry-never">Never</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="expiry" id="expiry-days" value="days"{% if form.expiry.value == "days" %} checked{% endif %}>
+                                <label class="form-check-label" for="expiry-days">Expires in</label>
+                                <span class="mx-1">{{ form.days }}</span> days
+                            </div>
+                            {% for error in form.expiry.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% for error in form.days.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="expiry" id="expiry-days" value="days"{% if form.expiry.value == "days" %} checked{% endif %}>
-                        <label class="form-check-label" for="expiry-days">Expires in</label>
-                        <span class="mx-1">{{ form.days }}</span> days
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>Scopes</label>
+                            <div class="border rounded p-3">
+                                {{ form.scopes }}
+                                {% for error in form.scopes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            </div>
+                        </div>
                     </div>
-                    {% for error in form.expiry.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                    {% for error in form.days.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                 </div>
                 <button type="submit" class="btn btn-sm btn-mdb-color">
                     <i class="fas fa-plus magic mr-1"></i> Create API Key
@@ -79,7 +87,7 @@
             </form>
         </div>
 
-        <table class="table table-sm table-striped table-bordered">
+        <table id="keys-table" class="table table-sm table-striped table-bordered"{% if form.errors %} style="display: none;"{% endif %}>
             <thead>
                 <tr>
                     <th>Name</th>
@@ -144,12 +152,16 @@
     $(function(){
         $("#add-key-toggle").on("click", function(e){
             e.preventDefault();
-            $("#create-key-form").toggle();
+            var showing = $("#create-key-form").toggle().is(":visible");
+            $("#keys-table").toggle(!showing);
+            $("#keys-page-header").text(showing ? "Add API Key" : "API Keys");
         });
 
         $("#cancel-key-form").on("click", function(e){
             e.preventDefault();
             $("#create-key-form").hide();
+            $("#keys-table").show();
+            $("#keys-page-header").text("API Keys");
         });
 
         $("#copy-key-btn").on("click", function(){

@@ -1,8 +1,11 @@
 import re, os
+from datetime import timedelta
+
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 import waffle
+from django.utils import timezone
 
 from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Tag, \
     Bin, Team, TeamUser, TeamDataset, \
@@ -629,8 +632,10 @@ class EditApiKeyForm(forms.Form):
         })
     )
 
-    def __init__(self, *args, user=None, **kwargs):
+    def __init__(self, *args, user=None, created_at=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # needed for validation when a key marked as never expiring changes to one with an expiry
+        self.created_at = created_at
 
         # scope choices are capped by what the owner's own role allows
         choices = [(BIN_READ, "Read bins")]
@@ -643,6 +648,15 @@ class EditApiKeyForm(forms.Form):
 
         if cleaned.get("expiry") == "days" and not cleaned.get("days"):
             self.add_error("days", "Please enter a number of days for the expiry")
+        elif cleaned.get("expiry") == "days" and self.created_at is not None:
+            # an expiry is measured from the key's creation date: a day count
+            #   smaller than the key's age would expire it immediately
+            age = (timezone.now() - self.created_at).days + 1
+            if cleaned["days"] < age:
+                self.add_error("days",
+                    f"This key is {age} days old, so {cleaned['days']} days would put its "
+                    f"expiry in the past. Enter at least {age} days, or choose Never."
+                )
 
         return cleaned
 

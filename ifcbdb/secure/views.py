@@ -1379,7 +1379,7 @@ def edit_api_key(request, key_id):
         return redirect(reverse('secure:api-key-management'))
 
     if request.method == "POST":
-        form = EditApiKeyForm(request.POST, user=request.user)
+        form = EditApiKeyForm(request.POST, user=request.user, created_at=api_key.created_at)
 
         if form.is_valid():
             api_key.scopes = form.cleaned_data["scopes"]
@@ -1394,7 +1394,7 @@ def edit_api_key(request, key_id):
     else:
         days = (api_key.expires_at - api_key.created_at).days if api_key.expires_at else None
         form = EditApiKeyForm(
-            user=request.user,
+            user=request.user, created_at=api_key.created_at,
             initial={
                 "description": api_key.description,
                 "scopes": api_key.scopes,
