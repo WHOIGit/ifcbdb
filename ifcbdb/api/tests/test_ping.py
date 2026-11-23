@@ -2,15 +2,17 @@ import json
 from unittest.mock import Mock
 
 from django.contrib.auth.models import User
-from django.test import RequestFactory, SimpleTestCase, TestCase
+from django.test import RequestFactory, TestCase
 from ninja.testing import TestClient
+from waffle.testutils import override_switch
 
 from api.api import api
 from api.models import ApiKey
 from api.scopes import BIN_READ
 
 
-class OpenApiSpecTests(SimpleTestCase):
+@override_switch("DashboardApi", active=True)
+class OpenApiSpecTests(TestCase):
     def _spec(self):
         request = RequestFactory().get("/api/openapi.json")
         request.user = Mock(is_authenticated=True)
@@ -45,6 +47,7 @@ class OpenApiSpecTests(SimpleTestCase):
         self.assertEqual(spec["info"]["version"], "1.0.0")
 
 
+@override_switch("DashboardApi", active=True)
 class PingEndpointTests(TestCase):
     def setUp(self):
         self.client = TestClient(api)

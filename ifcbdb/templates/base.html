@@ -1,4 +1,4 @@
-{% load static nav %}
+{% load static nav waffle_tags %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -45,10 +45,6 @@
                 <!-- Left -->
                 <nav class="nav flex-column flex-lg-row">
                     {% dataset_nav %}
-                    {% can_access_settings user as can_access_settings %}
-                    {% if can_access_settings %}
-                        <a class="white-text nav-link" href="/secure/" title="Settings" data-toggle="tooltip" data-placement="bottom"><span class="h5-responsive fa fa-cog"></span> Settings</a>
-                    {% endif %}
                     <div class="custom-control-inline">
                     <input id="go-to-bid-pid" type="text" class="form-control-sm" placeholder="Enter Bin PID..." />
                     <button id="go-to-bin" type="button" class="btn btn-sm btn-default btn-mdb-color">Go</button>
@@ -73,8 +69,15 @@
                         {% if user.first_name or user.last_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userMenu">
+                        {% can_access_settings user as can_access_settings %}
+                        {% if can_access_settings %}
+                        <a class="dropdown-item" href="/secure/"><span class="fas fa-cog mr-2"></span>Settings</a>
+                        <div class="dropdown-divider"></div>
+                        {% endif %}
+                        {% switch 'DashboardApi' %}
                         <a class="dropdown-item" href="{% url 'secure:api-key-management' %}"><span class="fas fa-key mr-2"></span>API Keys</a>
                         <div class="dropdown-divider"></div>
+                        {% endswitch %}
                         <a class="dropdown-item" href="{% url 'secure:logout' %}"><span class="fas fa-sign-out-alt mr-2"></span>Logout</a>
                     </div>
                 </div>

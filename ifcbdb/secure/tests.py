@@ -4,11 +4,13 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
+from waffle.testutils import override_switch
 
 from api.models import ApiKey
 from api.scopes import BIN_READ, BIN_SYNC
 
 
+@override_switch("DashboardApi", active=True)
 class ApiKeyManagementTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("regular", password="pw")
@@ -167,6 +169,7 @@ class ApiKeyManagementTests(TestCase):
         self.assertFalse(ApiKey.objects.filter(id=api_key.id).exists())
 
 
+@override_switch("DashboardApi", active=True)
 class CreateKeyExpiryAndDescriptionTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("expuser", password="pw")
@@ -239,6 +242,7 @@ class CreateKeyExpiryAndDescriptionTests(TestCase):
         self.assertContains(r, key.expires_at.strftime("%Y-%m-%d"))
 
 
+@override_switch("DashboardApi", active=True)
 class EditApiKeyTests(TestCase):
     "Editing a key's scopes/description/expiry; the key value is immutable."
 
@@ -390,6 +394,7 @@ class EditApiKeyTests(TestCase):
         self.assertContains(r, reverse("secure:api-key-edit", args=[self.api_key.id]))
 
 
+@override_switch("DashboardApi", active=True)
 class CreateFormVisibilityTests(TestCase):
     "The create form is collapsed until the user clicks Add New Key."
 
@@ -408,6 +413,7 @@ class CreateFormVisibilityTests(TestCase):
         self.assertContains(r, 'id="create-key-form" style="display: block;')
 
 
+@override_switch("DashboardApi", active=True)
 class UserNavMenuTests(TestCase):
     "The user menu (API Keys / Logout) in the top nav."
 
@@ -430,3 +436,78 @@ class UserNavMenuTests(TestCase):
         r = self.client.get(reverse("secure:api-key-management"))
         self.assertContains(r, "API Keys")
         self.assertContains(r, reverse("secure:logout"))
+
+class ApiKeyGatingTests(TestCase):
+    "API key management is gated behind the DashboardApi waffle switch."
+
+    def setUp(self):
+        self.user = User.objects.create_user("gateduser", password="pw")
+        self.admin = User.objects.create_user(
+            "gateadmin", password="pw", is_superuser=True
+        )
+        self.client.force_login(self.user)
+
+    def _create_key(self, revoked=False):
+        _, api_key = ApiKey.objects.create_key(
+            user=self.user, name="gated key", scopes=[BIN_READ]
+        )
+        if revoked:
+            api_key.revoked = True
+            api_key.save(update_fields=["revoked"])
+        return api_key
+
+    @override_switch("DashboardApi", active=False)
+    def test_management_page_404_when_switch_off(self):
+        r = self.client.get(reverse("secure:api-key-management"))
+        self.assertEqual(r.status_code, 404)
+
+    @override_switch("DashboardApi", active=False)
+    def test_create_404_when_switch_off(self):
+        r = self.client.post(
+            reverse("secure:api-key-create"),
+            {"name": "k", "scopes": [BIN_READ]},
+        )
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(ApiKey.objects.filter(user=self.user).count(), 0)
+
+    @override_switch("DashboardApi", active=False)
+    def test_edit_404_when_switch_off(self):
+        api_key = self._create_key()
+        r = self.client.get(reverse("secure:api-key-edit", args=[api_key.id]))
+        self.assertEqual(r.status_code, 404)
+
+    @override_switch("DashboardApi", active=False)
+    def test_revoke_404_when_switch_off(self):
+        api_key = self._create_key()
+        r = self.client.post(reverse("secure:api-key-revoke", args=[api_key.id]))
+        self.assertEqual(r.status_code, 404)
+        api_key.refresh_from_db()
+        self.assertFalse(api_key.revoked)
+
+    @override_switch("DashboardApi", active=False)
+    def test_delete_404_when_switch_off(self):
+        api_key = self._create_key(revoked=True)
+        r = self.client.post(reverse("secure:api-key-delete", args=[api_key.id]))
+        self.assertEqual(r.status_code, 404)
+        self.assertTrue(ApiKey.objects.filter(id=api_key.id).exists())
+
+    @override_switch("DashboardApi", active=True)
+    def test_management_page_renders_when_switch_on(self):
+        r = self.client.get(reverse("secure:api-key-management"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "API Keys")
+
+    @override_switch("DashboardApi", active=False)
+    def test_nav_menu_hides_api_keys_but_keeps_logout_when_switch_off(self):
+        self.client.force_login(self.admin)
+        r = self.client.get(reverse("secure:index"))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, "/secure/api-keys")
+        self.assertContains(r, "Logout")
+
+    @override_switch("DashboardApi", active=True)
+    def test_nav_menu_shows_api_keys_when_switch_on(self):
+        self.client.force_login(self.admin)
+        r = self.client.get(reverse("secure:index"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "/secure/api-keys")

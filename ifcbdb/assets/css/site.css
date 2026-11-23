@@ -425,3 +425,15 @@ a.tstabcollapser:after
 #mosaic-failed p {
     margin:0
 }
+
+/* In the collapsed navbar (below the xl breakpoint), Bootstrap renders
+   dropdown menus in-flow under their nav item, but MDB forces them to
+   position: absolute. That throws the user menu to the right edge of the
+   screen, disconnected from its left-aligned nav item. Restore the
+   static, full-width behavior on mobile. */
+@media (max-width: 1199.98px) {
+    .navbar .dropdown-menu {
+        position: static !important;
+        float: none;
+    }
+}

@@ -7,6 +7,7 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 from ninja import NinjaAPI
 from ninja.testing import TestClient
+from waffle.testutils import override_switch
 
 from api.auth import optional_auth, required_auth
 from api.models import ApiKey
@@ -118,6 +119,7 @@ class SessionAuthCsrfTests(SimpleTestCase):
         self.assertEqual(r.status_code, 200)
 
 
+@override_switch("DashboardApi", active=True)
 class ApiKeyAuthTests(TestCase):
     "API-key authentication against real (hashed, per-user) keys."
 
@@ -356,6 +358,7 @@ class PermissionScopeTests(SimpleTestCase):
         self.assertFalse(permissions.can_manage_bins(principal))
 
 
+@override_switch("DashboardApi", active=True)
 class ApiKeyThrottleEndToEndTests(TestCase):
     "Throttle tests that need database-backed keys."
 

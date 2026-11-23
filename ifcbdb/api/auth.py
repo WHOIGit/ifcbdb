@@ -1,7 +1,10 @@
 from django.conf import settings
 
+import waffle
 from ninja.errors import AuthenticationError
 from ninja.security import APIKeyCookie, APIKeyHeader, SessionAuth
+
+from common.constants import Features
 
 from .models import ApiKey
 from .principals import AnonymousPrincipal, ApiKeyPrincipal, UserPrincipal
@@ -14,6 +17,11 @@ class ApiKeyAuth(APIKeyHeader):
     "API Keys" page and stored hashed. An unknown, malformed, revoked,
     expired key (or a key whose owner is inactive) raises immediately:
     it never falls through to other authenticators.
+
+    The feature is gated behind the `DashboardApi` waffle switch: while
+    the switch is off, API-key authentication is unsupported entirely and
+    any presented key is rejected (requests without a key are unaffected:
+    session users and anonymous callers carry on as before).
     """
 
     param_name = "X-API-Key"
@@ -21,6 +29,13 @@ class ApiKeyAuth(APIKeyHeader):
     def authenticate(self, request, key):
         if not key:
             return None
+
+        if not waffle.switch_is_active(Features.DASHBOARD_API.value):
+            # the API key feature is disabled: keys are not supported at all,
+            #   so a presented key fails rather than silently degrading. A
+            #   request without a key never reaches this check and keeps
+            #   working via the next authenticators (public endpoints).
+            raise AuthenticationError(message="API key authentication is disabled")
 
         api_key = ApiKey.objects.authenticate(key)
         if api_key is None:

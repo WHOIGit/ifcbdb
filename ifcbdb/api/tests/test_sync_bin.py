@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 from ninja.testing import TestClient
+from waffle.testutils import override_switch
 
 from api.api import api
 from api.models import ApiKey
@@ -20,6 +21,7 @@ def make_plain_user():
     return Mock(username="plain", is_authenticated=True, is_superuser=False)
 
 
+@override_switch("DashboardApi", active=True)
 class SyncBinEndpointTests(TestCase):
     "GET /api/sync_bin"
 

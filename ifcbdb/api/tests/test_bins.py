@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils import timezone
 from ninja.testing import TestClient
+from waffle.testutils import override_switch
 
 from api.api import api
 from api.models import ApiKey
@@ -11,6 +12,7 @@ from api.scopes import BIN_READ
 from dashboard.models import Bin, Dataset
 
 
+@override_switch("DashboardApi", active=True)
 class MostRecentBinTests(TestCase):
     "GET /api/most_recent_bin"
 

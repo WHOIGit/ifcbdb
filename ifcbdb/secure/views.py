@@ -1319,6 +1319,7 @@ def request_get_team_name(team_value: str):
 
 
 @login_required
+@waffle_switch('DashboardApi')
 def api_key_management(request):
     "Self-service management of the logged-in user's API keys."
     form = ApiKeyForm(user=request.user)
@@ -1340,6 +1341,7 @@ def _expiry_from_form(cleaned_data, start=None):
 
 
 @login_required
+@waffle_switch('DashboardApi')
 @require_POST
 def create_api_key(request):
     form = ApiKeyForm(request.POST, user=request.user)
@@ -1364,6 +1366,7 @@ def create_api_key(request):
 
 
 @login_required
+@waffle_switch('DashboardApi')
 def edit_api_key(request, key_id):
     "Edit a key's scopes, description and expiry; the key value itself is immutable."
     api_key = get_object_or_404(ApiKey, id=key_id)
@@ -1407,6 +1410,7 @@ def edit_api_key(request, key_id):
 
 
 @login_required
+@waffle_switch('DashboardApi')
 @require_POST
 def revoke_api_key(request, key_id):
     api_key = get_object_or_404(ApiKey, id=key_id)
@@ -1420,6 +1424,7 @@ def revoke_api_key(request, key_id):
 
 
 @login_required
+@waffle_switch('DashboardApi')
 @require_POST
 def delete_api_key(request, key_id):
     api_key = get_object_or_404(ApiKey, id=key_id)
