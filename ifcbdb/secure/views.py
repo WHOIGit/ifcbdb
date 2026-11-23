@@ -546,7 +546,7 @@ def edit_user(request, id):
         .select_related("team", "role")
 
     return render(request, "secure/edit-user.html", {
-        "user": user,
+        "user_id": user.id,
         "form": form,
         "assigned_teams": assigned_teams,
     })
