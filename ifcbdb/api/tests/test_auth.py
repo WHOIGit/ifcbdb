@@ -307,7 +307,7 @@ class ScopesTests(SimpleTestCase):
 
 
 class PermissionScopeTests(SimpleTestCase):
-    "Effective access for a key is its scope capped by the owner's own permissions."
+    "Effective access for a key is its scope capped by the owner's own permissions; session users and anonymous callers keep the legacy open access."
 
     def _key_principal(self, scopes, owner_flags):
         owner = make_owner(is_superuser=owner_flags)
@@ -349,6 +349,14 @@ class PermissionScopeTests(SimpleTestCase):
 
         principal = self._key_principal([BIN_READ], owner_flags=True)
         self.assertFalse(permissions.can_sync_bin(principal))
+
+    def test_non_admin_session_user_allowed_for_legacy_endpoints(self):
+        "the old endpoints were public; logged-in non-admins keep that access"
+        from api import permissions
+
+        principal = UserPrincipal(make_user(username="plain"))
+        self.assertTrue(permissions.can_read_bin(principal))
+        self.assertTrue(permissions.can_sync_bin(principal))
 
     def test_key_principal_denied_write_permissions(self):
         from api import permissions

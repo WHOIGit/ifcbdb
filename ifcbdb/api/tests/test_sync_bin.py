@@ -108,6 +108,7 @@ class SyncBinEndpointTests(TestCase):
         self.assertEqual(r.json()["result"], "synced")
 
     def test_key_without_sync_scope_forbidden(self):
+        "keys are credentials: without the bins:sync scope they are rejected"
         r = self.client.get(
             "/sync_bin",
             query_params={"dataset": "test-ds", "bin": "NEW_BIN"},
@@ -115,13 +116,18 @@ class SyncBinEndpointTests(TestCase):
         )
         self.assertEqual(r.status_code, 403)
 
-    def test_non_admin_session_user_forbidden(self):
+    @patch("api.routers.bins.Accession")
+    def test_non_admin_session_user_allowed_for_legacy_compatibility(self, accession):
+        "the old unauthenticated endpoint served logged-in non-admins too; no regression"
+        accession.return_value.sync_one.return_value = Mock()
+
         r = self.client.get(
             "/sync_bin",
             query_params={"dataset": "test-ds", "bin": "NEW_BIN"},
             user=make_plain_user(),
         )
-        self.assertEqual(r.status_code, 403)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["result"], "synced")
 
     def test_scope_capped_by_non_admin_owner(self):
         "a non-admin's key has the scope but is denied anyway"

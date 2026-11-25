@@ -1132,32 +1132,6 @@ def nearest_bin(request):
         'bin_id': bin_id
     })
 
-# DEPRECATED: covered by the new Django Ninja API endpoint `/api/most_recent_bin`
-#   (see ifcbdb/api/routers/bins.py) and kept only until external consumers migrate
-def most_recent_bin(request):
-    dataset_name = request.GET.get("dataset")
-
-    _ = get_object_or_404(Dataset, name=dataset_name)
-
-    # The most recent bin is based on the bin's timestamp. Bins that have a timestamp in the future are excluded
-    #   because it's usually indicative of bad data
-    bin = Bin.objects \
-        .filter(datasets__name=dataset_name) \
-        .exclude(timestamp__gt=timezone.now()) \
-        .order_by('-timestamp') \
-        .first()
-
-    if not bin:
-        raise Http404("Dataset has no bins")
-
-    return JsonResponse({
-        "pid": bin.pid,
-        "timestamp": bin.timestamp,
-        "time_since": round((timezone.now() - bin.timestamp).total_seconds()),
-        "temperature": bin.temperature,
-        "humidity": bin.humidity
-    })
-
 def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     try:

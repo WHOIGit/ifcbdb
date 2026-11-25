@@ -32,9 +32,8 @@ class MostRecentBinResponse(Schema):
     description=(
         "Returns the PID, timestamp, and environmental readings of the most "
         "recently sampled bin in a dataset. Bins with a timestamp in the "
-        "future are excluded, since that usually indicates bad data. "
-        "Requires the `bins:read` scope (API keys); session users and "
-        "anonymous callers are accepted for legacy compatibility."
+        "future are excluded, since that usually indicates bad data. Public "
+        "for legacy compatibility; API keys require the `bins:read` scope."
     ),
 )
 def most_recent_bin(request, dataset: str):
@@ -72,9 +71,9 @@ def most_recent_bin(request, dataset: str):
     description=(
         "Ingests a single bin into the database by PID. Idempotent: returns "
         "`exists` if the bin is already ingested, `synced` after a successful "
-        "ingest. Requires the `bins:sync` scope (API keys, capped by the "
-        "owner's permissions) or an admin session; anonymous callers are "
-        "accepted for legacy compatibility with the old endpoint."
+        "ingest. Public for legacy compatibility with the old endpoint; API "
+        "keys require the `bins:sync` scope, capped by the owner's own "
+        "permissions."
     ),
 )
 def sync_bin(request, dataset: str, bin: str):

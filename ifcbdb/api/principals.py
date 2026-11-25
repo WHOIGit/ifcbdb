@@ -50,3 +50,7 @@ def is_user_principal(principal):
 
 def is_api_key_principal(principal):
     return isinstance(principal, ApiKeyPrincipal)
+
+
+def is_anonymous_principal(principal):
+    return isinstance(principal, AnonymousPrincipal)

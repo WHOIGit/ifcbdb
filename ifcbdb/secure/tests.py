@@ -293,16 +293,31 @@ class EditApiKeyTests(TestCase):
         self.assertNotIn("ifcb_", html.split("id_expiry")[0])  # key value not shown
 
     def test_edit_scopes(self):
-        self.client.force_login(self.admin)  # admin may grant bins:sync
-        r = self.client.post(self._edit_url(), {
+        # scope choices are capped by the key owner's role, so granting
+        # bins:sync means editing a key the admin owns
+        _, admin_key = ApiKey.objects.create_key(user=self.admin, name="admin's own", scopes=[BIN_READ])
+        self.client.force_login(self.admin)
+        r = self.client.post(reverse("secure:api-key-edit", args=[admin_key.id]), {
             "description": "original description",
             "scopes": [BIN_READ, BIN_SYNC],
             "expiry": "never",
         })
         self.assertEqual(r.status_code, 302)
+        admin_key.refresh_from_db()
+        self.assertEqual(admin_key.scopes, [BIN_READ, BIN_SYNC])
+        self.assertIsNone(admin_key.expires_at)
+
+    def test_admin_cannot_grant_sync_on_anothers_key(self):
+        "scope choices are capped by the key owner's role, not the editor's"
+        self.client.force_login(self.admin)
+        r = self.client.post(self._edit_url(), {
+            "description": "original description",
+            "scopes": [BIN_READ, BIN_SYNC],
+            "expiry": "never",
+        })
+        self.assertEqual(r.status_code, 200)  # re-rendered with errors
         self.api_key.refresh_from_db()
-        self.assertEqual(self.api_key.scopes, [BIN_READ, BIN_SYNC])
-        self.assertIsNone(self.api_key.expires_at)
+        self.assertEqual(self.api_key.scopes, [BIN_READ])
 
     def test_edit_expiry_against_creation_date(self):
         "30 days means created_at + 30, not edit time + 30"
