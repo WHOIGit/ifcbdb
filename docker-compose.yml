@@ -1,6 +1,6 @@
 
 x-ifcb-common: &ifcb-common
-  image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:4.3.0}
+  image: ${IFCBDB_IMAGE:-whoi/ifcb-dashboard:5.3.1}
   environment:
     - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-changeme}
     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ifcb}
