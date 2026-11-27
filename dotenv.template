@@ -21,3 +21,6 @@ POSTGRES_PASSWORD=changeme
 
 #LOCAL_SETTINGS=./local_settings.py
 
+# Rate limit for API-key-authenticated requests, in requests per minute.
+API_KEY_THROTTLE_RATE=600
+

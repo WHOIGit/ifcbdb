@@ -28,6 +28,11 @@ urlpatterns = [
     path('bin-management/search', views.bin_management_search, name='bin-management-search'),
     path('bin-management/export', views.bin_management_export, name='bin-management-export'),
     path('bin-management/execute', views.bin_management_execute, name='bin-management-execute'),
+    path('api-keys', views.api_key_management, name='api-key-management'),
+    path('api-keys/create', views.create_api_key, name='api-key-create'),
+    path('api-keys/<int:key_id>/edit', views.edit_api_key, name='api-key-edit'),
+    path('api-keys/<int:key_id>/revoke', views.revoke_api_key, name='api-key-revoke'),
+    path('api-keys/<int:key_id>/delete', views.delete_api_key, name='api-key-delete'),
 
     # Paths used for AJAX requests specifically for returning data formatted for DataTables
     path('api/dt/datasets', views.dt_datasets, name='datasets_dt'),

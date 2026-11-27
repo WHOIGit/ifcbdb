@@ -1,5 +1,6 @@
 import json
 import csv
+from datetime import timedelta
 from io import BytesIO
 from itertools import groupby
 from operator import attrgetter
@@ -17,12 +18,14 @@ import pandas as pd
 from dashboard.models import Dataset, Instrument, DataDirectory, Tag, TagEvent, Bin, Comment, AppSettings, Team, \
     TeamUser, TeamDataset, TeamRole, bin_query, bin_management_query, ReservedDatasetName
 from .forms import DatasetForm, InstrumentForm, DirectoryForm, MetadataUploadForm, AppSettingsForm, TagForm, \
-    MergeTagForm, UserForm, TeamForm, BinSearchForm, BinActionForm
+    MergeTagForm, UserForm, TeamForm, BinSearchForm, BinActionForm, ApiKeyForm, EditApiKeyForm
 
 from dashboard.accession import export_metadata
 from common import auth
 from common.constants import Features, TeamRoles, BinManagementActions, BIN_ID_COLUMNS, ADD_DATASET_COLUMNS, REMOVE_DATASET_COLUMNS, \
 BinManagementDatasetFilters, BinManagementTeamFilters
+
+from api.models import ApiKey
 
 
 from django.core.cache import cache
@@ -1313,3 +1316,125 @@ def request_get_team_name(team_value: str):
     team = Team.objects.filter(pk=int(team_value)).first()
 
     return [team.name] if team else None
+
+
+@login_required
+@waffle_switch('DashboardApi')
+def api_key_management(request):
+    "Self-service management of the logged-in user's API keys."
+    form = ApiKeyForm(user=request.user)
+    new_raw_key = request.session.pop('new_api_key', None)
+
+    return render(request, 'secure/api-key-management.html', {
+        "form": form,
+        "keys": ApiKey.objects.filter(user=request.user),
+        "new_raw_key": new_raw_key,
+        "can_sync": auth.is_admin(request.user),
+    })
+
+
+def _expiry_from_form(cleaned_data, start=None):
+    "expires_at computed from the given start date (defaults to now), or None for no expiry."
+    if cleaned_data.get("expiry") == "days" and cleaned_data.get("days"):
+        return (start or timezone.now()) + timedelta(days=cleaned_data["days"])
+    return None
+
+
+@login_required
+@waffle_switch('DashboardApi')
+@require_POST
+def create_api_key(request):
+    form = ApiKeyForm(request.POST, user=request.user)
+
+    if not form.is_valid():
+        return render(request, 'secure/api-key-management.html', {
+            "form": form,
+            "keys": ApiKey.objects.filter(user=request.user),
+            "can_sync": auth.is_admin(request.user),
+        })
+
+    raw_key, api_key = ApiKey.objects.create_key(
+        user=request.user,
+        name=form.cleaned_data["name"],
+        scopes=form.cleaned_data["scopes"],
+        description=form.cleaned_data.get("description", ""),
+        expires_at=_expiry_from_form(form.cleaned_data),
+    )
+    # show the raw key once, on the next page load only (so it isn't lost to a refresh)
+    request.session['new_api_key'] = raw_key
+    return redirect(reverse('secure:api-key-management'))
+
+
+@login_required
+@waffle_switch('DashboardApi')
+def edit_api_key(request, key_id):
+    "Edit a key's scopes, description and expiry; the key value itself is immutable."
+    api_key = get_object_or_404(ApiKey, id=key_id)
+    if api_key.user_id != request.user.id and not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
+    # expired keys are dead: they cannot be edited or revived, only replaced
+    #   (create a new key and delete this one)
+    if api_key.revoked or api_key.is_expired:
+        return redirect(reverse('secure:api-key-management'))
+
+    if request.method == "POST":
+        form = EditApiKeyForm(request.POST, user=api_key.user, created_at=api_key.created_at)
+
+        if form.is_valid():
+            api_key.scopes = form.cleaned_data["scopes"]
+            api_key.description = form.cleaned_data.get("description", "")
+            # expiry is computed against the original creation date, not now
+            api_key.expires_at = _expiry_from_form(
+                form.cleaned_data, start=api_key.created_at
+            )
+            api_key.save(update_fields=["scopes", "description", "expires_at"])
+
+            return redirect(reverse('secure:api-key-management'))
+    else:
+        days = (api_key.expires_at - api_key.created_at).days if api_key.expires_at else None
+        form = EditApiKeyForm(
+            user=api_key.user, created_at=api_key.created_at,
+            initial={
+                "description": api_key.description,
+                "scopes": api_key.scopes,
+                "expiry": "days" if api_key.expires_at else "never",
+                "days": days,
+            },
+        )
+
+    return render(request, 'secure/edit-api-key.html', {
+        "api_key": api_key,
+        "form": form,
+    })
+
+
+@login_required
+@waffle_switch('DashboardApi')
+@require_POST
+def revoke_api_key(request, key_id):
+    api_key = get_object_or_404(ApiKey, id=key_id)
+    if api_key.user_id != request.user.id and not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
+    api_key.revoked = True
+    api_key.save(update_fields=["revoked"])
+
+    return redirect(reverse('secure:api-key-management'))
+
+
+@login_required
+@waffle_switch('DashboardApi')
+@require_POST
+def delete_api_key(request, key_id):
+    api_key = get_object_or_404(ApiKey, id=key_id)
+    if api_key.user_id != request.user.id and not auth.is_admin(request.user):
+        return HttpResponseForbidden()
+
+    # only dead keys (revoked or expired) may be deleted
+    if not api_key.revoked and not api_key.is_expired:
+        return redirect(reverse('secure:api-key-management'))
+
+    api_key.delete()
+
+    return redirect(reverse('secure:api-key-management'))

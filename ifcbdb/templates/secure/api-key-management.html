@@ -1,0 +1,192 @@
+{% extends 'base.html' %} {% block content %}
+<div class="flex-row d-flex justify-content-between">
+    <div class="flex-column">
+        <span class="h3-responsive" id="keys-page-header">{% if form.errors %}Add API Key{% else %}API Keys{% endif %}</span>
+    </div>
+</div>
+<hr class="my-2">
+
+{% if new_raw_key %}
+<div class="alert alert-success mt-2 d-inline-block" role="alert" id="new-key-alert">
+    <div class="d-flex align-items-start">
+        <i class="fas fa-check-circle mt-1 mr-2"></i>
+        <div class="flex-grow-1">
+            <strong>API key created.</strong> Copy it now &mdash; it will not be shown again.
+            <div class="input-group input-group-sm mt-2 mb-2" style="width: auto; min-width: 12rem;">
+                <input type="text" id="new-key-code" class="form-control text-monospace"
+                    value="{{ new_raw_key }}" readonly size="{{ new_raw_key|length }}">
+                <div class="input-group-append">
+                    <button type="button" id="copy-key-btn" class="btn btn-mdb-color" style="margin: 0;"
+                        title="Copy key" aria-label="Copy key" data-clipboard="{{ new_raw_key }}">
+                        <i class="far fa-copy" id="copy-key-icon"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="mb-0 small">Send it with requests as the <code>X-API-Key</code> header.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row py-2 px-3">
+    <div class="col">
+        <div class="flex-row d-flex justify-content-end">
+            <div class="flex-column">
+                <a class="btn btn-sm btn-mdb-color" id="add-key-toggle" href="#" role="button">
+                    <i class="fas fa-plus magic mr-1"></i> Add New Key
+                </a>
+            </div>
+        </div>
+
+        <div id="create-key-form" style="display: {% if form.errors %}block{% else %}none{% endif %};" class="mb-4">
+            <form method="post" action="{% url 'secure:api-key-create' %}">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="{{ form.name.id_for_label }}">Name</label>
+                            {{ form.name }}
+                            {% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.description.id_for_label }}">Description</label>
+                            {{ form.description }}
+                            {% for error in form.description.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="form-group">
+                            <label>Expiry</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="expiry" id="expiry-never" value="never"{% if form.expiry.value != "days" %} checked{% endif %}>
+                                <label class="form-check-label" for="expiry-never">Never</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="expiry" id="expiry-days" value="days"{% if form.expiry.value == "days" %} checked{% endif %}>
+                                <label class="form-check-label" for="expiry-days">Expires in</label>
+                                <span class="mx-1">{{ form.days }}</span> days
+                            </div>
+                            {% for error in form.expiry.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% for error in form.days.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>Scopes</label>
+                            <div class="border rounded p-3">
+                                {{ form.scopes }}
+                                {% for error in form.scopes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-sm btn-mdb-color">
+                    <i class="fas fa-plus magic mr-1"></i> Create API Key
+                </button>
+                <button type="button" id="cancel-key-form" class="btn btn-sm btn-outline-dark">
+                    Cancel
+                </button>
+            </form>
+        </div>
+
+        <table id="keys-table" class="table table-sm table-striped table-bordered"{% if form.errors %} style="display: none;"{% endif %}>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Key</th>
+                    <th>Scopes</th>
+                    <th>Created</th>
+                    <th>Last used</th>
+                    <th>Expires</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key in keys %}
+                <tr>
+                    <td>{{ key.name }}</td>
+                    <td>{{ key.description }}</td>
+                    <td><code>ifcb_{{ key.prefix }}&hellip;</code></td>
+                    <td>{{ key.scopes|join:", " }}</td>
+                    <td>{{ key.created_at|date:"Y-m-d" }}</td>
+                    <td>{{ key.last_used_at|date:"Y-m-d H:i"|default:"&mdash;" }}</td>
+                    <td>{{ key.expires_at|date:"Y-m-d"|default:"Never" }}</td>
+                    <td>
+                        {% if key.revoked %}Revoked
+                        {% elif key.is_expired %}Expired
+                        {% else %}Active{% endif %}
+                    </td>
+                    <td>
+                        {% if not key.revoked and not key.is_expired %}
+                        <a class="btn btn-sm btn-mdb-color mr-2" href="{% url 'secure:api-key-edit' key.id %}">
+                            <i class="fas fa-edit magic mr-1"></i>Edit
+                        </a>
+                        <form method="post" action="{% url 'secure:api-key-revoke' key.id %}" class="d-inline mb-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-mdb-color"
+                                onclick="return confirm('Revoke this key? Applications using it will stop working immediately.');">
+                                <i class="fas fa-minus-circle magic mr-1"></i> Revoke
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'secure:api-key-delete' key.id %}" class="d-inline mb-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-mdb-color mr-2"
+                                onclick="return confirm('Permanently remove this key? This cannot be undone.');">
+                                <i class="fas fa-trash magic mr-1"></i> Remove
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9">No API keys yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+    $(function(){
+        $("#add-key-toggle").on("click", function(e){
+            e.preventDefault();
+            var showing = $("#create-key-form").toggle().is(":visible");
+            $("#keys-table").toggle(!showing);
+            $("#keys-page-header").text(showing ? "Add API Key" : "API Keys");
+        });
+
+        $("#cancel-key-form").on("click", function(e){
+            e.preventDefault();
+            $("#create-key-form").hide();
+            $("#keys-table").show();
+            $("#keys-page-header").text("API Keys");
+        });
+
+        $("#copy-key-btn").on("click", function(){
+            var text = $(this).data("clipboard") || $("#new-key-code").val();
+            var icon = $("#copy-key-icon");
+            var showCopied = function(){
+                icon.removeClass("far fa-copy").addClass("fas fa-check");
+                setTimeout(function(){
+                    icon.removeClass("fas fa-check").addClass("far fa-copy");
+                }, 2000);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(showCopied);
+            } else {
+                var $tmp = $("<textarea>").val(text).css({position: "fixed", opacity: 0}).appendTo("body");
+                $tmp[0].select();
+                document.execCommand("copy");
+                $tmp.remove();
+                showCopied();
+            }
+        });
+
+        if ($("#new-key-alert").length) {
+            $("#new-key-alert")[0].scrollIntoView({ block: "center" });
+        }
+    });
+</script>
+{% endblock %}

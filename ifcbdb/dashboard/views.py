@@ -33,7 +33,7 @@ from .forms import DatasetSearchForm
 from common.utilities import *
 from common import auth
 
-from dashboard.accession import Accession, export_metadata
+from dashboard.accession import export_metadata
 import waffle
 
 def index(request):
@@ -1132,30 +1132,6 @@ def nearest_bin(request):
         'bin_id': bin_id
     })
 
-def most_recent_bin(request):
-    dataset_name = request.GET.get("dataset")
-
-    _ = get_object_or_404(Dataset, name=dataset_name)
-
-    # The most recent bin is based on the bin's timestamp. Bins that have a timestamp in the future are excluded
-    #   because it's usually indicative of bad data
-    bin = Bin.objects \
-        .filter(datasets__name=dataset_name) \
-        .exclude(timestamp__gt=timezone.now()) \
-        .order_by('-timestamp') \
-        .first()
-
-    if not bin:
-        raise Http404("Dataset has no bins")
-
-    return JsonResponse({
-        "pid": bin.pid,
-        "timestamp": bin.timestamp,
-        "time_since": round((timezone.now() - bin.timestamp).total_seconds()),
-        "temperature": bin.temperature,
-        "humidity": bin.humidity
-    })
-
 def plot_data(request, bin_id):
     b = get_object_or_404(Bin, pid=bin_id)
     try:
@@ -1496,23 +1472,6 @@ def export_metadata_view(request, dataset_name=None):
     response['Content-Disposition'] = f'attachment; filename={filename}'
 
     return response
-
-def sync_bin(request):
-    dataset_name = request.GET.get("dataset")
-    pid = request.GET.get('bin')
-    dataset = get_object_or_404(Dataset, name=dataset_name)
-
-    if not pid:
-        return HttpResponseNotFound("Bin not specified")
-
-    if Bin.objects.filter(pid=pid).exists():
-        return JsonResponse({'result': 'exists'})
-
-    bin = Accession(dataset).sync_one(pid)
-    if bin is None:
-        return HttpResponseNotFound()
-
-    return JsonResponse({'result':'synced'})
 
 def about_page(request):
     return render(request, 'dashboard/about.html')

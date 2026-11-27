@@ -1,8 +1,11 @@
 import re, os
+from datetime import timedelta
+
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 import waffle
+from django.utils import timezone
 
 from dashboard.models import Dataset, Instrument, DataDirectory, AppSettings, Tag, \
     Bin, Team, TeamUser, TeamDataset, \
@@ -11,6 +14,8 @@ from common import auth
 from common.constants import BinManagementActions, TeamRoles, BinManagementDatasetFilters, BinManagementTeamFilters
 
 from common.constants import BinManagementTeamFilters, BinManagementDatasetFilters
+
+from api.scopes import BIN_READ, BIN_SYNC
 
 MIN_LATITUDE = -90
 MAX_LATITUDE = 90
@@ -602,3 +607,62 @@ class BinActionForm(forms.Form):
 
         if action == BinManagementActions.UNASSIGN_DATASET.value and unassigned_dataset is None:
             raise ValidationError("Please choose a dataset to unassign")
+
+
+class EditApiKeyForm(forms.Form):
+    description = forms.CharField(required=False, max_length=500, widget=forms.Textarea(
+        attrs={"class": "form-control form-control-sm", "rows": 2,
+               "placeholder": "What is this key for? (optional)"}
+    ))
+    scopes = forms.MultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        error_messages={"required": "Please select at least one scope"},
+    )
+    expiry = forms.ChoiceField(
+        choices=[("never", "Never"), ("days", "Expires in")],
+        required=False,
+        initial="never",
+    )
+    days = forms.IntegerField(
+        required=False, min_value=1, max_value=3650,
+        widget=forms.NumberInput(attrs={
+            "class": "form-control form-control-sm d-inline-block", "style": "width: 6rem;",
+            "placeholder": "days",
+        })
+    )
+
+    def __init__(self, *args, user=None, created_at=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # needed for validation when a key marked as never expiring changes to one with an expiry
+        self.created_at = created_at
+
+        # scope choices are capped by what the owner's own role allows
+        choices = [(BIN_READ, "Read bins")]
+        if user is not None and auth.is_admin(user):
+            choices.append((BIN_SYNC, "Sync bins"))
+        self.fields["scopes"].choices = choices
+
+    def clean(self):
+        cleaned = super().clean()
+
+        if cleaned.get("expiry") == "days" and not cleaned.get("days"):
+            self.add_error("days", "Please enter a number of days for the expiry")
+        elif cleaned.get("expiry") == "days" and self.created_at is not None:
+            # an expiry is measured from the key's creation date: a day count
+            #   smaller than the key's age would expire it immediately
+            age = (timezone.now() - self.created_at).days + 1
+            if cleaned["days"] < age:
+                self.add_error("days",
+                    f"This key is {age} days old, so {cleaned['days']} days would put its "
+                    f"expiry in the past. Enter at least {age} days, or choose Never."
+                )
+
+        return cleaned
+
+
+class ApiKeyForm(EditApiKeyForm):
+    name = forms.CharField(max_length=100, widget=forms.TextInput(
+        attrs={"class": "form-control form-control-sm", "placeholder": "e.g. My Application"}
+    ))
+    field_order = ["name", "description", "scopes", "expiry", "days"]
